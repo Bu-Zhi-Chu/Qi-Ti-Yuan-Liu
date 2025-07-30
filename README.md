@@ -1,14 +1,14 @@
-0. 目标是开发一个低代码拖拽式的前端快速开发工具 我希望是单页应用
-1. 创建了vite项目 npm create vite@latest
-2. 选择了svelte5 + TypeScript 项目模板
-3. 优化了TypeScript和vite的配置文件
-4. 删除了框架自带的示例 完成了项目的初始化
-5. 制定了项目规则 .trae\rules\project_rules.md
-6. 添加PWA开发依赖
+00. 目标是开发一个低代码拖拽式的前端快速开发工具 我希望是单页应用
+01. 创建了vite项目 npm create vite@latest
+02. 选择了svelte5 + TypeScript 项目模板
+03. 优化了TypeScript和vite的配置文件
+04. 删除了框架自带的示例 完成了项目的初始化
+05. 制定了项目规则 .trae\rules\project_rules.md
+06. 添加PWA开发依赖
    1. vite-plugin-pwa: ^0.19.0
    2. workbox-window: ^7.0.0
    3. 优化Service Worker配置
-7. 设计项目整体架构
+07. 设计项目整体架构
 ```html
     ├── .trae/                                # Trae IDE配置目录
     ├── .vscode/                              # VS Code编辑器配置目录
@@ -49,6 +49,6 @@
     ├── vite-env.d.ts                         # Vite环境变量声明
     └── vite.config.ts                        # Vite构建工具配置
 ```
-8. 制定了项目规则
-9. 集成了npm install @mateothegreat/svelte5-router 路由组件 并完成了对源码的初步学习
-10.
+08. 制定了项目规则
+09. 集成了npm install @mateothegreat/svelte5-router 路由组件 并完成了对源码的初步学习
+10. 首页搭建的时候发现我们其实先应该解决网页自适应屏幕的问题
