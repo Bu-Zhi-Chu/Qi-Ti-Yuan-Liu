@@ -45,12 +45,19 @@ export default defineConfig({
     ],
     server: {
         fs: {
-            allow: ['src', 'public', 'index.html', 'manifest.json']
+            allow: ['src', 'public', 'index.html', 'manifest.json'],
+            deny: ['study'] // 明确禁止访问study目录
+        },
+        watch: {
+            ignored: ['**/study/**'] // 忽略study目录变化
         }
+    },
+    optimizeDeps: {
+        exclude: ['study'] // 排除study目录依赖预构建
     },
     build: {
         rollupOptions: {
-            external: ['study/**/*']
+            // 移除study目录的构建排除，让Vite正常处理
         }
     }
 })
