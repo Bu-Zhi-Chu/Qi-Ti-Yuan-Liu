@@ -47,3 +47,4 @@
    ├── vite-env.d.ts                         # Vite环境变量声明
    └── vite.config.ts                        # Vite构建工具配置
 ```
+8. 制定了项目规则
