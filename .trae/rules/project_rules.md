@@ -1,10 +1,13 @@
 0. 中文交流
 
+1. 联网搜索信息要考虑时效性,要搜索日期较新的信息
+
 1. 注意项目用到的技术,实现一些功能思考注意有没有更好的新特性实现
    1. vite
    2. svelte5
    3. typescript
    4. vite-plugin-pwa + workbox-window
+   5. @mateothegreat/svelte5-router
 
 
 2. 注意项目的整体架构,创建文件要思考文件应该属于什么层级
