@@ -4,39 +4,7 @@
  * 专为七巧板低代码工具优化设计
  */
 
-export interface ScreenInfo {
-  physical: {
-    width: number;
-    height: number;
-    pixelRatio: number;
-    isHighDPI: boolean;
-    orientation: string;
-    colorDepth: number;
-    availWidth: number;
-    availHeight: number;
-    dpi: number;
-    dpiX: number;
-    dpiY: number;
-  };
-  viewport: {
-    width: number;
-    height: number;
-    scale: number;
-    scrollX: number;
-    scrollY: number;
-  };
-  device: {
-    isTouch: boolean;
-    isMobile: boolean;
-    platform: string;
-    userAgent: string;
-  };
-  timestamp: number;
-}
-
-export interface ScreenChangeCallback {
-  (info: ScreenInfo): void;
-}
+import type { ScreenInfo, ScreenChangeCallback, DeviceType, PixelDensityLevel } from './screen.types.js';
 
 class ScreenDetector {
   private callbacks: Set<ScreenChangeCallback> = new Set();
@@ -104,7 +72,7 @@ class ScreenDetector {
   /**
    * 获取设备类型
    */
-  getDeviceType(): 'mobile' | 'tablet' | 'desktop' {
+  getDeviceType(): DeviceType {
     const width = window.innerWidth;
     if (width < 768) return 'mobile';
     if (width < 1024) return 'tablet';
@@ -135,7 +103,7 @@ class ScreenDetector {
   /**
    * 获取像素密度等级
    */
-  getPixelDensityLevel(): 'low' | 'medium' | 'high' {
+  getPixelDensityLevel(): PixelDensityLevel {
     const ratio = window.devicePixelRatio;
     if (ratio < 1.5) return 'low';
     if (ratio < 2.5) return 'medium';
