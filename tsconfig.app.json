@@ -18,5 +18,6 @@
     "isolatedModules": true,
     "moduleDetection": "force"
   },
-  "include": ["src/**/*.ts", "src/**/*.js", "src/**/*.svelte"]
+  "include": ["src/**/*.ts", "src/**/*.js", "src/**/*.svelte"],
+  "exclude": ["study/**/*", "node_modules/**/*", "dist/**/*", "dev-dist/**/*"]
 }

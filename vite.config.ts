@@ -9,7 +9,8 @@ export default defineConfig({
         VitePWA({
             registerType: 'autoUpdate',
             workbox: {
-                globPatterns: ['**/*.{js,css,html,ico,png,svg}']
+                globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+                globIgnores: ['study/**/*']
             },
             manifest: {
                 name: '七巧板 - Qi Qiao Ban',
@@ -41,5 +42,15 @@ export default defineConfig({
                 enabled: true
             }
         })
-    ]
+    ],
+    server: {
+        fs: {
+            allow: ['src', 'public', 'index.html', 'manifest.json']
+        }
+    },
+    build: {
+        rollupOptions: {
+            external: ['study/**/*']
+        }
+    }
 })
