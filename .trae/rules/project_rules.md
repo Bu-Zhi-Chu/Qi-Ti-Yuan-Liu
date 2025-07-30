@@ -2,9 +2,10 @@
 
 1. 注意项目用到的技术,实现一些功能思考注意有没有更好的新特性实现
    1. vite
-   2. typescript
-   3. vite-plugin-pwa + workbox-window
-   4. svelte5
+   2. svelte5
+   3. typescript
+   4. vite-plugin-pwa + workbox-window
+
 
 2. 注意项目的整体架构,创建文件要思考文件应该属于什么层级
 ```html
