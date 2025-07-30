@@ -50,4 +50,5 @@
     └── vite.config.ts                        # Vite构建工具配置
 ```
 8. 制定了项目规则
-9. 集成了npm install @mateothegreat/svelte5-router 路由组件
+9. 集成了npm install @mateothegreat/svelte5-router 路由组件 并完成了对源码的初步学习
+10.
