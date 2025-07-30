@@ -1,8 +1,19 @@
-<script lang="ts">
-    import { goto } from '@mateothegreat/svelte5-router'
-</script>
+<!--
+首页组件
 
-/** * 首页组件 * * 功能描述： * 应用的主页面，展示欢迎信息和功能导航 * 提供快速访问各个功能模块的入口 * * 使用方法： * 1. 通过根路径'/'访问 * 2. 点击导航链接跳转到其他页面 * 3. 展示应用的主要功能和特色 */
+功能描述：
+应用的主页面，展示欢迎信息和功能导航
+提供快速访问各个功能模块的入口
+
+使用方法：
+1. 通过根路径'/'访问
+2. 点击导航链接跳转到其他页面
+3. 展示应用的主要功能和特色
+-->
+
+<script lang="ts">
+    import { goto } from '@mateothegreat/svelte5-router';
+</script>
 
 <div class="home-container">
     <header class="hero-section">
