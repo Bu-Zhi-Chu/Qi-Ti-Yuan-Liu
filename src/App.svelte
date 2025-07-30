@@ -1,8 +1,5 @@
 <script lang="ts">
-    let a = '测试'
+	import { PWAChecker } from './services/pwa/pwa-detector.service.js'
 </script>
 
-<div>{a}</div>
-
-<style>
-</style>
+<main>1</main>
