@@ -6,7 +6,7 @@
    1. vite
    2. svelte5
    3. typescript
-   4. vite-plugin-pwa + workbox-window
+   4. vite-plugin-pwa
    5. @mateothegreat/svelte5-router
    6. dexie
 

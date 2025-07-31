@@ -6,8 +6,7 @@
 05. 制定了项目规则 .trae\rules\project_rules.md
 06. 添加PWA开发依赖
    1. vite-plugin-pwa: ^0.19.0
-   2. workbox-window: ^7.0.0
-   3. 优化Service Worker配置
+   2. 优化Service Worker配置
 07. 设计项目整体架构
 ```html
     ├── .gitignore                                 # Git忽略文件配置
