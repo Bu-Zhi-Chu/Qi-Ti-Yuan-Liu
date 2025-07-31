@@ -158,8 +158,6 @@ class ScreenDetector {
         document.documentElement.style.removeProperty('--vw-ratio')
         document.documentElement.style.removeProperty('--vh-ratio')
         document.documentElement.style.removeProperty('--scale-ratio')
-        document.documentElement.style.removeProperty('--design-width')
-        document.documentElement.style.removeProperty('--design-height')
     }
 
     /**
@@ -209,8 +207,6 @@ class ScreenDetector {
         document.documentElement.style.setProperty('--vw-ratio', vwRatio.toString())
         document.documentElement.style.setProperty('--vh-ratio', vhRatio.toString())
         document.documentElement.style.setProperty('--scale-ratio', scale.ratio.toString())
-        document.documentElement.style.setProperty('--design-width', `${this.DESIGN_WIDTH}px`)
-        document.documentElement.style.setProperty('--design-height', `${this.DESIGN_HEIGHT}px`)
     }
 
     private setupEventListeners(): void {

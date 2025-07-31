@@ -7,8 +7,6 @@
 
 /* CSS变量定义 - 用于响应式布局 */
 :root {
-    --design-width: 1920px;
-    --design-height: 1080px;
     --scale-ratio: 1;
     --vw-ratio: 0.0521; /* 100/1920 */
     --vh-ratio: 0.0926; /* 100/1080 */
