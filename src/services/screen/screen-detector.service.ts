@@ -124,11 +124,11 @@ class ScreenDetector {
     destroy(): void {
         this.callbacks.clear()
         this.stopViewportScale()
-        
+
         window.removeEventListener('resize', this.handleResize)
         window.removeEventListener('orientationchange', this.handleOrientationChange)
         window.removeEventListener('pageshow', this.handlePageShow)
-        
+
         if (screen.orientation) {
             screen.orientation.removeEventListener('change', this.handleOrientationChange)
         }
@@ -213,8 +213,6 @@ class ScreenDetector {
         document.documentElement.style.setProperty('--design-height', `${this.DESIGN_HEIGHT}px`)
     }
 
-
-
     private setupEventListeners(): void {
         // 监听窗口大小变化（同时处理屏幕信息更新和视口缩放）
         window.addEventListener('resize', this.handleResize)
@@ -232,7 +230,7 @@ class ScreenDetector {
     private handleResize = (): void => {
         const info = this.getScreenInfo()
         this.callbacks.forEach((callback) => callback(info))
-        
+
         // 如果启用了视口缩放，刷新缩放比例
         if (this.isViewportScalingEnabled) {
             this.refreshViewportScale()
@@ -244,7 +242,7 @@ class ScreenDetector {
         setTimeout(() => {
             const info = this.getScreenInfo()
             this.callbacks.forEach((callback) => callback(info))
-            
+
             if (this.isViewportScalingEnabled) {
                 this.refreshViewportScale()
             }
@@ -255,7 +253,7 @@ class ScreenDetector {
         if (e.persisted) {
             const info = this.getScreenInfo()
             this.callbacks.forEach((callback) => callback(info))
-            
+
             if (this.isViewportScalingEnabled) {
                 this.refreshViewportScale()
             }
