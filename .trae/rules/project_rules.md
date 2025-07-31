@@ -8,6 +8,7 @@
    3. typescript
    4. vite-plugin-pwa + workbox-window
    5. @mateothegreat/svelte5-router
+   6. dexie
 
 
 2. 注意项目的整体架构,创建文件要思考文件应该属于什么层级
