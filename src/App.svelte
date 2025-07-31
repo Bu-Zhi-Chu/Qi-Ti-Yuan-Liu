@@ -9,3 +9,4 @@
 
 <!-- 新用法：在style属性中写CSS字符串 -->
 <ResponsiveBox style="width: 100px; height: 100px;  top: 200px; left: 200px; position: absolute; background-color: blue;">111111</ResponsiveBox>
+<ResponsiveBox style="width: 100px; height: 100px;  margin-top: 100px;  margin-left: 100px; background-color: blue;">111111</ResponsiveBox>
