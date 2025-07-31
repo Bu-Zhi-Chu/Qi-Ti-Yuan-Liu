@@ -1,15 +1,29 @@
-# 屏幕检测服务 (Screen Detection Service)
+# 屏幕适配服务 (Screen Adaptation Service)
 
-## 功能描述
+## 功能概述
 
-这是一个专用的屏幕信息检测服务，专为七巧板低代码工具优化设计。提供以下功能：
+这是一个综合的屏幕适配服务，专为七巧板低代码工具优化设计。统一处理屏幕检测、设备识别和响应式缩放，确保在不同设备上提供一致的用户体验。
 
-- 屏幕物理尺寸和分辨率检测
-- 视口尺寸和缩放比例计算
-- 设备类型识别（移动/平板/桌面）
-- 响应式监听屏幕变化
-- 像素密度等级评估
-- 推荐缩放比例计算
+## 核心功能
+
+### 📱 屏幕检测与识别
+- **物理屏幕检测**: 屏幕尺寸、分辨率、DPI、像素密度
+- **设备类型识别**: 自动识别 mobile/tablet/desktop
+- **视口计算**: 实时获取窗口尺寸和缩放状态
+- **响应式监听**: 监听屏幕变化和方向切换
+
+### 🎯 响应式缩放方案
+提供两种响应式缩放方案，满足不同场景需求：
+
+#### 方案一：Transform Scale（推荐）
+- **实时计算**: 运行时动态计算缩放比例
+- **快速集成**: 无需构建配置，即插即用
+- **适用场景**: 现有项目、快速原型
+
+#### 方案二：Viewport Scale（兼容）
+- **传统方案**: 基于viewport的缩放实现
+- **浏览器兼容**: 支持老旧浏览器
+- **适用场景**: 兼容性要求高的项目
 
 ## 使用方法
 
@@ -51,6 +65,36 @@ const unsubscribe = screenDetector.onChange((info) => {
 // 移除监听器
 unsubscribe();
 ```
+
+### 视口缩放功能（已整合）
+
+视口缩放功能已整合到屏幕适配服务中，提供向后兼容：
+
+```typescript
+import { screenDetector, viewportScaleService } from '@services/screen';
+
+// 方法1：使用整合后的 screenDetector
+screenDetector.initViewportScale();
+const scale = screenDetector.getViewportScale();
+
+// 方法2：使用向后兼容的 viewportScaleService
+viewportScaleService.init();
+const scale = viewportScaleService.getScale();
+viewportScaleService.destroy();
+
+// 设置自定义设计稿尺寸
+screenDetector.setDesignSize(1920, 1080);
+```
+
+## 文件结构
+
+screen/
+├── screen-detector.service.ts        # 屏幕适配核心服务（已整合视口缩放）
+├── screen.types.ts                   # 类型定义
+├── transform-scale/                  # Transform方案
+│   ├── transform-scale.service.ts    # Transform缩放服务
+│   └── README.md                     # Transform方案文档
+└── README.md                        # 服务总览
 
 ## 类型定义
 

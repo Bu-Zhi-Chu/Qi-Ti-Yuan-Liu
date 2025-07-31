@@ -46,7 +46,6 @@ export const routes: RouteConfig[] = [
         component: SettingsPage,
         name: 'settings'
     }
-    // 404页面由Router的statuses配置处理，无需在此处配置
 ]
 
 /**

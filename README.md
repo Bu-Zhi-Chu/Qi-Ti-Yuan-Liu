@@ -10,7 +10,7 @@
    3. 优化Service Worker配置
 07. 设计项目整体架构
 ```html
-    ├── .trae/                                # Trae IDE配置目录
+      ├── .trae/                                # Trae IDE配置目录
     ├── .vscode/                              # VS Code编辑器配置目录
     ├── dev-dist/                             # 开发构建输出目录（开发环境）
     ├── dist/                                 # 生产构建输出目录（构建后生成）
@@ -22,12 +22,13 @@
     │   │   ├── forms/                        # 表单组件
     │   │   ├── navigation/                   # 导航组件
     │   │   └── pages/                        # 页面级组件
+    │   │   └── demo/                         # 测试组件
     │   ├── router/                           # 路由层
     │   ├── services/                         # 服务层（业务逻辑层）
     │   │   ├── pwa/                          # PWA功能模块
     │   │   │   ├── pwa-detector.service.ts   # PWA环境检测与初始化服务
     │   │   │   └── pwa-status.model.ts       # PWA状态数据模型定义
-    │   │   └── utils/                        # 工具服务
+    │   │   └── utils/                        # 工具服务 但是如果工具是专用 那么应该和关联services在一起
     │   ├── style/                            # 样式层
     │   │   └── app.css                       # 主样式文件
     │   ├── App.svelte                        # 根组件
