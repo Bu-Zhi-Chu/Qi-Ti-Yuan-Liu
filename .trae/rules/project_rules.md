@@ -10,7 +10,6 @@
    5. @mateothegreat/svelte5-router
    6. dexie
 
-
 2. 注意项目的整体架构,创建文件要思考文件应该属于什么层级
 ```html
     ├── .gitignore                                 # Git忽略文件配置

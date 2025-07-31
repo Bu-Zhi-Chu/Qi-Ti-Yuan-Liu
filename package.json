@@ -20,6 +20,8 @@
         "workbox-window": "^7.3.0"
     },
     "dependencies": {
-        "@mateothegreat/svelte5-router": "^2.16.8"
+        "@mateothegreat/svelte5-router": "^2.16.8",
+        "@types/dexie": "^1.3.32",
+        "dexie": "^4.0.11"
     }
 }
