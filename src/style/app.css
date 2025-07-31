@@ -20,8 +20,6 @@ body,
 #app {
     width: 100vw;
     height: 100vh;
-    margin: 0;
-    padding: 0;
     overflow: auto;
 }
 
@@ -34,4 +32,3 @@ body {
     color: #333;
     font-size: calc(16px * var(--scale-ratio, 1));
 }
-

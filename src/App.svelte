@@ -1,5 +1,5 @@
 <script>
-    import ResponsiveBox from './components/common/ResponsiveBox.svelte'
+    import ResponsiveBox from './components/foundation/ResponsiveBox.svelte'
 </script>
 
 <!--
@@ -8,4 +8,4 @@
 -->
 
 <!-- 新用法：在style属性中写CSS字符串 -->
-<ResponsiveBox style="width: 100px; height: 100px; font-size: 32px; top: 200px; left: 200px; position: absolute; background-color: blue;">111111</ResponsiveBox>
+<ResponsiveBox style="width: 100px; height: 100px;  top: 200px; left: 200px; position: absolute; background-color: blue;">111111</ResponsiveBox>
