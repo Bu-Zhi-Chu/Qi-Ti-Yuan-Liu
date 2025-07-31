@@ -26,7 +26,11 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": ["games", "education", "puzzle"],
+  "categories": [
+    "games",
+    "education",
+    "puzzle"
+  ],
   "lang": "zh-CN",
   "scope": "/",
   "screenshots": [
