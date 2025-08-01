@@ -179,16 +179,112 @@ interface Props {
 </ResponsiveBox>
 ```
 
+---
+
+## 2. DynamicComponent.svelte - 核心组件切换逻辑
+
+### 组件定位
+低代码平台的动态组件容器，支持通过属性面板切换任意组件类型。
+
+### 核心特性
+- **动态加载**：基于 `type` 属性异步加载对应组件
+- **统一接口**：标准化的 props 和事件透传机制
+- **可扩展**：通过 `componentMap` 轻松添加新组件类型
+- **低代码友好**：专为可视化编辑器设计
+
+### 组件映射表
+```typescript
+const componentMap = {
+  RealTimeClock: () => import('../widgets/RealTimeClock.svelte'),
+  ResponsiveBox: () => import('./ResponsiveBox.svelte')
+  // 可扩展更多组件类型
+}
+```
+
+### 使用示例
+```svelte
+<!-- 动态加载时钟组件 -->
+<DynamicComponent
+  type="RealTimeClock"
+  props={{format: "datetime"}}
+  style="width: 200px; height: 100px;"
+/>
+
+<!-- 动态加载响应式容器 -->
+<DynamicComponent
+  type="ResponsiveBox"
+  props={{style: "width: 300px; height: 200px;"}}
+>
+  子内容
+</DynamicComponent>
+```
+
+---
+
+## 架构协作模式
+
+### 层级关系
+```
+低代码平台
+├── DynamicComponent (组件调度层)
+│   └── ResponsiveBox (基础容器层)
+│       └── 业务组件内容
+└── 其他动态组件
+```
+
+### 使用场景对比
+
+| 场景 | 使用组件 | 说明 |
+|------|----------|------|
+| 基础布局 | ResponsiveBox | 直接用作容器，提供响应式能力 |
+| 动态切换 | DynamicComponent | 在低代码平台中通过属性面板切换组件类型 |
+| 嵌套组合 | DynamicComponent + ResponsiveBox | 动态加载的组件内部继续使用ResponsiveBox |
+
+---
+
+## API 参考
+
+### DynamicComponent Props
+```typescript
+interface Props {
+  type: 'RealTimeClock' | 'ResponsiveBox' // 组件类型
+  props?: Record<string, any>     // 传递给目标组件的props
+  children?: any                  // 子内容插槽
+  style?: string                  // 容器样式
+  class?: string                 // 容器类名
+  [key: string]: any             // 支持任意HTML属性透传
+}
+```
+
+---
+
+## 扩展指南
+
+### 添加新的动态组件类型
+
+1. 在 `DynamicComponent.svelte` 的 `componentMap` 中添加映射：
+```typescript
+const componentMap = {
+  ...
+  NewComponent: () => import('../widgets/NewComponent.svelte')
+}
+```
+
+2. 确保新组件支持标准 props 接口
+
+3. 在类型定义中添加新的组件类型
+
+---
+
 ## 更新日志
 
+### v2.0.0
+- 重构为双组件架构
+- 新增 DynamicComponent 动态切换能力
+- 优化 ResponsiveBox 作为底层容器
+- 完善 TypeScript 类型定义
+
 ### v1.0.0
-- 初始版本发布
-- 支持基础像素值转换
-- 添加 TypeScript 类型定义
+- ResponsiveBox 初始版本
+- 支持基础响应式缩放
 - 实现窗口大小监听
-
-## 相关资源
-
-- [Svelte 5 Runes 文档](https://svelte.dev/docs/svelte/runes)
-- [CSS calc() 函数](https://developer.mozilla.org/zh-CN/docs/Web/CSS/calc)
-- [响应式设计最佳实践](https://web.dev/responsive-web-design-basics/)

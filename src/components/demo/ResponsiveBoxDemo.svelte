@@ -1,6 +1,14 @@
 <script lang="ts">
     import ResponsiveBox from '../Core/ResponsiveBox.svelte'
     import RealTimeClock from '../widgets/RealTimeClock.svelte'
+
+    // 控制组件切换的状态
+    let showRealTimeClock = $state(true)
+
+    // 切换组件的函数
+    function toggleComponent() {
+        showRealTimeClock = !showRealTimeClock
+    }
 </script>
 
 <!-- 主展示区域 -->
