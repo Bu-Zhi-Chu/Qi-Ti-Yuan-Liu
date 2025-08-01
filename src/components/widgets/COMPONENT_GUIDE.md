@@ -16,7 +16,7 @@
 -->
 
 <script lang="ts">
-    import ResponsiveBox from '../foundation/ResponsiveBox.svelte'
+    import ResponsiveBox from '../Core/ResponsiveBox.svelte'
 
     interface Props {
         style?: string
@@ -82,7 +82,7 @@
 
 ```
 src/components/
-├── foundation/          # 基础组件（仅ResponsiveBox）
+├── Core/                # 基础组件（仅ResponsiveBox）
 ├── widgets/            # 功能组件（时钟、按钮等）
 ├── forms/              # 表单组件
 ├── navigation/         # 导航组件
@@ -108,7 +108,7 @@ let { style = '', ...rest }: Props = $props()
 #### 按钮组件
 ```svelte
 <script lang="ts">
-    import ResponsiveBox from '../foundation/ResponsiveBox.svelte'
+    import ResponsiveBox from '../Core/ResponsiveBox.svelte'
 
     interface Props {
         style?: string
@@ -135,7 +135,7 @@ let { style = '', ...rest }: Props = $props()
 #### 卡片组件
 ```svelte
 <script lang="ts">
-    import ResponsiveBox from '../foundation/ResponsiveBox.svelte'
+    import ResponsiveBox from '../Core/ResponsiveBox.svelte'
 
     interface Props {
         style?: string

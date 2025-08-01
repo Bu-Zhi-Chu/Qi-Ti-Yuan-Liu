@@ -1,5 +1,5 @@
 <script lang="ts">
-    import ResponsiveBox from '../foundation/ResponsiveBox.svelte'
+    import ResponsiveBox from '../Core/ResponsiveBox.svelte'
     import RealTimeClock from '../widgets/RealTimeClock.svelte'
 </script>
 

@@ -28,17 +28,18 @@
     │   │       ├── icon-192.png                   # PWA图标192x192
     │   │       └── icon-512.png                   # PWA图标512x512
     │   ├── components/                            # 组件层（UI层）
-    │   │   ├── demo/                              # 测试组件
-    │   │   ├── forms/                             # 表单组件
-    │   │   ├── foundation/                        # 基础组件
+    │   │   ├── Core/                              # 基础组件
     │   │   │   └── ResponsiveBox.svelte           # 响应式容器组件
-    │   │   ├── navigation/                        # 导航组件
-    │   │   └── pages/                             # 页面级组件
-    │   │       ├── 404.svelte                     # 404错误页面
-    │   │       ├── 500.svelte                     # 500错误页面
-    │   │       ├── AboutPage.svelte               # 关于
-    │   │       ├── HomePage.svelte                # 首页
-    │   │       └── SettingsPage.svelte            # 设置
+    │   │   ├── demo/                              # 测试组件
+    │   │   ├── modules/                           # 模块组件
+    │   │   ├── pages/                             # 页面级组件
+    │   │   │   ├── 404.svelte                     # 404错误页面
+    │   │   │   ├── 500.svelte                     # 500错误页面
+    │   │   │   ├── AboutPage.svelte               # 关于
+    │   │   │   ├── EditorPage.svelte              # 编辑器页面
+    │   │   │   ├── HomePage.svelte                # 首页
+    │   │   │   └── SettingsPage.svelte            # 设置
+    │   │   └── widgets/                           # 可复用业务组件
     │   ├── main.ts                                # 应用主入口文件
     │   ├── router/                                # 路由层
     │   │   └── routes.ts                          # 路由配置

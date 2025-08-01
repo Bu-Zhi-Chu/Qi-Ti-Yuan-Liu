@@ -3,6 +3,7 @@
 ## 组件概述
 
 `ResponsiveBox` 是一个智能响应式容器组件，它能够自动将样式中的像素值转换为基于屏幕宽度的相对单位，实现真正的自适应布局。
+是UI唯一的核心组件,基于他封装的组件,逐步会取代一切html标签,实现更灵活的布局
 
 ## 核心特性
 
@@ -18,7 +19,7 @@
 
 ```svelte
 <script>
-  import ResponsiveBox from '$lib/components/foundation/ResponsiveBox.svelte'
+  import ResponsiveBox from '$lib/components/Core/ResponsiveBox.svelte'
 </script>
 
 <ResponsiveBox style="width: 100px; height: 50px; background: red;">
@@ -29,7 +30,7 @@
 ### 复杂样式示例
 
 ```svelte
-<ResponsiveBox 
+<ResponsiveBox
   style="width: 200px; height: 100px; padding: 16px; margin: 8px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
   复杂样式的自适应容器
 </ResponsiveBox>
@@ -38,7 +39,7 @@
 ### 响应式定位
 
 ```svelte
-<ResponsiveBox 
+<ResponsiveBox
   style="position: absolute; top: 100px; left: 50px; width: 300px; height: 200px;">
   绝对定位的自适应元素
 </ResponsiveBox>
@@ -125,8 +126,8 @@ interface Props {
 虽然组件主要处理像素适配，但仍可配合媒体查询：
 
 ```svelte
-<ResponsiveBox 
-  style="width: 300px; 
+<ResponsiveBox
+  style="width: 300px;
          @media (max-width: 375px) { width: 280px; }">
   响应式卡片
 </ResponsiveBox>
@@ -160,7 +161,7 @@ interface Props {
   import ResponsiveBox from './ResponsiveBox.svelte'
 </script>
 
-<ResponsiveBox 
+<ResponsiveBox
   style="
     width: 350px;
     height: 200px;
