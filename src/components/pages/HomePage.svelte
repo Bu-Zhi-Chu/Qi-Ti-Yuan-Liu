@@ -115,51 +115,53 @@
 </script>
 
 <!-- 主容器 - 全屏响应式布局 -->
-<ResponsiveBox style="width: 100vw; height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; box-sizing: border-box;">
+<ResponsiveBox style="width: 100vw; height: 100vh; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; box-sizing: border-box;">
     <!-- 头部区域 -->
     <ResponsiveBox style="margin-bottom: 60px; text-align: center;">
-        <ResponsiveBox style="font-size: 48px; font-weight: bold; color: white; margin-bottom: 16px;">七巧板</ResponsiveBox>
-        <ResponsiveBox style="font-size: 24px; color: rgba(255,255,255,0.9);">欢迎使用七巧板 - 您的低代码开发平台</ResponsiveBox>
+        <ResponsiveBox style="font-size: 48px; font-weight: 700; color: #1e293b; margin-bottom: 16px; letter-spacing: -0.02em;">七巧板</ResponsiveBox>
+        <ResponsiveBox style="font-size: 20px; color: #475569; font-weight: 300; max-width: 600px; line-height: 1.6;">创建、设计、构建您的下一个精彩项目</ResponsiveBox>
     </ResponsiveBox>
 
     <!-- 操作按钮区域 -->
-    <ResponsiveBox style="margin-bottom: 60px;">
-        <ResponsiveBox style="padding: 20px 60px; background: white; border-radius: 50px; font-size: 20px; font-weight: bold; color: #667eea; cursor: pointer; box-shadow: 0 8px 32px rgba(0,0,0,0.1); transition: all 0.3s ease;" onclick={createNewProject}>开始创建项目</ResponsiveBox>
+    <ResponsiveBox style="margin-bottom: 80px;">
+        <ResponsiveBox style="background: #1e293b; border: 1px solid #334155; color: #f8fafc; padding: 20px 40px; border-radius: 12px; font-size: 18px; font-weight: 500; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 14px 0 rgba(0,0,0,0.1);" onclick={createNewProject}>
+            开始创建
+        </ResponsiveBox>
     </ResponsiveBox>
 
     <!-- 历史项目区域 - 现代滚动布局 -->
     <ResponsiveBox style="width: 100%; max-width: 1200px; height: 60vh; display: flex; flex-direction: column;">
-        <ResponsiveBox style="font-size: 24px; font-weight: bold; color: white; margin-bottom: 30px; text-align: center; flex-shrink: 0;">历史项目</ResponsiveBox>
+        <ResponsiveBox style="font-size: 24px; font-weight: 600; color: #1e293b; margin-bottom: 30px; text-align: center; flex-shrink: 0;">历史项目</ResponsiveBox>
 
         <!-- 现代滚动容器 -->
         <ResponsiveBox style="flex: 1; overflow-y: auto; padding-right: 10px; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.3) transparent;">
             <ResponsiveBox style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 30px; justify-items: center; padding-bottom: 20px;">
                 {#each projects as project}
-                    <ResponsiveBox style="background: white; border-radius: 20px; padding: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.1); cursor: pointer; transition: all 0.3s ease; width: 300px;" onclick={() => openProject(project.id)}>
+                    <ResponsiveBox style="background: #ffffff; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); cursor: pointer; transition: all 0.3s ease; width: 300px; border: 1px solid #e2e8f0;" onclick={() => openProject(project.id)}>
                         <!-- 项目缩略图 -->
-                        <ResponsiveBox style="width: 100%; height: 160px; background: #f5f5f5; border-radius: 10px; margin-bottom: 16px; overflow: hidden;">
+                        <ResponsiveBox style="width: 100%; height: 160px; background: #f1f5f9; border-radius: 8px; margin-bottom: 16px; overflow: hidden;">
                             {#if project.thumbnail}
                                 <img src={project.thumbnail} alt={project.name} style="width: 100%; height: 100%; object-fit: cover;" />
                             {:else}
-                                <ResponsiveBox style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #999;">无缩略图</ResponsiveBox>
+                                <ResponsiveBox style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 14px;">预览图</ResponsiveBox>
                             {/if}
                         </ResponsiveBox>
 
                         <!-- 项目名称 -->
-                        <ResponsiveBox style="font-size: 18px; font-weight: bold; color: #333; margin-bottom: 8px;">
+                        <ResponsiveBox style="font-size: 16px; font-weight: 600; color: #1e293b; margin-bottom: 8px; line-height: 1.4;">
                             {project.name}
                         </ResponsiveBox>
 
                         <!-- 创建时间 -->
-                        <ResponsiveBox style="font-size: 14px; color: #666;">
-                            创建时间: {project.createTime}
+                        <ResponsiveBox style="font-size: 13px; color: #64748b; font-weight: 400;">
+                            {project.createTime}
                         </ResponsiveBox>
                     </ResponsiveBox>
                 {/each}
             </ResponsiveBox>
 
             {#if projects.length === 0}
-                <ResponsiveBox style="text-align: center; color: rgba(255,255,255,0.8); font-size: 18px; padding: 40px;">暂无历史项目，开始创建您的第一个项目吧！</ResponsiveBox>
+                <ResponsiveBox style="text-align: center; color: #64748b; font-size: 16px; padding: 40px;">暂无项目，点击上方按钮开始创建</ResponsiveBox>
             {/if}
         </ResponsiveBox>
     </ResponsiveBox>
