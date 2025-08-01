@@ -160,6 +160,7 @@
       - 代码生成完成后首先npm run check
       - 添加详细注释说明 格外注意velte文件需要用html注释 注意闭合
       - 确保类型安全（TypeScript）
+      - 自适应缩放核心 calc(100px * var(--scale-ratio, 1))
 
    5. 验证阶段
       - 运行TypeScript检查
