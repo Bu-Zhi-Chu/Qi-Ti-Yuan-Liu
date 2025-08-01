@@ -2,7 +2,7 @@
 
 ## 🎯 核心原则
 
-**所有UI组件必须使用`ResponsiveBox`作为根容器**，禁止直接使用原生HTML元素（div、span、p等）。
+**所有UI组件必须使用`ResponsiveBox`作为根容器**，禁止直接使用原生HTML元素。
 
 ## 📋 组件创建规范
 
@@ -41,7 +41,7 @@
 
 - **文件命名**: 使用PascalCase，如`UserCard.svelte`
 - **组件命名**: 与文件名保持一致
-- **props命名**: 
+- **props命名**:
   - `style` - 内联样式字符串（必需）
   - 其他使用camelCase
   - **注意**: 不再使用className，完全通过style控制样式
@@ -50,7 +50,7 @@
 
 #### ✅ 正确做法
 ```svelte
-<ResponsiveBox 
+<ResponsiveBox
     style="color: red; font-size: 16px; {style}"
 >
     内容
@@ -120,7 +120,7 @@ let { style = '', ...rest }: Props = $props()
     let { style = '', label, variant = 'primary', onclick }: Props = $props()
 </script>
 
-<ResponsiveBox 
+<ResponsiveBox
     style="padding: 10px 20px; cursor: pointer; background: {variant === 'primary' ? '#007bff' : '#6c757d'}; color: white; border: none; border-radius: 4px; {style}"
     {onclick}
 >
@@ -146,7 +146,7 @@ let { style = '', ...rest }: Props = $props()
     let { style = '', title = '', content = '' }: Props = $props()
 </script>
 
-<ResponsiveBox 
+<ResponsiveBox
     style="border: 1px solid #ddd; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); {style}"
 >
     {#if title}
