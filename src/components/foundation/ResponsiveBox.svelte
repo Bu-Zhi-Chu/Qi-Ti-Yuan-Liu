@@ -7,7 +7,7 @@
  *   内容放这里
  * </ResponsiveBox>
  *
- * 等价于：
+ * 自适应核心公式：
  * <div style="width: calc(100px * var(--scale-ratio, 1)); height: calc(100px * var(--scale-ratio, 1)); ...">
 -->
 

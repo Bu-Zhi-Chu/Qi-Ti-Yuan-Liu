@@ -172,7 +172,7 @@ export class DexieService {
             isArchived: false
         }
 
-        return await this.db.projects.add(project)
+        return await this.db.projects.add(project) as number
     }
 
     /**
@@ -267,7 +267,7 @@ export class DexieService {
             isLocked: false
         }
 
-        return await this.db.components.add(component)
+        return await this.db.components.add(component) as number
     }
 
     /**
@@ -285,7 +285,8 @@ export class DexieService {
             isLocked: false
         }))
 
-        return await this.db.components.bulkAdd(componentsWithTimestamps)
+        const result = await this.db.components.bulkAdd(componentsWithTimestamps)
+        return result ? [result].flat() : []
     }
 
     /**
@@ -357,7 +358,8 @@ export class DexieService {
      */
     static async deleteComponents(ids: number[]): Promise<number> {
         this.ensureInitialized()
-        return await this.db.components.bulkDelete(ids)
+        await this.db.components.bulkDelete(ids)
+        return ids.length
     }
 
     /**
@@ -387,7 +389,7 @@ export class DexieService {
      */
     static async addHistory(record: Omit<HistoryRecord, 'id'>): Promise<number> {
         this.ensureInitialized()
-        return await this.db.history.add(record)
+        return await this.db.history.add(record) as number
     }
 
     /**
