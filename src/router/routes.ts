@@ -33,18 +33,6 @@ export const routes: RouteConfig[] = [
         path: '/home',
         component: HomePage,
         name: 'home-direct'
-    },
-    {
-        // 关于页面路由
-        path: '/about',
-        component: AboutPage,
-        name: 'about'
-    },
-    {
-        // 设置页面路由
-        path: '/settings',
-        component: SettingsPage,
-        name: 'settings'
     }
 ]
 
