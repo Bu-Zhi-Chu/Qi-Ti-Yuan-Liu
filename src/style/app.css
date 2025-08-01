@@ -1,3 +1,6 @@
+/* 引入动画样式 */
+@import './animations.css';
+
 /* 全局样式重置 */
 * {
     box-sizing: border-box;
@@ -31,3 +34,4 @@ body {
     color: #333;
     font-size: calc(16px * var(--scale-ratio, 1));
 }
+

@@ -1,0 +1,227 @@
+/*
+ * 全局动画样式定义
+ * 包含文字动画、发光效果等通用动画
+ */
+
+/* 标题渐变动画 */
+@keyframes gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* 标题脉冲发光动画 */
+@keyframes pulse-glow {
+    0%, 100% {
+        text-shadow: 0 0 20px rgba(99, 102, 241, 0.5), 0 0 40px rgba(139, 92, 246, 0.3);
+    }
+    50% {
+        text-shadow: 0 0 30px rgba(99, 102, 241, 0.8), 0 0 60px rgba(139, 92, 246, 0.6), 0 0 80px rgba(99, 102, 241, 0.4);
+    }
+}
+
+/* 副标题流光动画 */
+@keyframes text-shimmer {
+    0% { background-position: -100% 0; }
+    100% { background-position: 100% 0; }
+}
+
+/* 按钮悬停发光动画 */
+@keyframes button-glow {
+    0% { box-shadow: 0 8px 32px rgba(99, 102, 241, 0.3); }
+    50% { box-shadow: 0 12px 48px rgba(99, 102, 241, 0.5), 0 0 20px rgba(139, 92, 246, 0.3); }
+    100% { box-shadow: 0 8px 32px rgba(99, 102, 241, 0.3); }
+}
+
+/* 卡片悬停动画 */
+@keyframes card-hover {
+    0% { transform: translateY(0px); }
+    100% { transform: translateY(-5px); }
+}
+
+/* 加载动画 */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* 淡入动画 */
+@keyframes fade-in {
+    0% { opacity: 0; transform: translateY(20px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+/* 脉冲动画 */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* 七巧板背景动画 - 不同形状缓缓落下 */
+@keyframes tangram-fall-1 {
+    0% {
+        transform: translateY(-100vh) rotate(0deg);
+        opacity: 0.3;
+    }
+    100% {
+        transform: translateY(100vh) rotate(360deg);
+        opacity: 0.3;
+    }
+}
+
+@keyframes tangram-fall-2 {
+    0% {
+        transform: translateY(-100vh) rotate(0deg);
+        opacity: 0.4;
+    }
+    100% {
+        transform: translateY(100vh) rotate(-360deg);
+        opacity: 0.4;
+    }
+}
+
+@keyframes tangram-fall-3 {
+    0% {
+        transform: translateY(-100vh) rotate(0deg);
+        opacity: 0.35;
+    }
+    100% {
+        transform: translateY(100vh) rotate(180deg);
+        opacity: 0.35;
+    }
+}
+
+@keyframes tangram-fall-4 {
+    0% {
+        transform: translateY(-100vh) rotate(0deg);
+        opacity: 0.25;
+    }
+    100% {
+        transform: translateY(100vh) rotate(-180deg);
+        opacity: 0.25;
+    }
+}
+
+@keyframes tangram-fall-5 {
+    0% {
+        transform: translateY(-100vh) rotate(0deg);
+        opacity: 0.3;
+    }
+    100% {
+        transform: translateY(100vh) rotate(270deg);
+        opacity: 0.3;
+    }
+}
+
+/* 七巧板形状样式 */
+.tangram-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+}
+
+.tangram-shape {
+    position: absolute;
+    opacity: 1;
+}
+
+/* 七巧板三角形 */
+.tangram-triangle {
+    width: 0;
+    height: 0;
+    border-style: solid;
+}
+
+.tangram-triangle-1 {
+    border-left: 60px solid transparent;
+    border-right: 60px solid transparent;
+    border-bottom: 120px solid rgba(99, 102, 241, 0.3);
+    animation: tangram-fall-1 15s linear infinite;
+}
+
+.tangram-triangle-2 {
+    border-left: 50px solid transparent;
+    border-right: 50px solid transparent;
+    border-bottom: 100px solid rgba(139, 92, 246, 0.3);
+    animation: tangram-fall-2 18s linear infinite;
+    animation-delay: -5s;
+}
+
+.tangram-triangle-3 {
+    border-left: 40px solid transparent;
+    border-right: 40px solid transparent;
+    border-bottom: 80px solid rgba(59, 130, 246, 0.3);
+    animation: tangram-fall-3 20s linear infinite;
+    animation-delay: -8s;
+}
+
+/* 七巧板正方形 */
+.tangram-square {
+    width: 80px;
+    height: 80px;
+    background: rgba(16, 185, 129, 0.3);
+    transform: rotate(45deg);
+    animation: tangram-fall-4 22s linear infinite;
+    animation-delay: -12s;
+}
+
+/* 七巧板平行四边形 */
+.tangram-parallelogram {
+    width: 100px;
+    height: 60px;
+    background: rgba(245, 158, 11, 0.3);
+    transform: skew(-20deg);
+    animation: tangram-fall-5 25s linear infinite;
+    animation-delay: -15s;
+}
+
+/* 七巧板中等三角形 */
+.tangram-medium-triangle {
+    border-left: 40px solid transparent;
+    border-right: 40px solid transparent;
+    border-bottom: 80px solid rgba(236, 72, 153, 0.3);
+    animation: tangram-fall-3 20s linear infinite;
+    animation-delay: -8s;
+}
+
+/* 七巧板小三角形 */
+.tangram-small-triangle {
+    border-left: 30px solid transparent;
+    border-right: 30px solid transparent;
+    border-bottom: 60px solid rgba(34, 197, 94, 0.3);
+    animation: tangram-fall-2 18s linear infinite;
+    animation-delay: -5s;
+}
+
+/* 七巧板平行四边形 */
+.tangram-parallelogram {
+    width: 50px;
+    height: 30px;
+    background: rgba(245, 158, 11, 0.3);
+    transform: skew(-20deg);
+    animation: tangram-fall-5 25s linear infinite;
+    animation-delay: -15s;
+}
+
+/* 七巧板中三角形 */
+.tangram-medium-triangle {
+    border-left: 40px solid transparent;
+    border-right: 40px solid transparent;
+    border-bottom: 70px solid rgba(239, 68, 68, 0.3);
+    animation: tangram-fall-1 17s linear infinite;
+    animation-delay: -3s;
+}
+
+/* 七巧板小三角形 */
+.tangram-small-triangle {
+    border-left: 30px solid transparent;
+    border-right: 30px solid transparent;
+    border-bottom: 50px solid rgba(34, 197, 94, 0.3);
+    animation: tangram-fall-2 19s linear infinite;
+    animation-delay: -7s;
+}
