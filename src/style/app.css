@@ -15,7 +15,8 @@
 /* 响应式布局基础样式 */
 html,
 body,
-#app {
+#app,
+main {
     width: 100vw;
     height: 100vh;
     overflow: auto;
