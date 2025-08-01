@@ -28,7 +28,7 @@
     │   │       ├── icon-192.png                   # PWA图标192x192
     │   │       └── icon-512.png                   # PWA图标512x512
     │   ├── components/                            # 组件层（UI层）
-    │   │   ├── Core/                              # 基础组件
+    │   │   ├── Core/                              # 核心组件 ResponsiveBox是文件夹内唯一组件
     │   │   │   └── ResponsiveBox.svelte           # 响应式容器组件
     │   │   ├── demo/                              # 测试组件
     │   │   ├── modules/                           # 模块组件
