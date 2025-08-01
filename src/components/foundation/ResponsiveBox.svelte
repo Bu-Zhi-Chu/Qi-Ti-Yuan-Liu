@@ -19,6 +19,8 @@
 -->
 
 <script lang="ts">
+    import { v4 as uuidv4 } from 'uuid'
+
     interface Props {
         style?: string
         children?: import('svelte').Snippet
@@ -27,6 +29,9 @@
     }
 
     let { style = '', baseWidth = 1920, children, ...rest }: Props = $props()
+
+    // 为每个组件实例生成唯一的data-id
+    const componentId = uuidv4()
 
     // 使用$state管理容器宽度状态
     let containerWidth = $state(0)
@@ -40,14 +45,17 @@
 
     // 使用$effect自动管理ResizeObserver生命周期和副作用清理
     $effect(() => {
+        console.log(`[ResponsiveBox-${componentId}] $effect初始化，容器引用状态:`, !!containerRef)
         if (!containerRef || typeof window === 'undefined') return
 
         // ResizeObserver 浏览器兼容性检查
         if ('ResizeObserver' in window) {
             // 使用ResizeObserver监听容器尺寸变化 - 现代浏览器
+            console.log(`[ResponsiveBox-${componentId}] 使用ResizeObserver监听容器尺寸变化`)
             const resizeObserver = new ResizeObserver((entries) => {
                 for (const entry of entries) {
                     const { width } = entry.contentRect
+                    console.log(`[ResponsiveBox-${componentId}] ResizeObserver触发: 容器宽度=${width}px, 缩放比例=${scaleRatio}`)
                     containerWidth = width
                 }
             })
@@ -64,8 +72,11 @@
             }
         } else {
             // 降级方案：使用传统的addEventListener - 旧版浏览器
+            console.log(`[ResponsiveBox-${componentId}] 使用降级方案：addEventListener监听window.resize`)
             const updateContainerWidth = () => {
-                containerWidth = containerRef.offsetWidth
+                const newWidth = containerRef.offsetWidth
+                console.log(`[ResponsiveBox-${componentId}] window.resize触发: 容器宽度=${newWidth}px, 缩放比例=${scaleRatio}`)
+                containerWidth = newWidth
             }
 
             updateContainerWidth()
@@ -79,6 +90,6 @@
     })
 </script>
 
-<div bind:this={containerRef} style={finalStyle} {...rest}>
+<div bind:this={containerRef} style={finalStyle} data-id={componentId} {...rest}>
     {@render children?.()}
 </div>
