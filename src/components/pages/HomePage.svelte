@@ -115,27 +115,27 @@
 </script>
 
 <!-- 主容器 - 全屏响应式布局 -->
-    <!-- 七巧板背景动画层 -->
-    <div class="tangram-bg">
-        <div class="tangram-shape tangram-triangle-1" style="left: 10%; top: -60px;"></div>
-        <div class="tangram-shape tangram-triangle-2" style="left: 25%; top: -50px;"></div>
-        <div class="tangram-shape tangram-triangle-3" style="left: 40%; top: -40px;"></div>
-        <div class="tangram-shape tangram-square" style="left: 55%; top: -40px;"></div>
-        <div class="tangram-shape tangram-parallelogram" style="left: 70%; top: -30px;"></div>
-        <div class="tangram-shape tangram-medium-triangle" style="left: 85%; top: -35px;"></div>
-        <div class="tangram-shape tangram-small-triangle" style="left: 15%; top: -25px;"></div>
-        
-        <div class="tangram-shape tangram-triangle-1" style="left: 80%; top: -100px; animation-delay: -10s;"></div>
-        <div class="tangram-shape tangram-triangle-2" style="left: 5%; top: -80px; animation-delay: -13s;"></div>
-        <div class="tangram-shape tangram-square" style="left: 35%; top: -90px; animation-delay: -18s;"></div>
-        <div class="tangram-shape tangram-parallelogram" style="left: 60%; top: -70px; animation-delay: -20s;"></div>
-        <div class="tangram-shape tangram-medium-triangle" style="left: 20%; top: -85px; animation-delay: -16s;"></div>
-        <div class="tangram-shape tangram-small-triangle" style="left: 75%; top: -75px; animation-delay: -22s;"></div>
-        
-        <div class="tangram-shape tangram-triangle-3" style="left: 50%; top: -120px; animation-delay: -25s;"></div>
-        <div class="tangram-shape tangram-square" style="left: 12%; top: -110px; animation-delay: -28s;"></div>
-        <div class="tangram-shape tangram-parallelogram" style="left: 88%; top: -95px; animation-delay: -30s;"></div>
-    </div>
+<!-- 七巧板背景动画层 -->
+<ResponsiveBox>
+    <ResponsiveBox class="tangram-shape tangram-triangle-1" style="left: 10%; top: -60px;"></ResponsiveBox>
+    <ResponsiveBox class="tangram-shape tangram-triangle-2" style="left: 25%; top: -50px;"></ResponsiveBox>
+    <ResponsiveBox class="tangram-shape tangram-triangle-3" style="left: 40%; top: -40px;"></ResponsiveBox>
+    <ResponsiveBox class="tangram-shape tangram-square" style="left: 55%; top: -40px;"></ResponsiveBox>
+    <ResponsiveBox class="tangram-shape tangram-parallelogram" style="left: 70%; top: -30px;"></ResponsiveBox>
+    <ResponsiveBox class="tangram-shape tangram-medium-triangle" style="left: 85%; top: -35px;"></ResponsiveBox>
+    <ResponsiveBox class="tangram-shape tangram-small-triangle" style="left: 15%; top: -25px;"></ResponsiveBox>
+
+    <ResponsiveBox class="tangram-shape tangram-triangle-1" style="left: 80%; top: -100px; animation-delay: -10s;"></ResponsiveBox>
+    <ResponsiveBox class="tangram-shape tangram-triangle-2" style="left: 5%; top: -80px; animation-delay: -13s;"></ResponsiveBox>
+    <ResponsiveBox class="tangram-shape tangram-square" style="left: 35%; top: -90px; animation-delay: -18s;"></ResponsiveBox>
+    <ResponsiveBox class="tangram-shape tangram-parallelogram" style="left: 60%; top: -70px; animation-delay: -20s;"></ResponsiveBox>
+    <ResponsiveBox class="tangram-shape tangram-medium-triangle" style="left: 20%; top: -85px; animation-delay: -16s;"></ResponsiveBox>
+    <ResponsiveBox class="tangram-shape tangram-small-triangle" style="left: 75%; top: -75px; animation-delay: -22s;"></ResponsiveBox>
+
+    <ResponsiveBox class="tangram-shape tangram-triangle-3" style="left: 50%; top: -120px; animation-delay: -25s;"></ResponsiveBox>
+    <ResponsiveBox class="tangram-shape tangram-square" style="left: 12%; top: -110px; animation-delay: -28s;"></ResponsiveBox>
+    <ResponsiveBox class="tangram-shape tangram-parallelogram" style="left: 88%; top: -95px; animation-delay: -30s;"></ResponsiveBox>
+</ResponsiveBox>
 <ResponsiveBox style="width: 100vw; height: 100vh; background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; box-sizing: border-box;">
     <!-- 头部区域 -->
     <ResponsiveBox style="margin-bottom: 60px; text-align: center;">
