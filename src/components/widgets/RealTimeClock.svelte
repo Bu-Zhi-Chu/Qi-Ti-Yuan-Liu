@@ -7,6 +7,7 @@
  * - 支持两种时间格式：
  *   1. "yyyy-MM-dd HH:mm:ss" (年月日时分秒)
  *   2. "yyyy-MM-dd 星期X HH:mm:ss" (年月日星期时分秒)
+ * - 支持单行/多行显示模式，多行模式具有优雅的视觉层次
  * - 响应式设计，自动适配容器大小
  * - 完全通过style属性控制样式，无需额外类名
  * - 利用Svelte 5的细粒度响应式更新机制
@@ -14,9 +15,15 @@
  * 使用方法：
  * <RealTimeClock format="datetime" /> // 显示年月日时分秒
  * <RealTimeClock format="datetime-weekday" /> // 显示年月日星期时分秒
+ * <RealTimeClock displayMode="multi-line" /> // 多行显示，日期在上，时间在下
  * <RealTimeClock style="color: aqua; font-size: 16px;" /> // 自定义样式
  *
+ * 样式优化：
+ * - 单行模式：紧凑显示，适合小空间
+ * - 多行模式：日期部分缩小+半透明，时间部分加粗突出，视觉层次清晰
+ *
  * @param {string} [format="datetime"] - 时间格式类型，可选值："datetime" | "datetime-weekday"
+ * @param {string} [displayMode="single-line"] - 显示模式，可选值："single-line" | "multi-line"
  * @param {string} [style=""] - 内联样式字符串
 -->
 
@@ -26,10 +33,11 @@
 
     interface Props {
         format?: 'datetime' | 'datetime-weekday'
+        displayMode?: 'single-line' | 'multi-line'
         style?: string
     }
 
-    let { format = 'datetime', style = '' }: Props = $props()
+    let { format = 'datetime', displayMode = 'single-line', style = '' }: Props = $props()
 
     // 使用 Svelte 5 的响应式日期对象
     let currentTime = new SvelteDate()
@@ -37,25 +45,32 @@
     // 星期映射
     const weekdays = ['日', '一', '二', '三', '四', '五', '六']
 
-    // 格式化时间
-    const formatTime = (date: Date, formatType: string): string => {
+    // 格式化日期部分
+    const formatDatePart = (date: Date, formatType: string): string => {
         const year = date.getFullYear()
         const month = String(date.getMonth() + 1).padStart(2, '0')
         const day = String(date.getDate()).padStart(2, '0')
-        const hours = String(date.getHours()).padStart(2, '0')
-        const minutes = String(date.getMinutes()).padStart(2, '0')
-        const seconds = String(date.getSeconds()).padStart(2, '0')
 
         if (formatType === 'datetime-weekday') {
             const weekday = weekdays[date.getDay()]
-            return `${year}-${month}-${day} 星期${weekday} ${hours}:${minutes}:${seconds}`
+            return `${year}-${month}-${day} 星期${weekday}`
         } else {
-            return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+            return `${year}-${month}-${day}`
         }
     }
 
+    // 格式化时间部分
+    const formatTimePart = (date: Date): string => {
+        const hours = String(date.getHours()).padStart(2, '0')
+        const minutes = String(date.getMinutes()).padStart(2, '0')
+        const seconds = String(date.getSeconds()).padStart(2, '0')
+        return `${hours}:${minutes}:${seconds}`
+    }
+
     // 派生计算格式化后的时间
-    let formattedTime = $derived(formatTime(currentTime, format))
+    let datePart = $derived(formatDatePart(currentTime, format))
+    let timePart = $derived(formatTimePart(currentTime))
+    let singleLineTime = $derived(`${datePart} ${timePart}`)
 
     // 使用 SvelteDate 的响应式特性，定时更新
     $effect(() => {
@@ -71,8 +86,10 @@
 </script>
 
 <ResponsiveBox {style}>
-    {formattedTime}
+    {#if displayMode === 'single-line'}
+        <span style="font-weight: 500; letter-spacing: 0.5px;">{singleLineTime}</span>
+    {:else}
+        <div style="font-size: 0.9em; opacity: 0.8; margin-bottom: 4px;">{datePart}</div>
+        <div style="font-size: 1.1em; font-weight: bold;">{timePart}</div>
+    {/if}
 </ResponsiveBox>
-
-<style>
-</style>
