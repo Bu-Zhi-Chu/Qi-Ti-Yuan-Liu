@@ -13,10 +13,10 @@
 /* 标题脉冲发光动画 */
 @keyframes pulse-glow {
     0%, 100% {
-        text-shadow: 0 0 20px rgba(90, 102, 241, 0.5), 0 0 40px rgba(139, 90, 246, 0.3);
+        text-shadow: 0 0 20px rgba(99, 102, 241, 0.5), 0 0 40px rgba(139, 92, 246, 0.3);
     }
     50% {
-        text-shadow: 0 0 30px rgba(90, 102, 241, 0.8), 0 0 60px rgba(139, 90, 246, 0.6), 0 0 80px rgba(90, 102, 241, 0.4);
+        text-shadow: 0 0 30px rgba(99, 102, 241, 0.8), 0 0 60px rgba(139, 92, 246, 0.6), 0 0 80px rgba(99, 102, 241, 0.4);
     }
 }
 
@@ -28,9 +28,9 @@
 
 /* 按钮悬停发光动画 */
 @keyframes button-glow {
-    0% { box-shadow: 0 8px 32px rgba(90, 102, 241, 0.3); }
-    50% { box-shadow: 0 12px 48px rgba(90, 102, 241, 0.5), 0 0 20px rgba(139, 90, 246, 0.3); }
-    100% { box-shadow: 0 8px 32px rgba(90, 102, 241, 0.3); }
+    0% { box-shadow: 0 8px 32px rgba(99, 102, 241, 0.3); }
+    50% { box-shadow: 0 12px 48px rgba(99, 102, 241, 0.5), 0 0 20px rgba(139, 92, 246, 0.3); }
+    100% { box-shadow: 0 8px 32px rgba(99, 102, 241, 0.3); }
 }
 
 /* 卡片悬停动画 */
@@ -60,55 +60,55 @@
 /* 七巧板背景动画 - 不同形状缓缓落下 */
 @keyframes tangram-fall-1 {
     0% {
-        transform: translateY(-100px) rotate(0deg);
+        transform: translateY(-5vh) rotate(0deg);
         opacity: 0.3;
     }
     100% {
-        transform: translateY(90vh) rotate(360deg);
+        transform: translateY(100vh) rotate(360deg);
         opacity: 0.3;
     }
 }
 
 @keyframes tangram-fall-2 {
     0% {
-        transform: translateY(-120px) rotate(0deg);
+        transform: translateY(-5vh) rotate(0deg);
         opacity: 0.4;
     }
     100% {
-        transform: translateY(88vh) rotate(-360deg);
+        transform: translateY(100vh) rotate(-360deg);
         opacity: 0.4;
     }
 }
 
 @keyframes tangram-fall-3 {
     0% {
-        transform: translateY(-110px) rotate(0deg);
+        transform: translateY(-5vh) rotate(0deg);
         opacity: 0.35;
     }
     100% {
-        transform: translateY(87vh) rotate(180deg);
+        transform: translateY(100vh) rotate(180deg);
         opacity: 0.35;
     }
 }
 
 @keyframes tangram-fall-4 {
     0% {
-        transform: translateY(-130px) rotate(0deg);
+        transform: translateY(-5vh) rotate(0deg);
         opacity: 0.25;
     }
     100% {
-        transform: translateY(86vh) rotate(-180deg);
+        transform: translateY(100vh) rotate(-180deg);
         opacity: 0.25;
     }
 }
 
 @keyframes tangram-fall-5 {
     0% {
-        transform: translateY(-125px) rotate(0deg);
+        transform: translateY(-5vh) rotate(0deg);
         opacity: 0.3;
     }
     100% {
-        transform: translateY(89vh) rotate(270deg);
+        transform: translateY(100vh) rotate(270deg);
         opacity: 0.3;
     }
 }
@@ -140,14 +140,14 @@
 .tangram-triangle-1 {
     border-left: 60px solid transparent;
     border-right: 60px solid transparent;
-    border-bottom: 120px solid rgba(90, 102, 241, 0.3);
+    border-bottom: 120px solid rgba(99, 102, 241, 0.3);
     animation: tangram-fall-1 15s linear infinite;
 }
 
 .tangram-triangle-2 {
     border-left: 50px solid transparent;
     border-right: 50px solid transparent;
-    border-bottom: 100px solid rgba(139, 90, 246, 0.3);
+    border-bottom: 100px solid rgba(139, 92, 246, 0.3);
     animation: tangram-fall-2 18s linear infinite;
     animation-delay: -5s;
 }

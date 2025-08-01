@@ -116,7 +116,7 @@
 
 <!-- 主容器 - 全屏响应式布局 -->
 <!-- 七巧板背景动画层 -->
-<ResponsiveBox>
+<ResponsiveBox style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;overflow: hidden;">
     <ResponsiveBox class="tangram-shape tangram-triangle-1" style="left: 10%; top: -60px;"></ResponsiveBox>
     <ResponsiveBox class="tangram-shape tangram-triangle-2" style="left: 25%; top: -50px;"></ResponsiveBox>
     <ResponsiveBox class="tangram-shape tangram-triangle-3" style="left: 40%; top: -40px;"></ResponsiveBox>
@@ -154,8 +154,18 @@
     <!-- 操作按钮区域 -->
     <ResponsiveBox style="margin-bottom: 80px;">
         <ResponsiveBox
-            style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border: none; color: #f8fafc; padding: 20px 40px; border-radius: 16px; font-size: 18px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 8px 32px rgba(99, 102, 241, 0.3); backdrop-filter: blur(10px);"
+            style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border: none; color: #f8fafc; padding: 20px 40px; border-radius: 16px; font-size: 18px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 8px 32px rgba(99, 102, 241, 0.3); backdrop-filter: blur(10px); transform: translateY(0px);"
             onclick={createNewProject}
+            onmouseenter={(e: MouseEvent) => {
+                const target = e.currentTarget as HTMLElement
+                target.style.transform = 'translateY(-4px) scale(1.05)'
+                target.style.boxShadow = '0 20px 60px rgba(99, 102, 241, 0.5), 0 0 40px rgba(139, 92, 246, 0.4)'
+            }}
+            onmouseleave={(e: MouseEvent) => {
+                const target = e.currentTarget as HTMLElement
+                target.style.transform = 'translateY(0px) scale(1)'
+                target.style.boxShadow = '0 8px 32px rgba(99, 102, 241, 0.3)'
+            }}
         >
             开始创建
         </ResponsiveBox>
@@ -166,12 +176,24 @@
         <ResponsiveBox style="font-size: 24px; font-weight: 600; color: #f8fafc; margin-bottom: 30px; text-align: center; flex-shrink: 0;">历史项目</ResponsiveBox>
 
         <!-- 现代滚动容器 -->
-        <ResponsiveBox style="flex: 1; overflow-y: auto; padding-right: 10px; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.3) transparent;">
+        <ResponsiveBox style="flex: 1; overflow-y: auto; padding: 20px 10px 0 0; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.3) transparent;">
             <ResponsiveBox style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 30px; justify-items: center; padding-bottom: 20px;">
                 {#each projects as project}
                     <ResponsiveBox
-                        style="background: rgba(30, 41, 59, 0.5); border-radius: 16px; padding: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); cursor: pointer; transition: all 0.3s ease; width: 300px; border: 1px solid rgba(99, 102, 241, 0.2); backdrop-filter: blur(10px);"
+                        style="background: rgba(30, 41, 59, 0.5); border-radius: 16px; padding: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); cursor: pointer; transition: all 0.3s ease; width: 300px; border: 1px solid rgba(99, 102, 241, 0.2); backdrop-filter: blur(10px); transform: translateY(0px);"
                         onclick={() => openProject(project.id)}
+                        onmouseenter={(e: MouseEvent) => {
+                            const target = e.currentTarget as HTMLElement
+                            target.style.transform = 'translateY(-8px) scale(1.02)'
+                            target.style.boxShadow = '0 20px 60px rgba(99, 102, 241, 0.4), 0 0 30px rgba(139, 92, 246, 0.3)'
+                            target.style.borderColor = 'rgba(99, 102, 241, 0.5)'
+                        }}
+                        onmouseleave={(e: MouseEvent) => {
+                            const target = e.currentTarget as HTMLElement
+                            target.style.transform = 'translateY(0px) scale(1)'
+                            target.style.boxShadow = '0 8px 32px rgba(0,0,0,0.3)'
+                            target.style.borderColor = 'rgba(99, 102, 241, 0.2)'
+                        }}
                     >
                         <!-- 项目缩略图 -->
                         <ResponsiveBox style="width: 100%; height: 160px; background: rgba(15, 23, 42, 0.5); border-radius: 12px; margin-bottom: 16px; overflow: hidden; border: 1px solid rgba(99, 102, 241, 0.1);">
