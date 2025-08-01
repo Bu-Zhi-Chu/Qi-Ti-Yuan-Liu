@@ -22,33 +22,18 @@
 
     let { style = '', children, ...rest }: Props = $props()
 
-    let scaleRatio = $state(1)
+    const baseFontSize = $state(16)
+    const scaleRatio = $derived(Math.min(window.innerWidth / 1920, 1.2))
 
     // 将style字符串中的px值转换为calc表达式
-    function convertStylePxToCalc(styleStr: string): string {
-        if (!styleStr.trim()) return ''
+    const finalStyle = $derived.by(() => {
+        if (!style.trim()) return ''
 
         // 替换所有数字+px为calc表达式，保留px单位
-        return styleStr.replace(/(\d+(?:\.\d+)?)px/g, 'calc($1px * var(--scale-ratio, 1))')
-    }
-
-    // 计算最终的style字符串
-    const finalStyle = $derived.by(() => {
-        const convertedStyle = convertStylePxToCalc(style)
-        return convertedStyle
-    })
-
-    onMount(() => {
-        const updateScale = () => {
-            scaleRatio = window.innerWidth / 375 // 375作为基准宽度
-        }
-
-        updateScale()
-        window.addEventListener('resize', updateScale)
-
-        return () => {
-            window.removeEventListener('resize', updateScale)
-        }
+        return style.replace(/(\d+(?:\.\d+)?)px/g, (match, value) => {
+            const numValue = parseFloat(value)
+            return `calc(${numValue}px * var(--scale-ratio, ${scaleRatio}))`
+        })
     })
 </script>
 
