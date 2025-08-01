@@ -1,6 +1,6 @@
 <!--
  * 实时时钟小组件
- * 基于ResponsiveBox的实时时间显示组件，使用Svelte 5的SvelteDate响应式时间类
+ * 基于ResponsiveBox的实时时间显示组件，使用Svelte 5 Runes系统
  *
  * 功能特性：
  * - 实时更新时间显示（使用Svelte 5 SvelteDate响应式对象）
@@ -8,14 +8,16 @@
  *   1. "yyyy-MM-dd HH:mm:ss" (年月日时分秒)
  *   2. "yyyy-MM-dd 星期X HH:mm:ss" (年月日星期时分秒)
  * - 响应式设计，自动适配容器大小
+ * - 完全通过style属性控制样式，无需额外类名
  * - 利用Svelte 5的细粒度响应式更新机制
  *
  * 使用方法：
  * <RealTimeClock format="datetime" /> // 显示年月日时分秒
  * <RealTimeClock format="datetime-weekday" /> // 显示年月日星期时分秒
+ * <RealTimeClock style="color: aqua; font-size: 16px;" /> // 自定义样式
  *
  * @param {string} [format="datetime"] - 时间格式类型，可选值："datetime" | "datetime-weekday"
- * @param {string} [className=""] - 额外的CSS类名
+ * @param {string} [style=""] - 内联样式字符串
 -->
 
 <script lang="ts">
@@ -24,10 +26,10 @@
 
     interface Props {
         format?: 'datetime' | 'datetime-weekday'
-        className?: string
+        style?: string
     }
 
-    let { format = 'datetime', className = '' }: Props = $props()
+    let { format = 'datetime', style = '' }: Props = $props()
 
     // 使用 Svelte 5 的响应式日期对象
     let currentTime = new SvelteDate()
@@ -68,28 +70,9 @@
     })
 </script>
 
-<ResponsiveBox class={className}>
-    <div class="realtime-clock">
-        {formattedTime}
-    </div>
+<ResponsiveBox {style}>
+    {formattedTime}
 </ResponsiveBox>
 
 <style>
-    .realtime-clock {
-        font-family: 'Courier New', monospace;
-        font-size: 1.2em;
-        font-weight: 500;
-        color: #333;
-        text-align: center;
-        padding: 1rem;
-        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        transition: all 0.3s ease;
-    }
-
-    .realtime-clock:hover {
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        transform: translateY(-1px);
-    }
 </style>

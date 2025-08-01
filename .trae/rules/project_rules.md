@@ -134,6 +134,7 @@
    - 单行注释注意换行
    - 多行注释注意闭合
    - 注意不同文件类型的注释方式
+   - 如果是封装新的UI组件 注意Z:\X\qi-qiao-ban\src\components\widgets\COMPONENT_GUIDE.md
 
 8. 操作流程规范（必须按顺序执行）
    1. 需求分析阶段
