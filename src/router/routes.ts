@@ -16,6 +16,7 @@ import type { RouteConfig } from '@mateothegreat/svelte5-router'
 import HomePage from '../components/pages/HomePage.svelte'
 import AboutPage from '../components/pages/AboutPage.svelte'
 import SettingsPage from '../components/pages/SettingsPage.svelte'
+import Page404 from '../components/pages/404.svelte'
 
 /**
  * 路由配置数组
@@ -33,6 +34,24 @@ export const routes: RouteConfig[] = [
         path: '/home',
         component: HomePage,
         name: 'home-direct'
+    },
+    {
+        // 关于页面
+        path: '/about',
+        component: AboutPage,
+        name: 'about'
+    },
+    {
+        // 设置页面
+        path: '/settings',
+        component: SettingsPage,
+        name: 'settings'
+    },
+    {
+        // 404页面 - 捕获所有未匹配的路由
+        path: '/(.*)*',
+        component: Page404,
+        name: 'not-found'
     }
 ]
 
