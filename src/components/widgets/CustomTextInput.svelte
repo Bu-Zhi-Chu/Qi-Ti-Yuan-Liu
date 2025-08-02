@@ -248,15 +248,11 @@
     </ResponsiveBox>
 
     {#if placeholder && !value}
-        <div style={placeholderStyle}>
-            {placeholder}
-        </div>
+        {placeholder}
     {/if}
 
     {#if errorMessage}
-        <div style="color: #ff4444; font-size: 12px; margin-top: 4px;">
-            {errorMessage}
-        </div>
+        {errorMessage}
     {/if}
 </ResponsiveBox>
 

@@ -2,17 +2,27 @@
  * 通用按钮组件
  *
  * 功能描述：
- * 提供统一风格的按钮组件，支持多种变体和交互状态
+ * 提供统一风格的按钮组件，支持多种变体和交互状态，完全基于ResponsiveBox构建
+ *
+ * 变体说明：
+ * - primary: 主要按钮，使用渐变色背景（靛蓝到紫色），白色文字，适用于主要操作如提交、确认
+ * - secondary: 次要按钮，半透明背景带模糊效果，白色文字，适用于次要操作如取消、返回
+ * - ghost: 幽灵按钮，透明背景带边框，白色文字，适用于辅助操作如链接、提示
+ * - danger: 危险按钮，红色渐变背景，白色文字，适用于危险操作如删除、重置
  *
  * 特性：
- * - 支持 primary、secondary、ghost 等多种变体
  * - 响应式设计，适配不同屏幕尺寸
  * - 支持加载状态、禁用状态
- * - 支持点击波纹效果
+ * - 悬停效果：轻微上浮和放大，阴影增强
+ * - 禁用状态：透明度降低，禁用点击
+ * - 加载状态：透明度降低，显示等待光标
  * - 完全使用 ResponsiveBox 构建，无原生 HTML 元素
  *
  * 使用示例：
- * <Button onclick={handleClick} variant="primary" size="medium">点击我</Button>
+ * <Button onclick={handleClick} variant="primary" size="medium">提交</Button>
+ * <Button onclick={handleCancel} variant="secondary" size="small">取消</Button>
+ * <Button onclick={handleDelete} variant="danger" disabled>删除</Button>
+ * <Button onclick={handleLink} variant="ghost" loading>加载中...</Button>
 -->
 
 <script lang="ts">
@@ -75,16 +85,16 @@
 
     // 计算最终样式
     let finalStyle = $derived.by(() => {
-        let baseStyle = `display: inline-block; ${getVariantStyles()} ${getSizeStyles()} ${style}`
+        let baseStyle = `display: inline-flex; align-items: center; justify-content: center; ; ${getVariantStyles()} ${getSizeStyles()} ${style}`
 
         if (disabled) {
             baseStyle += ' opacity: 0.5; cursor: not-allowed; transform: scale(1);'
         } else if (loading) {
             baseStyle += ' opacity: 0.7; cursor: wait;'
         } else if (isHovered) {
-            baseStyle += ' transform: translateY(-2px) scale(1.05); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);'
+            baseStyle += ' cursor: pointer; transform: translateY(-2px) scale(1.05); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);'
         } else {
-            baseStyle += ' transform: translateY(0) scale(1); transition: all 0.3s ease;'
+            baseStyle += ' cursor: pointer; transform: translateY(0) scale(1); transition: all 0.3s ease;'
         }
 
         return baseStyle
