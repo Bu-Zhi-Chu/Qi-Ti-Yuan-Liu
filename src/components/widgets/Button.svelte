@@ -38,9 +38,10 @@
         style?: string
         class?: string
         type?: 'button' | 'submit' | 'reset'
+        'data-id'?: string
     }
 
-    let { children, onclick, variant = 'primary', size = 'medium', disabled = false, loading = false, style = '', class: className = '', type = 'button' }: Props = $props()
+    let { children, onclick, variant = 'primary', size = 'medium', disabled = false, loading = false, style = '', class: className = '', type = 'button', 'data-id': dataId = '' }: Props = $props()
 
     // 根据变体获取样式
     function getVariantStyles() {
@@ -101,6 +102,6 @@
     })
 </script>
 
-<ResponsiveBox tag="button" {type} style={finalStyle} class={className} onclick={handleClick} onmouseenter={handleMouseEnter} onmouseleave={handleMouseLeave} disabled={disabled || loading}>
+<ResponsiveBox tag="button" {type} style={finalStyle} class={className} onclick={handleClick} onmouseenter={handleMouseEnter} onmouseleave={handleMouseLeave} disabled={disabled || loading} data-id={dataId}>
     {@render children?.()}
 </ResponsiveBox>

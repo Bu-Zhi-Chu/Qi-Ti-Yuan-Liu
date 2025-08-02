@@ -26,8 +26,8 @@ import type { RouteConfig } from '@mateothegreat/svelte5-router'
 import HomePage from '../components/pages/HomePage.svelte'
 import AboutPage from '../components/pages/AboutPage.svelte'
 import SettingsPage from '../components/pages/SettingsPage.svelte'
-import ResponsiveBoxDemo from '../components/demo/ResponsiveBoxDemo.svelte'
-import Page404 from '../components/pages/404.svelte'
+import DemoPage from '../components/pages/DemoPage.svelte'
+
 
 /**
  * 路由配置数组
@@ -61,7 +61,7 @@ export const routes: RouteConfig[] = [
     {
         // ResponsiveBox演示页面
         path: '/demo',
-        component: ResponsiveBoxDemo,
+        component: DemoPage,
         name: 'demo'
     },
     // 注意：404页面处理已移至App.svelte，通过Router的statuses配置实现

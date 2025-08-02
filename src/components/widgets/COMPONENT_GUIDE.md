@@ -13,6 +13,7 @@
  * 组件功能描述
  * 使用ResponsiveBox实现自适应布局
  * @param {string} [style=""] - 内联样式字符串
+ * @param {string} [data-id=""] - 外部指定的数据标识符，用于低代码平台定位
 -->
 
 <script lang="ts">
@@ -20,15 +21,16 @@
 
     interface Props {
         style?: string
+        'data-id'?: string
         // 其他自定义props
     }
 
-    let { style = '', ...otherProps }: Props = $props()
+    let { style = '', 'data-id': dataId = '', ...otherProps }: Props = $props()
 
     // 组件逻辑...
 </script>
 
-<ResponsiveBox {style}>
+<ResponsiveBox {style} data-id={dataId}>
     <!-- 组件内容 -->
 </ResponsiveBox>
 
@@ -82,7 +84,7 @@
 
 ```
 src/components/
-├── Core/                # 基础组件（仅ResponsiveBox）
+├── Core/                # 基础组件（仅ResponsiveBox、SimpleBox）
 ├── widgets/            # 功能组件（时钟、按钮等）
 ├── forms/              # 表单组件
 ├── navigation/         # 导航组件
@@ -160,13 +162,52 @@ let { style = '', ...rest }: Props = $props()
 </style>
 ```
 
+### 6. 嵌套规范与data-id处理
+
+#### ✅ 推荐做法
+- **单层结构**: 组件直接使用一个ResponsiveBox作为根容器
+- **data-id传递**: 通过props接收外部data-id并传递给根ResponsiveBox
+- **SimpleBox降级**: 如需内部嵌套，使用SimpleBox作为轻量级容器
+
+```svelte
+<!-- ✅ 单层结构示例 -->
+<ResponsiveBox
+    style="width: 200px; height: 100px; {style}"
+    data-id={dataId}
+>
+    <!-- 组件内容 -->
+</ResponsiveBox>
+
+<!-- ✅ 必要时使用SimpleBox -->
+<ResponsiveBox style={style} data-id={dataId}>
+    <SimpleBox style="display: flex; align-items: center;">
+        <!-- 子内容 -->
+    </SimpleBox>
+</ResponsiveBox>
+```
+
+#### ❌ 避免做法
+- **多层嵌套**: 避免多个ResponsiveBox嵌套
+- **重复data-id**: 不要在内部元素重复设置data-id
+- **原生元素**: 禁止使用原生div作为根容器
+
+### 7. data-id规范
+
+- **来源**: 由外部组件通过props传入
+- **作用**: 用于低代码平台精确定位组件
+- **传递**: 必须传递给根ResponsiveBox
+- **唯一性**: 在同一页面中保持唯一
+- **格式**: 字符串类型，可为空
+
 ## 🔍 检查清单
 
 创建新组件时必须确认：
 - [ ] 使用ResponsiveBox作为根容器
+- [ ] 通过props接收data-id并传递给根ResponsiveBox
 - [ ] 仅传递style属性（不再使用className）
-- [ ] Props接口仅包含style，不再包含className
+- [ ] Props接口包含style和data-id
 - [ ] 所有样式通过style属性内联控制
+- [ ] 避免多层ResponsiveBox嵌套
 - [ ] 文件位置符合层级规范
 - [ ] 添加详细注释说明
 - [ ] 通过`npm run check`类型检查

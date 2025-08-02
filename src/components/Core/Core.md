@@ -1,9 +1,14 @@
-# ResponsiveBox 响应式容器组件文档
+# 核心组件文档 - Core Components
 
-## 组件概述
+## 架构概述
 
-`ResponsiveBox` 是一个智能响应式容器组件，它能够自动将样式中的像素值转换为基于屏幕宽度的相对单位，实现真正的自适应布局。
-是UI唯一的核心组件,基于他封装的组件,逐步会取代一切html标签,实现更灵活的布局
+本项目提供三种核心组件，分别适用于不同的使用场景：
+
+- **ResponsiveBox**: 智能响应式容器，支持自动缩放适配
+- **SimpleBox**: 简化版容器，轻量级无响应式逻辑
+- **DynamicComponent**: 动态组件切换器，支持低代码平台
+
+所有组件都基于Svelte 5 Runes系统构建，提供完整的TypeScript支持。
 
 ## 核心特性
 
@@ -88,9 +93,17 @@ scaleRatio = window.innerWidth / 375
 interface Props {
   style?: string                    // CSS样式字符串，支持任意CSS属性
   children?: import('svelte').Snippet  // 子内容插槽
+  'data-id'?: string               // 外部指定的数据标识符，用于低代码平台定位
   [key: string]: any               // 支持传递任意HTML属性
 }
 ```
+
+### data-id 规范
+- **来源**：由外部组件通过props传入
+- **作用**：用于低代码平台精确定位组件
+- **传递**：必须传递给根ResponsiveBox
+- **唯一性**：在同一页面中保持唯一
+- **格式**：字符串类型，可为空
 
 ### 响应式变量
 
@@ -105,7 +118,7 @@ interface Props {
 
 ```svelte
 <!-- 设计稿中 100px 宽的按钮 -->
-<ResponsiveBox style="width: 100px; height: 44px; background: #007AFF; border-radius: 8px;">
+<ResponsiveBox style="width: 100px; height: 44px; background: #007AFF; border-radius: 8px;" data-id="unique-button-1">
   按钮
 </ResponsiveBox>
 ```
@@ -115,20 +128,50 @@ interface Props {
 与其他响应式组件组合使用：
 
 ```svelte
-<ResponsiveBox style="display: flex; gap: 16px;">
-  <ResponsiveBox style="width: 100px; height: 100px; background: #FF3B30;"/>
-  <ResponsiveBox style="width: 100px; height: 100px; background: #34C759;"/>
+<ResponsiveBox style="display: flex; gap: 16px;" data-id="flex-container">
+  <ResponsiveBox style="width: 100px; height: 100px; background: #FF3B30;" data-id="red-box"/>
+  <ResponsiveBox style="width: 100px; height: 100px; background: #34C759;" data-id="green-box"/>
 </ResponsiveBox>
 ```
 
-### 3. 媒体查询配合
+### 3. 嵌套规范
+
+#### ✅ 推荐做法
+- **单层结构**：组件直接使用一个ResponsiveBox作为根容器
+- **data-id传递**：通过props接收外部data-id并传递给根ResponsiveBox
+- **SimpleBox降级**：如需内部嵌套，使用SimpleBox作为轻量级容器
+
+```svelte
+<!-- ✅ 单层结构示例 -->
+<ResponsiveBox
+    style="width: 200px; height: 100px; {style}"
+    data-id={dataId}
+>
+    <!-- 组件内容 -->
+</ResponsiveBox>
+
+<!-- ✅ 必要时使用SimpleBox -->
+<ResponsiveBox style={style} data-id={dataId}>
+    <SimpleBox style="display: flex; align-items: center;">
+        <!-- 子内容 -->
+    </SimpleBox>
+</ResponsiveBox>
+```
+
+#### ❌ 避免做法
+- **多层嵌套**：避免多个ResponsiveBox嵌套
+- **重复data-id**：不要在内部元素重复设置data-id
+- **原生元素**：禁止使用原生div作为根容器
+
+### 4. 媒体查询配合
 
 虽然组件主要处理像素适配，但仍可配合媒体查询：
 
 ```svelte
 <ResponsiveBox
   style="width: 300px;
-         @media (max-width: 375px) { width: 280px; }">
+         @media (max-width: 375px) { width: 280px; }"
+  data-id="responsive-card">
   响应式卡片
 </ResponsiveBox>
 ```
@@ -181,7 +224,74 @@ interface Props {
 
 ---
 
-## 2. DynamicComponent.svelte - 核心组件切换逻辑
+## 2. SimpleBox.svelte - 简化版响应式容器
+
+### 组件定位
+`SimpleBox` 是 `ResponsiveBox` 的轻量化版本，专为组件封装场景设计，避免了复杂响应式逻辑带来的性能开销。
+
+### 核心特性
+- **轻量级**：无响应式计算逻辑，性能更好
+- **默认样式**：宽高100%，行内级别显示
+- **简洁API**：支持所有标准HTML属性透传
+- **适用场景**：组件封装、简单容器、避免多层嵌套
+
+### 使用场景对比
+
+| 场景 | 使用组件 | 说明 |
+|------|----------|------|
+| 复杂布局 | ResponsiveBox | 需要响应式缩放的场景 |
+| 组件封装 | SimpleBox | 不需要响应式缩放的场景 |
+| 简单容器 | SimpleBox | 避免多层嵌套的性能问题 |
+| 动态切换 | DynamicComponent | 低代码平台组件切换 |
+
+### 基础用法
+
+```svelte
+<script>
+  import SimpleBox from '$lib/components/Core/SimpleBox.svelte'
+</script>
+
+<!-- 基础用法 -->
+<SimpleBox>
+  这是一个简单的容器
+</SimpleBox>
+
+<!-- 带自定义样式 -->
+<SimpleBox style="background: #f0f0f0; padding: 20px; border-radius: 8px;">
+  带背景色的内容
+</SimpleBox>
+
+<!-- 组件封装示例 -->
+<SimpleBox style="display: flex; gap: 10px; align-items: center;">
+  <Button variant="primary">按钮1</Button>
+  <Button variant="secondary">按钮2</Button>
+</SimpleBox>
+```
+
+### API 参考
+
+```typescript
+interface Props {
+  style?: string                    // CSS样式字符串
+  children?: import('svelte').Snippet  // 子内容插槽
+  'data-id'?: string               // 外部指定的数据标识符，用于低代码平台定位
+  [key: string]: any               // 支持传递任意HTML属性
+}
+```
+
+### 默认样式
+
+组件默认样式设置为：
+
+```css
+display: inline-block;
+width: 100%;
+height: 100%;
+```
+
+---
+
+## 3. DynamicComponent.svelte - 核心组件切换逻辑
 
 ### 组件定位
 低代码平台的动态组件容器，支持通过属性面板切换任意组件类型。
@@ -196,7 +306,8 @@ interface Props {
 ```typescript
 const componentMap = {
   RealTimeClock: () => import('../widgets/RealTimeClock.svelte'),
-  ResponsiveBox: () => import('./ResponsiveBox.svelte')
+  ResponsiveBox: () => import('./ResponsiveBox.svelte'),
+  SimpleBox: () => import('./SimpleBox.svelte')
   // 可扩展更多组件类型
 }
 ```
@@ -223,13 +334,23 @@ const componentMap = {
 
 ## 架构协作模式
 
-### 层级关系
+### 三层架构设计
 ```
-低代码平台
-├── DynamicComponent (组件调度层)
-│   └── ResponsiveBox (基础容器层)
-│       └── 业务组件内容
-└── 其他动态组件
+应用层
+├── DynamicComponent (动态调度层)
+│   ├── ResponsiveBox (响应式容器层)
+│   ├── SimpleBox (简化容器层)
+│   └── 其他动态组件
+└── 业务组件内容
+```
+
+### 使用决策树
+```
+需要响应式缩放？
+├── 是 → 使用 ResponsiveBox
+└── 否 → 需要动态切换？
+    ├── 是 → 使用 DynamicComponent
+    └── 否 → 使用 SimpleBox
 ```
 
 ### 使用场景对比
@@ -274,9 +395,32 @@ const componentMap = {
 
 3. 在类型定义中添加新的组件类型
 
+### 创建自定义容器组件
+
+基于 SimpleBox 创建自定义容器组件：
+
+```svelte
+<!-- MyContainer.svelte -->
+<script>
+  import SimpleBox from './SimpleBox.svelte'
+
+  let { children, style = '', ...props } = $props()
+</script>
+
+<SimpleBox style="{style} background: #f5f5f5; padding: 16px;" {...props}>
+  {@render children?.()}
+</SimpleBox>
+```
+
 ---
 
 ## 更新日志
+
+### v3.0.0
+- 新增 SimpleBox 简化版容器组件
+- 完善三层架构设计
+- 优化使用决策树
+- 更新完整文档体系
 
 ### v2.0.0
 - 重构为双组件架构

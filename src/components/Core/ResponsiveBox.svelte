@@ -4,7 +4,7 @@
  * 支持在style属性中直接写CSS字符串，自动将px值转换为calc(值 * var(--scale-ratio, 1))
  *
  * 使用方法：
- * <ResponsiveBox style="width: 100px; height: 100px; top: 100px; left: 100px;">
+ * <ResponsiveBox style="width: 100px; height: 100px; top: 100px; left: 100px;" data-id="unique-id">
  *   内容放这里
  * </ResponsiveBox>
  *
@@ -16,6 +16,7 @@
  * 2. $derived缓存计算结果，避免重复计算
  * 3. ResizeObserver实现容器级精确尺寸监听
  * 4. 性能优化：只在必要时机重新计算
+ * 5. 支持data-id属性传递，用于低代码平台定位
 -->
 
 <script lang="ts">
@@ -25,13 +26,14 @@
         style?: string
         children?: import('svelte').Snippet
         baseWidth?: number // 基准宽度，默认1920
+        'data-id'?: string // 外部指定的数据标识符，用于低代码平台定位
         [key: string]: any // 支持其他任意属性
     }
 
     let { style = '', baseWidth = 1920, children, ...rest }: Props = $props()
 
-    // 为每个组件实例生成唯一的data-id
-    const componentId = uuidv4()
+    // 使用传入的data-id，没有传入则为空
+    const componentId = rest['data-id'] || ''
 
     // 使用$state管理容器宽度状态
     let containerWidth = $state(0)

@@ -1,8 +1,8 @@
 <!--
- * ResponsiveBox演示组件
+ * ResponsiveBox演示组件 + DynamicComponent演示
  *
  * 功能描述：
- * 展示ResponsiveBox核心组件的各种使用方式和特性
+ * 展示ResponsiveBox、SimpleBox核心组件以及DynamicComponent动态组件容器的使用
  *
  * 使用示例：
  * 通过路由 /demo 访问此演示页面
@@ -11,29 +11,35 @@
  * 1. 基础ResponsiveBox容器演示
  * 2. RealTimeClock组件的不同显示模式
  * 3. CustomTextInput组件演示
- * 4. 动态组件切换功能
- * 5. 完全使用项目组件构建，无原生HTML元素
+ * 4. DynamicComponent动态组件切换功能（使用key属性保持实例）
+ * 5. SimpleBox轻量级容器演示
+ * 6. 完全使用项目组件构建，无原生HTML元素
 -->
 
 <script lang="ts">
     import ResponsiveBox from '../Core/ResponsiveBox.svelte'
+    import SimpleBox from '../Core/SimpleBox.svelte'
     import RealTimeClock from '../widgets/RealTimeClock.svelte'
     import CustomTextInput from '../widgets/CustomTextInput.svelte'
     import Button from '../widgets/Button.svelte'
+    import DynamicComponent from '../Core/DynamicComponent.svelte'
 
-    // 控制组件切换的状态
-    let showRealTimeClock = $state(true)
+    // 控制组件切换的状态 - 使用字符串类型来切换DynamicComponent
+    let currentComponentType = $state<'RealTimeClock' | 'CustomTextInput'>('RealTimeClock')
     let inputValue = $state('演示输入框')
 
     // 切换组件的函数
     function toggleComponent() {
-        showRealTimeClock = !showRealTimeClock
+        currentComponentType = currentComponentType === 'RealTimeClock' ? 'CustomTextInput' : 'RealTimeClock'
     }
 
     // 处理输入框变化
     function handleInputChange(event: CustomEvent<string>) {
         inputValue = event.detail
     }
+
+    // 为DynamicComponent准备的稳定ID（模拟从数据库获取）
+    const stableComponentId = 'demo-dynamic-comp-001'
 </script>
 
 <!-- 页面主容器 -->
@@ -51,15 +57,31 @@
             <ResponsiveBox tag="h2" style="color: white; margin-top: 0; font-size: 24px; font-weight: bold; margin-bottom: 15px;">动态组件</ResponsiveBox>
 
             <!-- 切换按钮 - 与动态组件在同一容器内 -->
-            <ResponsiveBox style="text-align: center; margin-bottom: 20px;">
-                <Button onclick={toggleComponent} variant="primary" size="medium">切换组件显示</Button>
+            <ResponsiveBox data-id="demo-toggle-btn" style="text-align: center; margin-bottom: 20px;">
+                <Button onclick={toggleComponent} variant="primary" size="medium">
+                    切换组件显示 (当前: {currentComponentType})
+                </Button>
             </ResponsiveBox>
 
-            {#if showRealTimeClock}
-                <RealTimeClock format="datetime" />
-            {:else}
-                <CustomTextInput value={inputValue} oninput={handleInputChange} placeholder="请输入内容..." style="width: 200px;" />
-            {/if}
+            <!--
+              使用DynamicComponent演示稳定data-id的用法
+              - type: 切换组件类型
+              - data-id: 提供稳定的组件标识符（从数据库获取）
+              - 使用stableComponentId确保组件标识符不变
+              - props: 传递给目标组件的属性
+            -->
+            <DynamicComponent
+                type={currentComponentType}
+                data-id={stableComponentId}
+                props={currentComponentType === 'RealTimeClock'
+                    ? { format: 'datetime' }
+                    : {
+                          value: inputValue,
+                          oninput: handleInputChange,
+                          placeholder: '请输入内容...',
+                          style: 'width: 200px;'
+                      }}
+            />
         </ResponsiveBox>
     </ResponsiveBox>
 
@@ -113,6 +135,44 @@
         <ResponsiveBox style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 10px; text-align: center;">
             <ResponsiveBox tag="h3" style="color: white; margin-top: 0; font-size: 18px; font-weight: bold; margin-bottom: 15px;">完整日期</ResponsiveBox>
             <RealTimeClock format="datetime-weekday" displayMode="multi-line" />
+        </ResponsiveBox>
+    </ResponsiveBox>
+
+    <!-- SimpleBox演示区域 -->
+    <ResponsiveBox style="margin-top: 30px; max-width: 1200px; margin: 30px auto;">
+        <ResponsiveBox style="background: rgba(255,255,255,0.1); padding: 30px; border-radius: 15px; text-align: center;">
+            <ResponsiveBox tag="h2" style="color: white; margin-top: 0; margin-bottom: 20px; font-size: 28px; font-weight: bold;">📦 SimpleBox</ResponsiveBox>
+            <ResponsiveBox tag="p" style="color: rgba(255,255,255,0.8); margin-bottom: 25px; font-size: 16px; line-height: 1.5;">体验轻量级容器组件的简洁与高效</ResponsiveBox>
+
+            <ResponsiveBox style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: start;">
+                <!-- 左侧：基础用法 -->
+                <ResponsiveBox style="text-align: left;">
+                    <ResponsiveBox tag="h3" style="color: white; margin-bottom: 15px; font-size: 20px; font-weight: bold;">基础用法</ResponsiveBox>
+                    <SimpleBox style="background: linear-gradient(45deg, #ff6b6b, #4ecdc4); padding: 15px; border-radius: 8px; color: white; margin-bottom: 15px;">默认宽高100%的行内容器</SimpleBox>
+                    <SimpleBox style="background: #4ade80; padding: 10px; border-radius: 5px; color: white;">轻量级，无复杂逻辑</SimpleBox>
+                </ResponsiveBox>
+
+                <!-- 右侧：对比展示 -->
+                <ResponsiveBox style="text-align: left;">
+                    <ResponsiveBox tag="h3" style="color: white; margin-bottom: 15px; font-size: 20px; font-weight: bold;">嵌套对比</ResponsiveBox>
+
+                    <ResponsiveBox tag="p" style="color: rgba(255,255,255,0.7); margin-bottom: 10px; font-size: 14px;">ResponsiveBox嵌套：</ResponsiveBox>
+                    <ResponsiveBox style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+                        <ResponsiveBox style="background: rgba(255,255,255,0.2); padding: 8px; border-radius: 3px; margin: 5px;">多层容器</ResponsiveBox>
+                    </ResponsiveBox>
+
+                    <ResponsiveBox tag="p" style="color: rgba(255,255,255,0.7); margin-bottom: 10px; font-size: 14px;">SimpleBox嵌套：</ResponsiveBox>
+                    <SimpleBox style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 5px;">
+                        <SimpleBox style="background: rgba(255,255,255,0.2); padding: 8px; border-radius: 3px; margin: 5px;">更轻量的嵌套</SimpleBox>
+                    </SimpleBox>
+                </ResponsiveBox>
+            </ResponsiveBox>
+
+            <ResponsiveBox style="margin-top: 20px; display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                <SimpleBox style="background: #f59e0b; color: white; padding: 8px 16px; border-radius: 20px; font-size: 14px;">默认宽高100%</SimpleBox>
+                <SimpleBox style="background: #8b5cf6; color: white; padding: 8px 16px; border-radius: 20px; font-size: 14px;">行内显示</SimpleBox>
+                <SimpleBox style="background: #06b6d4; color: white; padding: 8px 16px; border-radius: 20px; font-size: 14px;">轻量级容器</SimpleBox>
+            </ResponsiveBox>
         </ResponsiveBox>
     </ResponsiveBox>
 </ResponsiveBox>

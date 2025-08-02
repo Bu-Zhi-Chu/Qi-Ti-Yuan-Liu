@@ -37,9 +37,10 @@
         onfocus?: (event: CustomEvent<void>) => void
         onblur?: (event: CustomEvent<void>) => void
         onkeydown?: (event: CustomEvent<KeyboardEvent>) => void
+        'data-id'?: string
     }
 
-    let { style = '', value = '', placeholder = '', maxlength, disabled = false, readonly = false, type = 'text', pattern, required = false, oninput, onfocus, onblur, onkeydown }: Props = $props()
+    let { style = '', value = '', placeholder = '', maxlength, disabled = false, readonly = false, type = 'text', pattern, required = false, oninput, onfocus, onblur, onkeydown, 'data-id': dataId = '' }: Props = $props()
 
     // 状态管理
     let isFocused = $state(false)
@@ -128,14 +129,24 @@
     function updateInputValue(newValue: string) {
         if (inputRef) {
             const element = inputRef as HTMLElement
+            if (!(element instanceof Node) || !document.body.contains(element)) return
+
             element.textContent = newValue
+
             // 设置光标位置到末尾
-            const range = document.createRange()
-            const selection = window.getSelection()
-            range.selectNodeContents(element)
-            range.collapse(false)
-            selection?.removeAllRanges()
-            selection?.addRange(range)
+            try {
+                const range = document.createRange()
+                const selection = window.getSelection()
+                if (element.firstChild && element.firstChild instanceof Node) {
+                    range.selectNodeContents(element)
+                    range.collapse(false)
+                    selection?.removeAllRanges()
+                    selection?.addRange(range)
+                }
+            } catch (error) {
+                // 忽略DOM操作错误，可能在组件卸载时发生
+                console.warn('Failed to set cursor position:', error)
+            }
         }
     }
 
@@ -175,7 +186,15 @@
     // 监听value变化，同步到输入框
     $effect(() => {
         if (inputRef && inputRef.textContent !== value) {
-            updateInputValue(value)
+            // 确保元素仍在DOM中且是有效节点
+            try {
+                if (inputRef instanceof Node && document.body.contains(inputRef)) {
+                    updateInputValue(value)
+                }
+            } catch (error) {
+                // 忽略DOM检查错误，可能在组件卸载时发生
+                console.warn('DOM check failed:', error)
+            }
         }
     })
 
@@ -224,35 +243,34 @@
     `
 </script>
 
-<ResponsiveBox style="position: relative; {style}">
-    <ResponsiveBox
-        bind:this={inputRef}
-        contenteditable={!disabled && !readonly}
-        style={computedStyle}
-        role="textbox"
-        aria-multiline="false"
-        aria-disabled={disabled}
-        aria-readonly={readonly}
-        aria-required={required}
-        aria-invalid={!isValid}
-        aria-placeholder={placeholder}
-        oninput={handleInput}
-        onkeydown={handleKeyDown}
-        onpaste={handlePaste}
-        onfocus={handleFocus}
-        onblur={handleBlur}
-        onmouseenter={() => !disabled && (isHovered = true)}
-        onmouseleave={() => (isHovered = false)}
-    >
-        {getDisplayText()}
-    </ResponsiveBox>
+<ResponsiveBox
+    bind:this={inputRef}
+    contenteditable={!disabled && !readonly}
+    style="position: relative; {computedStyle}"
+    role="textbox"
+    aria-multiline="false"
+    aria-disabled={disabled}
+    aria-readonly={readonly}
+    aria-required={required}
+    aria-invalid={!isValid}
+    aria-placeholder={placeholder}
+    oninput={handleInput}
+    onkeydown={handleKeyDown}
+    onpaste={handlePaste}
+    onfocus={handleFocus}
+    onblur={handleBlur}
+    onmouseenter={() => !disabled && (isHovered = true)}
+    onmouseleave={() => (isHovered = false)}
+    data-id={dataId}
+>
+    {getDisplayText()}
 
     {#if placeholder && !value}
-        {placeholder}
+        <span style={placeholderStyle}>{placeholder}</span>
     {/if}
 
     {#if errorMessage}
-        {errorMessage}
+        <div style="color: #ff4444; font-size: 12px; margin-top: 4px;">{errorMessage}</div>
     {/if}
 </ResponsiveBox>
 
