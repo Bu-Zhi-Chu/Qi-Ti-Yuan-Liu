@@ -101,9 +101,9 @@ export class DexieService {
             this.db = new DragDropDatabase()
             await this.db.open()
             this.isInitialized = true
-            console.log('✅ 数据库初始化成功')
+
         } catch (error) {
-            console.error('❌ 数据库初始化失败:', error)
+
             throw new Error(`数据库初始化失败: ${(error as Error).message}`)
         }
     }
@@ -126,9 +126,9 @@ export class DexieService {
         try {
             await this.db.delete()
             this.isInitialized = false
-            console.log('🗑️ 数据库已销毁')
+
         } catch (error) {
-            console.error('❌ 销毁数据库失败:', error)
+
             throw new Error(`销毁数据库失败: ${(error as Error).message}`)
         }
     }
@@ -140,7 +140,7 @@ export class DexieService {
     static async reset(): Promise<void> {
         await this.destroy()
         await this.init()
-        console.log('🔄 数据库已重置')
+
     }
 
     /**
@@ -554,7 +554,7 @@ export class DexieService {
 
             return true
         } catch (error) {
-            console.error('恢复数据库失败:', error)
+
             return false
         }
     }

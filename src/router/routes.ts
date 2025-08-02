@@ -77,9 +77,9 @@ export const globalHooks = {
     pre: async (route: any) => {
         navigationCount++
         if (navigationCount % 2 === 1) {
-            console.log('🔵 第一次路由导航:', route)
+
         } else {
-            console.log('🟢 第二次路由导航:', route)
+
         }
         return true // 返回true继续导航
     }

@@ -118,8 +118,6 @@
     function handleButtonClick(button: ButtonConfig, index: number) {
         if (button.disabled) return
 
-        // console.debug(`Button clicked: ${button.name} (index: ${index})`)
-
         const eventData = { name: button.name, index, button }
 
         // 优先使用直接的事件回调

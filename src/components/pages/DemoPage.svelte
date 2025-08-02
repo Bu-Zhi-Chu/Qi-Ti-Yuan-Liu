@@ -269,7 +269,6 @@
                     // 当模块变更时同步选中其首分类为左侧激活项
                     const firstCat = modulesData().find((m) => m.name === event.name)?.children[0]
                     if (firstCat) selectedMenuItem = firstCat.id
-                    console.log('切换到模块:', event.name)
                 }}
             />
         </ResponsiveBox>

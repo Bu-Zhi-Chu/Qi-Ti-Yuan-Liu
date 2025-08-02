@@ -77,13 +77,7 @@ export class PWAChecker {
 
         // 只在首次检测时打印信息
         if (!this._initialized) {
-            console.group('🔍 PWA环境检测')
-            console.log('协议:', location.protocol)
-            console.log('安全上下文:', isSecureContext ? '✅ 是' : '❌ 否')
-            console.log('Service Worker支持:', 'serviceWorker' in navigator ? '✅ 是' : '❌ 否')
-            console.log('独立模式:', isStandalone ? '✅ 是' : '❌ 否')
-            console.log('降级模式:', !canRegisterSW ? '⚠️ 是' : '✅ 否')
-            console.groupEnd()
+
         }
 
         this._lastStatus = {
@@ -103,7 +97,7 @@ export class PWAChecker {
     static async initPWA(): Promise<void> {
         // 防止重复初始化
         if (this._initialized) {
-            console.log('PWA已初始化，跳过重复执行')
+
             return
         }
 
@@ -111,7 +105,7 @@ export class PWAChecker {
         const status = this.checkEnvironment()
 
         if (status.downgradeMode) {
-            console.warn('⚠️ PWA功能降级：当前环境不支持Service Worker')
+
             this.setupFallback()
             return
         }
@@ -123,15 +117,14 @@ export class PWAChecker {
                 const response = await fetch('/sw.js', { method: 'HEAD' })
                 if (response.ok) {
                     await navigator.serviceWorker.register('/sw.js')
-                    console.log('✅ PWA注册成功')
+
                 } else {
-                    console.warn('⚠️ Service Worker文件不存在，跳过注册')
+
                     this.setupFallback()
                 }
             }
         } catch (error) {
-            console.error('❌ PWA注册失败:', error)
-            console.log('ℹ️ 这是开发环境的正常现象，生产环境将使用vite-plugin-pwa自动生成')
+
             this.setupFallback()
         }
     }
@@ -141,7 +134,7 @@ export class PWAChecker {
      */
     private static setupFallback(): void {
         // 仅在控制台输出降级提示，避免影响用户体验
-        console.warn('[PWA] 当前环境不支持离线功能，请使用HTTPS访问以获得最佳体验。')
+
     }
 
     /**

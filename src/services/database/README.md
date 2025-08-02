@@ -111,7 +111,7 @@ static async getProject(id: number): Promise<Project | undefined>
 更新项目信息
 ```typescript
 static async updateProject(
-  id: number, 
+  id: number,
   updates: Partial<Omit<Project, 'id'>>
 ): Promise<boolean>
 ```
@@ -136,7 +136,7 @@ static async deleteProject(id: number): Promise<boolean>
 分页查询项目
 ```typescript
 static async getProjectsPaginated(
-  page: number = 1, 
+  page: number = 1,
   limit: number = 10
 ): Promise<{
   projects: Project[]
@@ -179,7 +179,7 @@ static async getComponentsByType(type: string): Promise<DragComponent[]>
 更新组件信息
 ```typescript
 static async updateComponent(
-  id: number, 
+  id: number,
   updates: Partial<Omit<DragComponent, 'id'>>
 ): Promise<boolean>
 ```
@@ -211,7 +211,7 @@ static async deleteComponents(ids: number[]): Promise<number>
 获取指定区域内的组件
 ```typescript
 static async getComponentsInArea(
-  pageId: string, 
+  pageId: string,
   bounds: { x: number; y: number; width: number; height: number }
 ): Promise<DragComponent[]>
 ```
@@ -228,7 +228,7 @@ static async addHistory(record: Omit<HistoryRecord, 'id'>): Promise<number>
 获取项目历史记录
 ```typescript
 static async getHistory(
-  projectId: number, 
+  projectId: number,
   limit: number = 50
 ): Promise<HistoryRecord[]>
 ```

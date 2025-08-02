@@ -138,7 +138,7 @@ class ScreenDetector {
      * 初始化视口缩放
      */
     initViewportScale(): void {
-        console.log('[ScreenDetector] 初始化视口缩放')
+
         this.isViewportScalingEnabled = true
         this.createStyleElement()
         this.refreshViewportScale()
@@ -172,7 +172,7 @@ class ScreenDetector {
             height: docHeight / this.DESIGN_HEIGHT,
             ratio: Math.min(docWidth / this.DESIGN_WIDTH, docHeight / this.DESIGN_HEIGHT)
         }
-        console.log(`[ScreenDetector] 计算视口缩放比例: ${JSON.stringify(scale)}`)
+
         return scale
     }
 
@@ -191,7 +191,7 @@ class ScreenDetector {
      * 创建样式元素
      */
     private createStyleElement(): void {
-        console.log('[ScreenDetector] 创建样式元素用于视口缩放')
+
         this.styleElement = document.createElement('style')
         document.documentElement.firstElementChild?.appendChild(this.styleElement)
     }
@@ -201,7 +201,7 @@ class ScreenDetector {
      */
     private refreshViewportScale(): void {
         const scale = this.getViewportScale()
-        console.log(`[ScreenDetector] 刷新视口缩放: width=${scale.width}, height=${scale.height}, ratio=${scale.ratio}`)
+
 
         // 计算vw/vh比例因子
         const vwRatio = (100 / this.DESIGN_WIDTH) * scale.ratio

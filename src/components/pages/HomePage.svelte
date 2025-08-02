@@ -108,17 +108,9 @@
         }
     ])
 
-    function createNewProject() {
-        // 这里可以跳转到创建页面
-        // console.log('创建新项目')
-        // console.debug('创建新项目')
-    }
+    function createNewProject() {}
 
-    function openProject(projectId: string) {
-        // 这里可以跳转到编辑器页面
-        // console.log('打开项目:', projectId)
-        // console.debug('打开项目:', projectId)
-    }
+    function openProject(projectId: string) {}
 </script>
 
 <!-- 七巧板背景动画层 -->
