@@ -140,6 +140,9 @@
     // 当前选中的菜单项
     let selectedMenuItem = $state('overview')
 
+    // 当前选中的顶部按钮组
+    let selectedModule = $state('UI组件')
+
     // 过滤后的组件列表
     let filteredComponents = $derived(allComponents.filter((comp) => comp.name.toLowerCase().includes(searchQuery.toLowerCase()) || comp.description.toLowerCase().includes(searchQuery.toLowerCase())))
     // 按类别分组的组件
@@ -155,12 +158,6 @@
             {} as Record<string, ComponentItem[]>
         )
     )
-
-    // 处理菜单点击
-    function handleMenuClick(itemId: string) {
-        selectedMenuItem = String(itemId)
-        console.log('菜单点击:', itemId)
-    }
 
     // 处理搜索
     function handleSearch(query: string) {
@@ -184,7 +181,25 @@
     <ResponsiveBox style="height: 64px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(99, 102, 241, 0.2); display: flex; align-items: center; padding: 0 24px; gap: 16px;">
         <img src={logoImage} alt="七巧板" style="width:calc(32px * var(--scale-ratio, 1)); height: calc(32px * var(--scale-ratio, 1)); border-radius: 8px;" />
         <ResponsiveBox tag="h1" style="color: #f8fafc; margin: 0; font-size: 20px; font-weight: 600;">七巧板</ResponsiveBox>
-        <ResponsiveBox style="flex: 1; max-width: 300px; margin-left: auto;">
+
+        <!-- 居中的按钮组 -->
+        <ResponsiveBox style="flex: 1; display: flex; justify-content: center;">
+            <ActionButton
+                buttons={[
+                    { name: 'UI组件', variant: selectedModule === 'UI组件' ? 'primary' : 'ghost', size: 'medium', style: 'width: 120px;height: 30px;' },
+                    { name: '电子地图', variant: selectedModule === '电子地图' ? 'primary' : 'ghost', size: 'medium', style: 'width: 120px;height: 30px;' },
+                    { name: '三维引擎', variant: selectedModule === '三维引擎' ? 'primary' : 'ghost', size: 'medium', style: 'width: 120px;height: 30px;' }
+                ]}
+                direction="row"
+                style="gap: 23px;"
+                onbuttonClick={(event: { name: string; index: number; button: any }) => {
+                    selectedModule = event.name
+                    console.log('切换到模块:', event.name)
+                }}
+            />
+        </ResponsiveBox>
+
+        <ResponsiveBox style="max-width: 300px;">
             <input
                 type="search"
                 placeholder="搜索组件..."
@@ -269,3 +284,6 @@
         </ResponsiveBox>
     </ResponsiveBox>
 </ResponsiveBox>
+
+<style>
+</style>

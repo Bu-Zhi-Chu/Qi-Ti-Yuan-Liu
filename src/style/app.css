@@ -11,8 +11,10 @@
 /* CSS变量定义 - 用于响应式布局 */
 :root {
     --scale-ratio: 1;
-    --vw-ratio: 0.0521; /* 100/1920 */
-    --vh-ratio: 0.0926; /* 100/1080 */
+    --vw-ratio: 0.0521;
+    /* 100/1920 */
+    --vh-ratio: 0.0926;
+    /* 100/1080 */
 }
 
 /* 响应式布局基础样式 */
@@ -35,3 +37,11 @@ body {
     font-size: calc(16px * var(--scale-ratio, 1));
 }
 
+/* 搜索框清除按钮样式 */
+input[type='search']::-webkit-search-cancel-button {
+    cursor: pointer;
+}
+
+input[type='search']::-moz-search-clear-button {
+    cursor: pointer;
+}
