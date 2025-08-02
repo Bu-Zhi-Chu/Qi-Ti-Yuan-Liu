@@ -18,6 +18,7 @@
  *   buttons={[{ name: '提交', variant: 'primary', size: 'large' }]}
  *   style="width: 120px; height: 40px;"
  *   data-id="submit-button"
+ *   onbuttonClick={(event) => console.log('按钮被点击', event)}
  * />
  *
  * 按钮组：
@@ -31,6 +32,7 @@
  *   ]}
  *   direction="row"
  *   data-id="action-group-1"
+ *   onbuttonClick={(event) => console.log('按钮组点击', event)}
  * />
  *
  * 按钮配置格式：
@@ -62,10 +64,11 @@
         buttons: ButtonConfig[]
         direction?: 'row' | 'column'
         dataId?: string
+        onbuttonClick?: (event: { name: string; index: number; button: ButtonConfig }) => void
         [key: string]: any
     }
 
-    let { style = '', buttons = [], direction = 'row', dataId = '', ...rest }: Props = $props()
+    let { style = '', buttons = [], direction = 'row', dataId = '', onbuttonClick, ...rest }: Props = $props()
 
     // 计算按钮容器的样式
     const containerStyle = $derived(direction === 'row' ? `display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 8px; ${style}` : `display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; ${style}`)
@@ -117,11 +120,18 @@
 
         console.log(`Button clicked: ${button.name} (index: ${index})`)
 
-        // 触发自定义事件，供父组件监听
-        const event = new CustomEvent('buttonClick', {
-            detail: { name: button.name, index, button }
-        })
-        document.dispatchEvent(event)
+        const eventData = { name: button.name, index, button }
+
+        // 优先使用直接的事件回调
+        if (onbuttonClick) {
+            onbuttonClick(eventData)
+        } else {
+            // 回退到全局事件派发
+            const event = new CustomEvent('buttonClick', {
+                detail: eventData
+            })
+            document.dispatchEvent(event)
+        }
     }
 </script>
 

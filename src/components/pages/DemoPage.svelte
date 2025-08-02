@@ -2,7 +2,7 @@
  * ResponsiveBox演示组件 + DynamicComponent演示 + ButtonGroup演示
  *
  * 功能描述：
- * 展示ResponsiveBox、SimpleBox核心组件、DynamicComponent动态组件容器以及ButtonGroup按钮组的使用
+ * 展示ResponsiveBox、SimpleBox核心组件、DynamicComponent动态组件容器以及ActionButton动作按钮组件的使用
  *
  * 使用示例：
  * 通过路由 /demo 访问此演示页面
@@ -13,7 +13,7 @@
  * 3. CustomTextInput组件演示
  * 4. DynamicComponent动态组件切换功能（使用key属性保持实例）
  * 5. SimpleBox轻量级容器演示
- * 6. ButtonGroup响应式按钮组（横向/竖向布局）
+ * 6. ActionButton动作按钮组件（支持单个按钮和按钮组模式）
  * 7. 完全使用项目组件构建，无原生HTML元素
 -->
 
@@ -22,8 +22,7 @@
     import SimpleBox from '../Core/SimpleBox.svelte'
     import RealTimeClock from '../widgets/RealTimeClock.svelte'
     import CustomTextInput from '../widgets/CustomTextInput.svelte'
-    import Button from '../widgets/Button.svelte'
-    import ButtonGroup from '../widgets/ActionButton.svelte'
+    import ActionButton from '../widgets/ActionButton.svelte'
     import DynamicComponent from '../Core/DynamicComponent.svelte'
 
     // 控制组件切换的状态 - 使用字符串类型来切换DynamicComponent
@@ -52,20 +51,11 @@
     ]
 
     // 处理按钮组点击事件
-    function handleButtonGroupClick(event: CustomEvent<{ name: string; index: number }>) {
-        const button = demoButtons[event.detail.index]
-        const message = button?.message || `按钮 ${event.detail.name} 被点击`
-        console.log(`[按钮点击事件] 名称: ${event.detail.name} | 索引: ${event.detail.index} | 信息: ${message}`)
+    function handleButtonGroupClick(event: { name: string; index: number; button: any }) {
+        const button = demoButtons[event.index]
+        const message = button?.message || `按钮 ${event.name} 被点击`
+        console.log(`[按钮点击事件] 名称: ${event.name} | 索引: ${event.index} | 信息: ${message}`)
     }
-
-    // 添加事件监听器
-    $effect(() => {
-        document.addEventListener('buttonClick', handleButtonGroupClick as EventListener)
-
-        return () => {
-            document.removeEventListener('buttonClick', handleButtonGroupClick as EventListener)
-        }
-    })
 </script>
 
 <!-- 页面主容器 -->
@@ -84,9 +74,7 @@
 
             <!-- 切换按钮 - 与动态组件在同一容器内 -->
             <ResponsiveBox data-id="demo-toggle-btn" style="text-align: center; margin-bottom: 20px;">
-                <Button onclick={toggleComponent} variant="primary" size="medium">
-                    切换组件显示 (当前: {currentComponentType})
-                </Button>
+                <ActionButton buttons={[{ name: `切换组件显示 (当前: ${currentComponentType})`, variant: 'primary', size: 'medium' }]} direction="row" onbuttonClick={toggleComponent} />
             </ResponsiveBox>
 
             <!--
@@ -212,7 +200,7 @@
                 <!-- 左侧：横向布局 -->
                 <ResponsiveBox style="text-align: left;">
                     <ResponsiveBox tag="h3" style="color: white; margin-bottom: 15px; font-size: 20px; font-weight: bold;">横向布局</ResponsiveBox>
-                    <ButtonGroup style="width: 100%; max-width: 400px; margin-bottom: 20px;" buttons={demoButtons} direction="row" data-id="demo-button-group-row" onbuttonClick={handleButtonGroupClick} />
+                    <ActionButton style="width: 100%; max-width: 400px; margin-bottom: 20px;" buttons={demoButtons} direction="row" data-id="demo-button-group-row" onbuttonClick={handleButtonGroupClick} />
                     <ResponsiveBox style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px;">
                         <ResponsiveBox tag="p" style="color: rgba(255,255,255,0.9); margin: 0; font-size: 14px; line-height: 1.4;">
                             <ResponsiveBox tag="strong" style="font-weight: bold;">布局特点：</ResponsiveBox>
@@ -227,7 +215,7 @@
                 <!-- 右侧：竖向布局 -->
                 <ResponsiveBox style="text-align: left;">
                     <ResponsiveBox tag="h3" style="color: white; margin-bottom: 15px; font-size: 20px; font-weight: bold;">竖向布局</ResponsiveBox>
-                    <ButtonGroup style="background: rgba(10,0,0,1); width: 100%; max-width: 200px; margin-bottom: 20px;" buttons={demoButtons} direction="column" data-id="demo-button-group-column" onbuttonClick={handleButtonGroupClick} />
+                    <ActionButton style="background: rgba(10,0,0,1); width: 100%; max-width: 200px; margin-bottom: 20px;" buttons={demoButtons} direction="column" data-id="demo-button-group-column" onbuttonClick={handleButtonGroupClick} />
                     <ResponsiveBox style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px;">
                         <ResponsiveBox tag="p" style="color: rgba(255,255,255,0.9); margin: 0; font-size: 14px; line-height: 1.4;">
                             <ResponsiveBox tag="strong" style="font-weight: bold;">布局特点：</ResponsiveBox>
