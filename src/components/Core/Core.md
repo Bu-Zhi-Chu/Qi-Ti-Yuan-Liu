@@ -217,7 +217,8 @@ interface Props {
     display: flex;
     align-items: center;
     justify-content: center;
-  ">
+  "
+  data-id="example-card">
   这是一个完整的响应式卡片示例
 </ResponsiveBox>
 ```
@@ -252,17 +253,17 @@ interface Props {
 </script>
 
 <!-- 基础用法 -->
-<SimpleBox>
+<SimpleBox data-id="simple-container">
   这是一个简单的容器
 </SimpleBox>
 
 <!-- 带自定义样式 -->
-<SimpleBox style="background: #f0f0f0; padding: 20px; border-radius: 8px;">
+<SimpleBox style="background: #f0f0f0; padding: 20px; border-radius: 8px;" data-id="styled-container">
   带背景色的内容
 </SimpleBox>
 
 <!-- 组件封装示例 -->
-<SimpleBox style="display: flex; gap: 10px; align-items: center;">
+<SimpleBox style="display: flex; gap: 10px; align-items: center;" data-id="button-container">
   <Button variant="primary">按钮1</Button>
   <Button variant="secondary">按钮2</Button>
 </SimpleBox>
@@ -319,12 +320,14 @@ const componentMap = {
   type="RealTimeClock"
   props={{format: "datetime"}}
   style="width: 200px; height: 100px;"
+  data-id="dynamic-clock"
 />
 
 <!-- 动态加载响应式容器 -->
 <DynamicComponent
   type="ResponsiveBox"
   props={{style: "width: 300px; height: 200px;"}}
+  data-id="dynamic-container"
 >
   子内容
 </DynamicComponent>

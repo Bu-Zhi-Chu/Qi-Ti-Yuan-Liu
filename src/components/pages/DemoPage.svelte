@@ -1,8 +1,8 @@
 <!--
- * ResponsiveBox演示组件 + DynamicComponent演示
+ * ResponsiveBox演示组件 + DynamicComponent演示 + ButtonGroup演示
  *
  * 功能描述：
- * 展示ResponsiveBox、SimpleBox核心组件以及DynamicComponent动态组件容器的使用
+ * 展示ResponsiveBox、SimpleBox核心组件、DynamicComponent动态组件容器以及ButtonGroup按钮组的使用
  *
  * 使用示例：
  * 通过路由 /demo 访问此演示页面
@@ -13,7 +13,8 @@
  * 3. CustomTextInput组件演示
  * 4. DynamicComponent动态组件切换功能（使用key属性保持实例）
  * 5. SimpleBox轻量级容器演示
- * 6. 完全使用项目组件构建，无原生HTML元素
+ * 6. ButtonGroup响应式按钮组（横向/竖向布局）
+ * 7. 完全使用项目组件构建，无原生HTML元素
 -->
 
 <script lang="ts">
@@ -22,6 +23,7 @@
     import RealTimeClock from '../widgets/RealTimeClock.svelte'
     import CustomTextInput from '../widgets/CustomTextInput.svelte'
     import Button from '../widgets/Button.svelte'
+    import ButtonGroup from '../widgets/ActionButton.svelte'
     import DynamicComponent from '../Core/DynamicComponent.svelte'
 
     // 控制组件切换的状态 - 使用字符串类型来切换DynamicComponent
@@ -40,6 +42,30 @@
 
     // 为DynamicComponent准备的稳定ID（模拟从数据库获取）
     const stableComponentId = 'demo-dynamic-comp-001'
+
+    // ButtonGroup演示用的按钮配置
+    const demoButtons = [
+        { name: '主要操作', style: 'width: 30%;height: 10%;background: #1890ff; color: white;', message: '这是主要操作按钮，点击执行核心功能' },
+        { name: '次要操作', style: 'width: 30%;height: 10%;background: #52c41a; color: white;', message: '这是次要操作按钮，点击执行辅助功能' },
+        { name: '警告操作', style: 'width: 30%;height: 10%;background: #faad14; color: white;', message: '这是警告操作按钮，点击前请确认操作' },
+        { name: '危险操作', style: 'width: 30%;height: 10%;background: #f5222d; color: white;', disabled: true, message: '这是危险操作按钮，当前已禁用' }
+    ]
+
+    // 处理按钮组点击事件
+    function handleButtonGroupClick(event: CustomEvent<{ name: string; index: number }>) {
+        const button = demoButtons[event.detail.index]
+        const message = button?.message || `按钮 ${event.detail.name} 被点击`
+        console.log(`[按钮点击事件] 名称: ${event.detail.name} | 索引: ${event.detail.index} | 信息: ${message}`)
+    }
+
+    // 添加事件监听器
+    $effect(() => {
+        document.addEventListener('buttonClick', handleButtonGroupClick as EventListener)
+
+        return () => {
+            document.removeEventListener('buttonClick', handleButtonGroupClick as EventListener)
+        }
+    })
 </script>
 
 <!-- 页面主容器 -->
@@ -172,6 +198,59 @@
                 <SimpleBox style="background: #f59e0b; color: white; padding: 8px 16px; border-radius: 20px; font-size: 14px;">默认宽高100%</SimpleBox>
                 <SimpleBox style="background: #8b5cf6; color: white; padding: 8px 16px; border-radius: 20px; font-size: 14px;">行内显示</SimpleBox>
                 <SimpleBox style="background: #06b6d4; color: white; padding: 8px 16px; border-radius: 20px; font-size: 14px;">轻量级容器</SimpleBox>
+            </ResponsiveBox>
+        </ResponsiveBox>
+    </ResponsiveBox>
+
+    <!-- ButtonGroup演示区域 -->
+    <ResponsiveBox style="margin-top: 30px; max-width: 1200px; margin: 30px auto;">
+        <ResponsiveBox style="background: rgba(255,255,255,0.1); padding: 30px; border-radius: 15px; text-align: center;">
+            <ResponsiveBox tag="h2" style="color: white; margin-top: 0; margin-bottom: 20px; font-size: 28px; font-weight: bold;">🔘 按钮组</ResponsiveBox>
+            <ResponsiveBox tag="p" style="color: rgba(255,255,255,0.8); margin-bottom: 25px; font-size: 16px; line-height: 1.5;">体验响应式按钮组的灵活布局</ResponsiveBox>
+
+            <ResponsiveBox style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: start;">
+                <!-- 左侧：横向布局 -->
+                <ResponsiveBox style="text-align: left;">
+                    <ResponsiveBox tag="h3" style="color: white; margin-bottom: 15px; font-size: 20px; font-weight: bold;">横向布局</ResponsiveBox>
+                    <ButtonGroup style="width: 100%; max-width: 400px; margin-bottom: 20px;" buttons={demoButtons} direction="row" data-id="demo-button-group-row" onbuttonClick={handleButtonGroupClick} />
+                    <ResponsiveBox style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px;">
+                        <ResponsiveBox tag="p" style="color: rgba(255,255,255,0.9); margin: 0; font-size: 14px; line-height: 1.4;">
+                            <ResponsiveBox tag="strong" style="font-weight: bold;">布局特点：</ResponsiveBox>
+                            <ResponsiveBox tag="br" />
+                            <ResponsiveBox tag="span" style="color: #4ade80;">• 水平排列，自动填充宽度</ResponsiveBox>
+                            <ResponsiveBox tag="br" />
+                            <ResponsiveBox tag="span" style="color: #4ade80;">• 按钮间保持等间距</ResponsiveBox>
+                        </ResponsiveBox>
+                    </ResponsiveBox>
+                </ResponsiveBox>
+
+                <!-- 右侧：竖向布局 -->
+                <ResponsiveBox style="text-align: left;">
+                    <ResponsiveBox tag="h3" style="color: white; margin-bottom: 15px; font-size: 20px; font-weight: bold;">竖向布局</ResponsiveBox>
+                    <ButtonGroup style="background: rgba(10,0,0,1); width: 100%; max-width: 200px; margin-bottom: 20px;" buttons={demoButtons} direction="column" data-id="demo-button-group-column" onbuttonClick={handleButtonGroupClick} />
+                    <ResponsiveBox style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px;">
+                        <ResponsiveBox tag="p" style="color: rgba(255,255,255,0.9); margin: 0; font-size: 14px; line-height: 1.4;">
+                            <ResponsiveBox tag="strong" style="font-weight: bold;">布局特点：</ResponsiveBox>
+                            <ResponsiveBox tag="br" />
+                            <ResponsiveBox tag="span" style="color: #4ade80;">• 垂直堆叠，占满容器宽度</ResponsiveBox>
+                            <ResponsiveBox tag="br" />
+                            <ResponsiveBox tag="span" style="color: #4ade80;">• 适合移动端和窄屏场景</ResponsiveBox>
+                        </ResponsiveBox>
+                    </ResponsiveBox>
+                </ResponsiveBox>
+            </ResponsiveBox>
+
+            <ResponsiveBox style="margin-top: 30px; display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                <ResponsiveBox style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 10px; text-align: left;">
+                    <ResponsiveBox tag="h4" style="color: white; margin-top: 0; margin-bottom: 10px; font-size: 16px;">组件特性</ResponsiveBox>
+                    <ResponsiveBox tag="ul" style="color: rgba(255,255,255,0.8); margin: 0; padding-left: 20px; font-size: 14px; line-height: 1.6;">
+                        <ResponsiveBox tag="li" style="margin-bottom: 5px;">基于ResponsiveBox的最外层容器</ResponsiveBox>
+                        <ResponsiveBox tag="li" style="margin-bottom: 5px;">内部使用SimpleBox轻量按钮</ResponsiveBox>
+                        <ResponsiveBox tag="li" style="margin-bottom: 5px;">支持横向(row)和竖向(column)布局</ResponsiveBox>
+                        <ResponsiveBox tag="li" style="margin-bottom: 5px;">通过JSON数组动态配置按钮</ResponsiveBox>
+                        <ResponsiveBox tag="li">支持data-id属性用于低代码平台定位</ResponsiveBox>
+                    </ResponsiveBox>
+                </ResponsiveBox>
             </ResponsiveBox>
         </ResponsiveBox>
     </ResponsiveBox>

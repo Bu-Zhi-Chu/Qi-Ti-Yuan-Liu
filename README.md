@@ -75,3 +75,5 @@
 13. 我们基于ResponsiveBox开发了RealTimeClock,并且制定了组件封装的规范
 14. 我们更改了组件封装的规范,并开发了SimpleBox组件来解决大量的ResponsiveBox嵌套和复用问题
 15. 我们封装了实时时间和输入框的组件
+16. 我们封装了按钮组组件
+17. 我们安装了svelte-dnd-action 并完成了学习笔记
