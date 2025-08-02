@@ -201,7 +201,7 @@
     <ResponsiveBox style="flex: 1; display: flex; overflow: hidden;">
         <!-- 左侧边栏 - 使用DragDropList列表组件 -->
         <ResponsiveBox style="width: 250px; min-width: 200px; max-width: 300px; background: rgba(30, 41, 59, 0.8); border-right: 1px solid rgba(99, 102, 241, 0.2); padding: 16px;">
-            <DragDropList items={menuItems} enableDrag={false} direction="vertical" selectedId={selectedMenuItem} onSelect={(id: string) => selectedMenuItem = String(id)} style="background: none; padding: 0;color: #fff;" />
+            <DragDropList items={menuItems} enableDrag={false} direction="vertical" selectedId={selectedMenuItem} onSelect={(id: string) => (selectedMenuItem = String(id))} style="background: none; padding: 0;color: #fff;" />
         </ResponsiveBox>
 
         <!-- 内容区域 -->
