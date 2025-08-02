@@ -138,7 +138,7 @@
 <ResponsiveBox style={containerStyle} data-id={dataId} {...rest}>
     {#each buttons as button, index}
         {@const isInteractive = !button.disabled && !button.loading}
-        <SimpleBox
+        <ResponsiveBox
             class={isInteractive ? 'action-button-interactive' : ''}
             style={getButtonStyle(button, index)}
             data-id={dataId ? `${dataId}-button-${index}` : `button-${index}`}
@@ -152,7 +152,7 @@
             {#if button.loading}
                 <span style="margin-left: 8px; display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(255,255,255,0.3); border-top: 2px solid #fff; border-radius: 50%; animation: spin 1s linear infinite;"></span>
             {/if}
-        </SimpleBox>
+        </ResponsiveBox>
     {/each}
 </ResponsiveBox>
 
