@@ -231,7 +231,7 @@
                     onMenuClick(item.id)
                 } else if (onReorder) {
                     // 如果没有onMenuClick但有onReorder，可以触发点击事件
-                    console.log('Item clicked:', item.id)
+                    // console.log('Item clicked:', item.id)
                 }
             }}
             onkeydown={(e) => {
@@ -240,9 +240,9 @@
                     if (onSelect) {
                         onSelect(item.id)
                     } else if (onMenuClick) {
-                        onMenuClick(item.id)
+                        // console.log('Item clicked:', item.id)
                     } else if (onReorder) {
-                        console.log('Item clicked:', item.id)
+                        // console.debug('Item clicked:', item.id)
                     }
                 }
             }}

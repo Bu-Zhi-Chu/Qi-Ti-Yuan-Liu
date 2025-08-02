@@ -118,7 +118,7 @@
     function handleButtonClick(button: ButtonConfig, index: number) {
         if (button.disabled) return
 
-        console.log(`Button clicked: ${button.name} (index: ${index})`)
+        // console.debug(`Button clicked: ${button.name} (index: ${index})`)
 
         const eventData = { name: button.name, index, button }
 

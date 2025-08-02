@@ -160,7 +160,6 @@
                 selectedId: selectedListItem,
                 onSelect: (id: string) => {
                     selectedListItem = String(id)
-                    console.log('选中项目:', id)
                 }
             },
             description: '支持拖拽排序的响应式列表组件',

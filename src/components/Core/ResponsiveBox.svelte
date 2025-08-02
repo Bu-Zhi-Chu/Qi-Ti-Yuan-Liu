@@ -47,17 +47,17 @@
 
     // 使用$effect自动管理ResizeObserver生命周期和副作用清理
     $effect(() => {
-        console.log(`[ResponsiveBox-${componentId}] $effect初始化，容器引用状态:`, !!containerRef)
+        // console.debug(`[ResponsiveBox-${componentId}] $effect初始化，容器引用状态:`, !!containerRef)
         if (!containerRef || typeof window === 'undefined') return
 
         // ResizeObserver 浏览器兼容性检查
         if ('ResizeObserver' in window) {
             // 使用ResizeObserver监听容器尺寸变化 - 现代浏览器
-            console.log(`[ResponsiveBox-${componentId}] 使用ResizeObserver监听容器尺寸变化`)
+            console.debug(`[ResponsiveBox-${componentId}] 使用ResizeObserver监听容器尺寸变化`)
             const resizeObserver = new ResizeObserver((entries) => {
                 for (const entry of entries) {
                     const { width } = entry.contentRect
-                    console.log(`[ResponsiveBox-${componentId}] ResizeObserver触发: 容器宽度=${width}px, 缩放比例=${scaleRatio}`)
+                    console.debug(`[ResponsiveBox-${componentId}] ResizeObserver触发: 容器宽度=${width}px, 缩放比例=${scaleRatio}`)
                     containerWidth = width
                 }
             })
@@ -74,10 +74,10 @@
             }
         } else {
             // 降级方案：使用传统的addEventListener - 旧版浏览器
-            console.log(`[ResponsiveBox-${componentId}] 使用降级方案：addEventListener监听window.resize`)
+            console.debug(`[ResponsiveBox-${componentId}] 使用降级方案：addEventListener监听window.resize`)
             const updateContainerWidth = () => {
                 const newWidth = containerRef.offsetWidth
-                console.log(`[ResponsiveBox-${componentId}] window.resize触发: 容器宽度=${newWidth}px, 缩放比例=${scaleRatio}`)
+                console.debug(`[ResponsiveBox-${componentId}] window.resize触发: 容器宽度=${newWidth}px, 缩放比例=${scaleRatio}`)
                 containerWidth = newWidth
             }
 
