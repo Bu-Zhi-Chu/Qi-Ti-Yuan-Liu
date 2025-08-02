@@ -152,7 +152,7 @@
     </ResponsiveBox>
 
     <!-- 操作按钮区域 -->
-    <ResponsiveBox style="margin-bottom: 80px;">
+    <ResponsiveBox style="margin-bottom: 80px; display: flex; gap: 20px; align-items: center; justify-content: center; flex-wrap: wrap;">
         <ResponsiveBox
             style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border: none; color: #f8fafc; padding: 20px 40px; border-radius: 16px; font-size: 18px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 8px 32px rgba(99, 102, 241, 0.3); backdrop-filter: blur(10px); transform: translateY(0px);"
             onclick={createNewProject}
@@ -168,6 +168,22 @@
             }}
         >
             开始创建
+        </ResponsiveBox>
+        <ResponsiveBox
+            style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; color: #f8fafc; padding: 20px 40px; border-radius: 16px; font-size: 18px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 8px 32px rgba(16, 185, 129, 0.3); backdrop-filter: blur(10px); transform: translateY(0px);"
+            onclick={() => window.location.hash = '#/demo'}
+            onmouseenter={(e: MouseEvent) => {
+                const target = e.currentTarget as HTMLElement
+                target.style.transform = 'translateY(-4px) scale(1.05)'
+                target.style.boxShadow = '0 20px 60px rgba(16, 185, 129, 0.5), 0 0 40px rgba(5, 150, 105, 0.4)'
+            }}
+            onmouseleave={(e: MouseEvent) => {
+                const target = e.currentTarget as HTMLElement
+                target.style.transform = 'translateY(0px) scale(1)'
+                target.style.boxShadow = '0 8px 32px rgba(16, 185, 129, 0.3)'
+            }}
+        >
+            查看演示
         </ResponsiveBox>
     </ResponsiveBox>
 

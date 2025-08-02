@@ -87,9 +87,10 @@
 
 <ResponsiveBox {style}>
     {#if displayMode === 'single-line'}
-        <span style="font-weight: 500; letter-spacing: 0.5px;">{singleLineTime}</span>
+        {singleLineTime}
     {:else}
-        <div style="font-size: 0.9em; opacity: 0.8; margin-bottom: 4px;">{datePart}</div>
-        <div style="font-size: 1.1em; font-weight: bold;">{timePart}</div>
+        {datePart}
+        <br />
+        {timePart}
     {/if}
 </ResponsiveBox>

@@ -1,6 +1,7 @@
 <script lang="ts">
-    import { Router } from '@mateothegreat/svelte5-router'
+    import { Router, StatusCode } from '@mateothegreat/svelte5-router'
     import { routes, globalHooks } from './router/routes'
+    import Page404 from './components/pages/404.svelte'
 
     /**
      * 应用主组件
@@ -15,6 +16,15 @@
 <!--
   应用主界面
   使用Router组件渲染当前路由对应的页面
+  通过statuses配置处理404页面，避免通配符路由拦截所有路径
 -->
 
-<Router {routes} hooks={globalHooks} />
+<Router
+    {routes}
+    hooks={globalHooks}
+    statuses={{
+        [StatusCode.NotFound]: () => ({
+            component: Page404
+        })
+    }}
+/>
