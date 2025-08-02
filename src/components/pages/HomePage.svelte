@@ -7,6 +7,7 @@
 
 <script lang="ts">
     import ResponsiveBox from '../Core/ResponsiveBox.svelte'
+    import logoImage from '../../assets/img/icon-192.png'
 
     interface Project {
         id: string
@@ -139,10 +140,13 @@
 <ResponsiveBox style="width: 100vw; height: 100vh; background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; box-sizing: border-box;">
     <!-- 头部区域 -->
     <ResponsiveBox style="margin-bottom: 60px; text-align: center;">
-        <ResponsiveBox
-            style="font-size: 48px; font-weight: 700; color: #f8fafc; margin-bottom: 16px; letter-spacing: -0.02em; text-shadow: 0 0 20px rgba(99, 102, 241, 0.5), 0 0 40px rgba(139, 92, 246, 0.3); background: linear-gradient(135deg, #f8fafc 0%, #94a3b8 50%, #f8fafc 100%); background-size: 200% 200%; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: gradient-shift 3s ease-in-out infinite, pulse-glow 2s ease-in-out infinite;"
-        >
-            七巧板
+        <ResponsiveBox style="display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 16px;">
+            <img src={logoImage} alt="七巧板" style="width: 48px; height: 48px; border-radius: 12px; box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);" />
+            <ResponsiveBox
+                style="font-size: 48px; font-weight: 700; color: #f8fafc; letter-spacing: -0.02em; text-shadow: 0 0 20px rgba(99, 102, 241, 0.5), 0 0 40px rgba(139, 92, 246, 0.3); background: linear-gradient(135deg, #f8fafc 0%, #94a3b8 50%, #f8fafc 100%); background-size: 200% 200%; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: gradient-shift 3s ease-in-out infinite, pulse-glow 2s ease-in-out infinite;"
+            >
+                七巧板
+            </ResponsiveBox>
         </ResponsiveBox>
         <ResponsiveBox
             style="font-size: 20px; color: #94a3b8; font-weight: 300; max-width: 600px; line-height: 1.6; background: linear-gradient(90deg, #94a3b8, #e2e8f0, #94a3b8); background-size: 200% 200%; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: text-shimmer 2s ease-in-out infinite;"
@@ -171,7 +175,7 @@
         </ResponsiveBox>
         <ResponsiveBox
             style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; color: #f8fafc; padding: 20px 40px; border-radius: 16px; font-size: 18px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 8px 32px rgba(16, 185, 129, 0.3); backdrop-filter: blur(10px); transform: translateY(0px);"
-            onclick={() => window.location.hash = '#/demo'}
+            onclick={() => (window.location.hash = '#/demo')}
             onmouseenter={(e: MouseEvent) => {
                 const target = e.currentTarget as HTMLElement
                 target.style.transform = 'translateY(-4px) scale(1.05)'
