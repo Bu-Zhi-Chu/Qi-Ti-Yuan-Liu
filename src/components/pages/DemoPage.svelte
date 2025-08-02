@@ -174,15 +174,15 @@
 <ResponsiveBox style="display: flex; flex-direction: column; height: 100vh; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);">
     <!-- 顶部导航栏 - 100%宽度 -->
     <ResponsiveBox style="height: 64px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(99, 102, 241, 0.2); display: flex; align-items: center; padding: 0 24px; gap: 16px;">
-        <img src={logoImage} alt="七巧板" style="width: 32px; height: 32px; border-radius: 8px;" />
+        <img src={logoImage} alt="七巧板" style="width:calc(32px * var(--scale-ratio, 1)); height: calc(32px * var(--scale-ratio, 1)); border-radius: 8px;" />
         <ResponsiveBox tag="h1" style="color: #f8fafc; margin: 0; font-size: 20px; font-weight: 600;">七巧板</ResponsiveBox>
-        <ResponsiveBox style="flex: 1; max-width: 400px; margin-left: auto;">
+        <ResponsiveBox style="flex: 1; max-width: 300px; margin-left: auto;">
             <input
                 type="search"
                 placeholder="搜索组件..."
                 value={searchQuery}
                 oninput={(e) => handleSearch((e.target as HTMLInputElement).value)}
-                style="width: 100%; padding: 8px 16px; background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 8px; color: #e2e8f0; font-size: 14px; outline: none; transition: border-color 0.2s ease;"
+                style="width: 100%; padding:calc(8px * var(--scale-ratio, 1))calc(16px * var(--scale-ratio, 1)); background: rgba(30, 41, 59, 0.5); border: calc(1px * var(--scale-ratio, 1)) solid rgba(99, 102, 241, 0.2); border-radius: calc(8px * var(--scale-ratio, 1)); color: #e2e8f0; font-size: calc(14px * var(--scale-ratio, 1)); outline: none; transition: border-color 0.2s ease;"
                 onfocus={(e) => ((e.target as HTMLInputElement).style.borderColor = '#6366f1')}
                 onblur={(e) => ((e.target as HTMLInputElement).style.borderColor = 'rgba(99, 102, 241, 0.2)')}
             />

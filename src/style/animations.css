@@ -5,16 +5,27 @@
 
 /* 标题渐变动画 */
 @keyframes gradient-shift {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
 }
 
 /* 标题脉冲发光动画 */
 @keyframes pulse-glow {
-    0%, 100% {
+
+    0%,
+    100% {
         text-shadow: 0 0 calc(20px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.5), 0 0 calc(40px * var(--scale-ratio, 1)) rgba(139, 92, 246, 0.3);
     }
+
     50% {
         text-shadow: 0 0 calc(30px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.8), 0 0 calc(60px * var(--scale-ratio, 1)) rgba(139, 92, 246, 0.6), 0 0 calc(80px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.4);
     }
@@ -22,39 +33,76 @@
 
 /* 副标题流光动画 */
 @keyframes text-shimmer {
-    0% { background-position: -100% 0; }
-    100% { background-position: 100% 0; }
+    0% {
+        background-position: -100% 0;
+    }
+
+    100% {
+        background-position: 100% 0;
+    }
 }
 
 /* 按钮悬停发光动画 */
 @keyframes button-glow {
-    0% { box-shadow: 0 calc(8px * var(--scale-ratio, 1)) calc(32px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.3); }
-    50% { box-shadow: 0 calc(12px * var(--scale-ratio, 1)) calc(48px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.5), 0 0 calc(20px * var(--scale-ratio, 1)) rgba(139, 92, 246, 0.3); }
-    100% { box-shadow: 0 calc(8px * var(--scale-ratio, 1)) calc(32px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.3); }
+    0% {
+        box-shadow: 0 calc(8px * var(--scale-ratio, 1)) calc(32px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.3);
+    }
+
+    50% {
+        box-shadow: 0 calc(12px * var(--scale-ratio, 1)) calc(48px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.5), 0 0 calc(20px * var(--scale-ratio, 1)) rgba(139, 92, 246, 0.3);
+    }
+
+    100% {
+        box-shadow: 0 calc(8px * var(--scale-ratio, 1)) calc(32px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.3);
+    }
 }
 
 /* 卡片悬停动画 */
 @keyframes card-hover {
-    0% { transform: translateY(0px); }
-    100% { transform: translateY(calc(-5px * var(--scale-ratio, 1))); }
+    0% {
+        transform: translateY(0px);
+    }
+
+    100% {
+        transform: translateY(calc(-5px * var(--scale-ratio, 1)));
+    }
 }
 
 /* 加载动画 */
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 /* 淡入动画 */
 @keyframes fade-in {
-    0% { opacity: 0; transform: translateY(calc(20px * var(--scale-ratio, 1))); }
-    100% { opacity: 1; transform: translateY(0); }
+    0% {
+        opacity: 0;
+        transform: translateY(calc(20px * var(--scale-ratio, 1)));
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* 脉冲动画 */
 @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
 }
 
 /* 七巧板背景动画 - 不同形状缓缓落下 */
@@ -63,6 +111,7 @@
         transform: translateY(-5vh) rotate(0deg);
         opacity: 0.3;
     }
+
     100% {
         transform: translateY(100vh) rotate(360deg);
         opacity: 0.3;
@@ -74,6 +123,7 @@
         transform: translateY(-5vh) rotate(0deg);
         opacity: 0.4;
     }
+
     100% {
         transform: translateY(100vh) rotate(-360deg);
         opacity: 0.4;
@@ -85,6 +135,7 @@
         transform: translateY(-5vh) rotate(0deg);
         opacity: 0.35;
     }
+
     100% {
         transform: translateY(100vh) rotate(180deg);
         opacity: 0.35;
@@ -96,6 +147,7 @@
         transform: translateY(-5vh) rotate(0deg);
         opacity: 0.25;
     }
+
     100% {
         transform: translateY(100vh) rotate(-180deg);
         opacity: 0.25;
@@ -107,6 +159,7 @@
         transform: translateY(-5vh) rotate(0deg);
         opacity: 0.3;
     }
+
     100% {
         transform: translateY(100vh) rotate(270deg);
         opacity: 0.3;
