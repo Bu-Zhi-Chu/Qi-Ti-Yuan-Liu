@@ -10,6 +10,7 @@
     import ResponsiveBox from '../Core/ResponsiveBox.svelte'
     import TangramBackground from '../widgets/TangramBackground.svelte'
     import ActionButton from '../widgets/ActionButton.svelte'
+    import GenericCard from '../widgets/GenericCard.svelte'
     import logoImage from '../../assets/img/icon-192.png'
 
     interface Project {
@@ -170,44 +171,10 @@
         <ResponsiveBox style="font-size: 24px; font-weight: 600; color: #f8fafc; margin-bottom: 30px; text-align: center; flex-shrink: 0;">历史项目</ResponsiveBox>
 
         <!-- 现代滚动容器 -->
-        <ResponsiveBox style="flex: 1; overflow-y: auto; padding: 20px 10px 0 0; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.3) transparent;">
+        <ResponsiveBox style="flex: 1; overflow-y: auto; padding: 20px 10px 0 0; ">
             <ResponsiveBox style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 30px; justify-items: center; padding-bottom: 20px;">
                 {#each projects as project}
-                    <ResponsiveBox
-                        style="background: rgba(30, 41, 59, 0.5); border-radius: 16px; padding: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); cursor: pointer; transition: all 0.3s ease; width: 300px; border: 1px solid rgba(99, 102, 241, 0.2); backdrop-filter: blur(10px); transform: translateY(0px);"
-                        onclick={() => openProject(project.id)}
-                        onmouseenter={(e: MouseEvent) => {
-                            const target = e.currentTarget as HTMLElement
-                            target.style.transform = 'translateY(-8px) scale(1.02)'
-                            target.style.boxShadow = '0 20px 60px rgba(99, 102, 241, 0.4), 0 0 30px rgba(139, 92, 246, 0.3)'
-                            target.style.borderColor = 'rgba(99, 102, 241, 0.5)'
-                        }}
-                        onmouseleave={(e: MouseEvent) => {
-                            const target = e.currentTarget as HTMLElement
-                            target.style.transform = 'translateY(0px) scale(1)'
-                            target.style.boxShadow = '0 8px 32px rgba(0,0,0,0.3)'
-                            target.style.borderColor = 'rgba(99, 102, 241, 0.2)'
-                        }}
-                    >
-                        <!-- 项目缩略图 -->
-                        <ResponsiveBox style="width: 100%; height: 160px; background: rgba(15, 23, 42, 0.5); border-radius: 12px; margin-bottom: 16px; overflow: hidden; border: 1px solid rgba(99, 102, 241, 0.1);">
-                            {#if project.thumbnail}
-                                <img src={project.thumbnail} alt={project.name} style="width: 100%; height: 100%; object-fit: cover;" />
-                            {:else}
-                                <ResponsiveBox style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #64748b; font-size: 14px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);">预览图</ResponsiveBox>
-                            {/if}
-                        </ResponsiveBox>
-
-                        <!-- 项目名称 -->
-                        <ResponsiveBox style="font-size: 16px; font-weight: 600; color: #f8fafc; margin-bottom: 8px; line-height: 1.4;">
-                            {project.name}
-                        </ResponsiveBox>
-
-                        <!-- 创建时间 -->
-                        <ResponsiveBox style="font-size: 13px; color: #94a3b8; font-weight: 400;">
-                            {project.createTime}
-                        </ResponsiveBox>
-                    </ResponsiveBox>
+                    <GenericCard prop1={project.id} prop2={project.name} prop3={project.createTime} prop4={project.thumbnail} onClick={() => openProject(project.id)} />
                 {/each}
             </ResponsiveBox>
 

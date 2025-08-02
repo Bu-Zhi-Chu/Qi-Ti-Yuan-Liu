@@ -20,10 +20,9 @@
     import RealTimeClock from '../widgets/RealTimeClock.svelte'
     import CustomTextInput from '../widgets/CustomTextInput.svelte'
     import ActionButton from '../widgets/ActionButton.svelte'
-    import DynamicComponent from '../Core/DynamicComponent.svelte'
     import DragDropList from '../widgets/DragDropList.svelte'
 
-    import Card from '../widgets/Card.svelte'
+    import GenericCard from '../widgets/GenericCard.svelte'
     import logoImage from '../../assets/img/icon-192.png'
 
     interface ComponentItem {
@@ -44,6 +43,56 @@
 
     // 所有可用组件
     let allComponents = $derived([
+        {
+            id: 'realtime-clock',
+            name: '实时时钟',
+            category: '官方示例',
+            component: RealTimeClock,
+            props: { format: 'datetime-weekday', displayMode: 'multi-line' },
+            description: '显示实时时间的响应式时钟组件，支持多种显示格式',
+            image: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjMWUyOTNiIi8+CjxjaXJjbGUgY3g9IjEwMCIgY3k9IjYwIiByPSI0MCIgc3Ryb2tlPSIjNjM2NmYxIiBzdHJva2Utd2lkdGg9IjIiIGZpbGw9Im5vbmUiLz4KPGxpbmUgeDE9IjEwMCIgeTE9IjYwIiB4Mj0iMTAwIiB5Mj0iNDAiIHN0cm9rZT0iIzYzNjZmMSIgc3Ryb2tlLXdpZHRoPSIyIi8+CjxsaW5lIHgxPSIxMDAiIHkxPSI2MCIgeDI9IjEyMCIgeTI9IjYwIiBzdHJva2U9IiM2MzY2ZjEiIHN0cm9rZS13aWR0aD0iMiIvPgo8L3N2Zz4K',
+            badge: '组合'
+        },
+        {
+            id: 'realtime-clock',
+            name: '实时时钟',
+            category: '官方示例',
+            component: RealTimeClock,
+            props: { format: 'datetime-weekday', displayMode: 'multi-line' },
+            description: '显示实时时间的响应式时钟组件，支持多种显示格式',
+            image: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjMWUyOTNiIi8+CjxjaXJjbGUgY3g9IjEwMCIgY3k9IjYwIiByPSI0MCIgc3Ryb2tlPSIjNjM2NmYxIiBzdHJva2Utd2lkdGg9IjIiIGZpbGw9Im5vbmUiLz4KPGxpbmUgeDE9IjEwMCIgeTE9IjYwIiB4Mj0iMTAwIiB5Mj0iNDAiIHN0cm9rZT0iIzYzNjZmMSIgc3Ryb2tlLXdpZHRoPSIyIi8+CjxsaW5lIHgxPSIxMDAiIHkxPSI2MCIgeDI9IjEyMCIgeTI9IjYwIiBzdHJva2U9IiM2MzY2ZjEiIHN0cm9rZS13aWR0aD0iMiIvPgo8L3N2Zz4K',
+            badge: '组合'
+        },
+        {
+            id: 'realtime-clock',
+            name: '实时时钟',
+            category: '官方示例',
+            component: RealTimeClock,
+            props: { format: 'datetime-weekday', displayMode: 'multi-line' },
+            description: '显示实时时间的响应式时钟组件，支持多种显示格式',
+            image: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjMWUyOTNiIi8+CjxjaXJjbGUgY3g9IjEwMCIgY3k9IjYwIiByPSI0MCIgc3Ryb2tlPSIjNjM2NmYxIiBzdHJva2Utd2lkdGg9IjIiIGZpbGw9Im5vbmUiLz4KPGxpbmUgeDE9IjEwMCIgeTE9IjYwIiB4Mj0iMTAwIiB5Mj0iNDAiIHN0cm9rZT0iIzYzNjZmMSIgc3Ryb2tlLXdpZHRoPSIyIi8+CjxsaW5lIHgxPSIxMDAiIHkxPSI2MCIgeDI9IjEyMCIgeTI9IjYwIiBzdHJva2U9IiM2MzY2ZjEiIHN0cm9rZS13aWR0aD0iMiIvPgo8L3N2Zz4K',
+            badge: '组合'
+        },
+        {
+            id: 'realtime-clock',
+            name: '实时时钟',
+            category: '官方示例',
+            component: RealTimeClock,
+            props: { format: 'datetime-weekday', displayMode: 'multi-line' },
+            description: '显示实时时间的响应式时钟组件，支持多种显示格式',
+            image: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjMWUyOTNiIi8+CjxjaXJjbGUgY3g9IjEwMCIgY3k9IjYwIiByPSI0MCIgc3Ryb2tlPSIjNjM2NmYxIiBzdHJva2Utd2lkdGg9IjIiIGZpbGw9Im5vbmUiLz4KPGxpbmUgeDE9IjEwMCIgeTE9IjYwIiB4Mj0iMTAwIiB5Mj0iNDAiIHN0cm9rZT0iIzYzNjZmMSIgc3Ryb2tlLXdpZHRoPSIyIi8+CjxsaW5lIHgxPSIxMDAiIHkxPSI2MCIgeDI9IjEyMCIgeTI9IjYwIiBzdHJva2U9IiM2MzY2ZjEiIHN0cm9rZS13aWR0aD0iMiIvPgo8L3N2Zz4K',
+            badge: '组合'
+        },
+        {
+            id: 'realtime-clock',
+            name: '实时时钟',
+            category: '官方示例',
+            component: RealTimeClock,
+            props: { format: 'datetime-weekday', displayMode: 'multi-line' },
+            description: '显示实时时间的响应式时钟组件，支持多种显示格式',
+            image: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjMWUyOTNiIi8+CjxjaXJjbGUgY3g9IjEwMCIgY3k9IjYwIiByPSI0MCIgc3Ryb2tlPSIjNjM2NmYxIiBzdHJva2Utd2lkdGg9IjIiIGZpbGw9Im5vbmUiLz4KPGxpbmUgeDE9IjEwMCIgeTE9IjYwIiB4Mj0iMTAwIiB5Mj0iNDAiIHN0cm9rZT0iIzYzNjZmMSIgc3Ryb2tlLXdpZHRoPSIyIi8+CjxsaW5lIHgxPSIxMDAiIHkxPSI2MCIgeDI9IjEyMCIgeTI9IjYwIiBzdHJva2U9IiM2MzY2ZjEiIHN0cm9rZS13aWR0aD0iMiIvPgo8L3N2Zz4K',
+            badge: '组合'
+        },
         {
             id: 'realtime-clock',
             name: '实时时钟',
@@ -129,34 +178,71 @@
         }
     ])
 
-    // 导航菜单
-    const menuItems = [
-        { id: 'overview', name: '应用总览', icon: '📊' },
-        { id: 'components', name: '组件库', icon: '🔧' },
-        { id: 'templates', name: '模板中心', icon: '📋' },
-        { id: 'settings', name: '设置', icon: '⚙️' }
-    ]
+    /**
+     * 模块层级数据定义
+     * 第 1 层：模块按钮（可直接用于顶部 <ActionButton>）
+     * 第 2 层：模块内左侧列表（分类）
+     * 第 3 层：分类下组件条目（右侧画廊）
+     */
+    interface CategoryItem {
+        id: string
+        name: string
+        children: ComponentItem[]
+    }
 
-    // 当前选中的菜单项
-    let selectedMenuItem = $state('overview')
+    interface ModuleItem {
+        id: string
+        name: string
+        children: CategoryItem[]
+    }
+
+    // 统一后的三层数据（根据 allComponents 派生）
+    let modulesData = $derived((): ModuleItem[] => [
+        {
+            id: 'ui',
+            name: 'UI组件',
+            children: [
+                { id: '官方示例', name: '官方示例', children: allComponents.filter((c) => c.category === '官方示例') },
+                { id: '基础示例', name: '基础示例', children: allComponents.filter((c) => c.category === '基础示例') },
+                { id: '交互', name: '交互', children: allComponents.filter((c) => c.category === '交互') }
+            ]
+        },
+        { id: 'map', name: '电子地图', children: [] },
+        { id: 'engine', name: '三维引擎', children: [] }
+    ])
 
     // 当前选中的顶部按钮组
     let selectedModule = $state('UI组件')
 
-    // 过滤后的组件列表
-    let filteredComponents = $derived(allComponents.filter((comp) => comp.name.toLowerCase().includes(searchQuery.toLowerCase()) || comp.description.toLowerCase().includes(searchQuery.toLowerCase())))
-    // 按类别分组的组件
-    let groupedComponents = $derived(
-        filteredComponents.reduce(
-            (acc, comp) => {
-                if (!acc[comp.category]) {
-                    acc[comp.category] = []
-                }
-                acc[comp.category].push(comp)
-                return acc
-            },
-            {} as Record<string, ComponentItem[]>
-        )
+    // 顶部按钮组数据（第 1 层）
+    let moduleButtons = $derived(() =>
+        modulesData().map((m) => ({
+            name: m.name,
+            variant: (selectedModule === m.name ? 'primary' : 'ghost') as 'primary' | 'ghost',
+            size: 'medium' as 'medium',
+            style: 'width: 120px;height: 30px;'
+        }))
+    )
+
+    // 左侧列表数据（第 2 层）
+    let menuItems = $derived(() =>
+        (modulesData().find((m) => m.name === selectedModule)?.children || []).map((cat) => ({
+            id: cat.id,
+            name: cat.name,
+            icon: '📂'
+        }))
+    )
+
+    // 当前选中的菜单项
+    let selectedMenuItem = $state('官方示例')
+
+    // 过滤后的组件列表（第 3 层）
+    let filteredComponents = $derived(() =>
+        (
+            modulesData()
+                .find((m) => m.name === selectedModule)
+                ?.children.find((c) => c.id === selectedMenuItem)?.children || []
+        ).filter((comp) => comp.name.toLowerCase().includes(searchQuery.toLowerCase()) || comp.description.toLowerCase().includes(searchQuery.toLowerCase()))
     )
 
     // 处理搜索
@@ -185,15 +271,14 @@
         <!-- 居中的按钮组 -->
         <ResponsiveBox style="flex: 1; display: flex; justify-content: center;">
             <ActionButton
-                buttons={[
-                    { name: 'UI组件', variant: selectedModule === 'UI组件' ? 'primary' : 'ghost', size: 'medium', style: 'width: 120px;height: 30px;' },
-                    { name: '电子地图', variant: selectedModule === '电子地图' ? 'primary' : 'ghost', size: 'medium', style: 'width: 120px;height: 30px;' },
-                    { name: '三维引擎', variant: selectedModule === '三维引擎' ? 'primary' : 'ghost', size: 'medium', style: 'width: 120px;height: 30px;' }
-                ]}
+                buttons={moduleButtons()}
                 direction="row"
                 style="gap: 23px;"
                 onbuttonClick={(event: { name: string; index: number; button: any }) => {
                     selectedModule = event.name
+                    // 当模块变更时同步选中其首分类为左侧激活项
+                    const firstCat = modulesData().find((m) => m.name === event.name)?.children[0]
+                    if (firstCat) selectedMenuItem = firstCat.id
                     console.log('切换到模块:', event.name)
                 }}
             />
@@ -216,74 +301,56 @@
     <ResponsiveBox style="flex: 1; display: flex; overflow: hidden;">
         <!-- 左侧边栏 - 使用DragDropList列表组件 -->
         <ResponsiveBox style="width: 250px; min-width: 200px; max-width: 300px; background: rgba(30, 41, 59, 0.8); border-right: 1px solid rgba(99, 102, 241, 0.2); padding: 16px;">
-            <DragDropList items={menuItems} enableDrag={false} direction="vertical" selectedId={selectedMenuItem} onSelect={(id: string) => (selectedMenuItem = String(id))} style="background: none; padding: 0;color: #fff;" />
+            <DragDropList items={menuItems()} enableDrag={false} direction="vertical" selectedId={selectedMenuItem} onSelect={(id: string) => (selectedMenuItem = String(id))} style="background: none; padding: 0;color: #fff;" />
         </ResponsiveBox>
 
         <!-- 内容区域 -->
         <ResponsiveBox style="flex: 1; overflow-y: auto; padding: 24px;">
-            {#if selectedComponent}
-                <!-- 组件详情视图 -->
-                <ResponsiveBox style="max-width: 1200px; margin: 0 auto;">
-                    <ActionButton
-                        buttons={[
-                            {
-                                name: '← 返回列表',
-                                variant: 'ghost',
-                                size: 'medium'
-                            }
-                        ]}
-                        direction="row"
-                        style="margin-bottom: 24px;"
-                        onbuttonClick={handleBack}
-                    />
+            <!-- 组件画廊视图 -->
+            <ResponsiveBox style=" margin: 0 auto;">
+                <!-- 搜索结果提示 -->
+                {#if searchQuery}
+                    <ResponsiveBox style="margin-bottom: 24px; color: #94a3b8; font-size: 16px;">
+                        搜索 "{searchQuery}" 的结果 ({filteredComponents().length} 个组件)
+                    </ResponsiveBox>
+                {/if}
 
-                    <ResponsiveBox style="background: rgba(30, 41, 59, 0.5); border-radius: 16px; padding: 40px; backdrop-filter: blur(10px); border: 1px solid rgba(99, 102, 241, 0.2);">
-                        <ResponsiveBox tag="h1" style="color: #f8fafc; margin: 0 0 16px 0; font-size: 32px; font-weight: bold;">
-                            {selectedComponent.name}
-                        </ResponsiveBox>
+                <!-- 当前分类组件列表 -->
+                <ResponsiveBox style="margin-bottom: 12px;">
+                    <ResponsiveBox style="color: #f8fafc; margin: 0 0 6px 0; font-size:26px; font-weight: 600;">
+                        {selectedMenuItem}
+                    </ResponsiveBox>
 
-                        <ResponsiveBox tag="p" style="color: #94a3b8; margin: 0 0 32px 0; font-size: 16px; line-height: 1.6;">
-                            {selectedComponent.description}
-                        </ResponsiveBox>
-
-                        <ResponsiveBox style="background: rgba(15, 23, 42, 0.5); padding: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(99, 102, 241, 0.1);">
-                            <DynamicComponent type={selectedComponent.component} data-id={`demo-${selectedComponent.id}`} props={selectedComponent.props} />
-                        </ResponsiveBox>
+                    <ResponsiveBox style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px;">
+                        {#each filteredComponents() as component}
+                            <GenericCard prop1={component.id} prop2={component.name} prop3={component.description} prop4={component.image} prop5={component.badge} onClick={() => handleCardClick(component)} />
+                        {/each}
                     </ResponsiveBox>
                 </ResponsiveBox>
-            {:else}
-                <!-- 组件画廊视图 -->
-                <ResponsiveBox style="max-width: 1200px; margin: 0 auto;">
-                    <!-- 搜索结果提示 -->
-                    {#if searchQuery}
-                        <ResponsiveBox style="margin-bottom: 24px; color: #94a3b8; font-size: 16px;">
-                            搜索 "{searchQuery}" 的结果 ({filteredComponents.length} 个组件)
-                        </ResponsiveBox>
-                    {/if}
 
-                    <!-- 按类别展示组件 -->
-                    {#each Object.entries(groupedComponents) as [category, components]}
-                        <ResponsiveBox style="margin-bottom: 48px;">
-                            <ResponsiveBox tag="h2" style="color: #f8fafc; margin: 0 0 24px 0; font-size: 24px; font-weight: 600;">
-                                {category}
-                            </ResponsiveBox>
-
-                            <ResponsiveBox style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px;">
-                                {#each components as component}
-                                    <Card id={component.id} title={component.name} description={component.description} image={component.image} badge={component.badge} onClick={() => handleCardClick(component)} />
-                                {/each}
-                            </ResponsiveBox>
-                        </ResponsiveBox>
-                    {/each}
-
-                    {#if filteredComponents.length === 0}
-                        <ResponsiveBox style="text-align: center; color: #94a3b8; font-size: 18px; padding: 60px;">未找到匹配的组件</ResponsiveBox>
-                    {/if}
-                </ResponsiveBox>
-            {/if}
+                {#if filteredComponents().length === 0}
+                    <ResponsiveBox style="text-align: center; color: #94a3b8; font-size: 18px; padding: 60px;">未找到匹配的组件</ResponsiveBox>
+                {/if}
+            </ResponsiveBox>
         </ResponsiveBox>
     </ResponsiveBox>
+
+    <!-- 返回首页链接 -->
+    <a href="/" class="back-to-home">返回首页 →</a>
 </ResponsiveBox>
 
 <style>
+    .back-to-home {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        color: rgba(255, 255, 255, 0.7);
+        text-decoration: none;
+        font-size: 14px;
+        transition: color 0.2s ease;
+        z-index: 1000;
+    }
+    .back-to-home:hover {
+        color: rgba(255, 255, 255, 1);
+    }
 </style>
