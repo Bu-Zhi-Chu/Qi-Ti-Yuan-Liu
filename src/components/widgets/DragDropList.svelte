@@ -28,7 +28,6 @@
  * 菜单模式：
  * <DragDropList
  *   items={[{id: 1, name: '菜单1', icon: '📋'}, {id: 2, name: '菜单2', icon: '⚙️'}]}
- *   renderAsMenu={true}
  *   onMenuClick={(id) => console.log('点击菜单:', id)}
  * />
  *
@@ -51,6 +50,7 @@
     import { flip } from 'svelte/animate'
 
     import ResponsiveBox from '../Core/ResponsiveBox.svelte'
+    import SimpleBox from '../Core/SimpleBox.svelte'
 
     interface Props {
         items: any[]
@@ -60,7 +60,8 @@
         onReorder?: (items: any[]) => void
         onNodeToggle?: (item: any, expanded: boolean) => void
         onMenuClick?: (itemId: string) => void
-        renderAsMenu?: boolean
+        onSelect?: (itemId: string) => void
+        selectedId?: string
         style?: string
         itemStyle?: string
         dataId?: string
@@ -68,7 +69,7 @@
         [key: string]: any
     }
 
-    let { items = [], enableDrag = true, enableHierarchy = false, direction = 'vertical', onReorder, onNodeToggle, onMenuClick, renderAsMenu = false, style = '', itemStyle = '', dataId = '', children, ...rest }: Props = $props()
+    let { items = [], enableDrag = true, enableHierarchy = false, direction = 'vertical', onReorder, onNodeToggle, onMenuClick, onSelect, selectedId, style = '', itemStyle = '', dataId = '', children, ...rest }: Props = $props()
 
     // 拖拽事件处理
     function handleDndConsider(event: CustomEvent<DndEvent>) {
@@ -119,7 +120,7 @@
 
     // 计算容器样式
     function getContainerStyle() {
-        let baseStyle = `display: flex; gap: 10px; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 8px; ${style}`
+        let baseStyle = `display: flex; gap: calc(10px * var(--scale-ratio, 1)); padding: calc(10px * var(--scale-ratio, 1)); background: rgba(255,255,255,0.1); border-radius: calc(8px * var(--scale-ratio, 1)); ${style}`
 
         if (direction === 'horizontal') {
             baseStyle += '; flex-direction: row; flex-wrap: wrap;'
@@ -130,12 +131,16 @@
         return baseStyle
     }
 
-    // 计算项目样式
-    function getItemStyle() {
-        let baseItemStyle = `padding: 15px; background: rgba(255,255,255,0.2); border-radius: 6px; border: 1px solid rgba(255,255,255,0.3); color: white; cursor: ${enableDrag ? 'grab' : 'default'}; transition: all 0.3s ease; ${itemStyle}`
+    // 计算统一的项目样式
+    function getItemStyle(isSelected: boolean = false) {
+        let baseItemStyle = `padding: calc(5px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1)); margin: calc(2px * var(--scale-ratio, 1)) 0; background: rgba(99, 102, 241, 0.1); border: calc(1px * var(--scale-ratio, 1)) solid rgba(99, 102, 241, 0.2); border-radius: calc(4px * var(--scale-ratio, 1)); color: #e2e8f0; cursor: ${enableDrag ? 'grab' : 'pointer'}; transition: all 0.2s ease; ${itemStyle}`
+
+        if (isSelected) {
+            baseItemStyle += '; background: rgba(99, 102, 241, 0.3); border-color: rgba(99, 102, 241, 0.5); box-shadow: 0 0 calc(10px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.3);'
+        }
 
         if (direction === 'horizontal') {
-            baseItemStyle += '; flex: 1; min-width: 120px; text-align: center;'
+            baseItemStyle += '; flex: 1; min-width: calc(120px * var(--scale-ratio, 1)); text-align: center;'
         } else {
             baseItemStyle += '; width: 100%;'
         }
@@ -143,15 +148,10 @@
         return baseItemStyle
     }
 
-    // 计算菜单项样式
-    function getMenuItemStyle() {
-        return `padding: 12px 16px; margin: 4px 0; background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 8px; color: #e2e8f0; cursor: pointer; transition: all 0.2s ease; ${itemStyle}`
-    }
-
     // 拖拽时的样式
     function getDragStyle(isDragged: boolean) {
         if (isDragged) {
-            return 'opacity: 0.5; transform: scale(1.05); box-shadow: 0 8px 25px rgba(0,0,0,0.3);'
+            return 'opacity: 0.5; transform: scale(1.05); box-shadow: 0 calc(8px * var(--scale-ratio, 1)) calc(25px * var(--scale-ratio, 1)) rgba(0,0,0,0.3);'
         }
         return ''
     }
@@ -200,33 +200,16 @@
                 onfinalize={handleDndFinalize}
             >
                 {#each items as item, index (item.id || index)}
-                    <div animate:flip={{ duration: 300 }} style="{getItemStyle()} {getDragStyle(false)}" class="drag-item" data-index={index}>
-                        {#if children}
-                            {@render children(item, index)}
-                        {:else if renderAsMenu}
-                            {@render renderMenuItem(item, index)}
-                        {:else}
-                            <div style="display: flex; align-items: center; justify-content: space-between;">
-                                <span style="font-weight: 500;">{item.text || item.name || `项目 ${index + 1}`}</span>
-                                <span style="cursor: grab; font-size: 18px; color: rgba(255,255,255,0.7);">⋮⋮</span>
-                            </div>
-                        {/if}
+                    <div animate:flip={{ duration: 300 }} style="{getItemStyle(selectedId === item.id)} {getDragStyle(false)}" class="drag-item" data-index={index}>
+                        {@render renderItemContent(item, index)}
                     </div>
                 {/each}
             </div>
         {:else}
             <div style="width: 100%; height: 100%;">
                 {#each items as item, index (item.id || index)}
-                    <div style={renderAsMenu ? getMenuItemStyle() : getItemStyle()} class="drag-item" data-index={index}>
-                        {#if children}
-                            {@render children(item, index)}
-                        {:else if renderAsMenu}
-                            {@render renderMenuItem(item, index)}
-                        {:else}
-                            <div style="display: flex; align-items: center; justify-content: space-between;">
-                                <span style="font-weight: 500;">{item.text || item.name || `项目 ${index + 1}`}</span>
-                            </div>
-                        {/if}
+                    <div style={getItemStyle(selectedId === item.id)} class="drag-item" data-index={index}>
+                        {@render renderItemContent(item, index)}
                     </div>
                 {/each}
             </div>
@@ -234,58 +217,76 @@
     {/if}
 </ResponsiveBox>
 
-<!-- 菜单项渲染snippet -->
-{#snippet renderMenuItem(item: any, index: number)}
-    <button
-        style="display: flex; align-items: center; gap: 12px; width: 100%; background: none; border: none; text-align: left; cursor: pointer;"
-        onclick={() => onMenuClick?.(item.id)}
-        onkeydown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault()
-                onMenuClick?.(item.id)
-            }
-        }}
-        role="menuitem"
-        tabindex="0"
-    >
-        <span style="font-size: 16px;">{item.icon}</span>
-        <span style="font-weight: 500; font-size: 14px;">{item.name}</span>
-        {#if item.active}
-            <span style="margin-left: auto; width: 8px; height: 8px; background: #6366f1; border-radius: 50%;"></span>
-        {/if}
-    </button>
+<!-- 统一的项目内容渲染snippet -->
+{#snippet renderItemContent(item: any, index: number)}
+    {#if children}
+        {@render children(item, index)}
+    {:else}
+        <button
+            style="display: flex; align-items: center; width: 100%; background: none; border: none; cursor: pointer; position: relative; padding: calc(5px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1)); "
+            onclick={() => {
+                if (onSelect) {
+                    onSelect(item.id)
+                } else if (onMenuClick) {
+                    onMenuClick(item.id)
+                } else if (onReorder) {
+                    // 如果没有onMenuClick但有onReorder，可以触发点击事件
+                    console.log('Item clicked:', item.id)
+                }
+            }}
+            onkeydown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    if (onSelect) {
+                        onSelect(item.id)
+                    } else if (onMenuClick) {
+                        onMenuClick(item.id)
+                    } else if (onReorder) {
+                        console.log('Item clicked:', item.id)
+                    }
+                }
+            }}
+            tabindex="0"
+        >
+            <SimpleBox style="display: flex; align-items: center; justify-content: flex-start; width: 100%;">
+                {#if item.icon}
+                    <SimpleBox style="width:0; font-size: calc(14px * var(--scale-ratio, 1)); color: {item.style?.color || 'white'}; margin-right: calc(4px * var(--scale-ratio, 1));">{item.icon}</SimpleBox>
+                    <SimpleBox style="width:60%; font-weight: 500; font-size: calc(12px * var(--scale-ratio, 1)); color: {item.style?.color || 'white'};">{item.name || item.text || `项目 ${index + 1}`}</SimpleBox>
+                {:else}
+                    <SimpleBox style="width:100%; font-weight: 500; font-size: calc(12px * var(--scale-ratio, 1)); color: {item.style?.color || 'white'};">{item.name || item.text || `项目 ${index + 1}`}</SimpleBox>
+                {/if}
+            </SimpleBox>
+            {#if selectedId === item.id}
+                <SimpleBox style="position: absolute; right: calc(12px * var(--scale-ratio, 1)); width: calc(6px * var(--scale-ratio, 1)); height: calc(6px * var(--scale-ratio, 1)); background: #6366f1; border-radius: 50%;"></SimpleBox>
+            {/if}
+        </button>
+    {/if}
 {/snippet}
 
 <!-- 递归渲染树节点的snippet -->
 {#snippet renderTreeNode(item: any, index: number, level: number)}
-    <div style="{renderAsMenu ? getMenuItemStyle() : getItemStyle()} {getDragStyle(false)}" class="drag-item tree-node" data-index={index}>
-        <div style="display: flex; align-items: center; gap: 8px; padding-left: {level * 20}px;">
+    <SimpleBox style="{getItemStyle(selectedId === item.id)} {getDragStyle(false)}" class="drag-item tree-node" data-index={index}>
+        <SimpleBox style="display: flex; align-items: center; gap: calc(8px * var(--scale-ratio, 1)); padding-left: calc(${level} * 20px * var(--scale-ratio, 1));">
             <!-- 展开/折叠按钮 -->
             {#if item.children && item.children.length > 0}
-                <button style="background: none; border: none; cursor: pointer; color: rgba(255,255,255,0.7); font-size: 16px;" onclick={() => toggleNode(item)}>
+                <button style="background: none; border: none; cursor: pointer; color: rgba(255,255,255,0.7); font-size: calc(16px * var(--scale-ratio, 1));" onclick={() => toggleNode(item)}>
                     {item.expanded ? '▼' : '▶'}
                 </button>
             {:else}
-                <span style="width: 16px; display: inline-block;"></span>
+                <SimpleBox style="width: calc(16px * var(--scale-ratio, 1)); display: inline-block;"></SimpleBox>
             {/if}
 
             <!-- 内容区域 -->
-            {#if children}
-                {@render children(item, index)}
-            {:else if renderAsMenu}
-                {@render renderMenuItem(item, index)}
-            {:else}
-                <span style="font-weight: 500;">{item.text || item.name || `项目 ${index + 1}`}</span>
-            {/if}
+            {@render renderItemContent(item, index)}
 
             {#if enableDrag}
-                <span style="cursor: grab; font-size: 18px; color: rgba(255,255,255,0.7); margin-left: auto;">⋮⋮</span>
+                <SimpleBox style="cursor: grab; font-size: calc(18px * var(--scale-ratio, 1)); color: rgba(255,255,255,0.7); margin-left: auto;">⋮⋮</SimpleBox>
             {/if}
-        </div>
+        </SimpleBox>
 
         <!-- 子节点列表 -->
         {#if item.children && item.children.length > 0 && item.expanded}
-            <div style="margin-left: 24px; margin-top: 8px;">
+            <SimpleBox style="margin-left: calc(24px * var(--scale-ratio, 1)); margin-top: calc(8px * var(--scale-ratio, 1));">
                 {#if enableDrag}
                     <div
                         style="width: 100%;"
@@ -317,38 +318,18 @@
                         {/each}
                     </div>
                 {/if}
-            </div>
+            </SimpleBox>
         {/if}
-    </div>
+    </SimpleBox>
 {/snippet}
 
 <style>
     .drag-item:hover {
         background: rgba(255, 255, 255, 0.3);
-        transform: translateY(-2px);
+        transform: translateY(calc(-2px * var(--scale-ratio, 1)));
     }
 
     .drag-item:active {
         cursor: grabbing;
-    }
-
-    /* 拖拽时的样式覆盖 */
-    :global(.dragged) {
-        opacity: 0.5 !important;
-        transform: scale(1.05) !important;
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3) !important;
-    }
-
-    :global(.drag-preview) {
-        background: rgba(59, 130, 246, 0.8) !important;
-        color: white !important;
-        border-radius: 6px !important;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2) !important;
-    }
-
-    .tree-node {
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 4px;
-        margin: 2px 0;
     }
 </style>

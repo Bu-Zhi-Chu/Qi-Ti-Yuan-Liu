@@ -143,7 +143,6 @@
             style={getButtonStyle(button, index)}
             data-id={dataId ? `${dataId}-button-${index}` : `button-${index}`}
             onclick={() => handleButtonClick(button, index)}
-            role="button"
             tabindex={button.disabled ? -1 : 0}
             aria-disabled={button.disabled}
             aria-busy={button.loading}

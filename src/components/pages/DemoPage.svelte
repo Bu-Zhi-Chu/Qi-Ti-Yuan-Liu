@@ -26,20 +26,24 @@
     import Card from '../widgets/Card.svelte'
     import logoImage from '../../assets/img/icon-192.png'
 
-    // 组件分类和列表定义
     interface ComponentItem {
         id: string
         name: string
         category: string
         component: any
-        props?: Record<string, any>
+        props: any
         description: string
         image?: string
         badge?: string
     }
 
+    // 状态管理
+    let selectedComponent = $state<ComponentItem | null>(null)
+    let searchQuery = $state('')
+    let selectedListItem = $state<string | null>('1')
+
     // 所有可用组件
-    const allComponents: ComponentItem[] = [
+    let allComponents = $derived([
         {
             id: 'realtime-clock',
             name: '实时时钟',
@@ -107,18 +111,23 @@
             component: DragDropList,
             props: {
                 items: [
-                    { id: 1, text: '拖拽项目 1', priority: '高' },
-                    { id: 2, text: '拖拽项目 2', priority: '中' },
-                    { id: 3, text: '拖拽项目 3', priority: '低' }
+                    { id: '1', text: '拖拽项目 1', priority: '高' },
+                    { id: '2', text: '拖拽项目 2', priority: '中' },
+                    { id: '3', text: '拖拽项目 3', priority: '低' }
                 ],
                 enableDrag: true,
-                direction: 'vertical'
+                direction: 'vertical',
+                selectedId: selectedListItem,
+                onSelect: (id: string) => {
+                    selectedListItem = String(id)
+                    console.log('选中项目:', id)
+                }
             },
             description: '支持拖拽排序的响应式列表组件',
             image: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjMWUyOTNiIi8+CjxyZWN0IHg9IjIwIiB5PSIyNSIgd2lkdGg9IjE2MCIgaGVpZ2h0PSIyMCIgcng9IjQiIGZpbGw9IiMzMDQxNTUiLz4KPHJlY3QgeD0iMjAiIHk9IjUwIiB3aWR0aD0iMTYwIiBoZWlnaHQ9IjIwIiByeD0iNCIgZmlsbD0iIzMwNDE1NSIvPgo8cmVjdCB4PSIyMCIgeT0iNzUiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjAiIHJ4PSI0IiBmaWxsPSIjMzA0MTU1Ii8+Cjwvc3Zn+Cg==',
             badge: '交互'
         }
-    ]
+    ])
 
     // 导航菜单
     const menuItems = [
@@ -128,13 +137,11 @@
         { id: 'settings', name: '设置', icon: '⚙️' }
     ]
 
-    // 状态管理
-    let selectedComponent = $state<ComponentItem | null>(null)
-    let searchQuery = $state('')
+    // 当前选中的菜单项
+    let selectedMenuItem = $state('overview')
 
     // 过滤后的组件列表
     let filteredComponents = $derived(allComponents.filter((comp) => comp.name.toLowerCase().includes(searchQuery.toLowerCase()) || comp.description.toLowerCase().includes(searchQuery.toLowerCase())))
-
     // 按类别分组的组件
     let groupedComponents = $derived(
         filteredComponents.reduce(
@@ -151,6 +158,7 @@
 
     // 处理菜单点击
     function handleMenuClick(itemId: string) {
+        selectedMenuItem = String(itemId)
         console.log('菜单点击:', itemId)
     }
 
@@ -182,7 +190,7 @@
                 placeholder="搜索组件..."
                 value={searchQuery}
                 oninput={(e) => handleSearch((e.target as HTMLInputElement).value)}
-                style="width: 100%; padding:calc(8px * var(--scale-ratio, 1))calc(16px * var(--scale-ratio, 1)); background: rgba(30, 41, 59, 0.5); border: calc(1px * var(--scale-ratio, 1)) solid rgba(99, 102, 241, 0.2); border-radius: calc(8px * var(--scale-ratio, 1)); color: #e2e8f0; font-size: calc(14px * var(--scale-ratio, 1)); outline: none; transition: border-color 0.2s ease;"
+                style="width: 100%; padding:calc(8px * var(--scale-ratio, 1)) calc(16px * var(--scale-ratio, 1)); background: rgba(30, 41, 59, 0.5); border: calc(1px * var(--scale-ratio, 1)) solid rgba(99, 102, 241, 0.2); border-radius: calc(8px * var(--scale-ratio, 1)); color: #e2e8f0; font-size: calc(14px * var(--scale-ratio, 1)); outline: none; transition: border-color 0.2s ease;"
                 onfocus={(e) => ((e.target as HTMLInputElement).style.borderColor = '#6366f1')}
                 onblur={(e) => ((e.target as HTMLInputElement).style.borderColor = 'rgba(99, 102, 241, 0.2)')}
             />
@@ -193,7 +201,7 @@
     <ResponsiveBox style="flex: 1; display: flex; overflow: hidden;">
         <!-- 左侧边栏 - 使用DragDropList列表组件 -->
         <ResponsiveBox style="width: 250px; min-width: 200px; max-width: 300px; background: rgba(30, 41, 59, 0.8); border-right: 1px solid rgba(99, 102, 241, 0.2); padding: 16px;">
-            <DragDropList items={menuItems} enableDrag={false} direction="vertical" renderAsMenu={true} onMenuClick={handleMenuClick} style="background: none; padding: 0;color: #fff;" />
+            <DragDropList items={menuItems} enableDrag={false} direction="vertical" selectedId={selectedMenuItem} onSelect={(id: string) => selectedMenuItem = String(id)} style="background: none; padding: 0;color: #fff;" />
         </ResponsiveBox>
 
         <!-- 内容区域 -->
