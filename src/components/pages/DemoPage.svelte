@@ -22,7 +22,6 @@
     import ActionButton from '../widgets/ActionButton.svelte'
     import DynamicComponent from '../Core/DynamicComponent.svelte'
     import DragDropList from '../widgets/DragDropList.svelte'
-    import TopNavBar from '../widgets/TopNavBar.svelte'
 
     import Card from '../widgets/Card.svelte'
     import logoImage from '../../assets/img/icon-192.png'
@@ -124,7 +123,7 @@
     // 导航菜单
     const menuItems = [
         { id: 'overview', name: '应用总览', icon: '📊' },
-        { id: 'components', name: '组件库', icon: '🔧', active: true },
+        { id: 'components', name: '组件库', icon: '🔧' },
         { id: 'templates', name: '模板中心', icon: '📋' },
         { id: 'settings', name: '设置', icon: '⚙️' }
     ]
@@ -174,49 +173,27 @@
 <!-- 页面主容器 -->
 <ResponsiveBox style="display: flex; flex-direction: column; height: 100vh; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);">
     <!-- 顶部导航栏 - 100%宽度 -->
-    <TopNavBar
-        logo={logoImage}
-        title="七巧板"
-        searchPlaceholder="搜索组件..."
-        navLinks={[
-            { name: '官网', url: '#', icon: '🌐' },
-            { name: 'GitHub', url: 'https://github.com', icon: '⭐' }
-        ]}
-        onSearch={handleSearch}
-    />
+    <ResponsiveBox style="height: 64px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(99, 102, 241, 0.2); display: flex; align-items: center; padding: 0 24px; gap: 16px;">
+        <img src={logoImage} alt="七巧板" style="width: 32px; height: 32px; border-radius: 8px;" />
+        <ResponsiveBox tag="h1" style="color: #f8fafc; margin: 0; font-size: 20px; font-weight: 600;">七巧板</ResponsiveBox>
+        <ResponsiveBox style="flex: 1; max-width: 400px; margin-left: auto;">
+            <input
+                type="search"
+                placeholder="搜索组件..."
+                value={searchQuery}
+                oninput={(e) => handleSearch((e.target as HTMLInputElement).value)}
+                style="width: 100%; padding: 8px 16px; background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 8px; color: #e2e8f0; font-size: 14px; outline: none; transition: border-color 0.2s ease;"
+                onfocus={(e) => ((e.target as HTMLInputElement).style.borderColor = '#6366f1')}
+                onblur={(e) => ((e.target as HTMLInputElement).style.borderColor = 'rgba(99, 102, 241, 0.2)')}
+            />
+        </ResponsiveBox>
+    </ResponsiveBox>
 
     <!-- 主内容区域 - 侧边栏和内容并排 -->
     <ResponsiveBox style="flex: 1; display: flex; overflow: hidden;">
         <!-- 左侧边栏 - 使用DragDropList列表组件 -->
         <ResponsiveBox style="width: 250px; min-width: 200px; max-width: 300px; background: rgba(30, 41, 59, 0.8); border-right: 1px solid rgba(99, 102, 241, 0.2); padding: 16px;">
-            <DragDropList
-                items={menuItems}
-                enableDrag={false}
-                direction="vertical"
-                style="background: none; padding: 0;"
-                itemStyle="padding: 12px 16px; margin: 4px 0; background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 8px; color: #e2e8f0; cursor: pointer; transition: all 0.2s ease;"
-            >
-                {#snippet children(item, index)}
-                    <button
-                        style="display: flex; align-items: center; gap: 12px; width: 100%; background: none; border: none; text-align: left; cursor: pointer;"
-                        onclick={() => handleMenuClick(item.id)}
-                        onkeydown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault()
-                                handleMenuClick(item.id)
-                            }
-                        }}
-                        role="menuitem"
-                        tabindex="0"
-                    >
-                        <span style="font-size: 16px;">{item.icon}</span>
-                        <span style="font-weight: 500; font-size: 14px;">{item.name}</span>
-                        {#if item.active}
-                            <span style="margin-left: auto; width: 8px; height: 8px; background: #6366f1; border-radius: 50%;"></span>
-                        {/if}
-                    </button>
-                {/snippet}
-            </DragDropList>
+            <DragDropList items={menuItems} enableDrag={false} direction="vertical" renderAsMenu={true} onMenuClick={handleMenuClick} style="background: none; padding: 0;color: #fff;" />
         </ResponsiveBox>
 
         <!-- 内容区域 -->

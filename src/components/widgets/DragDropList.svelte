@@ -25,6 +25,13 @@
  *   direction="horizontal"
  * />
  *
+ * 菜单模式：
+ * <DragDropList
+ *   items={[{id: 1, name: '菜单1', icon: '📋'}, {id: 2, name: '菜单2', icon: '⚙️'}]}
+ *   renderAsMenu={true}
+ *   onMenuClick={(id) => console.log('点击菜单:', id)}
+ * />
+ *
  * 自定义渲染：
  * <DragDropList
  *   items={items}
@@ -52,6 +59,8 @@
         direction?: 'vertical' | 'horizontal'
         onReorder?: (items: any[]) => void
         onNodeToggle?: (item: any, expanded: boolean) => void
+        onMenuClick?: (itemId: string) => void
+        renderAsMenu?: boolean
         style?: string
         itemStyle?: string
         dataId?: string
@@ -59,7 +68,7 @@
         [key: string]: any
     }
 
-    let { items = [], enableDrag = true, enableHierarchy = false, direction = 'vertical', onReorder, onNodeToggle, style = '', itemStyle = '', dataId = '', children, ...rest }: Props = $props()
+    let { items = [], enableDrag = true, enableHierarchy = false, direction = 'vertical', onReorder, onNodeToggle, onMenuClick, renderAsMenu = false, style = '', itemStyle = '', dataId = '', children, ...rest }: Props = $props()
 
     // 拖拽事件处理
     function handleDndConsider(event: CustomEvent<DndEvent>) {
@@ -134,6 +143,11 @@
         return baseItemStyle
     }
 
+    // 计算菜单项样式
+    function getMenuItemStyle() {
+        return `padding: 12px 16px; margin: 4px 0; background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 8px; color: #e2e8f0; cursor: pointer; transition: all 0.2s ease; ${itemStyle}`
+    }
+
     // 拖拽时的样式
     function getDragStyle(isDragged: boolean) {
         if (isDragged) {
@@ -189,6 +203,8 @@
                     <div animate:flip={{ duration: 300 }} style="{getItemStyle()} {getDragStyle(false)}" class="drag-item" data-index={index}>
                         {#if children}
                             {@render children(item, index)}
+                        {:else if renderAsMenu}
+                            {@render renderMenuItem(item, index)}
                         {:else}
                             <div style="display: flex; align-items: center; justify-content: space-between;">
                                 <span style="font-weight: 500;">{item.text || item.name || `项目 ${index + 1}`}</span>
@@ -201,9 +217,11 @@
         {:else}
             <div style="width: 100%; height: 100%;">
                 {#each items as item, index (item.id || index)}
-                    <div style={getItemStyle()} class="drag-item" data-index={index}>
+                    <div style={renderAsMenu ? getMenuItemStyle() : getItemStyle()} class="drag-item" data-index={index}>
                         {#if children}
                             {@render children(item, index)}
+                        {:else if renderAsMenu}
+                            {@render renderMenuItem(item, index)}
                         {:else}
                             <div style="display: flex; align-items: center; justify-content: space-between;">
                                 <span style="font-weight: 500;">{item.text || item.name || `项目 ${index + 1}`}</span>
@@ -216,9 +234,31 @@
     {/if}
 </ResponsiveBox>
 
+<!-- 菜单项渲染snippet -->
+{#snippet renderMenuItem(item: any, index: number)}
+    <button
+        style="display: flex; align-items: center; gap: 12px; width: 100%; background: none; border: none; text-align: left; cursor: pointer;"
+        onclick={() => onMenuClick?.(item.id)}
+        onkeydown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                onMenuClick?.(item.id)
+            }
+        }}
+        role="menuitem"
+        tabindex="0"
+    >
+        <span style="font-size: 16px;">{item.icon}</span>
+        <span style="font-weight: 500; font-size: 14px;">{item.name}</span>
+        {#if item.active}
+            <span style="margin-left: auto; width: 8px; height: 8px; background: #6366f1; border-radius: 50%;"></span>
+        {/if}
+    </button>
+{/snippet}
+
 <!-- 递归渲染树节点的snippet -->
 {#snippet renderTreeNode(item: any, index: number, level: number)}
-    <div style="{getItemStyle()} {getDragStyle(false)}" class="drag-item tree-node" data-index={index}>
+    <div style="{renderAsMenu ? getMenuItemStyle() : getItemStyle()} {getDragStyle(false)}" class="drag-item tree-node" data-index={index}>
         <div style="display: flex; align-items: center; gap: 8px; padding-left: {level * 20}px;">
             <!-- 展开/折叠按钮 -->
             {#if item.children && item.children.length > 0}
@@ -232,6 +272,8 @@
             <!-- 内容区域 -->
             {#if children}
                 {@render children(item, index)}
+            {:else if renderAsMenu}
+                {@render renderMenuItem(item, index)}
             {:else}
                 <span style="font-weight: 500;">{item.text || item.name || `项目 ${index + 1}`}</span>
             {/if}
