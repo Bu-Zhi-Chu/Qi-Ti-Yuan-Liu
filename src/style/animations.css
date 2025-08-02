@@ -13,10 +13,10 @@
 /* 标题脉冲发光动画 */
 @keyframes pulse-glow {
     0%, 100% {
-        text-shadow: 0 0 20px rgba(99, 102, 241, 0.5), 0 0 40px rgba(139, 92, 246, 0.3);
+        text-shadow: 0 0 calc(20px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.5), 0 0 calc(40px * var(--scale-ratio, 1)) rgba(139, 92, 246, 0.3);
     }
     50% {
-        text-shadow: 0 0 30px rgba(99, 102, 241, 0.8), 0 0 60px rgba(139, 92, 246, 0.6), 0 0 80px rgba(99, 102, 241, 0.4);
+        text-shadow: 0 0 calc(30px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.8), 0 0 calc(60px * var(--scale-ratio, 1)) rgba(139, 92, 246, 0.6), 0 0 calc(80px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.4);
     }
 }
 
@@ -28,15 +28,15 @@
 
 /* 按钮悬停发光动画 */
 @keyframes button-glow {
-    0% { box-shadow: 0 8px 32px rgba(99, 102, 241, 0.3); }
-    50% { box-shadow: 0 12px 48px rgba(99, 102, 241, 0.5), 0 0 20px rgba(139, 92, 246, 0.3); }
-    100% { box-shadow: 0 8px 32px rgba(99, 102, 241, 0.3); }
+    0% { box-shadow: 0 calc(8px * var(--scale-ratio, 1)) calc(32px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.3); }
+    50% { box-shadow: 0 calc(12px * var(--scale-ratio, 1)) calc(48px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.5), 0 0 calc(20px * var(--scale-ratio, 1)) rgba(139, 92, 246, 0.3); }
+    100% { box-shadow: 0 calc(8px * var(--scale-ratio, 1)) calc(32px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.3); }
 }
 
 /* 卡片悬停动画 */
 @keyframes card-hover {
     0% { transform: translateY(0px); }
-    100% { transform: translateY(-5px); }
+    100% { transform: translateY(calc(-5px * var(--scale-ratio, 1))); }
 }
 
 /* 加载动画 */
@@ -47,7 +47,7 @@
 
 /* 淡入动画 */
 @keyframes fade-in {
-    0% { opacity: 0; transform: translateY(20px); }
+    0% { opacity: 0; transform: translateY(calc(20px * var(--scale-ratio, 1))); }
     100% { opacity: 1; transform: translateY(0); }
 }
 
@@ -114,16 +114,7 @@
 }
 
 /* 七巧板形状样式 */
-.tangram-bg {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    pointer-events: none;
-    z-index: 0;
-    overflow: hidden;
-}
+
 
 .tangram-shape {
     position: absolute;
@@ -138,32 +129,32 @@
 }
 
 .tangram-triangle-1 {
-    border-left: 60px solid transparent;
-    border-right: 60px solid transparent;
-    border-bottom: 120px solid rgba(99, 102, 241, 0.3);
+    border-left: calc(60px * var(--scale-ratio, 1)) solid transparent;
+    border-right: calc(60px * var(--scale-ratio, 1)) solid transparent;
+    border-bottom: calc(120px * var(--scale-ratio, 1)) solid rgba(99, 102, 241, 0.3);
     animation: tangram-fall-1 15s linear infinite;
 }
 
 .tangram-triangle-2 {
-    border-left: 50px solid transparent;
-    border-right: 50px solid transparent;
-    border-bottom: 100px solid rgba(139, 92, 246, 0.3);
+    border-left: calc(50px * var(--scale-ratio, 1)) solid transparent;
+    border-right: calc(50px * var(--scale-ratio, 1)) solid transparent;
+    border-bottom: calc(100px * var(--scale-ratio, 1)) solid rgba(139, 92, 246, 0.3);
     animation: tangram-fall-2 18s linear infinite;
     animation-delay: -5s;
 }
 
 .tangram-triangle-3 {
-    border-left: 40px solid transparent;
-    border-right: 40px solid transparent;
-    border-bottom: 80px solid rgba(59, 130, 246, 0.3);
+    border-left: calc(40px * var(--scale-ratio, 1)) solid transparent;
+    border-right: calc(40px * var(--scale-ratio, 1)) solid transparent;
+    border-bottom: calc(80px * var(--scale-ratio, 1)) solid rgba(59, 130, 246, 0.3);
     animation: tangram-fall-3 20s linear infinite;
     animation-delay: -8s;
 }
 
 /* 七巧板正方形 */
 .tangram-square {
-    width: 80px;
-    height: 80px;
+    width: calc(80px * var(--scale-ratio, 1));
+    height: calc(80px * var(--scale-ratio, 1));
     background: rgba(16, 185, 129, 0.3);
     transform: rotate(45deg);
     animation: tangram-fall-4 22s linear infinite;
@@ -172,8 +163,8 @@
 
 /* 七巧板平行四边形 */
 .tangram-parallelogram {
-    width: 100px;
-    height: 60px;
+    width: calc(100px * var(--scale-ratio, 1));
+    height: calc(60px * var(--scale-ratio, 1));
     background: rgba(245, 158, 11, 0.3);
     transform: skew(-20deg);
     animation: tangram-fall-5 25s linear infinite;
@@ -182,26 +173,26 @@
 
 /* 七巧板中等三角形 */
 .tangram-medium-triangle {
-    border-left: 40px solid transparent;
-    border-right: 40px solid transparent;
-    border-bottom: 80px solid rgba(236, 72, 153, 0.3);
+    border-left: calc(40px * var(--scale-ratio, 1)) solid transparent;
+    border-right: calc(40px * var(--scale-ratio, 1)) solid transparent;
+    border-bottom: calc(80px * var(--scale-ratio, 1)) solid rgba(236, 72, 153, 0.3);
     animation: tangram-fall-3 20s linear infinite;
     animation-delay: -8s;
 }
 
 /* 七巧板小三角形 */
 .tangram-small-triangle {
-    border-left: 30px solid transparent;
-    border-right: 30px solid transparent;
-    border-bottom: 60px solid rgba(34, 197, 94, 0.3);
+    border-left: calc(30px * var(--scale-ratio, 1)) solid transparent;
+    border-right: calc(30px * var(--scale-ratio, 1)) solid transparent;
+    border-bottom: calc(60px * var(--scale-ratio, 1)) solid rgba(34, 197, 94, 0.3);
     animation: tangram-fall-2 18s linear infinite;
     animation-delay: -5s;
 }
 
 /* 七巧板平行四边形 */
 .tangram-parallelogram {
-    width: 50px;
-    height: 30px;
+    width: calc(50px * var(--scale-ratio, 1));
+    height: calc(30px * var(--scale-ratio, 1));
     background: rgba(245, 158, 11, 0.3);
     transform: skew(-20deg);
     animation: tangram-fall-5 25s linear infinite;
@@ -210,18 +201,18 @@
 
 /* 七巧板中三角形 */
 .tangram-medium-triangle {
-    border-left: 40px solid transparent;
-    border-right: 40px solid transparent;
-    border-bottom: 70px solid rgba(239, 68, 68, 0.3);
+    border-left: calc(40px * var(--scale-ratio, 1)) solid transparent;
+    border-right: calc(40px * var(--scale-ratio, 1)) solid transparent;
+    border-bottom: calc(70px * var(--scale-ratio, 1)) solid rgba(239, 68, 68, 0.3);
     animation: tangram-fall-1 17s linear infinite;
     animation-delay: -3s;
 }
 
 /* 七巧板小三角形 */
 .tangram-small-triangle {
-    border-left: 30px solid transparent;
-    border-right: 30px solid transparent;
-    border-bottom: 50px solid rgba(34, 197, 94, 0.3);
+    border-left: calc(30px * var(--scale-ratio, 1)) solid transparent;
+    border-right: calc(30px * var(--scale-ratio, 1)) solid transparent;
+    border-bottom: calc(50px * var(--scale-ratio, 1)) solid rgba(34, 197, 94, 0.3);
     animation: tangram-fall-2 19s linear infinite;
     animation-delay: -7s;
 }
