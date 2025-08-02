@@ -73,3 +73,5 @@
 11. 我们解决的自适应的问题,开发完成了项目最核心的组件ResponsiveBox
 12. 我们开会决定用dexie来做数据持久化,先写了一个基础的工具类
 13. 我们基于ResponsiveBox开发了RealTimeClock,并且制定了组件封装的规范
+14. 我们更改了组件封装的规范,并开发了SimpleBox组件来解决大量的ResponsiveBox嵌套和复用问题
+15. 我们封装了实时时间和输入框的组件
