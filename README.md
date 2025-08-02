@@ -28,12 +28,12 @@
     │   │   ├── Core/                              # 核心机制组件
     │   │   │   └── DynamicComponent.svelte        # 能切换组件类型的通用容器
     │   │   │   └── ResponsiveBox.svelte           # 自适应的基础容器 所有自定义组件的原型
-    │   │   ├── demo/                              # 测试组件
     │   │   ├── modules/                           # 模块组件
     │   │   ├── pages/                             # 页面级组件
     │   │   │   ├── 404.svelte                     # 404错误页面
     │   │   │   ├── 500.svelte                     # 500错误页面
     │   │   │   ├── AboutPage.svelte               # 关于
+    │   │   │   ├── DemoPage.svelte                # 演示
     │   │   │   ├── EditorPage.svelte              # 编辑器页面
     │   │   │   ├── HomePage.svelte                # 首页
     │   │   │   └── SettingsPage.svelte            # 设置
