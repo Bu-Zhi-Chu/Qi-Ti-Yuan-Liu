@@ -24,8 +24,11 @@
     }
 
     let { style = '', children, ...rest }: Props = $props()
+    // 基础样式字符串，避免重复 style="" 属性
+    const baseStyle = 'display:inline-block;width:100%;height:100%'
+    const mergedStyle = `${baseStyle}${style ? ';' + style : ''}`
 </script>
 
-<div style="display: inline-block; width: 100%; height: 100%; {style}" {...rest}>
+<div style={mergedStyle} {...rest}>
     {@render children?.()}
 </div>
