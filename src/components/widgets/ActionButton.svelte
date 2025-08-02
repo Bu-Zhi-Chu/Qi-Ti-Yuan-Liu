@@ -139,7 +139,8 @@
     {#each buttons as button, index}
         {@const isInteractive = !button.disabled && !button.loading}
         <SimpleBox
-            style={getButtonStyle(button, index) + (isInteractive ? ' hover:transform: translateY(-2px) scale(1.05); hover:box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);' : '')}
+            class={isInteractive ? 'action-button-interactive' : ''}
+            style={getButtonStyle(button, index)}
             data-id={dataId ? `${dataId}-button-${index}` : `button-${index}`}
             onclick={() => handleButtonClick(button, index)}
             role="button"
@@ -163,5 +164,10 @@
         100% {
             transform: rotate(360deg);
         }
+    }
+
+    :global(.action-button-interactive:hover) {
+        transform: translateY(-2px) scale(1.05) !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
     }
 </style>

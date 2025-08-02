@@ -9,6 +9,7 @@
     import SimpleBox from '../Core/SimpleBox.svelte'
     import ResponsiveBox from '../Core/ResponsiveBox.svelte'
     import TangramBackground from '../widgets/TangramBackground.svelte'
+    import ActionButton from '../widgets/ActionButton.svelte'
     import logoImage from '../../assets/img/icon-192.png'
 
     interface Project {
@@ -124,7 +125,7 @@
     <!-- 头部区域 -->
     <ResponsiveBox style="margin-bottom: 60px; text-align: center;">
         <ResponsiveBox style="display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 16px;">
-            <img src={logoImage} alt="七巧板" style="width: 48px; height: 48px; border-radius: 12px; box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);" />
+            <img src={logoImage} alt="七巧板" style="display: inline;width: calc(48px * var(--scale-ratio, 1)); height: calc(48px * var(--scale-ratio, 1)); border-radius: 12px; box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);" />
             <ResponsiveBox
                 style="font-size: 48px; font-weight: 700; color: #f8fafc; letter-spacing: -0.02em; text-shadow: 0 0 20px rgba(99, 102, 241, 0.5), 0 0 40px rgba(139, 92, 246, 0.3); background: linear-gradient(135deg, #f8fafc 0%, #94a3b8 50%, #f8fafc 100%); background-size: 200% 200%; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: gradient-shift 3s ease-in-out infinite, pulse-glow 2s ease-in-out infinite;"
             >
@@ -140,38 +141,28 @@
 
     <!-- 操作按钮区域 -->
     <ResponsiveBox style="margin-bottom: 80px; display: flex; gap: 20px; align-items: center; justify-content: center; flex-wrap: wrap;">
-        <ResponsiveBox
-            style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border: none; color: #f8fafc; padding: 20px 40px; border-radius: 16px; font-size: 18px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 8px 32px rgba(99, 102, 241, 0.3); backdrop-filter: blur(10px); transform: translateY(0px);"
-            onclick={createNewProject}
-            onmouseenter={(e: MouseEvent) => {
-                const target = e.currentTarget as HTMLElement
-                target.style.transform = 'translateY(-4px) scale(1.05)'
-                target.style.boxShadow = '0 20px 60px rgba(99, 102, 241, 0.5), 0 0 40px rgba(139, 92, 246, 0.4)'
-            }}
-            onmouseleave={(e: MouseEvent) => {
-                const target = e.currentTarget as HTMLElement
-                target.style.transform = 'translateY(0px) scale(1)'
-                target.style.boxShadow = '0 8px 32px rgba(99, 102, 241, 0.3)'
-            }}
-        >
-            开始创建
-        </ResponsiveBox>
-        <ResponsiveBox
-            style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; color: #f8fafc; padding: 20px 40px; border-radius: 16px; font-size: 18px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 8px 32px rgba(16, 185, 129, 0.3); backdrop-filter: blur(10px); transform: translateY(0px);"
-            onclick={() => (window.location.hash = '#/demo')}
-            onmouseenter={(e: MouseEvent) => {
-                const target = e.currentTarget as HTMLElement
-                target.style.transform = 'translateY(-4px) scale(1.05)'
-                target.style.boxShadow = '0 20px 60px rgba(16, 185, 129, 0.5), 0 0 40px rgba(5, 150, 105, 0.4)'
-            }}
-            onmouseleave={(e: MouseEvent) => {
-                const target = e.currentTarget as HTMLElement
-                target.style.transform = 'translateY(0px) scale(1)'
-                target.style.boxShadow = '0 8px 32px rgba(16, 185, 129, 0.3)'
-            }}
-        >
-            查看演示
-        </ResponsiveBox>
+        <ActionButton
+            buttons={[
+                {
+                    name: '开始创建',
+                    variant: 'primary',
+                    size: 'large'
+                }
+            ]}
+            style="width: 160px; height: 56px;"
+            onbuttonClick={createNewProject}
+        />
+        <ActionButton
+            buttons={[
+                {
+                    name: '查看演示',
+                    variant: 'secondary',
+                    size: 'large'
+                }
+            ]}
+            style="width: 160px; height: 56px;"
+            onbuttonClick={() => (window.location.hash = '#/demo')}
+        />
     </ResponsiveBox>
 
     <!-- 历史项目区域 - 现代滚动布局 -->
