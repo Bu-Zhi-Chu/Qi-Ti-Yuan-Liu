@@ -21,9 +21,6 @@ if (!DEBUG_MODE) {
 }
 
 
-// 初始化PWA检测和降级处理
-PWAChecker.initPWA()
-
 // 初始化视口缩放（基于设计稿1912x1000）
 screenDetector.initViewportScale()
 

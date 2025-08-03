@@ -39,7 +39,8 @@ export default defineConfig({
                 ]
             },
             devOptions: {
-                enabled: true
+                // 开发阶段禁用 PWA Service Worker，避免 Workbox 报错
+                enabled: false
             }
         })
     ],
