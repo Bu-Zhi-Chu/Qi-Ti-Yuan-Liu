@@ -108,7 +108,9 @@
         }
     ])
 
-    function createNewProject() {}
+    function createNewProject() {
+        window.location.hash = '#/editor'
+    }
 
     function openProject(projectId: string) {}
 </script>

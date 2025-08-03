@@ -28,6 +28,7 @@ import AboutPage from '../components/pages/AboutPage.svelte'
 import SettingsPage from '../components/pages/SettingsPage.svelte'
 import DemoPage from '../components/pages/DemoPage.svelte'
 import PlaygroundPage from '../components/pages/PlaygroundPage.svelte'
+import EditorPage from '../components/pages/EditorPage.svelte'
 
 
 /**
@@ -76,6 +77,12 @@ export const routes: RouteConfig[] = [
         path: '/playground',
         component: PlaygroundPage,
         name: 'playground-base'
+    },
+    {
+        // 编辑器页面
+        path: '/editor',
+        component: EditorPage,
+        name: 'editor'
     }
     // 注意：404页面处理已移至App.svelte，通过Router的statuses配置实现
 ]
