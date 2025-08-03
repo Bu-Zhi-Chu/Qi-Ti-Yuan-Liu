@@ -24,6 +24,7 @@
 
     import GenericCard from '../widgets/GenericCard.svelte'
     import logoImage from '../../assets/img/icon-192.png'
+    import { goto } from '@mateothegreat/svelte5-router'
 
     interface ComponentItem {
         id: string
@@ -312,7 +313,16 @@
 
                     <ResponsiveBox style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px;">
                         {#each filteredComponents() as component}
-                            <GenericCard prop1={component.id} prop2={component.name} prop3={component.description} prop4={component.image} prop5={component.badge} onClick={() => handleCardClick(component)} />
+                            <a
+                                href={`/playground/${component.id}`}
+                                onclick={(e) => {
+                                    e.preventDefault()
+                                    goto(`/playground/${component.id}`)
+                                }}
+                                style="text-decoration:none;display:block;"
+                            >
+                                <GenericCard prop1={component.id} prop2={component.name} prop3={component.description} prop4={component.image} prop5={component.badge} />
+                            </a>
                         {/each}
                     </ResponsiveBox>
                 </ResponsiveBox>
@@ -325,7 +335,7 @@
     </ResponsiveBox>
 
     <!-- 返回首页链接 -->
-    <a href="/" class="back-to-home">返回首页 →</a>
+    <a href="/" class="back-to-home">← 返回</a>
 </ResponsiveBox>
 
 <style>

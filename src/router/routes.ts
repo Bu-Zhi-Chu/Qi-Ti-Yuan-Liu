@@ -27,6 +27,7 @@ import HomePage from '../components/pages/HomePage.svelte'
 import AboutPage from '../components/pages/AboutPage.svelte'
 import SettingsPage from '../components/pages/SettingsPage.svelte'
 import DemoPage from '../components/pages/DemoPage.svelte'
+import PlaygroundPage from '../components/pages/PlaygroundPage.svelte'
 
 
 /**
@@ -64,6 +65,18 @@ export const routes: RouteConfig[] = [
         component: DemoPage,
         name: 'demo'
     },
+    {
+        // Playground 示例运行页面
+        path: '/playground/(?<id>[^/]+)',
+        component: PlaygroundPage,
+        name: 'playground'
+    },
+    {
+        // Playground 基础页，无ID
+        path: '/playground',
+        component: PlaygroundPage,
+        name: 'playground-base'
+    }
     // 注意：404页面处理已移至App.svelte，通过Router的statuses配置实现
 ]
 

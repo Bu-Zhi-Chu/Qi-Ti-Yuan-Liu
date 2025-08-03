@@ -19,11 +19,18 @@
         "vite-plugin-pwa": "^1.0.2"
     },
     "dependencies": {
+        "@codemirror/commands": "^6.8.1",
+        "@codemirror/lang-javascript": "^6.2.4",
+        "@codemirror/lint": "^6.8.5",
+        "@codemirror/state": "^6.5.2",
+        "@codemirror/theme-one-dark": "^6.1.3",
+        "@codemirror/view": "^6.38.1",
         "@mateothegreat/svelte5-router": "^2.16.8",
         "@types/dexie": "^1.3.32",
         "@types/uuid": "^10.0.0",
         "dexie": "^4.0.11",
         "svelte-dnd-action": "^0.9.64",
+        "svelte-splitpanes": "^8.0.9",
         "uuid": "^11.1.0"
     }
 }
