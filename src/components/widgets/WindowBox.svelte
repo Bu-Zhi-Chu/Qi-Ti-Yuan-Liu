@@ -28,33 +28,24 @@
 <script lang="ts">
     import ResponsiveBox from '../Core/ResponsiveBox.svelte'
     import SimpleBox from '../Core/SimpleBox.svelte'
-    import { onMount, onDestroy } from 'svelte'
+    import { onMount } from 'svelte'
 
     /* --------------------------- Props (Runes) --------------------------- */
     interface Props {
         title?: string
         width?: number // 初始宽度，px
         height?: number // 初始高度，px
-        draggable?: boolean
         closeOnOverlay?: boolean
         onClose?: () => void
         overlayColor?: string // 遮罩颜色
         children?: import('svelte').Snippet
     }
 
-    let { title = '窗口', width = 600, height = 400, draggable = true, closeOnOverlay = false, overlayColor = 'rgba(0,0,0,0.5)', onClose, children }: Props = $props()
+    let { title = '窗口', width = 600, height = 400, closeOnOverlay = false, overlayColor = 'rgba(0,0,0,0.5)', onClose, children }: Props = $props()
 
     /* ----------------------------- State ----------------------------- */
     // 最大化状态
     let isMaximized = $state(false)
-    // 拖拽相关
-    let offsetX = 0,
-        offsetY = 0
-    let startX = 0,
-        startY = 0
-    let isDragging = false
-    // 是否已移动，用于区分初始居中与拖拽后定位
-    let hasMoved = $state(false)
 
     // 记录还原时尺寸 & 位置（相对于视口）
     let restoreRect = {
@@ -95,37 +86,6 @@
         }
     }
 
-    function pointerDown(e: PointerEvent) {
-        if (!draggable || isMaximized) return
-        isDragging = true
-        startX = e.clientX
-        startY = e.clientY
-        const rect = windowRef.getBoundingClientRect()
-        offsetX = rect.left
-        offsetY = rect.top
-        window.addEventListener('pointermove', pointerMove)
-        window.addEventListener('pointerup', pointerUp)
-    }
-
-    function pointerMove(e: PointerEvent) {
-        if (!isDragging || isMaximized) return
-        const dx = e.clientX - startX
-        const dy = e.clientY - startY
-        hasMoved = true
-        // 重新赋值对象以触发响应式更新
-        restoreRect = {
-            ...restoreRect,
-            left: offsetX + dx,
-            top: offsetY + dy
-        }
-    }
-
-    function pointerUp() {
-        isDragging = false
-        window.removeEventListener('pointermove', pointerMove)
-        window.removeEventListener('pointerup', pointerUp)
-    }
-
     /* ----------------------------- Styles ---------------------------- */
     const overlayStyle = $derived(`position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:${overlayColor};z-index:1000`)
 
@@ -133,14 +93,11 @@
         if (isMaximized) {
             return 'position:fixed;inset:0;margin:0;'
         }
-        if (!hasMoved) {
-            return `position:absolute;width:${restoreRect.width}px;height:${restoreRect.height}px;left:50%;top:50%;transform:translate(-50%,-50%);`
-        }
-        return `position:absolute;width:${restoreRect.width}px;height:${restoreRect.height}px;left:${restoreRect.left}px;top:${restoreRect.top}px;`
+        return `position:absolute;width:calc(${restoreRect.width}px * var(--scale-ratio, 1));height:calc(${restoreRect.height}px * var(--scale-ratio, 1));left:50%;top:50%;transform:translate(-50%,-50%);`
     })
 
     // 标题栏动态样式（根据拖拽/最大化状态切换 cursor）
-    const titleBarStyle = $derived(() => `height:32px;background:#333;color:#fff;display:flex;align-items:center;justify-content:space-between;user-select:none;cursor:${draggable && !isMaximized ? 'move' : 'default'}`)
+    const titleBarStyle = $derived(() => 'height:calc(32px * var(--scale-ratio, 1));background:#333;color:#fff;display:flex;align-items:center;justify-content:space-between;user-select:none;cursor:default')
 
     /* ----------------------------- Mount ----------------------------- */
     onMount(() => {
@@ -154,11 +111,6 @@
             }
         }
     })
-
-    onDestroy(() => {
-        // 清理拖拽监听 (保险)
-        pointerUp()
-    })
 </script>
 
 <!-- 遮罩层 -->
@@ -166,27 +118,27 @@
 <div style={overlayStyle} onclick={handleOverlayClick}>
     <!-- 窗口主体 -->
     <div bind:this={windowRef} style={baseWindowStyle()}>
-        <ResponsiveBox style="width:100%;height:100%;background:#fff;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,0.3);overflow:hidden;display:flex;flex-direction:column;">
+        <ResponsiveBox style="width:100%;height:100%;background:#fff;border-radius:calc(6px * var(--scale-ratio, 1));box-shadow:0 2px 8px rgba(0,0,0,0.3);overflow:hidden;display:flex;flex-direction:column;">
             <!-- 标题栏 -->
             <!-- 标题栏 -->
-            <SimpleBox style={titleBarStyle()} onpointerdown={pointerDown}>
+            <SimpleBox style={titleBarStyle()}>
                 <!-- 左侧标题 -->
-                <span style="padding-left:12px;font-size:14px;">{title}</span>
+                <span style="padding-left:calc(12px * var(--scale-ratio, 1));font-size:calc(14px * var(--scale-ratio, 1));">{title}</span>
                 <!-- 右侧按钮 -->
                 <span style="display:flex;height:100%">
-                    <button onclick={toggleMaximize} style="all:unset;width:32px;height:100%;display:flex;align-items:center;justify-content:center;cursor:pointer;">
+                    <button onclick={toggleMaximize} style="all:unset;width:calc(32px * var(--scale-ratio, 1));height:100%;display:flex;align-items:center;justify-content:center;cursor:pointer;">
                         {#if isMaximized}
                             🗗
                         {:else}
                             🗖
                         {/if}
                     </button>
-                    <button onclick={close} style="all:unset;width:32px;height:100%;display:flex;align-items:center;justify-content:center;cursor:pointer;">✕</button>
+                    <button onclick={close} style="all:unset;width:calc(32px * var(--scale-ratio, 1));height:100%;display:flex;align-items:center;justify-content:center;cursor:pointer;">✕</button>
                 </span>
             </SimpleBox>
 
             <!-- 内容区域 -->
-            <SimpleBox style="flex:1;overflow:auto;padding:16px;">
+            <SimpleBox style="flex:1;overflow:auto;padding:calc(16px * var(--scale-ratio, 1));">
                 {@render children?.()}
             </SimpleBox>
         </ResponsiveBox>

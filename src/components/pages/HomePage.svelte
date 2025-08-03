@@ -13,6 +13,7 @@
     import GenericCard from '../widgets/GenericCard.svelte'
     import logoImage from '../../assets/img/icon-192.png'
     import WindowBox from '../widgets/WindowBox.svelte'
+    import NewProjectDialog from '../widgets/NewProjectDialog.svelte'
 
     interface Project {
         id: string
@@ -117,6 +118,11 @@
     }
 
     function openProject(projectId: string) {}
+
+    function confirmNewProject(name: string) {
+        window.location.hash = '#/editor'
+        showWindow = false
+    }
 </script>
 
 <!-- 七巧板背景动画层 -->
@@ -186,8 +192,6 @@
 </ResponsiveBox>
 {#if showWindow}
     <WindowBox title="新建项目" width={800} height={600} onClose={() => (showWindow = false)}>
-        <ResponsiveBox style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;">
-            <span>这里是新建项目向导...</span>
-        </ResponsiveBox>
+        <NewProjectDialog on:confirm={(e) => confirmNewProject(e.detail)} on:cancel={() => (showWindow = false)} />
     </WindowBox>
 {/if}
