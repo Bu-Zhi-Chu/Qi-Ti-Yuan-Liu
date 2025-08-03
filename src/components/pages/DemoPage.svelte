@@ -347,7 +347,7 @@
         text-decoration: none;
         font-size: 14px;
         transition: color 0.2s ease;
-        z-index: 1000;
+        z-index: 10;
     }
     .back-to-home:hover {
         color: rgba(255, 255, 255, 1);

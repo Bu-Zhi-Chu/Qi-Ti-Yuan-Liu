@@ -17,7 +17,7 @@
     // iframe 预览 URL（Blob）
     let htmlUrl: string = ''
     // 侧栏比例 (0~1)
-    let ratio: number = parseFloat(localStorage.getItem('playground-ratio') || '0.4')
+    let ratio: number = 0.4
 
     // 运行代码 -> 生成 Blob URL
     function runCode() {
@@ -46,7 +46,6 @@
     function handleResizeEnd(e: CustomEvent<any>) {
         const sizes = Array.isArray(e.detail) ? e.detail.map((d: any) => d.size) : e.detail.sizes
         ratio = sizes[0] / (sizes[0] + sizes[1])
-        localStorage.setItem('playground-ratio', ratio.toString())
     }
 </script>
 
@@ -75,10 +74,7 @@
         text-decoration: none;
         font-size: calc(14px * var(--scale-ratio, 1));
         transition: color 0.2s ease;
-        z-index: 1000;
-    }
-    .back-to-demo:hover {
-        color: rgba(255, 255, 255, 1);
+        z-index: 10;
     }
 
     :global(.splitpanes.default-theme .splitpanes__splitter) {
