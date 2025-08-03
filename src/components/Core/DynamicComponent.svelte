@@ -10,7 +10,7 @@
     // 支持的组件类型映射
     const componentMap = {
         RealTimeClock: () => import('../widgets/RealTimeClock.svelte'),
-        CustomTextInput: () => import('../widgets/CustomTextInput.svelte'),
+
         ResponsiveBox: () => import('./ResponsiveBox.svelte'),
         SimpleBox: () => import('./SimpleBox.svelte')
         // 可扩展更多组件类型
