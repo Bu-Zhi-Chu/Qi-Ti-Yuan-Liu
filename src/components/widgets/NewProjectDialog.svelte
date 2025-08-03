@@ -91,13 +91,17 @@
         padding: calc(8px * var(--scale-ratio, 1)) calc(24px * var(--scale-ratio, 1));
         font-size: calc(14px * var(--scale-ratio, 1));
         border-radius: calc(8px * var(--scale-ratio, 1));
-        border: calc(1px * var(--scale-ratio, 1)) solid rgba(99, 102, 241, 0.4);
-        background: rgba(99, 102, 241, 0.15);
-        color: #e0e7ff;
-        transition: 0.2s;
+        border: none;
+        background: linear-gradient(135deg, #6366f1 0%, #7c3aed 100%);
+        color: #f8fafc;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        transition:
+            transform 0.15s ease,
+            box-shadow 0.15s ease;
     }
     button:hover {
-        background: rgba(99, 102, 241, 0.25);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
     }
 
     /* 模板卡片按钮，重置默认按钮样式 */

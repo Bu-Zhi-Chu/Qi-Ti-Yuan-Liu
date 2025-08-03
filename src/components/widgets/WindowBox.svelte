@@ -41,7 +41,7 @@
         children?: import('svelte').Snippet
     }
 
-    let { title = '窗口', width = 600, height = 400, closeOnOverlay = false, overlayColor = 'rgba(0,0,0,0.5)', onClose, children }: Props = $props()
+    let { title = '窗口', width = 600, height = 400, closeOnOverlay = false, overlayColor = 'rgba(15,23,42,0.8)', onClose, children }: Props = $props()
 
     /* ----------------------------- State ----------------------------- */
     // 最大化状态
@@ -97,7 +97,7 @@
     })
 
     // 标题栏动态样式（根据拖拽/最大化状态切换 cursor）
-    const titleBarStyle = $derived(() => 'height:calc(32px * var(--scale-ratio, 1));background:#333;color:#fff;display:flex;align-items:center;justify-content:space-between;user-select:none;cursor:default')
+    const titleBarStyle = $derived(() => 'height:calc(32px * var(--scale-ratio, 1));background:#0f172a;color:#f8fafc;display:flex;align-items:center;justify-content:space-between;user-select:none;cursor:default')
 
     /* ----------------------------- Mount ----------------------------- */
     onMount(() => {
@@ -118,7 +118,7 @@
 <div style={overlayStyle} onclick={handleOverlayClick}>
     <!-- 窗口主体 -->
     <div bind:this={windowRef} style={baseWindowStyle()}>
-        <ResponsiveBox style="width:100%;height:100%;background:#fff;border-radius:calc(6px * var(--scale-ratio, 1));box-shadow:0 2px 8px rgba(0,0,0,0.3);overflow:hidden;display:flex;flex-direction:column;">
+        <ResponsiveBox style="width:100%;height:100%;background:linear-gradient(135deg, #1e293b 0%, #334155 100%);color:#f8fafc;border-radius:calc(6px * var(--scale-ratio, 1));box-shadow:0 2px 8px rgba(0,0,0,0.3);overflow:hidden;display:flex;flex-direction:column;">
             <!-- 标题栏 -->
             <!-- 标题栏 -->
             <SimpleBox style={titleBarStyle()}>
