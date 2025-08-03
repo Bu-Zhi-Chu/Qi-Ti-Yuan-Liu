@@ -15,7 +15,7 @@
   注意：必须显式声明父组件中的 `code` 变量，以便实现双向绑定。
 -->
 <script lang="ts">
-    import { onMount, onDestroy, createEventDispatcher } from 'svelte'
+    import { onMount, onDestroy } from 'svelte'
     import { EditorState, type Extension } from '@codemirror/state'
     import { EditorView, keymap, lineNumbers } from '@codemirror/view'
     import { defaultKeymap, history } from '@codemirror/commands'
@@ -24,18 +24,21 @@
     import { oneDark } from '@codemirror/theme-one-dark'
 
     // --------------------------- Props ---------------------------
-    /** 编辑器当前代码内容 (双向绑定) */
-    export let code: string = ''
-    /** 语言类型 (目前仅支持 javascript，可扩展) */
-    export let language: 'javascript' | string = 'javascript'
-    /** 是否只读 */
-    export let readonly: boolean = false
-    /** 主题 (仅提供 oneDark，可扩展) */
-    export let theme: 'one-dark' | 'default' = 'one-dark'
-    /** 编辑器高度 */
-    export let height = '100%'
+    /* --------------------------- Props (Runes) --------------------------- */
+    // 使用 $props() + $bindable() 迁移到 Svelte5 Runes 语法，code 支持双向绑定
+    type CodeEditorProps = {
+        code: string
+        language?: 'javascript' | string
+        readonly?: boolean
+        theme?: 'one-dark' | 'default'
+        height?: string
+        run?: (code: string) => void
+        reset?: () => void
+    }
 
-    const dispatch = createEventDispatcher()
+    let { code = $bindable(''), language = 'javascript', readonly = false, theme = 'one-dark', height = '100%', run: onRun = undefined, reset: onReset = undefined } = $props()
+
+    // 事件通过回调 props 处理，已无需 dispatch
     let editorContainer: HTMLDivElement | null = null
     let view: EditorView | null = null
 
@@ -49,7 +52,6 @@
                 if (v.docChanged) {
                     // 细粒度同步外部 code
                     code = v.state.doc.toString()
-                    dispatch('update', { code })
                 }
             })
         ]
@@ -87,13 +89,22 @@
         view = null
     })
 
+    // 外部 code 变化时同步到编辑器
+    $effect(() => {
+        if (view && view.state.doc.toString() !== code) {
+            view.dispatch({
+                changes: { from: 0, to: view.state.doc.length, insert: code }
+            })
+        }
+    })
+
     // --------------------------- Actions ---------------------------
     function handleRun() {
-        dispatch('run', { code })
+        onRun?.(code)
     }
 
     function handleReset() {
-        dispatch('reset')
+        onReset?.()
     }
 </script>
 
@@ -103,8 +114,8 @@
 <div class="editor-wrapper" style="width: 100%; height: {height};">
     <!-- 工具栏 -->
     <div class="toolbar">
-        <button on:click={handleRun} class="btn-run">运行</button>
-        <button on:click={handleReset} class="btn-reset">重置</button>
+        <button onclick={handleRun} class="btn-run">运行</button>
+        <button onclick={handleReset} class="btn-reset">重置</button>
     </div>
     <!-- 编辑器 -->
     <div bind:this={editorContainer} class="editor-container"></div>

@@ -49,17 +49,19 @@
     }
 </script>
 
-<Splitpanes on:resized={handleResizeEnd} style="width: 100vw; height: 100vh;">
-    <!-- 左侧代码编辑区 -->
-    <Pane size={ratio * 100}>
-        <CodeEditor bind:code on:run={runCode} on:reset={resetCode} height="100%" />
-    </Pane>
+<div style="width: 100vw; height: 100vh;">
+    <Splitpanes on:resized={handleResizeEnd}>
+        <!-- 左侧代码编辑区 -->
+        <Pane size={ratio * 100}>
+            <CodeEditor bind:code run={runCode} reset={resetCode} />
+        </Pane>
 
-    <!-- 右侧预览区 -->
-    <Pane>
-        <iframe src={htmlUrl} title="preview" sandbox="allow-scripts allow-same-origin" style="width: 100%; height: 100%; border: none; background: #fff;"></iframe>
-    </Pane>
-</Splitpanes>
+        <!-- 右侧预览区 -->
+        <Pane>
+            <iframe src={htmlUrl} title="preview" sandbox="allow-scripts allow-same-origin" style="width: 100%; height: 100%; border: none; background: #fff;"></iframe>
+        </Pane>
+    </Splitpanes>
+</div>
 
 <!-- 返回 Demo 按钮 -->
 <a href="/demo" class="back-to-demo">← 返回</a>
