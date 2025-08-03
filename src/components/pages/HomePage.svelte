@@ -12,6 +12,7 @@
     import ActionButton from '../widgets/ActionButton.svelte'
     import GenericCard from '../widgets/GenericCard.svelte'
     import logoImage from '../../assets/img/icon-192.png'
+    import WindowBox from '../widgets/WindowBox.svelte'
 
     interface Project {
         id: string
@@ -108,8 +109,11 @@
         }
     ])
 
+    let showWindow = $state(false)
+
     function createNewProject() {
-        window.location.hash = '#/editor'
+        // 打开新建项目窗口
+        showWindow = true
     }
 
     function openProject(projectId: string) {}
@@ -180,3 +184,10 @@
         </ResponsiveBox>
     </ResponsiveBox>
 </ResponsiveBox>
+{#if showWindow}
+    <WindowBox title="新建项目" width={800} height={600} onClose={() => (showWindow = false)}>
+        <ResponsiveBox style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;">
+            <span>这里是新建项目向导...</span>
+        </ResponsiveBox>
+    </WindowBox>
+{/if}

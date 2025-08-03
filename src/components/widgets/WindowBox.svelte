@@ -42,7 +42,7 @@
         children?: import('svelte').Snippet
     }
 
-    let { title = '窗口', width = 600, height = 400, draggable = true, closeOnOverlay = true, overlayColor = 'rgba(0,0,0,0.5)', onClose, children }: Props = $props()
+    let { title = '窗口', width = 600, height = 400, draggable = true, closeOnOverlay = false, overlayColor = 'rgba(0,0,0,0.5)', onClose, children }: Props = $props()
 
     /* ----------------------------- State ----------------------------- */
     // 最大化状态
@@ -53,6 +53,8 @@
     let startX = 0,
         startY = 0
     let isDragging = false
+    // 是否已移动，用于区分初始居中与拖拽后定位
+    let hasMoved = $state(false)
 
     // 记录还原时尺寸 & 位置（相对于视口）
     let restoreRect = {
@@ -106,11 +108,16 @@
     }
 
     function pointerMove(e: PointerEvent) {
-        if (!isDragging) return
+        if (!isDragging || isMaximized) return
         const dx = e.clientX - startX
         const dy = e.clientY - startY
-        restoreRect.left = offsetX + dx
-        restoreRect.top = offsetY + dy
+        hasMoved = true
+        // 重新赋值对象以触发响应式更新
+        restoreRect = {
+            ...restoreRect,
+            left: offsetX + dx,
+            top: offsetY + dy
+        }
     }
 
     function pointerUp() {
@@ -123,10 +130,11 @@
     const overlayStyle = $derived(`position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:${overlayColor};z-index:1000`)
 
     const baseWindowStyle = $derived(() => {
-        // 窗口定位样式
-
         if (isMaximized) {
             return 'position:fixed;inset:0;margin:0;'
+        }
+        if (!hasMoved) {
+            return `position:absolute;width:${restoreRect.width}px;height:${restoreRect.height}px;left:50%;top:50%;transform:translate(-50%,-50%);`
         }
         return `position:absolute;width:${restoreRect.width}px;height:${restoreRect.height}px;left:${restoreRect.left}px;top:${restoreRect.top}px;`
     })
@@ -139,8 +147,11 @@
         // 初始居中位置
         if (windowRef && !isMaximized) {
             const { innerWidth, innerHeight } = window
-            restoreRect.left = (innerWidth - width) / 2
-            restoreRect.top = (innerHeight - height) / 2
+            restoreRect = {
+                ...restoreRect,
+                left: (innerWidth - width) / 2,
+                top: (innerHeight - height) / 2
+            }
         }
     })
 
