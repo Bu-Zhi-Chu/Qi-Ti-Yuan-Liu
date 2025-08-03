@@ -79,7 +79,10 @@
 
     :global(.splitpanes.default-theme .splitpanes__splitter) {
         background: #d6c0f3 !important; /* 灰色 */
-        width: calc(6px * var(--scale-ratio, 1));
+        width: calc(6px * var(--scale-ratio, 1)) !important;
         cursor: col-resize;
+    }
+    :global(.default-theme.splitpanes--vertical > .splitpanes__splitter:before, .default-theme.splitpanes--vertical > .splitpanes__splitter:after, .default-theme .splitpanes--vertical > .splitpanes__splitter:before, .default-theme .splitpanes--vertical > .splitpanes__splitter:after) {
+        display: none !important;
     }
 </style>

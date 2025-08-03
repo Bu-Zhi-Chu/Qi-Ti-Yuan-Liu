@@ -26,6 +26,4 @@
         align-items: center;
         justify-content: center;
     "
->
-    编辑器页面建设中...
-</ResponsiveBox>
+></ResponsiveBox>

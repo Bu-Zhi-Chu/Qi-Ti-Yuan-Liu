@@ -132,9 +132,11 @@
         border-radius: calc(4px * var(--scale-ratio, 1));
         background: #16a34a;
         color: #fff;
+        border: none;
         font-size: calc(14px * var(--scale-ratio, 1));
     }
     .btn-reset {
+        border: none;
         padding: calc(4px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
         border-radius: calc(4px * var(--scale-ratio, 1));
         background: #0f172a;
@@ -163,5 +165,22 @@
     div::-webkit-scrollbar-thumb {
         background-color: #475569;
         border-radius: 4px;
+    }
+
+    :global(.ͼ1 .cm-lineNumbers .cm-gutterElement) {
+        height: calc(11px * var(--scale-ratio, 1));
+        padding: calc(4px * var(--scale-ratio, 1)) 0;
+        min-width: 0px !important;
+        width: calc(20px * var(--scale-ratio, 1)) !important;
+    }
+    :global(.ͼ1 .cm-gutter-lint) {
+        width: calc(11px * var(--scale-ratio, 1));
+    }
+
+    :global(.ͼ1 .cm-content) {
+        padding: calc(4px * var(--scale-ratio, 1)) 0;
+    }
+    :global(.ͼ1 .cm-line) {
+        padding: 0 calc(4px * var(--scale-ratio, 1));
     }
 </style>
