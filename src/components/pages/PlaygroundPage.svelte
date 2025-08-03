@@ -69,15 +69,21 @@
     /* 返回 Demo 按钮样式 */
     .back-to-demo {
         position: fixed;
-        bottom: 20px;
-        right: 20px;
+        bottom: calc(20px * var(--scale-ratio, 1));
+        right: calc(20px * var(--scale-ratio, 1));
         color: rgba(0, 0, 0, 0.7);
         text-decoration: none;
-        font-size: 14px;
+        font-size: calc(14px * var(--scale-ratio, 1));
         transition: color 0.2s ease;
         z-index: 1000;
     }
     .back-to-demo:hover {
         color: rgba(255, 255, 255, 1);
+    }
+
+    :global(.splitpanes.default-theme .splitpanes__splitter) {
+        background: #d6c0f3 !important; /* 灰色 */
+        width: calc(6px * var(--scale-ratio, 1));
+        cursor: col-resize;
     }
 </style>

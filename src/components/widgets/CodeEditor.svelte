@@ -104,7 +104,7 @@
     <!-- 工具栏 -->
     <div class="toolbar">
         <button on:click={handleRun} class="btn-run">运行</button>
-        <button on:click={handleReset} class="btn-reset">设置</button>
+        <button on:click={handleReset} class="btn-reset">重置</button>
     </div>
     <!-- 编辑器 -->
     <div bind:this={editorContainer} class="editor-container"></div>
@@ -122,24 +122,24 @@
     .toolbar {
         display: flex;
         justify-content: flex-end;
-        gap: 8px;
-        padding: 4px 8px;
+        gap: calc(8px * var(--scale-ratio, 1));
+        padding: calc(4px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));
         background: var(--toolbar-bg, #1e293b);
     }
 
     .btn-run {
-        padding: 4px 12px;
-        border-radius: 4px;
+        padding: calc(4px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
+        border-radius: calc(4px * var(--scale-ratio, 1));
         background: #16a34a;
         color: #fff;
-        font-size: 14px;
+        font-size: calc(14px * var(--scale-ratio, 1));
     }
     .btn-reset {
-        padding: 4px 12px;
-        border-radius: 4px;
+        padding: calc(4px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
+        border-radius: calc(4px * var(--scale-ratio, 1));
         background: #0f172a;
         color: #fff;
-        font-size: 14px;
+        font-size: calc(14px * var(--scale-ratio, 1));
     }
 
     /* 编辑器容器，强制占满空间 */
@@ -157,8 +157,8 @@
 
     /* 简单滚动条美化 */
     div::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
+        width: calc(8px * var(--scale-ratio, 1));
+        height: calc(8px * var(--scale-ratio, 1));
     }
     div::-webkit-scrollbar-thumb {
         background-color: #475569;
