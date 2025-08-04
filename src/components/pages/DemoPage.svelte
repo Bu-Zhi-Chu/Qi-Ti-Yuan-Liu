@@ -16,7 +16,7 @@
 
 <script lang="ts">
     import ResponsiveBox from '../Core/ResponsiveBox.svelte'
-    import SimpleBox from '../Core/SimpleBox.svelte'
+
     import RealTimeClock from '../widgets/RealTimeClock.svelte'
 
     import ActionButton from '../widgets/ActionButton.svelte'
@@ -53,119 +53,6 @@
             description: '显示实时时间的响应式时钟组件，支持多种显示格式',
             image: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjMWUyOTNiIi8+CjxjaXJjbGUgY3g9IjEwMCIgY3k9IjYwIiByPSI0MCIgc3Ryb2tlPSIjNjM2NmYxIiBzdHJva2Utd2lkdGg9IjIiIGZpbGw9Im5vbmUiLz4KPGxpbmUgeDE9IjEwMCIgeTE9IjYwIiB4Mj0iMTAwIiB5Mj0iNDAiIHN0cm9rZT0iIzYzNjZmMSIgc3Ryb2tlLXdpZHRoPSIyIi8+CjxsaW5lIHgxPSIxMDAiIHkxPSI2MCIgeDI9IjEyMCIgeTI9IjYwIiBzdHJva2U9IiM2MzY2ZjEiIHN0cm9rZS13aWR0aD0iMiIvPgo8L3N2Zz4K',
             badge: '组合'
-        },
-        {
-            id: 'realtime-clock',
-            name: '实时时钟',
-            category: '官方示例',
-            component: RealTimeClock,
-            props: { format: 'datetime-weekday', displayMode: 'multi-line' },
-            description: '显示实时时间的响应式时钟组件，支持多种显示格式',
-            image: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjMWUyOTNiIi8+CjxjaXJjbGUgY3g9IjEwMCIgY3k9IjYwIiByPSI0MCIgc3Ryb2tlPSIjNjM2NmYxIiBzdHJva2Utd2lkdGg9IjIiIGZpbGw9Im5vbmUiLz4KPGxpbmUgeDE9IjEwMCIgeTE9IjYwIiB4Mj0iMTAwIiB5Mj0iNDAiIHN0cm9rZT0iIzYzNjZmMSIgc3Ryb2tlLXdpZHRoPSIyIi8+CjxsaW5lIHgxPSIxMDAiIHkxPSI2MCIgeDI9IjEyMCIgeTI9IjYwIiBzdHJva2U9IiM2MzY2ZjEiIHN0cm9rZS13aWR0aD0iMiIvPgo8L3N2Zz4K',
-            badge: '组合'
-        },
-        {
-            id: 'realtime-clock',
-            name: '实时时钟',
-            category: '官方示例',
-            component: RealTimeClock,
-            props: { format: 'datetime-weekday', displayMode: 'multi-line' },
-            description: '显示实时时间的响应式时钟组件，支持多种显示格式',
-            image: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjMWUyOTNiIi8+CjxjaXJjbGUgY3g9IjEwMCIgY3k9IjYwIiByPSI0MCIgc3Ryb2tlPSIjNjM2NmYxIiBzdHJva2Utd2lkdGg9IjIiIGZpbGw9Im5vbmUiLz4KPGxpbmUgeDE9IjEwMCIgeTE9IjYwIiB4Mj0iMTAwIiB5Mj0iNDAiIHN0cm9rZT0iIzYzNjZmMSIgc3Ryb2tlLXdpZHRoPSIyIi8+CjxsaW5lIHgxPSIxMDAiIHkxPSI2MCIgeDI9IjEyMCIgeTI9IjYwIiBzdHJva2U9IiM2MzY2ZjEiIHN0cm9rZS13aWR0aD0iMiIvPgo8L3N2Zz4K',
-            badge: '组合'
-        },
-        {
-            id: 'realtime-clock',
-            name: '实时时钟',
-            category: '官方示例',
-            component: RealTimeClock,
-            props: { format: 'datetime-weekday', displayMode: 'multi-line' },
-            description: '显示实时时间的响应式时钟组件，支持多种显示格式',
-            image: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjMWUyOTNiIi8+CjxjaXJjbGUgY3g9IjEwMCIgY3k9IjYwIiByPSI0MCIgc3Ryb2tlPSIjNjM2NmYxIiBzdHJva2Utd2lkdGg9IjIiIGZpbGw9Im5vbmUiLz4KPGxpbmUgeDE9IjEwMCIgeTE9IjYwIiB4Mj0iMTAwIiB5Mj0iNDAiIHN0cm9rZT0iIzYzNjZmMSIgc3Ryb2tlLXdpZHRoPSIyIi8+CjxsaW5lIHgxPSIxMDAiIHkxPSI2MCIgeDI9IjEyMCIgeTI9IjYwIiBzdHJva2U9IiM2MzY2ZjEiIHN0cm9rZS13aWR0aD0iMiIvPgo8L3N2Zz4K',
-            badge: '组合'
-        },
-        {
-            id: 'realtime-clock',
-            name: '实时时钟',
-            category: '官方示例',
-            component: RealTimeClock,
-            props: { format: 'datetime-weekday', displayMode: 'multi-line' },
-            description: '显示实时时间的响应式时钟组件，支持多种显示格式',
-            image: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjMWUyOTNiIi8+CjxjaXJjbGUgY3g9IjEwMCIgY3k9IjYwIiByPSI0MCIgc3Ryb2tlPSIjNjM2NmYxIiBzdHJva2Utd2lkdGg9IjIiIGZpbGw9Im5vbmUiLz4KPGxpbmUgeDE9IjEwMCIgeTE9IjYwIiB4Mj0iMTAwIiB5Mj0iNDAiIHN0cm9rZT0iIzYzNjZmMSIgc3Ryb2tlLXdpZHRoPSIyIi8+CjxsaW5lIHgxPSIxMDAiIHkxPSI2MCIgeDI9IjEyMCIgeTI9IjYwIiBzdHJva2U9IiM2MzY2ZjEiIHN0cm9rZS13aWR0aD0iMiIvPgo8L3N2Zz4K',
-            badge: '组合'
-        },
-        {
-            id: 'realtime-clock',
-            name: '实时时钟',
-            category: '官方示例',
-            component: RealTimeClock,
-            props: { format: 'datetime-weekday', displayMode: 'multi-line' },
-            description: '显示实时时间的响应式时钟组件，支持多种显示格式',
-            image: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjMWUyOTNiIi8+CjxjaXJjbGUgY3g9IjEwMCIgY3k9IjYwIiByPSI0MCIgc3Ryb2tlPSIjNjM2NmYxIiBzdHJva2Utd2lkdGg9IjIiIGZpbGw9Im5vbmUiLz4KPGxpbmUgeDE9IjEwMCIgeTE9IjYwIiB4Mj0iMTAwIiB5Mj0iNDAiIHN0cm9rZT0iIzYzNjZmMSIgc3Ryb2tlLXdpZHRoPSIyIi8+CjxsaW5lIHgxPSIxMDAiIHkxPSI2MCIgeDI9IjEyMCIgeTI9IjYwIiBzdHJva2U9IiM2MzY2ZjEiIHN0cm9rZS13aWR0aD0iMiIvPgo8L3N2Zz4K',
-            badge: '组合'
-        },
-        {
-            id: 'action-button',
-            name: '动作按钮',
-            category: '基础示例',
-            component: ActionButton,
-            props: {
-                buttons: [
-                    { name: '主要操作', variant: 'primary', size: 'medium' },
-                    { name: '次要操作', variant: 'secondary', size: 'medium' },
-                    { name: '警告操作', variant: 'warning', size: 'medium' }
-                ],
-                direction: 'row'
-            },
-            description: '灵活的按钮组件，支持单个按钮和按钮组模式',
-            image: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjMWUyOTNiIi8+CjxyZWN0IHg9IjIwIiB5PSI0NSIgd2lkdGg9IjUwIiBoZWlnaHQ9IjMwIiByeD0iNiIgZmlsbD0iIzYzNjZmMSIvPgo8cmVjdCB4PSI3NSIgeT0iNDUiIHdpZHRoPSI1MCIgaGVpZ2h0PSIzMCIgcng9IjYiIGZpbGw9IiM0YjU1NjMiLz4KPHJlY3QgeD0iMTMwIiB5PSI0NSIgd2lkdGg9IjUwIiBoZWlnaHQ9IjMwIiByeD0iNiIgZmlsbD0iI2Y1OTUwMCIvPgo8L3N2Zz4K'
-        },
-        {
-            id: 'responsive-box',
-            name: '响应式容器',
-            category: '官方示例',
-            component: ResponsiveBox,
-            props: {
-                style: 'width: 200px; height: 100px; background: linear-gradient(45deg, #ff6b6b, #4ecdc4); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;',
-                tag: 'div'
-            },
-            description: '自适应的响应式容器组件，所有自定义组件的基础',
-            image: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjMWUyOTNiIi8+CjxyZWN0IHg9IjUwIiB5PSIzNSIgd2lkdGg9IjEwMCIgaGVpZ2h0PSI1MCIgcng9IjgiIGZpbGw9ImxpbmVhci1ncmFkaWVudCg0NWRlZywgI2ZmNmI2YiwgIzRlY2RjNCkiLz4KPC9zdmc+Cg==',
-            badge: '核心'
-        },
-        {
-            id: 'simple-box',
-            name: '轻量级容器',
-            category: '基础示例',
-            component: SimpleBox,
-            props: {
-                style: 'width: 200px; height: 80px; background: #4ade80; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white;',
-                tag: 'div'
-            },
-            description: '轻量级的简单容器组件，适合快速布局',
-            image: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjMWUyOTNiIi8+CjxyZWN0IHg9IjUwIiB5PSI0MCIgd2lkdGg9IjEwMCIgaGVpZ2h0PSI0MCIgcng9IjgiIGZpbGw9IiM0YWRlODAiLz4KPC9zdmc+Cg=='
-        },
-        {
-            id: 'drag-drop-list',
-            name: '拖拽列表',
-            category: '官方示例',
-            component: DragDropList,
-            props: {
-                items: [
-                    { id: '1', text: '拖拽项目 1', priority: '高' },
-                    { id: '2', text: '拖拽项目 2', priority: '中' },
-                    { id: '3', text: '拖拽项目 3', priority: '低' }
-                ],
-                enableDrag: true,
-                direction: 'vertical',
-                selectedId: selectedListItem,
-                onSelect: (id: string) => {
-                    selectedListItem = String(id)
-                }
-            },
-            description: '支持拖拽排序的响应式列表组件',
-            image: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjMWUyOTNiIi8+CjxyZWN0IHg9IjIwIiB5PSIyNSIgd2lkdGg9IjE2MCIgaGVpZ2h0PSIyMCIgcng9IjQiIGZpbGw9IiMzMDQxNTUiLz4KPHJlY3QgeD0iMjAiIHk9IjUwIiB3aWR0aD0iMTYwIiBoZWlnaHQ9IjIwIiByeD0iNCIgZmlsbD0iIzMwNDE1NSIvPgo8cmVjdCB4PSIyMCIgeT0iNzUiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjAiIHJ4PSI0IiBmaWxsPSIjMzA0MTU1Ii8+Cjwvc3Zn+Cg==',
-            badge: '交互'
         }
     ])
 

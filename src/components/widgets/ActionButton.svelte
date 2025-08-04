@@ -48,7 +48,6 @@
 
 <script lang="ts">
     import ResponsiveBox from '../Core/ResponsiveBox.svelte'
-    import SimpleBox from '../Core/SimpleBox.svelte'
 
     interface ButtonConfig {
         name: string
@@ -144,7 +143,9 @@
         >
             {button.name}
             {#if button.loading}
-                <span style="margin-left: calc(8px * var(--scale-ratio, 1)); display: inline-block; width: calc(12px * var(--scale-ratio, 1)); height: calc(12px * var(--scale-ratio, 1)); border: calc(2px * var(--scale-ratio, 1)) solid rgba(255,255,255,0.3); border-top: calc(2px * var(--scale-ratio, 1)) solid #fff; border-radius: 50%; animation: spin 1s linear infinite;"></span>
+                <span
+                    style="margin-left: calc(8px * var(--scale-ratio, 1)); display: inline-block; width: calc(12px * var(--scale-ratio, 1)); height: calc(12px * var(--scale-ratio, 1)); border: calc(2px * var(--scale-ratio, 1)) solid rgba(255,255,255,0.3); border-top: calc(2px * var(--scale-ratio, 1)) solid #fff; border-radius: 50%; animation: spin 1s linear infinite;"
+                ></span>
             {/if}
         </ResponsiveBox>
     {/each}

@@ -48,36 +48,75 @@
     import { dndzone } from 'svelte-dnd-action'
     import type { DndEvent } from 'svelte-dnd-action'
     import { flip } from 'svelte/animate'
+     
+    
 
     import ResponsiveBox from '../Core/ResponsiveBox.svelte'
     import SimpleBox from '../Core/SimpleBox.svelte'
 
-    interface Props {
-        items: any[]
+    // 使用泛型提升类型安全，T 至少需要 id 字段供拖拽与选中逻辑使用
+export interface Props {
+        /** 列表数据 */
+        items: { id: string; [key: string]: any }[]
+        /** 是否启用拖拽功能 */
         enableDrag?: boolean
+        /** 是否启用树形层级 */
         enableHierarchy?: boolean
+        /** 布局方向 */
         direction?: 'vertical' | 'horizontal'
-        onReorder?: (items: any[]) => void
+        /** 拖拽结束后回调 */
+        onReorder?: (items: { id: string; [key: string]: any }[]) => void
+        /** 树节点展开/折叠回调 */
         onNodeToggle?: (item: any, expanded: boolean) => void
+        /** 菜单点击回调（普通模式） */
         onMenuClick?: (itemId: string) => void
+        /** 选中回调 */
         onSelect?: (itemId: string) => void
+        /** 当前选中 id */
         selectedId?: string
+        /** 容器附加样式 */
         style?: string
+        /** 项目附加样式 */
         itemStyle?: string
+        /** data-id 标识 */
         dataId?: string
+        /** 自定义渲染函数 */
         children?: (item: any, index: number) => any
+        /** 透传其余属性 */
         [key: string]: any
     }
 
-    let { items = [], enableDrag = true, enableHierarchy = false, direction = 'vertical', onReorder, onNodeToggle, onMenuClick, onSelect, selectedId, style = '', itemStyle = '', dataId = '', children, ...rest }: Props = $props()
+    // 解构 props（仅调用一次 $props()）
+let {
+    items: initialItems = [],
+    enableDrag = true,
+    enableHierarchy = false,
+    direction = 'vertical',
+    onReorder,
+    onNodeToggle,
+    onMenuClick,
+    onSelect,
+    selectedId: selectedIdProp = '',
+    style = '',
+    itemStyle = '',
+    dataId = '',
+    children,
+    ...rest
+} : Props = $props()
+
+type DragItem = { id: string; [key: string]: any }
+let items = $state<DragItem[]>(initialItems as DragItem[])
+const selectedId = $derived(() => selectedIdProp)
+
+
 
     // 拖拽事件处理
     function handleDndConsider(event: CustomEvent<DndEvent>) {
-        items = [...event.detail.items]
+        items = [...(event.detail.items as DragItem[])]
     }
 
     function handleDndFinalize(event: CustomEvent<DndEvent>) {
-        items = [...event.detail.items]
+        items = [...(event.detail.items as DragItem[])]
         if (onReorder) {
             onReorder(items)
         }
@@ -118,35 +157,26 @@
         }
     }
 
-    // 计算容器样式
-    function getContainerStyle() {
-        let baseStyle = `display: flex; gap: calc(10px * var(--scale-ratio, 1)); padding: calc(10px * var(--scale-ratio, 1)); background: rgba(255,255,255,0.1); border-radius: calc(8px * var(--scale-ratio, 1)); ${style}`
+    // 预构建常量映射，避免每次渲染拼接
+const BASE_CONTAINER_STYLE = 'display: flex; gap: calc(10px * var(--scale-ratio, 1)); padding: calc(10px * var(--scale-ratio, 1)); background: rgba(255,255,255,0.1); border-radius: calc(8px * var(--scale-ratio, 1));'
+const DIRECTION_CONTAINER_STYLE_MAP: Record<'vertical' | 'horizontal', string> = {
+    vertical: '; flex-direction: column;',
+    horizontal: '; flex-direction: row; flex-wrap: wrap;'
+}
 
-        if (direction === 'horizontal') {
-            baseStyle += '; flex-direction: row; flex-wrap: wrap;'
-        } else {
-            baseStyle += '; flex-direction: column;'
-        }
+const containerStyle = $derived(`${BASE_CONTAINER_STYLE}${DIRECTION_CONTAINER_STYLE_MAP[direction as 'vertical' | 'horizontal']}${style}`) // style 透传附加
 
-        return baseStyle
-    }
 
-    // 计算统一的项目样式
-    function getItemStyle(isSelected: boolean = false) {
-        let baseItemStyle = `padding: calc(5px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1)); margin: calc(2px * var(--scale-ratio, 1)) 0; background: rgba(99, 102, 241, 0.1); border: calc(1px * var(--scale-ratio, 1)) solid rgba(99, 102, 241, 0.2); border-radius: calc(4px * var(--scale-ratio, 1)); color: #e2e8f0; cursor: ${enableDrag ? 'grab' : 'default'}; transition: all 0.2s ease; ${itemStyle}`
+    const BASE_ITEM_STYLE = 'padding: calc(5px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1)); margin: calc(2px * var(--scale-ratio, 1)) 0; background: rgba(99, 102, 241, 0.1); border: calc(1px * var(--scale-ratio, 1)) solid rgba(99, 102, 241, 0.2); border-radius: calc(4px * var(--scale-ratio, 1)); color: #e2e8f0; transition: all 0.2s ease;'
+const SELECTED_ITEM_EXTRA = '; background: rgba(99, 102, 241, 0.3); border-color: rgba(99, 102, 241, 0.5); box-shadow: 0 0 calc(10px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.3);'
+const DIRECTION_ITEM_STYLE_MAP: Record<'vertical' | 'horizontal', string> = {
+    vertical: '; width: 100%;',
+    horizontal: '; flex: 1; min-width: calc(120px * var(--scale-ratio, 1)); text-align: center;'
+}
 
-        if (isSelected) {
-            baseItemStyle += '; background: rgba(99, 102, 241, 0.3); border-color: rgba(99, 102, 241, 0.5); box-shadow: 0 0 calc(10px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.3);'
-        }
-
-        if (direction === 'horizontal') {
-            baseItemStyle += '; flex: 1; min-width: calc(120px * var(--scale-ratio, 1)); text-align: center;'
-        } else {
-            baseItemStyle += '; width: 100%;'
-        }
-
-        return baseItemStyle
-    }
+function getItemStyle(isSelected: boolean = false) {
+    return `${BASE_ITEM_STYLE} cursor: ${enableDrag ? 'grab' : 'default'};${DIRECTION_ITEM_STYLE_MAP[direction as 'vertical' | 'horizontal']}${isSelected ? SELECTED_ITEM_EXTRA : ''} ${itemStyle}`
+}
 
     // 拖拽时的样式
     function getDragStyle(isDragged: boolean) {
@@ -157,7 +187,7 @@
     }
 </script>
 
-<ResponsiveBox style={getContainerStyle()} data-id={dataId} {...rest}>
+<ResponsiveBox style={containerStyle} data-id={dataId} {...rest}>
     {#if enableHierarchy}
         <!-- 树形结构渲染 -->
         {#if enableDrag}
@@ -200,7 +230,7 @@
                 onfinalize={handleDndFinalize}
             >
                 {#each items as item, index (item.id || index)}
-                    <div animate:flip={{ duration: 300 }} style="{getItemStyle(selectedId === item.id)} {getDragStyle(false)}" class="drag-item" data-index={index}>
+                    <div animate:flip={{ duration: 300 }} style="{getItemStyle(selectedId() === item.id)} {getDragStyle(false)}" class="drag-item" data-index={index}>
                         {@render renderItemContent(item, index)}
                     </div>
                 {/each}
@@ -208,7 +238,7 @@
         {:else}
             <div style="width: 100%; height: 100%;">
                 {#each items as item, index (item.id || index)}
-                    <div style={getItemStyle(selectedId === item.id)} class="drag-item" data-index={index}>
+                    <div style={getItemStyle(selectedId() === item.id)} class="drag-item" data-index={index}>
                         {@render renderItemContent(item, index)}
                     </div>
                 {/each}
@@ -252,7 +282,7 @@
                     <SimpleBox style="width:100%; font-weight: 500; font-size: calc(12px * var(--scale-ratio, 1)); color: {item.style?.color || 'white'};">{item.name || item.text || `项目 ${index + 1}`}</SimpleBox>
                 {/if}
             </SimpleBox>
-            {#if selectedId === item.id}
+            {#if selectedId() === item.id}
                 <SimpleBox style="position: absolute; right: calc(12px * var(--scale-ratio, 1)); width: calc(6px * var(--scale-ratio, 1)); height: calc(6px * var(--scale-ratio, 1)); background: #6366f1; border-radius: 50%;"></SimpleBox>
             {/if}
         </button>
@@ -261,7 +291,7 @@
 
 <!-- 递归渲染树节点的snippet -->
 {#snippet renderTreeNode(item: any, index: number, level: number)}
-    <SimpleBox style="{getItemStyle(selectedId === item.id)} {getDragStyle(false)}" class="drag-item tree-node" data-index={index}>
+    <SimpleBox style="{getItemStyle(selectedId() === item.id)} {getDragStyle(false)}" class="drag-item tree-node" data-index={index}>
         <SimpleBox style="display: flex; align-items: center; gap: calc(8px * var(--scale-ratio, 1)); padding-left: calc(${level} * 20px * var(--scale-ratio, 1));">
             <!-- 展开/折叠按钮 -->
             {#if item.children && item.children.length > 0}
