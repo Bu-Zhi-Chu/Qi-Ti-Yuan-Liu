@@ -12,7 +12,6 @@ dist
 dev-dist
 dist-ssr
 *.local
-study
 
 # Editor directories and files
 .vscode/*
