@@ -77,7 +77,6 @@ export class PWAChecker {
 
         // 只在首次检测时打印信息
         if (!this._initialized) {
-
         }
 
         this._lastStatus = {
@@ -95,7 +94,6 @@ export class PWAChecker {
      * 初始化PWA注册，支持降级（防止重复执行）
      */
     static async initPWA(): Promise<void> {
-
         // 开发环境直接跳过 Service Worker，避免调试时缓存干扰
         if (import.meta.env.DEV) {
             // 开发环境：主动注销已存在的 Service Worker，避免缓存干扰
@@ -105,17 +103,13 @@ export class PWAChecker {
                     for (const reg of registrations) {
                         await reg.unregister()
                     }
-
-                } catch (err) {
-
-                }
+                } catch (err) {}
             }
 
             return
         }
         // 防止重复初始化
         if (this._initialized) {
-
             return
         }
 
@@ -123,7 +117,6 @@ export class PWAChecker {
         const status = this.checkEnvironment()
 
         if (status.downgradeMode) {
-
             this.setupFallback()
             return
         }
@@ -135,14 +128,11 @@ export class PWAChecker {
                 const response = await fetch('/sw.js', { method: 'HEAD' })
                 if (response.ok) {
                     await navigator.serviceWorker.register('/sw.js')
-
                 } else {
-
                     this.setupFallback()
                 }
             }
         } catch (error) {
-
             this.setupFallback()
         }
     }
@@ -152,7 +142,6 @@ export class PWAChecker {
      */
     private static setupFallback(): void {
         // 仅在控制台输出降级提示，避免影响用户体验
-
     }
 
     /**
