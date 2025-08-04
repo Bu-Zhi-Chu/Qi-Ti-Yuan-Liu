@@ -8,37 +8,53 @@
 -->
 
 <script lang="ts">
-    import { createEventDispatcher } from 'svelte'
+    import { createEventDispatcher, onMount } from 'svelte'
     import ResponsiveBox from '../Core/ResponsiveBox.svelte'
     import GenericCard from './GenericCard.svelte'
+    import DexieService from '../../services/database/dexie-service'
+    import Dexie from 'dexie'
 
     interface TemplateInfo {
         id: string
         name: string
-        desc: string
+        desc?: string
         cover?: string
         tag?: string
+        thumbnailUrl?: string
     }
 
-    // 模板示例数据，后续可从远端或配置读取
-    const templates: TemplateInfo[] = [
-        { id: 'blank', name: '空白项目', desc: '从零开始创建', cover: '/assets/img/blank.png', tag: '默认' },
-        { id: 'blog', name: '博客模板', desc: '快速搭建个人博客', cover: '/assets/img/blog.png', tag: '常用' },
-        { id: 'gallery', name: '画廊模板', desc: '图片展示与分享', cover: '/assets/img/gallery.png' }
+    let templates: TemplateInfo[] = []
+    const fallbackTemplates: TemplateInfo[] = [
+        { id: 'blank', name: '空白项目', desc: '从零开始创建', cover: '/assets/img/blank.png', tag: '默认', thumbnailUrl: '/assets/img/blank.png' },
+        { id: 'blog', name: '博客模板', desc: '快速搭建个人博客', cover: '/assets/img/blog.png', tag: '常用', thumbnailUrl: '/assets/img/blog.png' },
+        { id: 'gallery', name: '画廊模板', desc: '图片展示与分享', cover: '/assets/img/gallery.png', thumbnailUrl: '/assets/img/gallery.png' }
     ]
 
+    onMount(async () => {
+        const data = await DexieService.queryRecords<TemplateInfo>('qi-qiao-ban', 'templates')
+        templates = data.length ? data : fallbackTemplates
+    })
     let projectName = ''
     let selected = 'blank'
     const inputId: string = 'project-name-' + Math.random().toString(36).slice(2)
 
     const dispatch = createEventDispatcher()
 
-    const confirm = () => {
+    const confirm = async () => {
         const name = projectName.trim()
         if (!name) {
             alert('请输入项目名称')
             return
         }
+        const tpl = templates.find((t) => t.id === selected)
+        const db = new Dexie('qi-qiao-ban')
+        await db.open()
+        await db.table('projects').add({
+            name,
+            createdAt: Date.now(),
+            templateId: selected,
+            thumbnailUrl: tpl?.thumbnailUrl ?? tpl?.cover ?? ''
+        })
         dispatch('confirm', name)
     }
     const cancel = () => dispatch('cancel')

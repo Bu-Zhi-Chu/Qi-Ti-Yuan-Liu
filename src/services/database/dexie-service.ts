@@ -1,30 +1,10 @@
 /*
   DexieService 通用数据库工具
-  ==================================
-  1. databaseExists(dbName:string): Promise<boolean>
-     - 检测指定名称的数据库是否存在。
-
-  2. createDatabase(dbName:string, schema?: Record<string, string>): Promise<Dexie>
-     - 创建一个新数据库并返回 Dexie 实例。
-     - 可选传入 schema 定义表结构，例如：
-         {
-           projects: '++id, name, createdAt',
-           components: '++id, pageId, type'
-         }
-
-  使用示例：
-  ```ts
-  import DexieService from '@/services/database/dexie-service'
-
-  const exists = await DexieService.databaseExists('MyDB')
-  if (!exists) {
-    await DexieService.createDatabase('MyDB', {
-      users: '++id, name, age'
-    })
-  }
-  ```
+  ----------------------------------
+  1. databaseExists(dbName): 检测指定名称的数据库是否已存在
+  2. createDatabase(dbName, schema?): 创建数据库并初始化模板种子数据
+  3. queryRecords<T>(dbName, tableName, index?, value?): 通用条件/整表查询
 */
-
 import Dexie from 'dexie'
 
 export default class DexieService {
@@ -55,16 +35,31 @@ export default class DexieService {
 
         // Dexie 要求至少定义一次 version().stores() 才能创建数据库
         // 默认项目表 schema（含项目ID、自增主键，名称、创建时间、模板编号、缩略图URL）
-        const defaultProjectSchema = {
-            projects: '++id, name, createdAt, templateId, thumbnailUrl'
+        const defaultSchema = {
+            // 项目表：自增 ID 主键
+            projects: '++id, name, createdAt, templateId, thumbnailUrl',
+            // 模板表：字符串 ID 主键
+            templates: 'id, name, createdAt, thumbnailUrl'
         }
 
         // 合并用户自定义 schema 与默认项目表，用户自定义同名表优先
-        const mergedSchema = { ...defaultProjectSchema, ...(schema || {}) }
+        const mergedSchema = { ...defaultSchema, ...(schema || {}) }
 
         db.version(1).stores(mergedSchema)
 
         await db.open()
+
+        // 初始化模板表数据（仅当为空时）
+        if ((await db.table('templates').count()) === 0) {
+            const now = Date.now()
+            const templateSeeds = [
+                { id: 'blank', name: '空白项目', createdAt: now, thumbnailUrl: '/assets/img/blank.png' },
+                { id: 'blog', name: '博客模板', createdAt: now, thumbnailUrl: '/assets/img/blog.png' },
+                { id: 'gallery', name: '画廊模板', createdAt: now, thumbnailUrl: '/assets/img/gallery.png' }
+            ]
+            await db.table('templates').bulkAdd(templateSeeds)
+        }
+
         return db
     }
 
