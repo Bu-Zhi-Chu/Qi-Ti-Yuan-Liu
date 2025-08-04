@@ -39,6 +39,10 @@
     let containerWidth = $state(0)
     let containerRef: HTMLDivElement = $state() as HTMLDivElement
 
+    // 使用 requestAnimationFrame 节流，避免高频触发导致性能开销
+    let rafId = 0
+    let resizeScheduled = false
+
     // 使用$derived创建响应式计算属性，自动缓存计算结果
     const scaleRatio = $derived(containerWidth > 0 ? Math.min(containerWidth / baseWidth, 1.2) : 1)
 
@@ -54,10 +58,14 @@
             // 使用ResizeObserver监听容器尺寸变化 - 现代浏览器
 
             const resizeObserver = new ResizeObserver((entries) => {
-                for (const entry of entries) {
-                    const { width } = entry.contentRect
+                const { width } = entries[0].contentRect
 
-                    containerWidth = width
+                if (!resizeScheduled) {
+                    resizeScheduled = true
+                    rafId = requestAnimationFrame(() => {
+                        containerWidth = width
+                        resizeScheduled = false
+                    })
                 }
             })
 
@@ -70,14 +78,19 @@
             // $effect自动返回清理函数
             return () => {
                 resizeObserver.disconnect()
+                if (rafId) cancelAnimationFrame(rafId)
             }
         } else {
             // 降级方案：使用传统的addEventListener - 旧版浏览器
 
             const updateContainerWidth = () => {
-                const newWidth = containerRef.offsetWidth
-
-                containerWidth = newWidth
+                if (!resizeScheduled) {
+                    resizeScheduled = true
+                    rafId = requestAnimationFrame(() => {
+                        containerWidth = containerRef.offsetWidth
+                        resizeScheduled = false
+                    })
+                }
             }
 
             updateContainerWidth()
@@ -86,6 +99,7 @@
             // $effect自动返回清理函数
             return () => {
                 ;(window as Window & typeof globalThis).removeEventListener('resize', updateContainerWidth)
+                if (rafId) cancelAnimationFrame(rafId)
             }
         }
     })
