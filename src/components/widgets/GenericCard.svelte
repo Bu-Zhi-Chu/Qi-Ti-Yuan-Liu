@@ -15,17 +15,46 @@
 
 <script lang="ts">
     import ResponsiveBox from '../Core/ResponsiveBox.svelte'
+    import { onDestroy } from 'svelte'
 
     interface Props {
         prop1?: string | number
         prop2?: string
         prop3?: string
-        prop4?: string
+        prop4?: string | Blob
         prop5?: string
         onClick?: () => void
     }
 
     let { prop1, prop2, prop3, prop4, prop5, onClick }: Props = $props()
+
+    let imageSrc = $state<string | undefined>()
+    let objectUrls = $state<string[]>([])
+
+    $effect(() => {
+        if (prop4) {
+            if (prop4 instanceof Blob) {
+                const url = URL.createObjectURL(prop4)
+                imageSrc = url
+                objectUrls = [url]
+            } else {
+                imageSrc = prop4
+                objectUrls = []
+            }
+        } else {
+            imageSrc = undefined
+            objectUrls = []
+        }
+
+        return () => {
+            objectUrls.forEach(url => URL.revokeObjectURL(url))
+            objectUrls = []
+        }
+    })
+
+    onDestroy(() => {
+        objectUrls.forEach(url => URL.revokeObjectURL(url))
+    })
 </script>
 
 <ResponsiveBox
@@ -46,8 +75,8 @@
 >
     <!-- 图片区域 -->
     <ResponsiveBox style="width: 100%; height: 160px; background: rgba(15, 23, 42, 0.5); border-radius: 12px; margin-bottom: 16px; overflow: hidden; border: 1px solid rgba(99, 102, 241, 0.1);">
-        {#if prop4}
-            <img src={prop4} alt={prop2 || '卡片图片'} style="width: 100%; height: 100%; object-fit: cover;" />
+        {#if imageSrc}
+            <img src={imageSrc} alt={prop2 || '卡片图片'} style="width: 100%; height: 100%; object-fit: cover;" />
         {:else}
             <ResponsiveBox style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #64748b; font-size: 14px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);">预览图</ResponsiveBox>
         {/if}

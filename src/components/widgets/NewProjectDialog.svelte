@@ -8,48 +8,55 @@
 -->
 
 <script lang="ts">
-    import { onMount } from 'svelte'
+    import { onMount, onDestroy } from 'svelte'
     import ResponsiveBox from '../Core/ResponsiveBox.svelte'
     import GenericCard from './GenericCard.svelte'
     import DexieService from '../../services/database/dexie-service'
     import Dexie from 'dexie'
 
-    interface TemplateInfo {
-        id: string
-        name: string
-        desc?: string
-        cover?: string
-        tag?: string
-        thumbnailUrl?: string
-    }
-
+    // Props定义
     interface Props {
         onConfirm?: (name: string) => void
         onCancel?: () => void
     }
-
     let { onConfirm, onCancel }: Props = $props()
 
-    let templates: TemplateInfo[] = $state([])
-    const fallbackTemplates: TemplateInfo[] = [
-        { id: 'blank', name: '空白项目', desc: '从零开始创建', cover: '/assets/img/blank.png', tag: '默认', thumbnailUrl: '/assets/img/blank.png' },
-        { id: 'blog', name: '博客模板', desc: '快速搭建个人博客', cover: '/assets/img/blog.png', tag: '常用', thumbnailUrl: '/assets/img/blog.png' },
-        { id: 'gallery', name: '画廊模板', desc: '图片展示与分享', cover: '/assets/img/gallery.png', thumbnailUrl: '/assets/img/gallery.png' }
-    ]
+    // 类型定义
+    interface TemplateInfo {
+        id: string
+        name: string
+        desc: string
+        cover?: string | Blob
+        tag: string
+        thumbnailUrl?: string | Blob
+    }
+
+    // 状态管理
+    let templates = $state<TemplateInfo[]>([])
+    let selected = $state('blank')
+    let projectName = $state('')
+    let isLoading = $state(true)
+    const inputId: string = 'project-name-' + Math.random().toString(36).slice(2)
 
     onMount(async () => {
-        const data = await DexieService.queryRecords<TemplateInfo>('qi-qiao-ban', 'templates')
-        const source = data.length ? data : fallbackTemplates
-        // 映射数据库字段 thumbnailUrl -> cover，保证 GenericCard 正确显示图片
-        templates = source.map((t) => ({
-            ...t,
-            cover: t.cover ?? t.thumbnailUrl ?? '/assets/img/blank.png'
-        }))
+        try {
+            const data = await DexieService.queryRecords<TemplateInfo>('qi-qiao-ban', 'templates')
+            templates = data
+        } finally {
+            isLoading = false
+        }
     })
 
-    let projectName = $state('')
-    let selected = $state('blank')
-    const inputId: string = 'project-name-' + Math.random().toString(36).slice(2)
+    onDestroy(() => {
+        templates.forEach(tpl => {
+            if (typeof tpl.cover === 'string' && tpl.cover.startsWith('blob:')) {
+                URL.revokeObjectURL(tpl.cover)
+            }
+            if (typeof tpl.thumbnailUrl === 'string' && tpl.thumbnailUrl.startsWith('blob:')) {
+                URL.revokeObjectURL(tpl.thumbnailUrl)
+            }
+        })
+    })
 
     const confirm = async () => {
         const name = projectName.trim()
@@ -68,6 +75,7 @@
         })
         onConfirm?.(name)
     }
+
     const cancel = () => onCancel?.()
 </script>
 
@@ -86,7 +94,7 @@
     <div class="grid">
         {#each templates as tpl}
             <button type="button" class="tpl-btn" style="border:calc(2px*var(--scale-ratio,1)) solid {selected === tpl.id ? 'rgba(99,102,241,0.8)' : 'rgba(99,102,241,0.2)'}; border-radius:calc(8px*var(--scale-ratio,1));" onclick={() => (selected = tpl.id)}>
-                <GenericCard prop1={tpl.id} prop2={tpl.name} prop3={tpl.desc} prop4={tpl.cover} prop5={tpl.tag} />
+                <GenericCard prop1={tpl.id} prop2={tpl.name} prop3={tpl.desc} prop4={tpl.thumbnailUrl} prop5={tpl.tag} />
             </button>
         {/each}
     </div>
