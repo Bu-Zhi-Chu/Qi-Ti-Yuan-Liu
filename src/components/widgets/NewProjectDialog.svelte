@@ -3,12 +3,12 @@
  * 功能：输入项目名称 + 选择模板 + 确定/取消
  * 依赖：ResponsiveBox、GenericCard
  * 事件：
- *   confirm(detail: string)  确认并返回项目名称
- *   cancel                  取消并关闭窗口
+ *   onConfirm(name: string)  确认并返回项目名称
+ *   onCancel                取消并关闭窗口
 -->
 
 <script lang="ts">
-    import { createEventDispatcher, onMount } from 'svelte'
+    import { onMount } from 'svelte'
     import ResponsiveBox from '../Core/ResponsiveBox.svelte'
     import GenericCard from './GenericCard.svelte'
     import DexieService from '../../services/database/dexie-service'
@@ -23,7 +23,14 @@
         thumbnailUrl?: string
     }
 
-    let templates: TemplateInfo[] = []
+    interface Props {
+        onConfirm?: (name: string) => void
+        onCancel?: () => void
+    }
+
+    let { onConfirm, onCancel }: Props = $props()
+
+    let templates: TemplateInfo[] = $state([])
     const fallbackTemplates: TemplateInfo[] = [
         { id: 'blank', name: '空白项目', desc: '从零开始创建', cover: '/assets/img/blank.png', tag: '默认', thumbnailUrl: '/assets/img/blank.png' },
         { id: 'blog', name: '博客模板', desc: '快速搭建个人博客', cover: '/assets/img/blog.png', tag: '常用', thumbnailUrl: '/assets/img/blog.png' },
@@ -32,13 +39,17 @@
 
     onMount(async () => {
         const data = await DexieService.queryRecords<TemplateInfo>('qi-qiao-ban', 'templates')
-        templates = data.length ? data : fallbackTemplates
+        const source = data.length ? data : fallbackTemplates
+        // 映射数据库字段 thumbnailUrl -> cover，保证 GenericCard 正确显示图片
+        templates = source.map((t) => ({
+            ...t,
+            cover: t.cover ?? t.thumbnailUrl ?? '/assets/img/blank.png'
+        }))
     })
-    let projectName = ''
-    let selected = 'blank'
-    const inputId: string = 'project-name-' + Math.random().toString(36).slice(2)
 
-    const dispatch = createEventDispatcher()
+    let projectName = $state('')
+    let selected = $state('blank')
+    const inputId: string = 'project-name-' + Math.random().toString(36).slice(2)
 
     const confirm = async () => {
         const name = projectName.trim()
@@ -55,9 +66,9 @@
             templateId: selected,
             thumbnailUrl: tpl?.thumbnailUrl ?? tpl?.cover ?? ''
         })
-        dispatch('confirm', name)
+        onConfirm?.(name)
     }
-    const cancel = () => dispatch('cancel')
+    const cancel = () => onCancel?.()
 </script>
 
 <ResponsiveBox style="display:flex; flex-direction:column; height:100%; width:100%; padding:16px; box-sizing:border-box;">

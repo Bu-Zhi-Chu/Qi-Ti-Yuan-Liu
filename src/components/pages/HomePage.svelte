@@ -119,6 +119,6 @@
 </ResponsiveBox>
 {#if showWindow}
     <WindowBox title="新建项目" width={800} height={600} onClose={() => (showWindow = false)}>
-        <NewProjectDialog on:confirm={(e) => confirmNewProject(e.detail)} on:cancel={() => (showWindow = false)} />
+        <NewProjectDialog onConfirm={confirmNewProject} onCancel={() => (showWindow = false)} />
     </WindowBox>
 {/if}
