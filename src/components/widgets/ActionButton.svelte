@@ -64,44 +64,40 @@
         buttons: ButtonConfig[]
         direction?: 'row' | 'column'
         dataId?: string
+        /** 新版事件回调 */
+        onButtonClick?: (event: { name: string; index: number; button: ButtonConfig }) => void
+        /** 旧版事件名兼容，后续将废弃 */
         onbuttonClick?: (event: { name: string; index: number; button: ButtonConfig }) => void
         [key: string]: any
     }
 
-    let { style = '', buttons = [], direction = 'row', dataId = '', onbuttonClick, ...rest }: Props = $props()
+    let { style = '', buttons = [], direction = 'row', dataId = '', onButtonClick, onbuttonClick, ...rest }: Props = $props()
 
     // 计算按钮容器的样式
     const containerStyle = $derived(direction === 'row' ? `display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 8px; ${style}` : `display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; ${style}`)
 
+    // 预计算样式映射，避免在每次渲染时重复创建闭包
+    const VARIANT_STYLE_MAP: Record<string, string> = {
+        primary: 'background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: #ffffff; border: 1px solid transparent; box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);',
+        secondary: 'background: rgba(255, 255, 255, 0.1); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.2); backdrop-filter: blur(10px);',
+        ghost: 'background: transparent; color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.3);',
+        danger: 'background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: #ffffff; border: 1px solid transparent; box-shadow: 0 4px 16px rgba(239, 68, 68, 0.3);'
+    }
+
+    const SIZE_STYLE_MAP: Record<string, string> = {
+        small: 'padding: 8px 16px; font-size: 14px; border-radius: 6px;',
+        medium: 'padding: 12px 24px; font-size: 16px; border-radius: 8px;',
+        large: 'padding: 16px 32px; font-size: 18px; border-radius: 10px;'
+    }
+
     // 计算单个按钮的样式
     const getButtonStyle = (button: ButtonConfig, index: number) => {
-        // 根据变体获取样式
-        const getVariantStyles = () => {
-            const styles = {
-                primary: 'background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: #ffffff; border: 1px solid transparent; box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);',
-                secondary: 'background: rgba(255, 255, 255, 0.1); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.2); backdrop-filter: blur(10px);',
-                ghost: 'background: transparent; color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.3);',
-                danger: 'background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: #ffffff; border: 1px solid transparent; box-shadow: 0 4px 16px rgba(239, 68, 68, 0.3);'
-            }
-            return styles[button.variant || 'primary']
-        }
+        const variantStyle = VARIANT_STYLE_MAP[button.variant || 'primary']
+        const sizeStyle = SIZE_STYLE_MAP[button.size || 'medium']
 
-        // 根据尺寸获取样式
-        const getSizeStyles = () => {
-            const styles = {
-                small: 'padding: 8px 16px; font-size: 14px; border-radius: 6px;',
-                medium: 'padding: 12px 24px; font-size: 16px; border-radius: 8px;',
-                large: 'padding: 16px 32px; font-size: 18px; border-radius: 10px;'
-            }
-            return styles[button.size || 'medium']
-        }
-
-        // 方向相关的样式
         const directionStyle = direction === 'row' ? 'flex: 1; min-height: 32px;' : 'width: 100%; min-height: 36px;'
-
         const baseStyle = `${directionStyle} border: none; cursor: pointer; transition: all 0.3s ease; display: inline-flex; align-items: center; justify-content: center; text-align: center;`
 
-        // 状态样式
         let stateStyle = ''
         if (button.disabled) {
             stateStyle = ' opacity: 0.5; cursor: not-allowed; transform: scale(1);'
@@ -111,7 +107,7 @@
             stateStyle = ' cursor: pointer; transform: translateY(0) scale(1);'
         }
 
-        return `${baseStyle} ${getVariantStyles()} ${getSizeStyles()} ${button.style || ''} ${stateStyle}`
+        return `${baseStyle} ${variantStyle} ${sizeStyle} ${button.style || ''} ${stateStyle}`
     }
 
     // 按钮点击处理
@@ -121,8 +117,9 @@
         const eventData = { name: button.name, index, button }
 
         // 优先使用直接的事件回调
-        if (onbuttonClick) {
-            onbuttonClick(eventData)
+        const clickHandler = onButtonClick ?? onbuttonClick
+        if (clickHandler) {
+            clickHandler(eventData)
         } else {
             // 回退到全局事件派发
             const event = new CustomEvent('buttonClick', {
@@ -147,7 +144,7 @@
         >
             {button.name}
             {#if button.loading}
-                <span style="margin-left: 8px; display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(255,255,255,0.3); border-top: 2px solid #fff; border-radius: 50%; animation: spin 1s linear infinite;"></span>
+                <span style="margin-left: calc(8px * var(--scale-ratio, 1)); display: inline-block; width: calc(12px * var(--scale-ratio, 1)); height: calc(12px * var(--scale-ratio, 1)); border: calc(2px * var(--scale-ratio, 1)) solid rgba(255,255,255,0.3); border-top: calc(2px * var(--scale-ratio, 1)) solid #fff; border-radius: 50%; animation: spin 1s linear infinite;"></span>
             {/if}
         </ResponsiveBox>
     {/each}
