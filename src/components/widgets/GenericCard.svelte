@@ -23,13 +23,16 @@
         prop3?: string
         prop4?: string | Blob
         prop5?: string
+        showDelete?: boolean
+        onDelete?: (id?: string | number) => void | Promise<void>
         onClick?: () => void
     }
 
-    let { prop1, prop2, prop3, prop4, prop5, onClick }: Props = $props()
+    let { prop1, prop2, prop3, prop4, prop5, onClick, showDelete = false, onDelete }: Props = $props()
 
     let imageSrc = $state<string | undefined>()
     let objectUrls = $state<string[]>([])
+let isHovered = $state(false)
 
     $effect(() => {
         if (prop4) {
@@ -55,18 +58,24 @@
     onDestroy(() => {
         objectUrls.forEach(url => URL.revokeObjectURL(url))
     })
+
+    function handleDelete() {
+        onDelete?.(prop1)
+    }
 </script>
 
 <ResponsiveBox
     style="position: relative; background: rgba(30, 41, 59, 0.5); border-radius: 16px; padding: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); cursor: pointer; transition: all 0.3s ease; width: 100%; border: 1px solid rgba(99, 102, 241, 0.2); backdrop-filter: blur(10px); transform: translateY(0px);"
     onclick={onClick}
     onmouseenter={(e: MouseEvent) => {
+        isHovered = true
         const target = e.currentTarget as HTMLElement
         target.style.transform = 'translateY(-8px) scale(1.02)'
         target.style.boxShadow = '0 20px 60px rgba(99, 102, 241, 0.4), 0 0 30px rgba(139, 92, 246, 0.3)'
         target.style.borderColor = 'rgba(99, 102, 241, 0.5)'
     }}
     onmouseleave={(e: MouseEvent) => {
+        isHovered = false
         const target = e.currentTarget as HTMLElement
         target.style.transform = 'translateY(0px) scale(1)'
         target.style.boxShadow = '0 8px 32px rgba(0,0,0,0.3)'
@@ -81,6 +90,16 @@
             <ResponsiveBox style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #64748b; font-size: 14px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);">预览图</ResponsiveBox>
         {/if}
     </ResponsiveBox>
+
+    <!-- 删除按钮 -->
+    {#if showDelete && isHovered}
+        <ResponsiveBox
+            style="position: absolute; top: 12px; left: 12px; background: rgba(220,38,38,0.8); color:#f8fafc; font-size:12px; padding:4px 8px; border-radius:4px; cursor:pointer; z-index:20;"
+            onclick={handleDelete}
+        >
+            删除
+        </ResponsiveBox>
+    {/if}
 
     <!-- 右上角悬浮标签 -->
     {#if prop5}

@@ -46,6 +46,16 @@
 
     function openProject(projectId: string) {}
 
+    async function deleteProject(projectId?: string | number) {
+        if (projectId == null) return
+        const ok = await DexieService.deleteRecord('qi-qiao-ban', 'projects', Number(projectId))
+        if (ok) {
+            projects = projects.filter((p) => p.id !== String(projectId))
+        } else {
+            alert('删除失败，请重试')
+        }
+    }
+
     function confirmNewProject(name: string) {
         window.location.hash = '#/editor'
         showWindow = false
@@ -105,9 +115,9 @@
 
         <!-- 现代滚动容器 -->
         <ResponsiveBox style="flex: 1; overflow-y: auto; padding: 20px 10px 0 0; ">
-            <ResponsiveBox style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 30px; justify-items: center; padding-bottom: 20px;">
+            <ResponsiveBox style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 30px; justify-items: center; padding: 10px;">
                 {#each projects as project}
-                    <GenericCard prop1={project.id} prop2={project.name} prop3={project.createTime} prop4={project.thumbnail} onClick={() => openProject(project.id)} />
+                    <GenericCard prop1={project.id} prop2={project.name} prop3={project.createTime} prop4={project.thumbnail} showDelete={true} onDelete={deleteProject} onClick={() => openProject(project.id)} />
                 {/each}
             </ResponsiveBox>
 

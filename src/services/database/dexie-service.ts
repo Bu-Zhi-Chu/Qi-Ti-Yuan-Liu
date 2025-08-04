@@ -38,9 +38,9 @@ export default class DexieService {
             const blankBlob = new Blob(
                 [
                     `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="150" viewBox="0 0 200 150">
-  <rect width="200" height="150" fill="#f5f5f5"/>
-  <text x="100" y="75" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-size="14" fill="#999">空白项目</text>
-</svg>`
+                        <rect width="200" height="150" fill="#f5f5f5"/>
+                        <text x="100" y="75" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-size="14" fill="#999">空白项目</text>
+                    </svg>`
                 ],
                 { type: 'image/svg+xml' }
             )
@@ -64,5 +64,24 @@ export default class DexieService {
         const db = new Dexie(dbName)
         await db.open()
         return db.table(tableName).toArray()
+    }
+
+    /**
+     * 删除表中指定主键记录
+     * @param dbName   数据库名称
+     * @param tableName 表名
+     * @param key       主键值
+     * @returns 删除是否成功
+     */
+    static async deleteRecord(dbName: string, tableName: string, key: any): Promise<boolean> {
+        try {
+            const db = new Dexie(dbName)
+            await db.open()
+            await db.table(tableName).delete(key)
+            return true
+        } catch (error) {
+            console.error(`删除记录失败: ${tableName}.${key}`, error)
+            return false
+        }
     }
 }
