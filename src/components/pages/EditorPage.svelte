@@ -13,8 +13,6 @@
  -->
 
 <script lang="ts">
-    import ResponsiveBox from '../Core/ResponsiveBox.svelte'
-    import SimpleBox from '../Core/SimpleBox.svelte'
     import { onMount, onDestroy } from 'svelte'
     import { registerShortcut } from '../../services/utils/shortcut.service'
 
@@ -35,14 +33,14 @@
 </script>
 
 <!-- 背景 -->
-<ResponsiveBox style="width: 100%;height: 100%;position: absolute;background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);z-index: 0;">
+<div style="width: 100%;height: 100%;position: absolute;background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);z-index: 0;">
     <!-- 画布 -->
     <div class="canvas" class:editing={showWorkspace} style="background: white;"></div>
-</ResponsiveBox>
+</div>
 
 <!-- 工作区 -->
 {#if showWorkspace}
-    <ResponsiveBox class="workspace" style="position: absolute;width: 100%;height: 100%;z-index: 10;">
+    <div class="workspace" style="position: absolute;width: 100%;height: 100%;z-index: 10;">
         <!-- 顶部导航区 -->
         <div style="display: block;width: 100%;height: 4%;background: rgba(1, 255, 255, 0.3);"></div>
 
@@ -66,7 +64,7 @@
 
         <!-- 底部状态栏 -->
         <div style="width: 100%; height: 2%;background: rgba(1, 255, 255, 0.3);"></div>
-    </ResponsiveBox>
+    </div>
 {/if}
 
 <style>
