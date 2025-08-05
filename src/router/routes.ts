@@ -20,7 +20,7 @@
  * - 路径设计规范：使用小写字母和连字符
  */
 
-import type { RouteConfig } from '@mateothegreat/svelte5-router'
+import type { Route } from '@dvcol/svelte-simple-router/models'
 
 // 页面组件导入
 import HomePage from '../components/pages/HomePage.svelte'
@@ -30,12 +30,11 @@ import DemoPage from '../components/pages/DemoPage.svelte'
 import PlaygroundPage from '../components/pages/PlaygroundPage.svelte'
 import EditorPage from '../components/pages/EditorPage.svelte'
 
-
 /**
  * 路由配置数组
  * 定义应用的所有路由规则
  */
-export const routes: RouteConfig[] = [
+export const routes: Readonly<Route<any>[]> = [
     {
         // 首页路由 - 根路径
         path: '/',
@@ -83,9 +82,20 @@ export const routes: RouteConfig[] = [
         path: '/editor',
         component: EditorPage,
         name: 'editor'
+    },
+    {
+        // 404 通配符路由
+        path: '*',
+        component: () => import('../components/pages/404.svelte'),
+        name: 'not-found'
     }
-    // 注意：404页面处理已移至App.svelte，通过Router的statuses配置实现
-]
+] as const
+
+// Router 全局配置，启用 hash 模式以保证子目录部署可正常访问
+export const routerOptions = {
+    routes,
+    hash: true
+} as const
 
 /**
  * 全局路由守卫钩子
@@ -97,9 +107,7 @@ export const globalHooks = {
     pre: async (route: any) => {
         navigationCount++
         if (navigationCount % 2 === 1) {
-
         } else {
-
         }
         return true // 返回true继续导航
     }

@@ -10,6 +10,7 @@
     import { onDestroy } from 'svelte'
     import { Splitpanes, Pane } from 'svelte-splitpanes'
     import CodeEditor from '../widgets/CodeEditor.svelte'
+    import { useNavigate } from '@dvcol/svelte-simple-router/router'
 
     // --------------------------- 状态 ---------------------------
     // 编辑器代码内容
@@ -47,6 +48,7 @@
         const sizes = Array.isArray(e.detail) ? e.detail.map((d: any) => d.size) : e.detail.sizes
         ratio = sizes[0] / (sizes[0] + sizes[1])
     }
+    const { push } = useNavigate()
 </script>
 
 <div style="width: 100vw; height: 100vh;">
@@ -64,7 +66,14 @@
 </div>
 
 <!-- 返回 Demo 按钮 -->
-<a href="/demo" class="back-to-demo">← 返回</a>
+<a
+    href="/demo"
+    onclick={(e) => {
+        e.preventDefault()
+        push({ path: '/demo' })
+    }}
+    class="back-to-demo"
+>← 返回</a>
 
 <style>
     /* 返回 Demo 按钮样式 */

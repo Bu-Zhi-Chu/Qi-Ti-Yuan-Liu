@@ -24,7 +24,9 @@
 
     import GenericCard from '../widgets/GenericCard.svelte'
     import logoImage from '../../assets/img/icon-192.png'
-    import { goto } from '@mateothegreat/svelte5-router'
+    import { useNavigate } from '@dvcol/svelte-simple-router/router'
+
+    const { push } = useNavigate()
 
     interface ComponentItem {
         id: string
@@ -204,7 +206,7 @@
                                 href={`/playground/${component.id}`}
                                 onclick={(e) => {
                                     e.preventDefault()
-                                    goto(`/playground/${component.id}`)
+                                    push({ path: `/playground/${component.id}` })
                                 }}
                                 style="text-decoration:none;display:block;"
                             >
