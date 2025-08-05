@@ -45,7 +45,7 @@ export const routes: Readonly<Route<any>[]> = [
     },
     {
         // Playground 示例运行页面
-        path: '/playground/(?<id>[^/]+)',
+        path: '/playground/:id',
         component: PlaygroundPage,
         name: 'playground'
     },
