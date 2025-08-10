@@ -46,11 +46,21 @@
     })
 </script>
 
-<!-- 确保 data-id 始终存在于 DOM 中，即使在组件切换过程中 -->
+<!-- 根据组件加载状态渲染 -->
 {#if TargetComponent}
-    <TargetComponent {...props} {...restProps} {style} class={className} data-id={componentUUID}>
+    <svelte:component 
+        this={TargetComponent} 
+        {style}
+        class={className}
+        data-id={componentUUID}
+        {...props}
+        {...restProps}
+    />
+{:else}
+    <!-- 组件未加载时的占位符 -->
+    <div data-id={componentUUID} {style} class={className} {...restProps}>
         {@render children?.()}
-    </TargetComponent>
+    </div>
 {/if}
 
 <!--

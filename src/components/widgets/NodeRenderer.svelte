@@ -2,6 +2,7 @@
  * NodeRenderer.svelte
  * 递归渲染 DomNode 数据结构；除根节点外统一使用 DynamicComponent(SimpleBox)。
  * 支持选中高亮，通过派发 select 事件让上层组件维护 selectedId。
+ * 高亮边框只在编辑模式下显示，避免在正常浏览模式下干扰用户体验。
  -->
 <script module lang="ts">
     import type { DomNode } from '../../types/dom-node.types'
@@ -9,6 +10,8 @@
     export interface Props {
         node: DomNode
         selectedId?: string | null
+        /** 是否为编辑模式，控制高亮边框显示 */
+        editing?: boolean
         /** 选择回调 */
         select?: (id: string) => void
     }
@@ -19,19 +22,48 @@
     // 递归自引入，替代 <svelte:self>（Svelte5 已弃用）
     import NodeRenderer from './NodeRenderer.svelte'
 
-    // Runes props
-    const { node, selectedId, select } = $props()
+    // Runes props - 保留 selectedId 响应式
+    const { node, selectedId, editing = false, select } = $props()
+
+    // 最新选中 ID
+
     /** 当前节点业务标识 */
     const nodeKey = node.dataId ?? node.id
 
-    /** 点击选中 */
+    /** 点击选中 - 精确点击，不冒泡 */
     function handleClick(event: MouseEvent) {
-        event.stopPropagation()
-        select?.(nodeKey)
+        console.log(`[NodeRenderer] 点击事件触发: ${nodeKey}, target:`, event.target, 'currentTarget:', event.currentTarget)
+
+        // 检查是否是直接点击当前元素（不是子元素冒泡上来的）
+        const isDirectClick = event.target === event.currentTarget
+
+        if (isDirectClick) {
+            // 立即阻止事件冒泡和默认行为
+            event.stopImmediatePropagation()
+            event.preventDefault()
+
+            // 选中当前元素
+            select?.(nodeKey)
+            console.log(`[NodeRenderer] 直接点击选中: ${nodeKey}`)
+        } else {
+            console.log(`[NodeRenderer] 忽略子元素冒泡: ${nodeKey}`)
+        }
     }
 
-    /** 生成内联样式字符串 */
-    function buildStyle(): string {
+    // 计算当前节点是否被选中
+    const isSelected = $derived(selectedId === nodeKey)
+
+    // 调试：监听 isSelected 变化（仅在状态改变时打印）
+    let previousSelected = $state(false)
+    $effect(() => {
+        if (isSelected !== previousSelected) {
+            console.log(`[NodeRenderer ${nodeKey}] isSelected 状态改变: ${previousSelected} -> ${isSelected}, selectedId: ${selectedId}`)
+            previousSelected = isSelected
+        }
+    })
+
+    /** 派生最终内联样式，依赖 selectedId 和 node.styles 实时更新 */
+    let finalStyle = $derived.by(() => {
         const styleEntries = Object.entries(node.styles ?? {})
         const styleStr = styleEntries
             .map(([k, v]) => {
@@ -39,27 +71,44 @@
                 return `${kebab}:${v}`
             })
             .join(';')
-        const isSelected = nodeKey === selectedId
-        const border = 'calc(1px * var(--scale-ratio, 1)) dashed transparent'
-        const boxShadow = isSelected ? '0 0 calc(10px * var(--scale-ratio, 1)) rgba(59,130,246,0.7)' : 'none'
-        const defaultStyles = `transition:all 0.2s ease;border:${border};box-shadow:${boxShadow}`
-        return styleStr ? `${styleStr};${defaultStyles}` : defaultStyles
-    }
+
+        // 使用更明显的边框宽度和 !important 强制应用
+        const borderWidth = 1
+        let borderStyles = ''
+        let boxShadowStyles = ''
+
+        // 只在编辑模式下显示高亮边框
+        if (editing && isSelected) {
+            borderStyles = `border: calc(${borderWidth}px * var(--scale-ratio, 1)) solid #00ff00 !important`
+            boxShadowStyles = `box-shadow: inset 0 0 0 calc(2px * var(--scale-ratio, 1)) #00ff00, 0 0 calc(8px * var(--scale-ratio, 1)) rgba(0, 255, 0, 0.5) !important`
+        } else {
+            borderStyles = `border: none !important`
+            boxShadowStyles = `box-shadow: none !important`
+        }
+
+        const defaultStyles = `transition: all 0.2s ease !important; ${borderStyles}; ${boxShadowStyles}`
+        const result = styleStr ? `${styleStr}; ${defaultStyles}` : defaultStyles
+
+        // 调试：输出最终样式
+        console.log(`[NodeRenderer ${nodeKey}] editing:${editing}, isSelected:${isSelected}, finalStyle:`, result)
+
+        return result
+    })
 
     /** 透传除 styles 之外的 attributes */
     const extraAttr = node.attributes ?? {}
 </script>
 
 {#if nodeKey === 'root'}
-    <div data-id={nodeKey} style={buildStyle()} {...extraAttr} onclick={handleClick}>
+    <div data-id={nodeKey} style={finalStyle} {...extraAttr} onclick={handleClick}>
         {#each node.children ?? [] as child}
-            <NodeRenderer node={child} {selectedId} {select} />
+            <NodeRenderer node={child} {selectedId} {editing} {select} />
         {/each}
     </div>
 {:else}
-    <DynamicComponent type="SimpleBox" data-id={nodeKey} style={buildStyle()} {...extraAttr} onclick={handleClick}>
+    <DynamicComponent type="SimpleBox" data-id={nodeKey} style={finalStyle} {...extraAttr} onclick={handleClick}>
         {#each node.children ?? [] as child}
-            <NodeRenderer node={child} {selectedId} {select} />
+            <NodeRenderer node={child} {selectedId} {editing} {select} />
         {/each}
     </DynamicComponent>
 {/if}

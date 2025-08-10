@@ -23,12 +23,10 @@
         [key: string]: any // 支持其他任意属性
     }
 
-    let { style = '', children, ...rest }: Props = $props()
-    // 基础样式字符串，避免重复 style="" 属性
-    const baseStyle = 'display:inline-block;width:100%;height:100%'
-    const mergedStyle = `${baseStyle}${style ? ';' + style : ''}`
+    let { style, children, ...rest }: Props = $props()
 </script>
 
-<div style={mergedStyle} {...rest}>
+<!-- 最简单的div传值模式，直接透传所有属性，不做任何样式处理 -->
+<div {style} {...rest}>
     {@render children?.()}
 </div>

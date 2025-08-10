@@ -210,7 +210,7 @@
     role="application"
     onmousedown={handleMouseDown}
 >
-    <NodeRenderer node={domTree} {selectedId} select={handleSelect} />
+    <NodeRenderer node={domTree} {selectedId} {editing} select={handleSelect} />
 </div>
 
 <style>

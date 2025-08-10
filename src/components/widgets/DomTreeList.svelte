@@ -34,9 +34,12 @@
     function handleClick(event: MouseEvent) {
         const target = event.target as HTMLElement | null
         if (!target) return
-        const id = target.getAttribute('data-id')
-        if (id) {
-            selectedId = id
+        const nodeItem = target.closest('[data-id]')
+        if (nodeItem) {
+            const id = nodeItem.getAttribute('data-id')
+            if (id) {
+                selectedId = id
+            }
         }
     }
 
