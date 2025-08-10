@@ -23,18 +23,14 @@
     }
 
     /** DOM 节点类型 */
-    export type DomNode = {
-        id: string
-        tagName: string
-        nodeId?: string
-        children?: DomNode[]
-        expanded?: boolean
-    }
+    import type { DomNode } from '../../types/dom-node.types'
+
+
 </script>
 
 <script lang="ts">
     /* 组件属性 - 使用 Runes $props */
-    let { domTree, selectedId = null } = $props<{ domTree: import('./DomTreeList.svelte').DomNode; selectedId?: string | null }>()
+    let { domTree, selectedId = null } = $props<{ domTree: import('../../types/dom-node.types').DomNode; selectedId?: string | null }>()
 
     /** 点击节点，更新选中 ID（事件委托） */
     function handleClick(event: MouseEvent) {

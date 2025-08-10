@@ -20,17 +20,8 @@
     import DomCanvas from '../widgets/DomCanvas.svelte'
     import DomTreeList from '../widgets/DomTreeList.svelte'
 
-    // 定义 DomNode 类型，表示 DOM 树中的节点
-    interface DomNode {
-        id: string
-        tagName: string
-        children?: DomNode[]
-        attributes?: Record<string, string>
-        styles?: Record<string, string>
-        events?: Record<string, Function>
-        nodeId?: string
-        expanded?: boolean
-    }
+    // 引入 DomNode 类型，统一维护
+    import type { DomNode } from '../../types/dom-node.types'
 
     // DOM 树作为单一数据源（普通 let 声明以避免类型检查问题）
     let domTree: DomNode = {

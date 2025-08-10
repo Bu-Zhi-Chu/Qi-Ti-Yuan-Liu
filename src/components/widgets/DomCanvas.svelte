@@ -26,21 +26,12 @@
     }
 
     /** DOM 节点类型 */
-    export type DomNode = {
-        id: string
-        tagName: string
-        nodeId?: string
-        children?: DomNode[]
-        attributes?: Record<string, string>
-        styles?: Record<string, string>
-        events?: Record<string, Function>
-        expanded?: boolean
-    }
+    import type { DomNode } from '../../types/dom-node.types'
 </script>
 
 <script lang="ts">
     // 组件属性 - 使用 Runes $props 声明，selectedId 支持双向绑定
-    let { domTree, selectedId = null, editing = false } = $props<{ domTree: import('./DomCanvas.svelte').DomNode; selectedId?: string | null; editing?: boolean }>()
+    let { domTree, selectedId = null, editing = false } = $props<{ domTree: import('../../types/dom-node.types').DomNode; selectedId?: string | null; editing?: boolean }>()
     // 顶部容器引用，用于渲染画布内容
     let canvasContainerRef: HTMLDivElement | null = null
 
