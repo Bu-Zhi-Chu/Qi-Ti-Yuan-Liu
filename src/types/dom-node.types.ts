@@ -6,8 +6,8 @@
 export interface DomNode {
   /** 唯一标识（随机或自增） */
   id: string
-  /** 元素标签名，例如 div / span */
-  tagName: string
+  /** 元素标签名，可选。默认为 SimpleBox 的 div 容器 */
+  tagName?: string
   /** 更稳定的业务级标识（可选），优先用于查找 */
   nodeId?: string
   /** 子节点列表 */

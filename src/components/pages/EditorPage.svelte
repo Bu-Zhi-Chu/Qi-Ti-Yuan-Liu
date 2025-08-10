@@ -26,7 +26,6 @@
     // DOM 树作为单一数据源（普通 let 声明以避免类型检查问题）
     let domTree: DomNode = {
         id: 'root',
-        tagName: 'div',
         nodeId: 'root',
         styles: {
             width: '100%',
@@ -37,17 +36,15 @@
         children: [
             {
                 id: 'header', // 根节点下第 1 个子节点
-                tagName: 'header',
                 nodeId: 'header',
                 styles: {
-                    height: '60px',
+                    height: 'calc(60px * var(--scale-ratio, 1))',
                     backgroundColor: '#f87171'
                 },
                 children: []
             },
             {
                 id: 'main', // 根节点下第 2 个子节点
-                tagName: 'main',
                 nodeId: 'main',
                 styles: {
                     flex: '1',
@@ -57,17 +54,15 @@
                 children: [
                     {
                         id: 'sidebar', // main 下的子节点
-                        tagName: 'aside',
                         nodeId: 'sidebar',
                         styles: {
-                            width: '200px',
+                            width: 'calc(200px * var(--scale-ratio, 1))',
                             backgroundColor: '#60a5fa'
                         },
                         children: []
                     },
                     {
                         id: 'content', // main 下的子节点
-                        tagName: 'section',
                         nodeId: 'content',
                         styles: {
                             flex: '1',
@@ -76,10 +71,9 @@
                         children: [
                             {
                                 id: 'article', // 更深层级
-                                tagName: 'article',
                                 nodeId: 'article',
                                 styles: {
-                                    padding: '20px',
+                                    padding: 'calc(20px * var(--scale-ratio, 1))',
                                     backgroundColor: '#a78bfa'
                                 },
                                 children: []
@@ -90,10 +84,9 @@
             },
             {
                 id: 'footer', // 根节点下第 3 个子节点
-                tagName: 'footer',
                 nodeId: 'footer',
                 styles: {
-                    height: '40px',
+                    height: 'calc(40px * var(--scale-ratio, 1))',
                     backgroundColor: '#fb923c'
                 },
                 children: []

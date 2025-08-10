@@ -24,8 +24,6 @@
 
     /** DOM 节点类型 */
     import type { DomNode } from '../../types/dom-node.types'
-
-
 </script>
 
 <script lang="ts">
@@ -49,24 +47,20 @@
         const isSelected = nodeKey === currentSelectedId
         const labelClass = isSelected ? 'node-label selected' : 'node-label'
 
-        const displayName = level === 0 ? '画布' : node.tagName
-        const idHtml = level === 0 ? '' : ` <span class=\"node-id\">(${nodeKey})</span>`
+        // 根节点显示“画布”，其余层显示 nodeId
+        const displayName = level === 0 ? '画布' : nodeKey
 
-        const childrenHtml = node.children && node.children.length
-            ? node.children.map((child: DomNode) => renderNode(child, level + 1, currentSelectedId)).join('')
-            : ''
+        const childrenHtml = node.children && node.children.length ? node.children.map((child: DomNode) => renderNode(child, level + 1, currentSelectedId)).join('') : ''
 
-        return /*html*/`
-            <div class="tree-node" style="padding-left: ${padding}px;">
-                <div class="${labelClass}" data-id="${nodeKey}">
-                    ${displayName}${idHtml}
-                </div>
+        return /*html*/ `
+          <div class="tree-node" style="padding-left: calc(${padding}px * var(--scale-ratio, 1));">
+                <div class="${labelClass}" data-id="${nodeKey}">${displayName}</div>
                 ${childrenHtml}
-            </div>
+          </div>
         `
     }
 
-    const htmlString = $derived(() => domTree ? renderNode(domTree, 0, selectedId) : '')
+    const htmlString = $derived(() => (domTree ? renderNode(domTree, 0, selectedId) : ''))
 </script>
 
 <!-- 容器使用事件委托监听 -->
@@ -77,8 +71,8 @@
 
 <style>
     .tree-container {
-        padding: 8px 4px;
-        font-size: 12px;
+        padding: calc(8px * var(--scale-ratio, 1)) calc(4px * var(--scale-ratio, 1));
+        font-size: calc(12px * var(--scale-ratio, 1));
         color: #cbd5e1;
         overflow-y: auto;
         height: 100%;
@@ -86,9 +80,9 @@
 
     /* svelte-ignore css_unused_selector */
     :global(.node-label) {
-        padding: 4px 6px;
+        padding: calc(4px * var(--scale-ratio, 1)) calc(6px * var(--scale-ratio, 1));
         cursor: pointer;
-        border-radius: 4px;
+        border-radius: calc(4px * var(--scale-ratio, 1));
         transition: background 0.2s ease;
         display: inline-block;
     }

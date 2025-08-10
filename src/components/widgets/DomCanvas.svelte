@@ -140,8 +140,9 @@
      * @returns 创建的 DOM 元素
      */
     function createDomElement(node: DomNode): HTMLElement {
-        // 创建元素
-        const element = document.createElement(node.tagName)
+        // 创建元素，若未指定 tagName 则默认使用 'div'
+        const tagName = node.tagName ?? 'div'
+        const element = document.createElement(tagName)
         const nodeKey = node.nodeId ?? node.id
 
         // 设置元素 ID 和数据属性
@@ -166,7 +167,7 @@
 
         // 添加默认样式
         element.style.transition = 'all 0.2s ease'
-        element.style.border = '1px dashed transparent'
+        element.style.border = 'calc(1px * var(--scale-ratio, 1)) dashed transparent'
 
         // 递归处理子节点
         if (node.children && node.children.length > 0) {
@@ -189,7 +190,7 @@
         const allElements = document.querySelectorAll('[data-node-id]')
         allElements.forEach((el) => {
             const elem = el as HTMLElement
-            elem.style.border = '1px dashed transparent'
+            elem.style.border = 'calc(1px * var(--scale-ratio, 1)) dashed transparent'
             elem.style.boxShadow = 'none'
         })
 
@@ -197,8 +198,8 @@
         const selectedElement = document.querySelector(`[data-node-id="${selectedId}"]`)
         if (selectedElement) {
             const elem = selectedElement as HTMLElement
-            elem.style.border = '1px dashed #3b82f6'
-            elem.style.boxShadow = '0 0 10px rgba(59, 130, 246, 0.5)'
+            elem.style.border = 'calc(1px * var(--scale-ratio, 1)) dashed #3b82f6'
+            elem.style.boxShadow = '0 0 calc(10px * var(--scale-ratio, 1)) rgba(59, 130, 246, 0.5)'
         }
     })
 
