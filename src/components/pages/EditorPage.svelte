@@ -81,15 +81,6 @@
                         ]
                     }
                 ]
-            },
-            {
-                id: 'footer', // 根节点下第 3 个子节点
-                nodeId: 'footer',
-                styles: {
-                    height: 'calc(40px * var(--scale-ratio, 1))',
-                    backgroundColor: '#fb923c'
-                },
-                children: []
             }
         ]
     }
@@ -117,7 +108,7 @@
 <div style="width: 100%;height: 100%;position: absolute;background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);z-index: 0;overflow: hidden;">
     <!-- 画布包裹元素，承担缩放与定位 -->
     <!-- @ts-ignore: props typing still WIP -->
-    <DomCanvas editing={showWorkspace} {domTree} {selectedId} />
+    <DomCanvas editing={showWorkspace} {domTree} bind:selectedId />
 </div>
 
 <!-- 工作区 -->
@@ -132,9 +123,9 @@
                 <!-- 工具栏 -->
                 <div style="width: 12%; height: 100%;background: rgba(255, 1, 255, 0.3);"></div>
                 <!-- dom树列表 -->
-                <div style="width: 88%;height: 100%;background: rgba(30, 41, 59, 0.8);">
+                <div style="width: 88%;height: 100%;background: rgba(30, 41, 59, 0.8);pointer-events: auto;">
                     <!-- @ts-ignore: props typing still WIP -->
-                    <DomTreeList {domTree} {selectedId} />
+                    <DomTreeList {domTree} bind:selectedId />
                 </div>
             </div>
 

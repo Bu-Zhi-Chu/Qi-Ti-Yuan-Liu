@@ -28,11 +28,12 @@
     /** DOM 节点类型 */
     import type { DomNode } from '../../types/dom-node.types'
     import { onMount, onDestroy } from 'svelte'
+    import NodeRenderer from './NodeRenderer.svelte'
 </script>
 
 <script lang="ts">
     // 组件属性 - 使用 Runes $props 声明，selectedId 支持双向绑定
-    let { domTree, selectedId = null, editing = false } = $props<{ domTree: import('../../types/dom-node.types').DomNode; selectedId?: string | null; editing?: boolean }>()
+    let { domTree, selectedId = $bindable(null), editing = false } = $props<{ domTree: import('../../types/dom-node.types').DomNode; selectedId?: string | null; editing?: boolean }>()
     // 顶部容器引用，用于渲染画布内容
     let canvasContainerRef: HTMLDivElement | null = null
 
@@ -135,6 +136,13 @@
     }
 
     /**
+     * 处理 NodeRenderer 选中事件
+     */
+    function handleSelect(event: CustomEvent<string>) {
+        selectedId = event.detail
+    }
+
+    /**
      * 递归创建 DOM 元素
      * @param node DOM 节点数据
      * @returns 创建的 DOM 元素
@@ -181,45 +189,8 @@
     }
 
     /**
-     * 更新选中节点样式
+     * DOM 树渲染交由 NodeRenderer 递归组件处理
      */
-    $effect(() => {
-        if (!selectedId) return
-
-        // 先清除所有元素的选中样式
-        const allElements = document.querySelectorAll('[data-node-id]')
-        allElements.forEach((el) => {
-            const elem = el as HTMLElement
-            elem.style.border = 'calc(1px * var(--scale-ratio, 1)) dashed transparent'
-            elem.style.boxShadow = 'none'
-        })
-
-        // 为选中元素添加样式
-        const selectedElement = document.querySelector(`[data-node-id="${selectedId}"]`)
-        if (selectedElement) {
-            const elem = selectedElement as HTMLElement
-            elem.style.border = 'calc(1px * var(--scale-ratio, 1)) dashed #3b82f6'
-            elem.style.boxShadow = '0 0 calc(10px * var(--scale-ratio, 1)) rgba(59, 130, 246, 0.5)'
-        }
-    })
-
-    /**
-     * DOM 树更新时，重新渲染画布
-     */
-    $effect(() => {
-        if (!domTree) return
-
-        // 获取画布容器
-        const canvasContainer = canvasContainerRef
-        if (!canvasContainer) return
-
-        // 清空容器
-        canvasContainer.innerHTML = ''
-
-        // 创建根元素并添加到容器
-        const rootElement = createDomElement(domTree)
-        canvasContainer.appendChild(rootElement)
-    })
 
     /*
      * 当退出编辑模式时，重置画布位移，确保“正常模式”回到原位
@@ -239,7 +210,7 @@
     role="application"
     onmousedown={handleMouseDown}
 >
-    <!-- DOM 树将在这里动态渲染 -->
+    <NodeRenderer node={domTree} {selectedId} on:select={handleSelect} />
 </div>
 
 <style>
