@@ -222,11 +222,13 @@
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-<div bind:this={canvasContainerRef}
-     class:editing
-     style={`width: 100%; height: 100%; cursor: ${state.cursor}; transform: ${editing ? `translate(calc(-50% + ${state.offsetX}px), calc(-50% + ${state.offsetY}px)) scale(0.5)` : `translate(${state.offsetX}px, ${state.offsetY}px)`}; transform-origin: center center;`}
-     role="application"
-     onmousedown={handleMouseDown}>
+<div
+    bind:this={canvasContainerRef}
+    class:editing
+    style={`width: 100%; height: 100%; cursor: ${state.cursor}; transform: ${editing ? `translate(calc(-50% + ${state.offsetX}px), calc(-50% + ${state.offsetY}px)) scale(0.5)` : `translate(${state.offsetX}px, ${state.offsetY}px)`}; transform-origin: center center;`}
+    role="application"
+    onmousedown={handleMouseDown}
+>
     <!-- DOM 树将在这里动态渲染 -->
 </div>
 
