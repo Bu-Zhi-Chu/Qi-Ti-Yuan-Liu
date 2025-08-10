@@ -36,9 +36,10 @@
         displayMode?: 'single-line' | 'multi-line'
         style?: string
         'data-id'?: string
+        [key: string]: any // 支持任意属性和事件处理器的传递
     }
 
-    let { format = 'datetime', displayMode = 'single-line', style = '', 'data-id': dataId = '' }: Props = $props()
+    let { format = 'datetime', displayMode = 'single-line', style = '', 'data-id': dataId = '', ...restProps }: Props = $props()
 
     // 使用 Svelte 5 的响应式日期对象
     let currentTime = new SvelteDate()
@@ -86,7 +87,7 @@
     })
 </script>
 
-<ResponsiveBox {style} data-id={dataId}>
+<ResponsiveBox {style} data-id={dataId} {...restProps}>
     {#if displayMode === 'single-line'}
         {singleLineTime}
     {:else}

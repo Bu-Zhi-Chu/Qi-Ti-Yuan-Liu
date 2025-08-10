@@ -98,14 +98,14 @@
         if (!state.dragging) return
         const dx = e.clientX - state.startX
         const dy = e.clientY - state.startY
-        
+
         // 获取当前缩放比例，用于补偿鼠标移动距离
         const scaleRatio = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--scale-ratio') || '1')
-        
+
         // 根据缩放比例调整移动距离，确保鼠标与画布移动同步
         const adjustedDx = dx / scaleRatio
         const adjustedDy = dy / scaleRatio
-        
+
         // 鼠标移动方向与画布平移方向保持一致
         setState({ offsetX: state.startOffsetX + adjustedDx, offsetY: state.startOffsetY + adjustedDy })
     }
