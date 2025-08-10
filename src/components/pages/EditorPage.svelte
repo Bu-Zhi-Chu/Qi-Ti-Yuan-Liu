@@ -35,7 +35,7 @@
         expanded: true,
         children: [
             {
-                id: 'header', // 根节点下第 1 个子节点
+                id: 'header',
                 dataId: 'header',
                 styles: {
                     height: '10%',
