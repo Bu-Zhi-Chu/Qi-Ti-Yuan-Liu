@@ -39,10 +39,10 @@
                 return `${kebab}:${v}`
             })
             .join(';')
-        const borderColor = nodeKey === selectedId ? '#3b82f6' : 'transparent'
-        const boxShadow = nodeKey === selectedId ? '0 0 calc(10px * var(--scale-ratio, 1)) rgba(59,130,246,0.5)' : 'none'
-        const outline = nodeKey === selectedId ? '2px solid #3b82f6' : 'none'
-        const defaultStyles = `transition:all 0.2s ease;border: calc(1px * var(--scale-ratio, 1)) dashed ${borderColor};box-shadow:${boxShadow};outline:${outline};outline-offset:-2px`
+        const isSelected = nodeKey === selectedId
+        const border = 'calc(1px * var(--scale-ratio, 1)) dashed transparent'
+        const boxShadow = isSelected ? '0 0 calc(10px * var(--scale-ratio, 1)) rgba(59,130,246,0.7)' : 'none'
+        const defaultStyles = `transition:all 0.2s ease;border:${border};box-shadow:${boxShadow}`
         return styleStr ? `${styleStr};${defaultStyles}` : defaultStyles
     }
 
