@@ -219,6 +219,15 @@
         const rootElement = createDomElement(domTree)
         canvasContainer.appendChild(rootElement)
     })
+
+    /*
+     * 当退出编辑模式时，重置画布位移，确保“正常模式”回到原位
+     */
+    $effect(() => {
+        if (!editing && (state.offsetX !== 0 || state.offsetY !== 0)) {
+            setState({ offsetX: 0, offsetY: 0 })
+        }
+    })
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->

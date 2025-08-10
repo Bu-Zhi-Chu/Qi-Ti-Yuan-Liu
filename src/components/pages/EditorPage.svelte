@@ -34,7 +34,71 @@
             backgroundColor: '#ffffff'
         },
         expanded: true,
-        children: []
+        children: [
+            {
+                id: 'header', // 根节点下第 1 个子节点
+                tagName: 'header',
+                nodeId: 'header',
+                styles: {
+                    height: '60px',
+                    backgroundColor: '#f87171'
+                },
+                children: []
+            },
+            {
+                id: 'main', // 根节点下第 2 个子节点
+                tagName: 'main',
+                nodeId: 'main',
+                styles: {
+                    flex: '1',
+                    backgroundColor: '#34d399',
+                    display: 'flex'
+                },
+                children: [
+                    {
+                        id: 'sidebar', // main 下的子节点
+                        tagName: 'aside',
+                        nodeId: 'sidebar',
+                        styles: {
+                            width: '200px',
+                            backgroundColor: '#60a5fa'
+                        },
+                        children: []
+                    },
+                    {
+                        id: 'content', // main 下的子节点
+                        tagName: 'section',
+                        nodeId: 'content',
+                        styles: {
+                            flex: '1',
+                            backgroundColor: '#facc15'
+                        },
+                        children: [
+                            {
+                                id: 'article', // 更深层级
+                                tagName: 'article',
+                                nodeId: 'article',
+                                styles: {
+                                    padding: '20px',
+                                    backgroundColor: '#a78bfa'
+                                },
+                                children: []
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 'footer', // 根节点下第 3 个子节点
+                tagName: 'footer',
+                nodeId: 'footer',
+                styles: {
+                    height: '40px',
+                    backgroundColor: '#fb923c'
+                },
+                children: []
+            }
+        ]
     }
 
     // 当前选中的节点 nodeId
