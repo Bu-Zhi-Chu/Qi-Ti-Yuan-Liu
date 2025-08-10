@@ -24,13 +24,12 @@
 
     interface Props {
         style?: string
-        children?: import('svelte').Snippet
         baseWidth?: number // 基准宽度，默认1920
         'data-id'?: string // 外部指定的数据标识符，用于低代码平台定位
         [key: string]: any // 支持其他任意属性
     }
 
-    let { style = '', baseWidth = 1920, children, ...rest }: Props = $props()
+    let { style = '', baseWidth = 1920, ...rest }: Props = $props()
 
     // 使用传入的data-id，没有传入则为空
     const componentId = rest['data-id'] || ''
@@ -106,5 +105,5 @@
 </script>
 
 <div bind:this={containerRef} style={finalStyle} data-id={componentId} {...rest}>
-    {@render children?.()}
+    <slot />
 </div>

@@ -49,11 +49,13 @@
 <!-- 根据组件加载状态渲染 -->
 {#if TargetComponent}
     <!-- Svelte 5 runes 模式：组件默认动态，直接使用组件语法 -->
-    <TargetComponent {style} class={className} data-id={componentUUID} {...props} {...restProps} />
+    <TargetComponent {style} class={className} data-id={componentUUID} {...props} {...restProps}>
+        <slot />
+    </TargetComponent>
 {:else}
     <!-- 组件未加载时的占位符 -->
     <div data-id={componentUUID} {style} class={className} {...restProps}>
-        {@render children?.()}
+        <slot />
     </div>
 {/if}
 
