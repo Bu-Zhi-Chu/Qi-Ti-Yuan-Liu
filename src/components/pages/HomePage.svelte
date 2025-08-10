@@ -111,7 +111,7 @@
 
     <!-- 历史项目区域 - 现代滚动布局 -->
     <ResponsiveBox style="width: 100%; max-width: 1200px; height: 60vh; display: flex; flex-direction: column;">
-        <ResponsiveBox style="font-size: 24px; font-weight: 600; color: #f8fafc; margin-bottom: 30px; text-align: center; flex-shrink: 0;">历史项目</ResponsiveBox>
+        <ResponsiveBox style="font-size: 24px; font-weight: 600; color: #f8fafc; margin-bottom:5px; text-align: center; flex-shrink: 0;">历史项目</ResponsiveBox>
 
         <!-- 现代滚动容器 -->
         <ResponsiveBox style="flex: 1; overflow-y: auto; padding: 20px 10px 0 0; ">

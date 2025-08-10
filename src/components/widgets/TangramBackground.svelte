@@ -4,7 +4,7 @@
 </script>
 
 <!-- 七巧板背景动画层 -->
-<ResponsiveBox style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;overflow: hidden;">
+<ResponsiveBox style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;overflow: hidden;pointer-events: none;">
     <SimpleBox
         class="tangram-shape tangram-triangle-1"
         style="position: absolute; left: 10%; top: calc(-60px * var(--scale-ratio, 1)); width: 0; height: 0; border-left: calc(60px * var(--scale-ratio, 1)) solid transparent; border-right: calc(60px * var(--scale-ratio, 1)) solid transparent; border-bottom: calc(120px * var(--scale-ratio, 1)) solid rgba(99, 102, 241, 0.3); animation: tangram-fall-1 15s linear infinite;"

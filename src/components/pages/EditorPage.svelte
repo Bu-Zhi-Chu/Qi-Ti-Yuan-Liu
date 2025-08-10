@@ -16,6 +16,39 @@
     import { onMount, onDestroy } from 'svelte'
     import { registerShortcut } from '../../services/utils/shortcut.service'
 
+    /* 新增：Dom 区域与 Dom 树列表组件 */
+    import DomCanvas from '../widgets/DomCanvas.svelte'
+    import DomTreeList from '../widgets/DomTreeList.svelte'
+
+    // 定义 DomNode 类型，表示 DOM 树中的节点
+    interface DomNode {
+        id: string
+        tagName: string
+        children?: DomNode[]
+        attributes?: Record<string, string>
+        styles?: Record<string, string>
+        events?: Record<string, Function>
+        nodeId?: string
+        expanded?: boolean
+    }
+
+    // DOM 树作为单一数据源（普通 let 声明以避免类型检查问题）
+    let domTree: DomNode = {
+        id: 'root',
+        tagName: 'root',
+        nodeId: 'root',
+        styles: {
+            width: '100%',
+            height: '100%',
+            backgroundColor: '#ffffff'
+        },
+        expanded: true,
+        children: []
+    }
+
+    // 当前选中的节点 nodeId
+    let selectedId: string | null = 'root'
+
     // 是否显示工作区，默认正常模式隐藏
     let showWorkspace = false
 
@@ -34,8 +67,9 @@
 
 <!-- 背景 -->
 <div style="width: 100%;height: 100%;position: absolute;background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);z-index: 0;">
-    <!-- 画布 -->
-    <div class="canvas" class:editing={showWorkspace} style="background: white;"></div>
+    <!-- 画布包裹元素，承担缩放与定位 -->
+    <!-- @ts-ignore: props typing still WIP -->
+    <DomCanvas editing={showWorkspace} {domTree} {selectedId} />
 </div>
 
 <!-- 工作区 -->
@@ -50,7 +84,10 @@
                 <!-- 工具栏 -->
                 <div style="width: 12%; height: 100%;background: rgba(255, 1, 255, 0.3);"></div>
                 <!-- dom树列表 -->
-                <div style="width: 88%;height: 100%;background: rgba(1, 1, 255, 0.3);"></div>
+                <div style="width: 88%;height: 100%;background: rgba(30, 41, 59, 0.8);">
+                    <!-- @ts-ignore: props typing still WIP -->
+                    <DomTreeList {domTree} {selectedId} />
+                </div>
             </div>
 
             <!-- 右侧 -->
@@ -66,21 +103,3 @@
         <div style="width: 100%; height: 2%;background: rgba(1, 255, 255, 0.3);"></div>
     </div>
 {/if}
-
-<style>
-    .canvas {
-        position: relative;
-        width: 100%;
-        height: 100%;
-        display: block;
-    }
-
-    .editing {
-        position: absolute;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%) scale(0.5);
-        transform-origin: center center;
-        z-index: 5;
-    }
-</style>
