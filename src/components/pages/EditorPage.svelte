@@ -26,7 +26,7 @@
     // DOM 树作为单一数据源（普通 let 声明以避免类型检查问题）
     let domTree: DomNode = {
         id: 'root',
-        nodeId: 'root',
+        dataId: 'root',
         styles: {
             width: '100%',
             height: '100%',
@@ -36,51 +36,16 @@
         children: [
             {
                 id: 'header', // 根节点下第 1 个子节点
-                nodeId: 'header',
+                dataId: 'header',
                 styles: {
-                    height: 'calc(60px * var(--scale-ratio, 1))',
+                    height: '10%',
+                    width: '10%',
+                    top: '10%',
+                    left: '10%',
+                    position: 'absolute',
                     backgroundColor: '#f87171'
                 },
                 children: []
-            },
-            {
-                id: 'main', // 根节点下第 2 个子节点
-                nodeId: 'main',
-                styles: {
-                    flex: '1',
-                    backgroundColor: '#34d399',
-                    display: 'flex'
-                },
-                children: [
-                    {
-                        id: 'sidebar', // main 下的子节点
-                        nodeId: 'sidebar',
-                        styles: {
-                            width: 'calc(200px * var(--scale-ratio, 1))',
-                            backgroundColor: '#60a5fa'
-                        },
-                        children: []
-                    },
-                    {
-                        id: 'content', // main 下的子节点
-                        nodeId: 'content',
-                        styles: {
-                            flex: '1',
-                            backgroundColor: '#facc15'
-                        },
-                        children: [
-                            {
-                                id: 'article', // 更深层级
-                                nodeId: 'article',
-                                styles: {
-                                    padding: 'calc(20px * var(--scale-ratio, 1))',
-                                    backgroundColor: '#a78bfa'
-                                },
-                                children: []
-                            }
-                        ]
-                    }
-                ]
             }
         ]
     }

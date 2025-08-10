@@ -43,7 +43,7 @@
     // 递归生成 HTML 字符串
     function renderNode(node: DomNode, level = 0, currentSelectedId: string | null): string {
         const padding = level * 16
-        const nodeKey = node.nodeId ?? node.id
+        const nodeKey = node.dataId ?? node.id
         const isSelected = nodeKey === currentSelectedId
         const labelClass = isSelected ? 'node-label selected' : 'node-label'
 

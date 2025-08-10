@@ -1,12 +1,12 @@
 /**
  * DOM Geometry Utility
  * -------------------------------------------------------------
- * 提供基于 nodeId（组件统一分配到 DOM 元素的 data-node-id 属性）
+ * 提供基于 nodeId（组件统一分配到 DOM 元素的 data-id 属性）
  * 的常用几何计算函数，便于各业务（如快捷键服务、拖拽、命令面板等）
  * 判断鼠标是否在指定元素内部并获取相对坐标。
  *
  * 使用约定：
- * 1. 所有需要被识别的 DOM 元素均 **必须** 带有 `data-node-id="<nodeId>"` 属性。
+ * 1. 所有需要被识别的 DOM 元素均 **必须** 带有 `data-id="<nodeId>"` 属性。
  * 2. nodeId 应保持全局唯一。
  * 3. 本工具纯函数实现，不持有任何状态，可放心复用。
  * -------------------------------------------------------------
@@ -23,13 +23,13 @@ export interface Position {
  * 根据 nodeId 获取对应元素；不存在时返回 null。
  */
 export function getElementByNodeId(nodeId: string): HTMLElement | null {
-    return document.querySelector<HTMLElement>(`[data-node-id="${nodeId}"]`)
+    return document.querySelector<HTMLElement>(`[data-id="${nodeId}"]`)
 }
 
 /**
  * 判断鼠标是否位于指定 nodeId 对应的元素内部。
  *
- * @param nodeId 元素唯一标识（绑定在 data-node-id）
+ * @param nodeId 元素唯一标识（绑定在 data-id）
  * @param evt     鼠标事件对象
  * @returns       位于内部返回 true，否则 false
  */

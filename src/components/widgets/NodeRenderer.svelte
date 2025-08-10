@@ -22,7 +22,7 @@
     // Runes props
     const { node, selectedId, select } = $props()
     /** 当前节点业务标识 */
-    const nodeKey = node.nodeId ?? node.id
+    const nodeKey = node.dataId ?? node.id
 
     /** 点击选中 */
     function handleClick(event: MouseEvent) {
@@ -51,7 +51,7 @@
 </script>
 
 {#if nodeKey === 'root'}
-    <div data-node-id={nodeKey} style={buildStyle()} {...extraAttr} onclick={handleClick}>
+    <div data-id={nodeKey} style={buildStyle()} {...extraAttr} onclick={handleClick}>
         {#each node.children ?? [] as child}
             <NodeRenderer node={child} {selectedId} {select} />
         {/each}

@@ -151,10 +151,10 @@
         // 创建元素，若未指定 tagName 则默认使用 'div'
         const tagName = node.tagName ?? 'div'
         const element = document.createElement(tagName)
-        const nodeKey = node.nodeId ?? node.id
+        const nodeKey = node.dataId ?? node.id
 
         // 设置元素 ID 和数据属性
-        element.dataset.nodeId = nodeKey
+        element.dataset.id = nodeKey
 
         // 添加点击事件
         element.addEventListener('click', (e) => handleSelectNode(nodeKey, e))
