@@ -98,8 +98,16 @@
         if (!state.dragging) return
         const dx = e.clientX - state.startX
         const dy = e.clientY - state.startY
+        
+        // 获取当前缩放比例，用于补偿鼠标移动距离
+        const scaleRatio = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--scale-ratio') || '1')
+        
+        // 根据缩放比例调整移动距离，确保鼠标与画布移动同步
+        const adjustedDx = dx / scaleRatio
+        const adjustedDy = dy / scaleRatio
+        
         // 鼠标移动方向与画布平移方向保持一致
-        setState({ offsetX: state.startOffsetX + dx, offsetY: state.startOffsetY + dy })
+        setState({ offsetX: state.startOffsetX + adjustedDx, offsetY: state.startOffsetY + adjustedDy })
     }
 
     // 释放拖动
@@ -206,7 +214,7 @@
 <div
     bind:this={canvasContainerRef}
     class:editing
-    style={`width: 100%; height: 100%; cursor: ${state.cursor}; transform: ${editing ? `translate(calc(-50% + ${state.offsetX}px), calc(-50% + ${state.offsetY}px)) scale(0.5)` : `translate(${state.offsetX}px, ${state.offsetY}px)`}; transform-origin: center center;`}
+    style={`width: 100%; height: 100%; cursor: ${state.cursor}; transform: ${editing ? `translate(calc(-50% + calc(${state.offsetX}px * var(--scale-ratio, 1))), calc(-50% + calc(${state.offsetY}px * var(--scale-ratio, 1)))) scale(0.5)` : `translate(calc(${state.offsetX}px * var(--scale-ratio, 1)), calc(${state.offsetY}px * var(--scale-ratio, 1)))`}; transform-origin: center center;`}
     role="application"
     onmousedown={handleMouseDown}
 >
