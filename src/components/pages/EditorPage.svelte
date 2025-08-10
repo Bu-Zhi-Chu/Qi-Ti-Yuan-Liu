@@ -26,7 +26,7 @@
     // DOM 树作为单一数据源（普通 let 声明以避免类型检查问题）
     let domTree: DomNode = {
         id: 'root',
-        tagName: 'root',
+        tagName: 'div',
         nodeId: 'root',
         styles: {
             width: '100%',
@@ -57,7 +57,7 @@
 </script>
 
 <!-- 背景 -->
-<div style="width: 100%;height: 100%;position: absolute;background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);z-index: 0;">
+<div style="width: 100%;height: 100%;position: absolute;background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);z-index: 0;overflow: hidden;">
     <!-- 画布包裹元素，承担缩放与定位 -->
     <!-- @ts-ignore: props typing still WIP -->
     <DomCanvas editing={showWorkspace} {domTree} {selectedId} />
@@ -65,7 +65,7 @@
 
 <!-- 工作区 -->
 {#if showWorkspace}
-    <div class="workspace" style="position: absolute;width: 100%;height: 100%;z-index: 10;">
+    <div class="workspace" style="position: absolute;width: 100%;height: 100%;z-index: 10;pointer-events: none;">
         <!-- 顶部导航区 -->
         <div style="display: block;width: 100%;height: 4%;background: rgba(1, 255, 255, 0.3);"></div>
 

@@ -27,6 +27,7 @@
 
     /** DOM 节点类型 */
     import type { DomNode } from '../../types/dom-node.types'
+    import { onMount, onDestroy } from 'svelte'
 </script>
 
 <script lang="ts">
@@ -34,6 +35,93 @@
     let { domTree, selectedId = null, editing = false } = $props<{ domTree: import('../../types/dom-node.types').DomNode; selectedId?: string | null; editing?: boolean }>()
     // 顶部容器引用，用于渲染画布内容
     let canvasContainerRef: HTMLDivElement | null = null
+
+    /* =================== 画布移动逻辑 =================== */
+    interface DragState {
+        spaceDown: boolean
+        dragging: boolean
+        startX: number
+        startY: number
+        startOffsetX: number
+        startOffsetY: number
+        offsetX: number
+        offsetY: number
+        cursor: string
+    }
+    let state: DragState = $state({
+        spaceDown: false,
+        dragging: false,
+        startX: 0,
+        startY: 0,
+        startOffsetX: 0,
+        startOffsetY: 0,
+        offsetX: 0,
+        offsetY: 0,
+        cursor: 'auto'
+    })
+    const setState = (patch: Partial<DragState>) => {
+        state = { ...state, ...patch }
+    }
+
+    // 监听键盘空格按下/松开
+    const handleKeyDown = (e: KeyboardEvent) => {
+        if (!editing || e.repeat) return
+        if (e.code === 'Space') {
+            setState({ spaceDown: true, cursor: 'grab' })
+            // 阻止页面滚动
+            e.preventDefault()
+        }
+    }
+    const handleKeyUp = (e: KeyboardEvent) => {
+        if (e.code === 'Space') {
+            setState({ spaceDown: false, dragging: false, cursor: 'auto' })
+        }
+    }
+
+    // 鼠标按下开始拖动
+    const handleMouseDown = (e: MouseEvent) => {
+        if (!editing || !state.spaceDown || !canvasContainerRef) return
+        setState({
+            dragging: true,
+            startX: e.clientX,
+            startY: e.clientY,
+            startOffsetX: state.offsetX,
+            startOffsetY: state.offsetY,
+            cursor: 'grabbing'
+        })
+        e.preventDefault()
+    }
+
+    // 鼠标移动滚动画布
+    const handleMouseMove = (e: MouseEvent) => {
+        if (!state.dragging) return
+        const dx = e.clientX - state.startX
+        const dy = e.clientY - state.startY
+        // 鼠标移动方向与画布平移方向保持一致
+        setState({ offsetX: state.startOffsetX + dx, offsetY: state.startOffsetY + dy })
+    }
+
+    // 释放拖动
+    const endDrag = () => {
+        if (state.dragging) {
+            setState({ dragging: false, cursor: state.spaceDown ? 'grab' : 'auto' })
+        }
+    }
+
+    // 注册全局监听
+    onMount(() => {
+        window.addEventListener('keydown', handleKeyDown, { passive: false })
+        window.addEventListener('keyup', handleKeyUp)
+        window.addEventListener('mouseup', endDrag)
+        window.addEventListener('mousemove', handleMouseMove)
+    })
+
+    onDestroy(() => {
+        window.removeEventListener('keydown', handleKeyDown)
+        window.removeEventListener('keyup', handleKeyUp)
+        window.removeEventListener('mouseup', endDrag)
+        window.removeEventListener('mousemove', handleMouseMove)
+    })
 
     /**
      * 选中节点事件处理
@@ -133,7 +221,12 @@
     })
 </script>
 
-<div bind:this={canvasContainerRef} class:editing style="background: white; width: 100%; height: 100%; overflow: auto;">
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+<div bind:this={canvasContainerRef}
+     class:editing
+     style={`width: 100%; height: 100%; cursor: ${state.cursor}; transform: ${editing ? `translate(calc(-50% + ${state.offsetX}px), calc(-50% + ${state.offsetY}px)) scale(0.5)` : `translate(${state.offsetX}px, ${state.offsetY}px)`}; transform-origin: center center;`}
+     role="application"
+     onmousedown={handleMouseDown}>
     <!-- DOM 树将在这里动态渲染 -->
 </div>
 
@@ -145,7 +238,7 @@
         width: 100%;
         height: 100%;
         display: block;
-        transform: translate(-50%, -50%) scale(0.5);
+        /* 平移由内联 style 控制 */
         transform-origin: center center;
         z-index: 5;
     }
