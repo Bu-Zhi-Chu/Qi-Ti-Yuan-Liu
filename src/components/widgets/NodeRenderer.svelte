@@ -97,6 +97,12 @@
 
     /** 透传除 styles 之外的 attributes */
     const extraAttr = node.attributes ?? {}
+
+    /** 获取组件类型，默认为 SimpleBox */
+    const componentType = node.componentType ?? 'SimpleBox'
+
+    /** 获取组件属性，合并 componentProps 和其他属性 */
+    const componentProps = { ...extraAttr, ...(node.componentProps ?? {}) }
 </script>
 
 {#if nodeKey === 'root'}
@@ -106,7 +112,7 @@
         {/each}
     </div>
 {:else}
-    <DynamicComponent type="SimpleBox" data-id={nodeKey} style={finalStyle} {...extraAttr} onclick={handleClick}>
+    <DynamicComponent type={componentType} data-id={nodeKey} style={finalStyle} {...componentProps} onclick={handleClick}>
         {#each node.children ?? [] as child}
             <NodeRenderer node={child} {selectedId} {editing} {select} />
         {/each}

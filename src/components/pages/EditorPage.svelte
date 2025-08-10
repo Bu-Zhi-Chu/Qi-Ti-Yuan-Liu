@@ -27,6 +27,7 @@
     let domTree: DomNode = {
         id: 'root',
         dataId: 'root',
+        componentType: 'SimpleBox', // 根容器使用 SimpleBox
         styles: {
             width: '100%',
             height: '100%',
@@ -37,6 +38,7 @@
             {
                 id: 'header',
                 dataId: 'header',
+                componentType: 'SimpleBox', // 头部区域使用 SimpleBox
                 styles: {
                     height: '10%',
                     width: '10%',
@@ -46,6 +48,59 @@
                     backgroundColor: '#f87171'
                 },
                 children: []
+            },
+            {
+                id: 'clock',
+                dataId: 'clock',
+                componentType: 'RealTimeClock', // 实时时钟组件
+                styles: {
+                    height: '8%',
+                    width: '15%',
+                    top: '25%',
+                    left: '10%',
+                    position: 'absolute',
+                    backgroundColor: '#60a5fa',
+                    color: '#ffffff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: '8px'
+                },
+                componentProps: {
+                    format: 'HH:mm:ss' // 传递给时钟组件的格式参数
+                },
+                children: []
+            },
+            {
+                id: 'responsive-container',
+                dataId: 'responsive-container',
+                componentType: 'ResponsiveBox', // 响应式容器
+                styles: {
+                    height: '20%',
+                    width: '30%',
+                    top: '40%',
+                    left: '10%',
+                    position: 'absolute',
+                    backgroundColor: '#34d399',
+                    borderRadius: '12px'
+                },
+                componentProps: {
+                    padding: '16px' // 传递给响应式容器的内边距
+                },
+                children: [
+                    {
+                        id: 'inner-box',
+                        dataId: 'inner-box',
+                        componentType: 'SimpleBox',
+                        styles: {
+                            width: '100%',
+                            height: '50%',
+                            backgroundColor: '#fbbf24',
+                            borderRadius: '8px'
+                        },
+                        children: []
+                    }
+                ]
             }
         ]
     }

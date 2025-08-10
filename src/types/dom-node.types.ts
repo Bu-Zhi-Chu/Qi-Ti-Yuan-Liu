@@ -10,6 +10,10 @@ export interface DomNode {
   tagName?: string
   /** 更稳定的业务级标识（可选），优先用于查找 */
   dataId?: string
+  /** 组件类型，指定使用 DynamicComponent 中的哪种组件，默认为 'SimpleBox' */
+  componentType?: 'RealTimeClock' | 'ResponsiveBox' | 'SimpleBox'
+  /** 传递给组件的属性 */
+  componentProps?: Record<string, any>
   /** 子节点列表 */
   children?: DomNode[]
   /** DOM 属性 */
