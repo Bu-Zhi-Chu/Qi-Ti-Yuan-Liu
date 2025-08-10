@@ -138,8 +138,8 @@
     /**
      * 处理 NodeRenderer 选中事件
      */
-    function handleSelect(event: CustomEvent<string>) {
-        selectedId = event.detail
+    function handleSelect(id: string) {
+        selectedId = id
     }
 
     /**
@@ -210,7 +210,7 @@
     role="application"
     onmousedown={handleMouseDown}
 >
-    <NodeRenderer node={domTree} {selectedId} on:select={handleSelect} />
+    <NodeRenderer node={domTree} {selectedId} select={handleSelect} />
 </div>
 
 <style>
