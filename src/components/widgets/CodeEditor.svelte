@@ -144,6 +144,7 @@
         background: #16a34a;
         color: #fff;
         border: none;
+        cursor: pointer;
         font-size: calc(14px * var(--scale-ratio, 1));
     }
     .btn-reset {
@@ -152,6 +153,7 @@
         border-radius: calc(4px * var(--scale-ratio, 1));
         background: #0f172a;
         color: #fff;
+        cursor: pointer;
         font-size: calc(14px * var(--scale-ratio, 1));
     }
 
