@@ -14,9 +14,16 @@
 
     // --------------------------- 状态 ---------------------------
     // HTML / CSS / JS 代码内容
-    let htmlCode: string = '<h1 style="text-align:center;">Hello, Qi Qiao Ban!</h1>'
+    let htmlCode: string = ''
     let cssCode: string = 'body { font-family: sans-serif; }'
-    let jsCode: string = "console.log('Hello, Qi Qiao Ban!')"
+    let jsCode: string = `<script lang="ts">
+  // 使用 Svelte 5 Runes，无需导入
+  let count = $state(0);
+<\/script>
+
+<button on:click={() => { count++ }}>
+  点击次数：{count}
+</button>`
     // 控制台日志
     let logs: string[] = []
     // iframe 预览 URL（Blob）
@@ -36,32 +43,57 @@
         const consoleHook = `(() => {const levels = ['log','info','warn','error'];levels.forEach(level => {const orig = console[level];console[level] = (...args) => {window.parent.postMessage({ type: 'console', level, msg: args.map(a => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ') }, '*');orig.apply(console, args);};});})();`
 
         // ---------------- Svelte5 编译支持 ----------------
-        let finalJsCode: string = jsCode
+        // 将裸模块导入替换为 esm.sh CDN，解决 Svelte 在线编译无法解析裸包名的问题
+        const transformBareImports = (code: string) => {
+            // import ... from 'package'
+            code = code.replace(/from\s+['"]([^'"./][^'" ]*)['"]/g, (_m, p1) => `from 'https://esm.sh/${p1}?bundle'`)
+            // import 'package'
+            code = code.replace(/import\s+['"]([^'"./][^'" ]*)['"]/g, (_m, p1) => `import 'https://esm.sh/${p1}?bundle'`)
+            return code
+        }
+
+        const escapeScriptEnd = (code: string) => {
+            const endTag = '</scr' + 'ipt>'
+            const endTagEscaped = '<\\/scr' + 'ipt>'
+            return code.replace(new RegExp(endTag, 'gi'), endTagEscaped)
+        }
+
+        const stripScriptWrapper = (code: string) => code.replace(/<script[^>]*>/g, '').replace(/<\/script>/g, '')
+        let finalJsCode: string = transformBareImports(stripScriptWrapper(jsCode))
         try {
             // 简单启发式：如果 js 区域以 "<" 开头，视为 Svelte 单文件组件源码
             if (jsCode.trim().startsWith('<')) {
-                const { compile } = await import(/* @vite-ignore */ 'https://cdn.jsdelivr.net/npm/svelte@next/src/compiler/index.js')
-                const { js } = compile(jsCode, {
+                const { compile } = await import('https://esm.sh/svelte@5/compiler')
+                const transformedSource = transformBareImports(jsCode)
+                const { js } = compile(transformedSource, {
                     generate: 'dom',
-                    format: 'esm',
-                    dev: true // 保留调试信息
+                    dev: true, // 保留调试信息
+                    runes: true
                 })
-                finalJsCode = js.code
+                // 将 ESM 默认导出转换为组件变量，便于后续实例化
+                const compiledCode = js.code.replace(/export\s+default/g, 'const Component =')
+                finalJsCode = transformBareImports(compiledCode) + '\nnew Component({ target: document.body });'
             }
         } catch (err) {
             logs = [...logs, `[error] Svelte compile error: ${err instanceof Error ? err.message : String(err)}`]
         }
         // ---------------------------------------------------
 
-        const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${cssCode}</style></head><body>${htmlCode}<script type="module">${consoleHook + finalJsCode}<\/script></body></html>`
+        const safeJsCode = escapeScriptEnd(finalJsCode)
+        const html = `<!DOCTYPE html><html><head><meta charset=\"utf-8\"><style>${cssCode}</style></head><body>${htmlCode}<script type=\"module\">${consoleHook} ${safeJsCode}<\\/script></body></html>`
         htmlUrl = URL.createObjectURL(new Blob([html], { type: 'text/html' }))
     }
 
     // 重置代码到默认模板
     function resetCode() {
-        htmlCode = '<h1 style="text-align:center;">Hello, Qi Qiao Ban!</h1>'
+        htmlCode = ''
         cssCode = 'body { font-family: sans-serif; }'
-        jsCode = "console.log('Hello, Qi Qiao Ban!')"
+        jsCode = `<script lang=\"ts\">\n  // 使用 Svelte 5 Runes，无需导入\n  let count = $state(0);
+<\\/script>
+
+<button on:click={() => { count++ }}>
+  点击次数：{count}
+</button>`
         runCode()
     }
 
