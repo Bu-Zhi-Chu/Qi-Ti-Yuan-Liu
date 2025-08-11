@@ -41,6 +41,8 @@ export interface UsePanOptions {
     y: number;
     event: PointerEvent;
   }) => void;
+  /** 当前偏移读取函数, 用于在按下时初始化总位移 */
+  offsetAccessor?: () => { x: number; y: number };
 }
 
 interface InternalState {
@@ -101,6 +103,11 @@ export default function usePan(node: HTMLElement, opts: UsePanOptions = {}) {
   function onPointerDown(e: PointerEvent) {
     if (e.button !== 0) return; // 限制左键
     if (options.key && !state.keyPressed) return; // 未按触发键
+
+    // 初始化累计位移为当前偏移, 解决缩放后首次拖动跳动
+    const initOffset = options.offsetAccessor?.() ?? { x: 0, y: 0 };
+    state.totalX = initOffset.x;
+    state.totalY = initOffset.y;
 
     state.panActive = true;
     state.lastX = e.clientX;
