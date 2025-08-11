@@ -2,16 +2,11 @@
   "default": {
     "name": "计数器组件",
     "description": "一个简单的计数器示例组件",
-    "code": "<script>\n  console.log(1111); // 初始加载时打印，验证脚本执行\n  let count = $state(0); // Svelte 5 使用 $state 创建响应式状态\n  console.log(count); // 打印初始值\n  function increment() {\n    count++; // 直接修改 $state 创建的响应式变量\n    console.log(count); // 打印更新后的值\n  }\n</script>\n\n<button onclick={increment}>\n  点击次数：{count}\n</button>"
-  },
-  "reset": {
-    "name": "简化计数器",
-    "description": "重置时使用的简化计数器组件",
     "code": "<script>\n  let count = $state(0);\n  function increment() {\n    count++;\n  }\n</script>\n\n<button onclick={increment}>\n  点击次数：{count}\n</button>"
   },
-  "minimal": {
-    "name": "最小化组件",
-    "description": "最简化的Svelte组件示例",
+  "hello-world": {
+    "name": "Hello World",
+    "description": "最基础的Svelte组件",
     "code": "<script>\n  let message = $state('Hello, Svelte 5!');\n</script>\n\n<h1>{message}</h1>"
   },
   "interactive": {

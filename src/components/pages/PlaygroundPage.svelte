@@ -20,38 +20,54 @@
     // 从JSON导入导航配置
     import demoNavigation from '../../examples/demo-navigation.json'
 
-    // 解析Svelte组件代码为HTML/CSS/JS部分
+    // 解析完整代码为 HTML/CSS/JS 部分
+    // 对于 Svelte 组件，将整个组件代码放在 JS 区域，HTML 和 CSS 区域留空
     function parseCode(fullCode: string): { html: string; css: string; js: string } {
-        const htmlParts: string[] = []
-        const cssParts: string[] = []
-        const jsParts: string[] = []
+        // 检查是否为 Svelte 单文件组件（包含 <script> 或 <style> 标签）
+        const isSvelteComponent = /<script[^>]*>[\s\S]*?<\/script>/i.test(fullCode) || 
+                                 /<style[^>]*>[\s\S]*?<\/style>/i.test(fullCode) ||
+                                 (fullCode.includes('{') && fullCode.includes('}') && fullCode.includes('<'))
 
-        // 简单的正则表达式来提取各个部分
-        const scriptRegex = /<script[^>]*>([\s\S]*?)<\/script>/gi
-        const styleRegex = /<style[^>]*>([\s\S]*?)<\/style>/gi
+        if (isSvelteComponent) {
+            // Svelte 单文件组件：整个代码放在 JS 区域
+            return {
+                html: '', // HTML 区域留空
+                css: '',  // CSS 区域留空
+                js: fullCode.trim() || '// 空 Svelte 组件'
+            }
+        } else {
+            // 传统 HTML/CSS/JS 分离模式
+            const htmlParts: string[] = []
+            const cssParts: string[] = []
+            const jsParts: string[] = []
 
-        let htmlContent = fullCode
+            // 简单的正则表达式来提取各个部分
+            const scriptRegex = /<script[^>]*>([\s\S]*?)<\/script>/gi
+            const styleRegex = /<style[^>]*>([\s\S]*?)<\/style>/gi
 
-        // 提取JS部分
-        let match
-        while ((match = scriptRegex.exec(fullCode)) !== null) {
-            jsParts.push(match[1].trim())
-            htmlContent = htmlContent.replace(match[0], '')
-        }
+            let htmlContent = fullCode
 
-        // 提取CSS部分
-        while ((match = styleRegex.exec(fullCode)) !== null) {
-            cssParts.push(match[1].trim())
-            htmlContent = htmlContent.replace(match[0], '')
-        }
+            // 提取JS部分
+            let match
+            while ((match = scriptRegex.exec(fullCode)) !== null) {
+                jsParts.push(match[1].trim())
+                htmlContent = htmlContent.replace(match[0], '')
+            }
 
-        // 剩余的为HTML部分
-        htmlContent = htmlContent.trim()
+            // 提取CSS部分
+            while ((match = styleRegex.exec(fullCode)) !== null) {
+                cssParts.push(match[1].trim())
+                htmlContent = htmlContent.replace(match[0], '')
+            }
 
-        return {
-            html: htmlContent || '<div>Hello World</div>',
-            css: cssParts.join('\n') || 'body { font-family: sans-serif; }',
-            js: jsParts.join('\n') || ''
+            // 剩余的为HTML部分
+            htmlContent = htmlContent.trim()
+
+            return {
+                html: htmlContent || '<div>Hello World</div>',
+                css: cssParts.join('\n') || 'body { font-family: sans-serif; }',
+                js: jsParts.join('\n') || ''
+            }
         }
     }
 
@@ -267,7 +283,13 @@
             <Splitpanes horizontal>
                 <Pane size={85}>
                     <!-- bind:htmlCode, bind:cssCode, bind:jsCode 实现了双向绑定 -->
-                    <TabbedCodeEditor bind:htmlCode bind:cssCode bind:jsCode run={runCode} reset={resetCode} />
+                    <TabbedCodeEditor 
+                        bind:htmlCode 
+                        bind:cssCode 
+                        bind:jsCode 
+                        run={runCode} 
+                        reset={resetCode} 
+                        mode={jsCode.trim().startsWith('<') ? 'svelte' : 'default'} />
                 </Pane>
                 <Pane>
                     <!-- 控制台输出区域 -->
