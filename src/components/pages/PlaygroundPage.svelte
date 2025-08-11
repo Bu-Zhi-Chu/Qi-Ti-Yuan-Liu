@@ -79,6 +79,7 @@
             if (jsCode.trim().startsWith('<')) {
                 // 动态导入 Svelte 5 编译器
                 // 使用正确的 svelte/compiler 包名
+                // @ts-ignore
                 const { compile } = await import('https://esm.sh/svelte@5/compiler')
 
                 // 对 Svelte 源代码进行裸模块导入转换
