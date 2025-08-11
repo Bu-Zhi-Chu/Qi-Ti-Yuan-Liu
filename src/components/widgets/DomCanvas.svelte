@@ -27,8 +27,9 @@
 
     /** DOM 节点类型 */
     import type { DomNode } from '../../types/dom-node.types'
-    import { onMount, onDestroy } from 'svelte'
+    import { onMount } from 'svelte'
     import NodeRenderer from './NodeRenderer.svelte'
+    import { registerSpacePressRelease, registerMouseMove, registerMouseLeftPressRelease } from '../../services/utils/shortcut.service'
 </script>
 
 <script lang="ts">
@@ -117,19 +118,17 @@
         }
     }
 
-    // 注册全局监听
+    // 通过快捷键服务统一注册监听，确保自动清理
     onMount(() => {
-        window.addEventListener('keydown', handleKeyDown, { passive: false })
-        window.addEventListener('keyup', handleKeyUp)
-        window.addEventListener('mouseup', endDrag)
-        window.addEventListener('mousemove', handleMouseMove)
-    })
+        const offSpace = registerSpacePressRelease(handleKeyDown, handleKeyUp)
+        const offMove = registerMouseMove(handleMouseMove)
+        const offLeft = registerMouseLeftPressRelease(handleMouseDown, endDrag)
 
-    onDestroy(() => {
-        window.removeEventListener('keydown', handleKeyDown)
-        window.removeEventListener('keyup', handleKeyUp)
-        window.removeEventListener('mouseup', endDrag)
-        window.removeEventListener('mousemove', handleMouseMove)
+        return () => {
+            offSpace()
+            offMove()
+            offLeft()
+        }
     })
 
     /**
@@ -216,7 +215,6 @@
     class:editing
     style={`width: 100%; height: 100%; cursor: ${state.cursor}; transform: ${editing ? `translate(calc(-50% + calc(${state.offsetX}px * var(--scale-ratio, 1))), calc(-50% + calc(${state.offsetY}px * var(--scale-ratio, 1)))) scale(0.5)` : `translate(calc(${state.offsetX}px * var(--scale-ratio, 1)), calc(${state.offsetY}px * var(--scale-ratio, 1)))`}; transform-origin: center center;`}
     role="application"
-    onmousedown={handleMouseDown}
 >
     <NodeRenderer node={domTree} {selectedId} {editing} select={handleSelect} />
 </div>
