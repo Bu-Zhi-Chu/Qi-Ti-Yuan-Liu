@@ -7,7 +7,7 @@
   中间：svelte-splitpanes 拖拽分隔条，可记忆比例
 -->
 <script lang="ts">
-    import { onDestroy } from 'svelte'
+    import { onMount, onDestroy } from 'svelte'
     import { Splitpanes, Pane } from 'svelte-splitpanes'
     import TabbedCodeEditor from '../widgets/TabbedCodeEditor.svelte'
     import { useNavigate } from '@dvcol/svelte-simple-router/router'
@@ -17,6 +17,8 @@
     let htmlCode: string = '<h1 style="text-align:center;">Hello, Qi Qiao Ban!</h1>'
     let cssCode: string = 'body { font-family: sans-serif; }'
     let jsCode: string = "console.log('Hello, Qi Qiao Ban!')"
+    // 控制台日志
+    let logs: string[] = []
     // iframe 预览 URL（Blob）
     let htmlUrl: string = ''
     // 侧栏比例 (0~1)
@@ -27,7 +29,13 @@
         // 释放旧 URL
         if (htmlUrl) URL.revokeObjectURL(htmlUrl)
 
-        const html = `<!DOCTYPE html><html><head><meta charset=\"utf-8\"><style>${cssCode}</style></head><body>${htmlCode}<script type=\"module\">${jsCode}<\/script></body></html>`
+        // 清空日志
+        logs = []
+
+        // 注入 console hook
+        const consoleHook = `(() => {const levels = ['log','info','warn','error'];levels.forEach(level => {const orig = console[level];console[level] = (...args) => {window.parent.postMessage({ type: 'console', level, msg: args.map(a => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ') }, '*');orig.apply(console, args);};});})();`
+
+        const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${cssCode}</style></head><body>${htmlCode}<script type="module">${consoleHook + jsCode}<\/script></body></html>`
         htmlUrl = URL.createObjectURL(new Blob([html], { type: 'text/html' }))
     }
 
@@ -45,6 +53,7 @@
     // 组件卸载时释放 Blob URL
     onDestroy(() => {
         if (htmlUrl) URL.revokeObjectURL(htmlUrl)
+        window.removeEventListener('message', handleConsoleMessage)
     })
 
     // 拖拽结束保存比例
@@ -53,13 +62,31 @@
         ratio = sizes[0] / (sizes[0] + sizes[1])
     }
     const { push } = useNavigate()
+
+    // 监听 iframe console 消息
+    function handleConsoleMessage(e: MessageEvent<any>) {
+        if (e.data?.type === 'console') {
+            logs = [...logs, `[${e.data.level}] ${e.data.msg}`]
+        }
+    }
+
+    onMount(() => {
+        window.addEventListener('message', handleConsoleMessage)
+    })
 </script>
 
 <div style="width: 100vw; height: 100vh;">
     <Splitpanes on:resized={handleResizeEnd}>
         <!-- 左侧代码编辑区 -->
         <Pane size={ratio * 100}>
-            <TabbedCodeEditor bind:htmlCode bind:cssCode bind:jsCode run={runCode} reset={resetCode} />
+            <Splitpanes horizontal>
+                <Pane size={85}>
+                    <TabbedCodeEditor bind:htmlCode bind:cssCode bind:jsCode run={runCode} reset={resetCode} />
+                </Pane>
+                <Pane>
+                    <pre class="console-output">{logs.join('\n')}</pre>
+                </Pane>
+            </Splitpanes>
         </Pane>
 
         <!-- 右侧预览区 -->
@@ -99,7 +126,29 @@
         width: calc(6px * var(--scale-ratio, 1)) !important;
         cursor: col-resize;
     }
-    :global(.default-theme.splitpanes--vertical > .splitpanes__splitter:before, .default-theme.splitpanes--vertical > .splitpanes__splitter:after, .default-theme .splitpanes--vertical > .splitpanes__splitter:before, .default-theme .splitpanes--vertical > .splitpanes__splitter:after) {
+
+    :global(.splitpanes.default-theme.splitpanes--horizontal .splitpanes__splitter) {
+        background: #d6c0f3 !important; /* 同色系 */
+        height: calc(6px * var(--scale-ratio, 1)) !important;
+        width: 100% !important;
+        cursor: row-resize;
+    }
+    :global(.default-theme.splitpanes--vertical > .splitpanes__splitter:before, .default-theme.splitpanes--vertical > .splitpanes__splitter:after, .default-theme .splitpanes--vertical > .splitpanes__splitter:before, .default-theme .splitpanes--vertical > .splitpanes__splitter:after,
+        .default-theme.splitpanes--horizontal > .splitpanes__splitter:before, .default-theme.splitpanes--horizontal > .splitpanes__splitter:after, .default-theme .splitpanes--horizontal > .splitpanes__splitter:before, .default-theme .splitpanes--horizontal > .splitpanes__splitter:after) {
         display: none !important;
+    }
+
+    /* 控制台样式 */
+    /* svelte-ignore css_unused_selector */
+    .console-output {
+        margin: 0;
+        padding: calc(8px * var(--scale-ratio, 1));
+        font-size: calc(13px * var(--scale-ratio, 1));
+        line-height: 1.4;
+        color: #16a34a;
+        background: #1e1e1e;
+        overflow-y: auto;
+        height: 100%;
+        box-sizing: border-box;
     }
 </style>
