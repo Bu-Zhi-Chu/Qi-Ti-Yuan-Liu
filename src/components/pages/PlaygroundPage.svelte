@@ -12,16 +12,16 @@
     import TabbedCodeEditor from '../widgets/TabbedCodeEditor.svelte'
     import { useNavigate } from '@dvcol/svelte-simple-router/router'
 
-    // 【核心改动】导入默认的 Svelte 代码字符串
-    import { defaultSvelteComponentCode, resetSvelteComponentCode } from '../../services/utils/defaultSvelteCode'
+    // 【核心改动】直接导入JSON配置文件中的组件代码
+    import defaultComponents from '../../examples/svelte5/default-svelte-components.json'
 
     // --------------------------- 状态 ---------------------------
     // HTML / CSS / JS 代码内容
     let htmlCode: string = ''
     let cssCode: string = 'body { font-family: sans-serif; }'
 
-    // 【核心改动】直接使用导入的字符串作为 jsCode 的默认值
-    let jsCode: string = defaultSvelteComponentCode
+    // 【核心改动】直接使用JSON中的默认组件代码
+    let jsCode: string = defaultComponents.default.code
 
     // 控制台日志
     let logs: string[] = []
@@ -127,8 +127,8 @@
     function resetCode() {
         htmlCode = ''
         cssCode = 'body { font-family: sans-serif; }'
-        // 【核心改动】使用导入的重置代码字符串
-        jsCode = resetSvelteComponentCode
+        // 【核心改动】使用JSON中的重置组件代码
+        jsCode = defaultComponents.reset.code
         runCode()
     }
 

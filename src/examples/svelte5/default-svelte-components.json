@@ -1,0 +1,22 @@
+{
+  "default": {
+    "name": "计数器组件",
+    "description": "一个简单的计数器示例组件",
+    "code": "<script>\n  console.log(1111); // 初始加载时打印，验证脚本执行\n  let count = $state(0); // Svelte 5 使用 $state 创建响应式状态\n  console.log(count); // 打印初始值\n  function increment() {\n    count++; // 直接修改 $state 创建的响应式变量\n    console.log(count); // 打印更新后的值\n  }\n</script>\n\n<button onclick={increment}>\n  点击次数：{count}\n</button>"
+  },
+  "reset": {
+    "name": "简化计数器",
+    "description": "重置时使用的简化计数器组件",
+    "code": "<script>\n  let count = $state(0);\n  function increment() {\n    count++;\n  }\n</script>\n\n<button onclick={increment}>\n  点击次数：{count}\n</button>"
+  },
+  "minimal": {
+    "name": "最小化组件",
+    "description": "最简化的Svelte组件示例",
+    "code": "<script>\n  let message = $state('Hello, Svelte 5!');\n</script>\n\n<h1>{message}</h1>"
+  },
+  "interactive": {
+    "name": "交互式组件",
+    "description": "包含多种交互的示例组件",
+    "code": "<script>\n  let count = $state(0);\n  let text = $state('');\n  \n  function increment() {\n    count++;\n  }\n  \n  function decrement() {\n    count--;\n  }\n  \n  function reset() {\n    count = 0;\n    text = '';\n  }\n</script>\n\n<div>\n  <h2>计数器: {count}</h2>\n  <button onclick={increment}>+</button>\n  <button onclick={decrement}>-</button>\n  <button onclick={reset}>重置</button>\n  \n  <input bind:value={text} placeholder=\"输入一些文字...\">\n  <p>你输入了: {text}</p>\n</div>"
+  }
+}
