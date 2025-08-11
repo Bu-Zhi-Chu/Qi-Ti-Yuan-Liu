@@ -146,6 +146,8 @@
      * 处理 NodeRenderer 选中事件
      */
     function handleSelect(id: string) {
+        // 拖动画布过程中忽略节点选中
+        if (state.spaceDown || state.dragging) return
         selectedId = id
     }
 
