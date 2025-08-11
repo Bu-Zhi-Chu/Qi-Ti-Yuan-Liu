@@ -24,15 +24,13 @@
     // 对于 Svelte 组件，将整个组件代码放在 JS 区域，HTML 和 CSS 区域留空
     function parseCode(fullCode: string): { html: string; css: string; js: string } {
         // 检查是否为 Svelte 单文件组件（包含 <script> 或 <style> 标签）
-        const isSvelteComponent = /<script[^>]*>[\s\S]*?<\/script>/i.test(fullCode) || 
-                                 /<style[^>]*>[\s\S]*?<\/style>/i.test(fullCode) ||
-                                 (fullCode.includes('{') && fullCode.includes('}') && fullCode.includes('<'))
+        const isSvelteComponent = /<script[^>]*>[\s\S]*?<\/script>/i.test(fullCode) || /<style[^>]*>[\s\S]*?<\/style>/i.test(fullCode) || (fullCode.includes('{') && fullCode.includes('}') && fullCode.includes('<'))
 
         if (isSvelteComponent) {
             // Svelte 单文件组件：整个代码放在 JS 区域
             return {
                 html: '', // HTML 区域留空
-                css: '',  // CSS 区域留空
+                css: '', // CSS 区域留空
                 js: fullCode.trim() || '// 空 Svelte 组件'
             }
         } else {
@@ -283,13 +281,7 @@
             <Splitpanes horizontal>
                 <Pane size={85}>
                     <!-- bind:htmlCode, bind:cssCode, bind:jsCode 实现了双向绑定 -->
-                    <TabbedCodeEditor 
-                        bind:htmlCode 
-                        bind:cssCode 
-                        bind:jsCode 
-                        run={runCode} 
-                        reset={resetCode} 
-                        mode={jsCode.trim().startsWith('<') ? 'svelte' : 'default'} />
+                    <TabbedCodeEditor bind:htmlCode bind:cssCode bind:jsCode run={runCode} reset={resetCode} mode={jsCode.trim().startsWith('<') ? 'svelte' : 'default'} />
                 </Pane>
                 <Pane>
                     <!-- 控制台输出区域 -->
