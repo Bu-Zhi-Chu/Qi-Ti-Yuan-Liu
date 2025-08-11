@@ -383,8 +383,48 @@ let { a, b } = $derived(getPair());
 - 子组件可**临时重新赋值**覆盖 prop；依赖更新后仍会同步父级值。
 - **切勿**直接 mutate 普通对象 prop，否则不会触发更新；若 prop 为 `$state` 代理，变异会触发但会出现 *ownership_invalid_mutation* 警告。
 
-#### 2.5.6 bindable 与双向绑定
-- 对于需要双向绑定的 prop，应在父组件使用 `$bindable` rune（后续章节补充）。
+#### 2.5.6 $bindable 与双向绑定
+- 使用 `$bindable()` 将 prop 声明为 **可绑定**，允许父级通过 `bind:` 指令实现双向数据流 <mcreference link="https://svelte.dev/docs/svelte/$bindable" index="0">0</mcreference>
+- 仅在确有必要时使用，避免破坏自上而下的数据流模型。
+
+##### 2.5.6.1 基础示例
+```svelte
+<!-- FancyInput.svelte -->
+<script>
+	// 声明 value 为可绑定；其默认值为空字符串
+	let { value = $bindable(), ...rest } = $props();
+</script>
+<input bind:value={value} {...rest} />
+```
+```svelte
+<!-- App.svelte (parent) -->
+<script>
+	import FancyInput from './FancyInput.svelte';
+	let message = $state('hello');
+</script>
+<FancyInput bind:value={message} />
+<p>{message}</p>
+```
+- 当子组件修改 `value` 时，`message` 随之更新；反之同理。
+
+##### 2.5.6.2 默认值与 Fallback
+- `$bindable('fallback')` 可指定当父级未传入 prop 时的默认值；仍具备双向绑定能力。
+
+```svelte
+let { value = $bindable('fallback'), ...rest } = $props();
+```
+
+##### 2.5.6.3 类型安全
+```ts
+let { count = $bindable<number>(0) } = $props();
+```
+- 在 TS 中可为 `$bindable<T>()` 指定类型参数，获得完整类型推断。
+
+##### 2.5.6.4 变异警告与最佳实践
+1. 子组件可直接 **重新赋值** `value`，但若对对象/数组内部进行 *mutation* 会触发 *ownership_invalid_mutation* 警告。
+2. 考虑使用回调 (`on:change`) 或向上传递事件代替双向绑定，保持数据单向流。
+3. 对表单组件等输入场景使用 `$bindable` 最为合适，其余情况请审慎评估。
+
 
 #### 2.5.7 最佳实践
 1. 避免在子组件修改不属于自己的数据；使用回调或 `$bindable`。
@@ -392,7 +432,89 @@ let { a, b } = $derived(getPair());
 3. 对大型对象传递只读引用，如需修改请在父级管理状态。
 
 
-### 2.6 Legacy 模式与迁移
+### 2.6 $inspect
+- 调试 rune，在开发环境下类似 `console.log`，但会在依赖值变化时重新触发 <mcreference link="https://svelte.dev/docs/svelte/$inspect" index="0">0</mcreference>
+
+#### 2.6.1 基础用法
+```svelte
+<script>
+	let count = $state(0);
+	let message = $state('hello');
+	$inspect(count, message); // 任意依赖变化时打印
+</script>
+```
+
+#### 2.6.2 $inspect.with
+- `$inspect(...).with(callback)` 自定义处理输出，回调首参数为 "init" 或 "update"。
+```svelte
+$inspect(count).with((type, value) => {
+	if (type === 'update') {
+		console.debug('count changed:', value);
+	}
+});
+```
+
+#### 2.6.3 $inspect.trace
+- 在 `$effect` 或 `$derived` 内部调用 `$inspect.trace()` 可追踪导致函数重跑的依赖。
+```svelte
+$effect(() => {
+	$inspect.trace('draw');
+	drawStuff();
+});
+```
+
+#### 2.6.4 性能与生产环境
+1. 仅在 **开发环境** 启用；生产构建中将被移除，不影响包体积。
+2. 避免在高频循环内打印大型对象，防止控制台卡顿。
+
+#### 2.6.5 最佳实践
+- 配合浏览器 DevTools 的 Network、Performance 面板综合定位问题。
+- 使用 `console.trace` 结合 Source Map 快速定位代码行。
+
+### 2.7 $host
+- 在将组件编译为 **自定义元素** (`<svelte:options customElement="my-tag" />`) 时，`$host()` Rune 可用于**获取宿主元素实例**，从而便捷地派发自定义事件或操作其属性/方法 <mcreference link="https://svelte.dev/docs/svelte/$host" index="1">1</mcreference>
+
+#### 2.7.1 基础用法：派发事件
+```svelte
+<!-- Stepper.svelte -->
+<svelte:options customElement="my-stepper" />
+<script>
+	function dispatch(type) {
+		$host().dispatchEvent(new CustomEvent(type));
+	}
+</script>
+<button on:click={() => dispatch('decrement')}>－</button>
+<button on:click={() => dispatch('increment')}>＋</button>
+```
+```svelte
+<!-- App.svelte -->
+<script>
+	import './Stepper.svelte';
+	let count = $state(0);
+</script>
+<my-stepper ondecrement={() => count -= 1} onincrement={() => count += 1} />
+<p>count: {count}</p>
+```
+- `$host()` 每次调用都会返回宿主元素，可按需缓存或直接使用。
+- 与 `createEventDispatcher` 不同，派发的事件可**冒泡**至父级 DOM。
+
+#### 2.7.2 读取/修改宿主属性
+利用 DOM API 可读取或设置自定义元素属性/样式：
+```svelte
+$effect(() => {
+	const el = $host();
+	el.setAttribute('data-ready', '');
+});
+```
+
+#### 2.7.3 注意事项
+1. **仅在自定义元素模式**下有效；普通组件内返回值为 `null`。
+2. `untrack()` 可用于在 `$effect` 中非响应式地访问宿主元素，避免无意义依赖。
+3. 访问宿主元素时请关注 **SSR 环境**，避免在服务器渲染阶段触发 DOM 相关逻辑。
+
+---
+
+### 2.8 Legacy 模式与迁移
 - 旧版 `$:` 语法仍可通过 "legacy" 配置启用，但官方建议迁移至 Runes 以获得更佳类型安全和性能 <mcreference link="https://svelte.dev/docs/svelte/what-are-runes" index="0">0</mcreference>
 
 ---
