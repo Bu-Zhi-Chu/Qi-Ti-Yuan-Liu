@@ -12,23 +12,96 @@
     import TabbedCodeEditor from '../widgets/TabbedCodeEditor.svelte'
     import { useNavigate } from '@dvcol/svelte-simple-router/router'
 
-    // 【核心改动】直接导入JSON配置文件中的组件代码
-    import defaultComponents from '../../examples/svelte5/default-svelte-components.json'
+    // 获取路由参数
+    import { useRoute } from '@dvcol/svelte-simple-router/router'
+    const { location } = $derived(useRoute())
+    const params = $derived(location?.params || {})
+
+    // 从JSON导入导航配置
+    import demoNavigation from '../../examples/demo-navigation.json'
+
+    // 解析Svelte组件代码为HTML/CSS/JS部分
+    function parseCode(fullCode: string): { html: string; css: string; js: string } {
+        const htmlParts: string[] = []
+        const cssParts: string[] = []
+        const jsParts: string[] = []
+
+        // 简单的正则表达式来提取各个部分
+        const scriptRegex = /<script[^>]*>([\s\S]*?)<\/script>/gi
+        const styleRegex = /<style[^>]*>([\s\S]*?)<\/style>/gi
+
+        let htmlContent = fullCode
+
+        // 提取JS部分
+        let match
+        while ((match = scriptRegex.exec(fullCode)) !== null) {
+            jsParts.push(match[1].trim())
+            htmlContent = htmlContent.replace(match[0], '')
+        }
+
+        // 提取CSS部分
+        while ((match = styleRegex.exec(fullCode)) !== null) {
+            cssParts.push(match[1].trim())
+            htmlContent = htmlContent.replace(match[0], '')
+        }
+
+        // 剩余的为HTML部分
+        htmlContent = htmlContent.trim()
+
+        return {
+            html: htmlContent || '<div>Hello World</div>',
+            css: cssParts.join('\n') || 'body { font-family: sans-serif; }',
+            js: jsParts.join('\n') || ''
+        }
+    }
+
+    // 动态加载组件代码的函数
+    async function loadComponentCode(componentId: string): Promise<string> {
+        try {
+            // 在demo-navigation.json中查找组件
+            let componentConfig = null
+            for (const module of demoNavigation.modules) {
+                for (const category of module.categories) {
+                    const found = category.components.find((comp) => comp.id === componentId)
+                    if (found && found.codeFile) {
+                        componentConfig = found
+                        break
+                    }
+                }
+                if (componentConfig) break
+            }
+
+            if (!componentConfig || !componentConfig.codeFile) {
+                // 默认回退到svelte默认组件
+                const svelteComponents = await import('../../examples/svelte/default-svelte-components.json')
+                return (svelteComponents as any)[componentId]?.code || (svelteComponents as any).default?.code
+            }
+
+            // 动态加载对应的代码文件
+            const codeFilePath = `../../examples/${componentConfig.codeFile}`
+            const codeModule = await import(/* @vite-ignore */ codeFilePath)
+
+            // 获取组件代码
+            const componentCode = codeModule.default?.[componentId]?.code || codeModule.default?.default?.code
+            return componentCode || `// 未找到组件代码\nconsole.error('未找到组件 ${componentId} 的代码')`
+        } catch (error) {
+            console.error('加载组件代码失败:', error)
+            return `// 加载组件代码失败\nconsole.error('加载组件代码失败: ${error}')`
+        }
+    }
 
     // --------------------------- 状态 ---------------------------
     // HTML / CSS / JS 代码内容
-    let htmlCode: string = ''
-    let cssCode: string = 'body { font-family: sans-serif; }'
-
-    // 【核心改动】直接使用JSON中的默认组件代码
-    let jsCode: string = defaultComponents.default.code
+    let htmlCode: string = $state('')
+    let cssCode: string = $state('body { font-family: sans-serif; }')
+    let jsCode: string = $state('')
 
     // 控制台日志
-    let logs: string[] = []
+    let logs: string[] = $state([])
     // iframe 预览 URL（Blob）
-    let htmlUrl: string = ''
+    let htmlUrl: string = $state('')
     // 侧栏比例 (0~1)
-    let ratio: number = 0.4
+    let ratio: number = $state(0.4)
 
     // 运行代码 -> 生成 Blob URL（支持 Svelte5 单文件组件）
     async function runCode() {
@@ -123,22 +196,47 @@
         console.log('Generated HTML for iframe:\n', html)
     }
 
-    // 重置代码到默认模板
-    function resetCode() {
-        htmlCode = ''
-        cssCode = 'body { font-family: sans-serif; }'
-        // 【核心改动】使用JSON中的重置组件代码
-        jsCode = defaultComponents.reset.code
+    // 重置代码到当前组件的默认模板
+    async function resetCode() {
+        const componentId = String(params.id || 'hello-world')
+        const newCode = await loadComponentCode(componentId)
+        const componentData = parseCode(newCode)
+        htmlCode = componentData.html
+        cssCode = componentData.css
+        jsCode = componentData.js
         runCode()
     }
 
     // 组件挂载后首次自动运行代码
     // 使用 onMount 确保 DOM 已准备好
-    onMount(() => {
+    onMount(async () => {
         console.log('PlaygroundPage mounted, attempting runCode()~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+
+        // 根据路由参数加载组件代码
+        const componentId = String(params.id || 'hello-world') // 默认组件
+        const newCode = await loadComponentCode(componentId)
+        const componentData = parseCode(newCode)
+        htmlCode = componentData.html
+        cssCode = componentData.css
+        jsCode = componentData.js
+
         runCode()
         // 监听 iframe 发送的 console 消息
         window.addEventListener('message', handleConsoleMessage)
+    })
+
+    // 监听路由参数变化，当用户切换组件时重新加载代码
+    $effect(() => {
+        const componentId = String(params.id || 'hello-world')
+        if (componentId) {
+            loadComponentCode(componentId).then((newCode) => {
+                const componentData = parseCode(newCode)
+                htmlCode = componentData.html
+                cssCode = componentData.css
+                jsCode = componentData.js
+                runCode()
+            })
+        }
     })
 
     // 组件卸载时释放 Blob URL 和移除事件监听器

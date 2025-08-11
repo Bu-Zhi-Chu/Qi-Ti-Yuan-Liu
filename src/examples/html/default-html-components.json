@@ -1,0 +1,22 @@
+{
+  "hello-world": {
+    "name": "Hello World",
+    "description": "最基础的HTML页面结构示例",
+    "code": "<!DOCTYPE html>\n<html lang=\"zh-CN\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Hello World</title>\n</head>\n<body>\n    <h1>Hello World</h1>\n    <p>Welcome to HTML!</p>\n</body>\n</html>"
+  },
+  "form-example": {
+    "name": "表单示例",
+    "description": "完整的HTML表单演示，包含各种输入类型",
+    "code": "<!DOCTYPE html>\n<html lang=\"zh-CN\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>表单示例</title>\n</head>\n<body>\n    <h2>用户注册表单</h2>\n    <form>\n        <label>姓名:</label>\n        <input type=\"text\" name=\"name\" placeholder=\"请输入姓名\"><br><br>\n        \n        <label>邮箱:</label>\n        <input type=\"email\" name=\"email\" placeholder=\"请输入邮箱\"><br><br>\n        \n        <label>留言:</label>\n        <textarea name=\"message\" placeholder=\"请输入留言\"></textarea><br><br>\n        \n        <button type=\"submit\">提交</button>\n    </form>\n</body>\n</html>"
+  },
+  "table-layout": {
+    "name": "表格布局",
+    "description": "使用HTML表格创建复杂布局结构",
+    "code": "<!DOCTYPE html>\n<html lang=\"zh-CN\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>表格布局</title>\n    <style>\n        table {\n            border-collapse: collapse;\n            width: 100%;\n        }\n        th, td {\n            border: 1px solid #ddd;\n            padding: 8px;\n            text-align: left;\n        }\n        th {\n            background-color: #f2f2f2;\n        }\n    </style>\n</head>\n<body>\n    <h2>学生成绩表</h2>\n    <table>\n        <thead>\n            <tr>\n                <th>姓名</th>\n                <th>语文</th>\n                <th>数学</th>\n                <th>英语</th>\n                <th>总分</th>\n            </tr>\n        </thead>\n        <tbody>\n            <tr>\n                <td>张三</td>\n                <td>85</td>\n                <td>90</td>\n                <td>88</td>\n                <td>263</td>\n            </tr>\n            <tr>\n                <td>李四</td>\n                <td>92</td>\n                <td>87</td>\n                <td>95</td>\n                <td>274</td>\n            </tr>\n        </tbody>\n    </table>\n</body>\n</html>"
+  },
+  "article-layout": {
+    "name": "文章布局",
+    "description": "使用语义化标签构建文章页面结构",
+    "code": "<!DOCTYPE html>\n<html lang=\"zh-CN\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>文章布局</title>\n    <style>\n        header, nav, main, footer {\n            margin: 20px;\n            padding: 20px;\n            border: 1px solid #ccc;\n        }\n        header { background-color: #f8f9fa; }\n        nav { background-color: #e9ecef; }\n        main { background-color: #fff; }\n        footer { background-color: #f8f9fa; }\n    </style>\n</head>\n<body>\n    <header>\n        <h1>网站标题</h1>\n        <p>网站描述</p>\n    </header>\n    \n    <nav>\n        <ul>\n            <li><a href=\"#\">首页</a></li>\n            <li><a href=\"#\">关于</a></li>\n            <li><a href=\"#\">联系</a></li>\n        </ul>\n    </nav>\n    \n    <main>\n        <article>\n            <h2>文章标题</h2>\n            <p>这里是文章内容...</p>\n        </article>\n    </main>\n    \n    <footer>\n        <p>&copy; 2024 版权所有</p>\n    </footer>\n</body>\n</html>"
+  }
+}

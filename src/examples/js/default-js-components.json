@@ -1,0 +1,27 @@
+{
+  "dom-manipulation": {
+    "name": "DOM操作",
+    "description": "原生JavaScript DOM操作示例",
+    "code": "// DOM操作示例\n// 选择元素\nconst app = document.getElementById('app');\n\n// 创建新元素\nconst newDiv = document.createElement('div');\nnewDiv.textContent = '这是新创建的元素';\nnewDiv.className = 'highlight';\n\n// 添加样式\nnewDiv.style.backgroundColor = '#f0f0f0';\nnewDiv.style.padding = '10px';\nnewDiv.style.margin = '10px';\n\n// 添加到DOM\napp.appendChild(newDiv);\n\n// 修改类名\nnewDiv.classList.add('active');\n\n// 事件监听\nnewDiv.addEventListener('click', function() {\n    this.style.backgroundColor = '#ffcccc';\n    this.textContent = '被点击了！';\n});\n\nconsole.log('DOM操作完成');"
+  },
+  "event-handling": {
+    "name": "事件处理",
+    "description": "JavaScript事件监听和处理机制",
+    "code": "// 事件处理示例\n// 获取按钮元素\nconst button = document.getElementById('myButton');\nconst output = document.getElementById('output');\n\n// 添加点击事件监听器\nbutton.addEventListener('click', handleClick);\n\nfunction handleClick(event) {\n    console.log('按钮被点击了！');\n    console.log('事件类型:', event.type);\n    console.log('目标元素:', event.target);\n    \n    // 更新输出内容\n    output.textContent = `点击次数: ${++clickCount}`;\n}\n\n// 添加鼠标悬停事件\nbutton.addEventListener('mouseenter', function() {\n    this.style.backgroundColor = '#007bff';\n    this.style.color = 'white';\n});\n\nbutton.addEventListener('mouseleave', function() {\n    this.style.backgroundColor = '';\n    this.style.color = '';\n});\n\n// 键盘事件\ndocument.addEventListener('keydown', function(event) {\n    if (event.key === 'Enter') {\n        console.log('按下了回车键');\n    }\n});\n\nlet clickCount = 0;"
+  },
+  "array-methods": {
+    "name": "数组方法",
+    "description": "JavaScript数组常用方法演示",
+    "code": "// 数组方法示例\nconst numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];\n\n// map - 转换数组\nconst doubled = numbers.map(n => n * 2);\nconsole.log('原始数组:', numbers);\nconsole.log('翻倍后的数组:', doubled);\n\n// filter - 过滤数组\nconst evens = numbers.filter(n => n % 2 === 0);\nconsole.log('偶数:', evens);\n\n// reduce - 归约数组\nconst sum = numbers.reduce((acc, curr) => acc + curr, 0);\nconsole.log('数组总和:', sum);\n\n// 实际应用：处理用户数据\nconst users = [\n    { name: '张三', age: 25, city: '北京' },\n    { name: '李四', age: 30, city: '上海' },\n    { name: '王五', age: 22, city: '北京' }\n];\n\n// 获取所有北京用户\nconst beijingUsers = users.filter(user => user.city === '北京');\nconsole.log('北京用户:', beijingUsers);\n\n// 获取用户姓名列表\nconst userNames = users.map(user => user.name);\nconsole.log('用户姓名:', userNames);\n\n// 计算平均年龄\nconst averageAge = users.reduce((sum, user) => sum + user.age, 0) / users.length;\nconsole.log('平均年龄:', averageAge);"
+  },
+  "arrow-functions": {
+    "name": "箭头函数",
+    "description": "ES6箭头函数的使用示例",
+    "code": "// 箭头函数示例\n\n// 传统函数\nfunction add(a, b) {\n    return a + b;\n}\n\n// 箭头函数\nconst addArrow = (a, b) => a + b;\n\nconsole.log('传统函数:', add(5, 3));\nconsole.log('箭头函数:', addArrow(5, 3));\n\n// 单个参数可以省略括号\nconst square = x => x * x;\nconsole.log('平方:', square(4));\n\n// 多行箭头函数\nconst calculate = (a, b) => {\n    const sum = a + b;\n    const product = a * b;\n    return { sum, product };\n};\n\nconsole.log('计算结果:', calculate(3, 4));\n\n// 在数组方法中使用\nconst numbers = [1, 2, 3, 4, 5];\nconst squares = numbers.map(n => n * n);\nconsole.log('平方数组:', squares);\n\n// this绑定的差异\nconst obj = {\n    name: '测试对象',\n    traditional: function() {\n        setTimeout(function() {\n            console.log('传统函数this:', this.name); // undefined\n        }, 100);\n    },\n    arrow: function() {\n        setTimeout(() => {\n            console.log('箭头函数this:', this.name); // '测试对象'\n        }, 100);\n    }\n};\n\n// obj.traditional();\n// obj.arrow();"
+  },
+  "destructuring": {
+    "name": "解构赋值",
+    "description": "对象和数组解构赋值示例",
+    "code": "// 解构赋值示例\n\n// 数组解构\nconst colors = ['red', 'green', 'blue'];\nconst [firstColor, secondColor, thirdColor] = colors;\nconsole.log('第一个颜色:', firstColor);\nconsole.log('第二个颜色:', secondColor);\n\n// 对象解构\nconst user = {\n    name: '张三',\n    age: 25,\n    city: '北京',\n    skills: ['JavaScript', 'HTML', 'CSS']\n};\n\nconst { name, age, city } = user;\nconsole.log(`姓名: ${name}, 年龄: ${age}, 城市: ${city}`);\n\n// 重命名解构\nconst { name: userName, age: userAge } = user;\nconsole.log('用户名:', userName);\n\n// 默认值\nconst { country = '中国' } = user;\nconsole.log('国家:', country);\n\n// 嵌套解构\nconst company = {\n    name: '科技公司',\n    address: {\n        street: '科技园路',\n        city: '深圳',\n        zipcode: '518000'\n    }\n};\n\nconst { address: { city: companyCity } } = company;\nconsole.log('公司城市:', companyCity);\n\n// 函数参数解构\nfunction printUser({ name, age }) {\n    console.log(`用户: ${name}, 年龄: ${age}`);\n}\n\nprintUser(user);\n\n// 数组剩余元素\nconst [first, ...restColors] = colors;\nconsole.log('剩余颜色:', restColors);"
+  }
+}

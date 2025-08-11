@@ -1,0 +1,480 @@
+{
+  "modules": [
+    {
+      "id": "html",
+      "name": "HTML",
+      "categories": [
+        {
+          "id": "basic-html",
+          "name": "基础HTML",
+          "components": [
+            {
+              "id": "hello-world",
+              "name": "Hello World",
+              "description": "最基础的HTML页面结构示例",
+              "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjZjNmNGY2Ii8+Cjx0ZXh0IHg9IjEwMCIgeT0iNjUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiMzNzQwYTkiIHN0eWxlPSJmb250LXNpemU6IDE2cHg7IGZvbnQtd2VpZ2h0OiBib2xkOyI+SGVsbG8gV29ybGQ8L3RleHQ+Cjwvc3ZnPgo=",
+              "badge": "入门",
+              "category": "基础HTML",
+              "codeFile": "./html/default-html-components.json",
+              "props": {
+                "title": "Hello World",
+                "content": "Welcome to HTML!"
+              }
+            },
+            {
+              "id": "form-example",
+              "name": "表单示例",
+              "description": "完整的HTML表单演示，包含各种输入类型",
+              "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjZjNmNGY2Ii8+CjxyZWN0IHg9IjQwIiB5PSI0MCIgd2lkdGg9IjEyMCIgaGVpZ2h0PSI0MCIgcng9IjgiIGZpbGw9IiNlNWU3ZWIiLz4KPHRleHQgeD0iMTAwIiB5PSI2NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzM3NDBhOSIgc3R5bGU9ImZvbnQtc2l6ZTogMTJweDsiPkZvcm0gRXhhbXBsZTwvdGV4dD4KPC9zdmc+Cg==",
+              "badge": "表单",
+              "category": "基础HTML",
+              "codeFile": "./html/default-html-components.json",
+              "props": {
+                "fields": [
+                  "name",
+                  "email",
+                  "message"
+                ]
+              }
+            },
+            {
+              "id": "table-layout",
+              "name": "表格布局",
+              "description": "使用HTML表格创建复杂布局结构",
+              "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjZjNmNGY2Ii8+CjxyZWN0IHg9IjMwIiB5PSIzMCIgd2lkdGg9IjE0MCIgaGVpZ2h0PSI2MCIgZmlsbD0iI2U1ZTdlYiIgc3Ryb2tlPSIjOWNhM2FmIiBzdHJva2Utd2lkdGg9IjEiLz4KPC9zdmc+Cg==",
+              "badge": "布局",
+              "category": "基础HTML",
+              "codeFile": "./html/default-html-components.json",
+              "props": {
+                "rows": 3,
+                "columns": 4
+              }
+            }
+          ]
+        },
+        {
+          "id": "semantic-html",
+          "name": "语义化HTML",
+          "components": [
+            {
+              "id": "article-layout",
+              "name": "文章布局",
+              "description": "使用语义化标签构建文章页面结构",
+              "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjZjNmNGY2Ii8+CjxyZWN0IHg9IjIwIiB5PSIyMCIgd2lkdGg9IjE2MCIgaGVpZ2h0PSI4MCIgZmlsbD0iI2U1ZTdlYiIgc3Ryb2tlPSIjOWNhM2FmIiBzdHJva2Utd2lkdGg9IjEiLz4KPC9zdmc+Cg==",
+              "badge": "语义化",
+              "category": "语义化HTML",
+              "codeFile": "./html/default-html-components.json",
+              "props": {
+                "header": true,
+                "nav": true,
+                "main": true,
+                "footer": true
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "js",
+      "name": "JavaScript",
+      "categories": [
+        {
+          "id": "basic-js",
+          "name": "基础JavaScript",
+          "components": [
+            {
+              "id": "dom-manipulation",
+              "name": "DOM操作",
+              "description": "原生JavaScript DOM操作示例",
+              "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjZmVkN2EyIi8+Cjx0ZXh0IHg9IjEwMCIgeT0iNjUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNjMjQxMGMiIHN0eWxlPSJmb250LXNpemU6IDE2cHg7IGZvbnQtd2VpZ2h0OiBib2xkOyI+RE9NPC90ZXh0Pgo8L3N2Zz4K",
+              "badge": "DOM",
+              "category": "基础JavaScript",
+              "codeFile": "./js/default-js-components.json",
+              "props": {
+                "selector": "#app",
+                "action": "addClass"
+              }
+            },
+            {
+              "id": "event-handling",
+              "name": "事件处理",
+              "description": "JavaScript事件监听和处理机制",
+              "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjZmVkN2EyIi8+CjxjaXJjbGUgY3g9IjEwMCIgY3k9IjYwIiByPSIzMCIgZmlsbD0iI2MyNDEwYyIvPgo8L3N2Zz4K",
+              "badge": "事件",
+              "category": "基础JavaScript",
+              "codeFile": "./js/default-js-components.json",
+              "props": {
+                "eventType": "click",
+                "handler": "handleClick"
+              }
+            },
+            {
+              "id": "array-methods",
+              "name": "数组方法",
+              "description": "JavaScript数组常用方法演示",
+              "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjZmVkN2EyIi8+CjxyZWN0IHg9IjQwIiB5PSI0MCIgd2lkdGg9IjEyMCIgaGVpZ2h0PSI0MCIgZmlsbD0iI2MyNDEwYyIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiLz4KPC9zdmc+Cg==",
+              "badge": "数组",
+              "category": "基础JavaScript",
+              "codeFile": "./js/default-js-components.json",
+              "props": {
+                "methods": [
+                  "map",
+                  "filter",
+                  "reduce"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "es6-features",
+          "name": "ES6+特性",
+          "components": [
+            {
+              "id": "arrow-functions",
+              "name": "箭头函数",
+              "description": "ES6箭头函数的使用示例",
+              "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjZmVkN2EyIi8+Cjx0ZXh0IHg9IjEwMCIgeT0iNjUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNjMjQxMGMiIHN0eWxlPSJmb250LXNpemU6IDE0cHg7IGZvbnQtd2VpZ2h0OiBib2xkOyI9PT48L3RleHQ+Cjwvc3ZnPgo=",
+              "badge": "ES6",
+              "category": "ES6+特性",
+              "codeFile": "./js/default-js-components.json",
+              "props": {
+                "syntax": "(x) => x * 2"
+              }
+            },
+            {
+              "id": "destructuring",
+              "name": "解构赋值",
+              "description": "对象和数组解构赋值示例",
+              "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjZmVkN2EyIi8+Cjx0ZXh0IHg9IjEwMCIgeT0iNjUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNjMjQxMGMiIHN0eWxlPSJmb250LXNpemU6IDEycHg7IGZvbnQtd2VpZ2h0OiBib2xkOyI+e30gPSB7fTwvdGV4dD4KPC9zdmc+Cg==",
+              "badge": "ES6",
+              "category": "ES6+特性",
+              "codeFile": "./js/default-js-components.json",
+              "props": {
+                "type": "object"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "css",
+      "name": "CSS",
+      "categories": [
+        {
+          "id": "basic-css",
+          "name": "基础CSS",
+          "components": [
+            {
+              "id": "flexbox-layout",
+              "name": "Flexbox布局",
+              "description": "CSS Flexbox弹性盒布局示例",
+              "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjZGNmMmZmIi8+CjxyZWN0IHg9IjIwIiB5PSIyMCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjM2I4MmY2Ii8+CjxyZWN0IHg9IjcwIiB5PSIyMCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjM2I4MmY2Ii8+CjxyZWN0IHg9IjEyMCIgeT0iMjAiIHdpZHRoPSI0MCIgaGVpZ2h0PSI4MCIgZmlsbD0iIzNiODJmNiIvPgo8L3N2Zz4K",
+              "badge": "Flexbox",
+              "category": "基础CSS",
+              "codeFile": "./css/default-css-components.json",
+              "props": {
+                "direction": "row",
+                "justify": "center"
+              }
+            },
+            {
+              "id": "grid-layout",
+              "name": "Grid布局",
+              "description": "CSS Grid网格布局示例",
+              "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjZGNmMmZmIi8+CjxyZWN0IHg9IjIwIiB5PSIyMCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjM2I4MmY2Ii8+CjxyZWN0IHg9IjcwIiB5PSIyMCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjM2I4MmY2Ii8+CjxyZWN0IHg9IjEyMCIgeT0iMjAiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgZmlsbD0iIzNiODJmNiIvPgo8cmVjdCB4PSIyMCIgeT0iNzAiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgZmlsbD0iIzNiODJmNiIvPgo8cmVjdCB4PSI3MCIgeT0iNzAiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgZmlsbD0iIzNiODJmNiIvPgo8cmVjdCB4PSIxMjAiIHk9IjcwIiB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIGZpbGw9IiMzYjgyZjYiLz4KPC9zdmc+Cg==",
+              "badge": "Grid",
+              "category": "基础CSS",
+              "codeFile": "./css/default-css-components.json",
+              "props": {
+                "columns": 3,
+                "rows": 2
+              }
+            },
+            {
+              "id": "animations",
+              "name": "动画效果",
+              "description": "CSS动画和过渡效果演示",
+              "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjZGNmMmZmIi8+CjxjaXJjbGUgY3g9IjEwMCIgY3k9IjYwIiByPSIyNSIgZmlsbD0iIzNiODJmNiI+PC9jaXJjbGU+Cjwvc3ZnPgo=",
+              "badge": "动画",
+              "category": "基础CSS",
+              "codeFile": "./css/default-css-components.json",
+              "props": {
+                "duration": "1s",
+                "type": "fadeIn"
+              }
+            }
+          ]
+        },
+        {
+          "id": "responsive",
+          "name": "响应式设计",
+          "components": [
+            {
+              "id": "media-queries",
+              "name": "媒体查询",
+              "description": "CSS媒体查询实现响应式布局",
+              "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjZGNmMmZmIi8+CjxyZWN0IHg9IjUwIiB5PSIzMCIgd2lkdGg9IjEwMCIgaGVpZ2h0PSI2MCIgZmlsbD0iIzNiODJmNiIgcng9IjgiLz4KPC9zdmc+Cg==",
+              "badge": "响应式",
+              "category": "响应式设计",
+              "codeFile": "./css/default-css-components.json",
+              "props": {
+                "breakpoints": [
+                  "768px",
+                  "1024px"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "svelte",
+      "name": "Svelte",
+      "categories": [
+        {
+          "id": "svelte-basics",
+          "name": "基础Svelte",
+          "components": [
+            {
+              "id": "reactive-state",
+              "name": "响应式状态",
+              "description": "Svelte响应式状态管理示例",
+              "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjZmZlNGU2Ii8+Cjx0ZXh0IHg9IjEwMCIgeT0iNjUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNkZTAyNjAiIHN0eWxlPSJmb250LXNpemU6IDE2cHg7IGZvbnQtd2VpZ2h0OiBib2xkOyI+JTwvdGV4dD4KPC9zdmc+Cg==",
+              "badge": "响应式",
+              "category": "基础Svelte",
+              "codeFile": "./svelte/default-svelte-components.json",
+              "props": {
+                "count": 0
+              }
+            },
+            {
+              "id": "component-props",
+              "name": "组件Props",
+              "description": "Svelte组件props传递示例",
+              "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjZmZlNGU2Ii8+CjxyZWN0IHg9IjQwIiB5PSI0MCIgd2lkdGg9IjEyMCIgaGVpZ2h0PSI0MCIgZmlsbD0iI2RlMDI2MCIgcng9IjgiLz4KPHRleHQgeD0iMTAwIiB5PSI2NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iI2ZmZiIgc3R5bGU9ImZvbnQtc2l6ZTogMTJweDsiPlByb3BzPC90ZXh0Pgo8L3N2Zz4K",
+              "badge": "Props",
+              "category": "基础Svelte",
+              "codeFile": "./svelte/default-svelte-components.json",
+              "props": {
+                "title": "Component Title",
+                "content": "Hello Svelte"
+              }
+            },
+            {
+              "id": "conditional-rendering",
+              "name": "条件渲染",
+              "description": "Svelte条件渲染和列表渲染",
+              "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjZmZlNGU2Ii8+CjxyZWN0IHg9IjQwIiB5PSI0MCIgd2lkdGg9IjEyMCIgaGVpZ2h0PSI0MCIgZmlsbD0iI2RlMDI2MCIgcng9IjgiLz4KPHRleHQgeD0iMTAwIiB5PSI2NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iI2ZmZiIgc3R5bGU9ImZvbnQtc2l6ZTogMTJweDsiPntjaG9vc2V9PC90ZXh0Pgo8L3N2Zz4K",
+              "badge": "条件",
+              "category": "基础Svelte",
+              "codeFile": "./svelte/default-svelte-components.json",
+              "props": {
+                "show": true
+              }
+            }
+          ]
+        },
+        {
+          "id": "svelte-advanced",
+          "name": "高级Svelte",
+          "components": [
+            {
+              "id": "stores",
+              "name": "状态管理",
+              "description": "Svelte stores状态管理示例",
+              "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjZmZlNGU2Ii8+CjxyZWN0IHg9IjQwIiB5PSI0MCIgd2lkdGg9IjEyMCIgaGVpZ2h0PSI0MCIgZmlsbD0iI2RlMDI2MCIgcng9IjgiLz4KPHRleHQgeD0iMTAwIiB5PSI2NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iI2ZmZiIgc3R5bGU9ImZvbnQtc2l6ZTogMTJweDsiPlN0b3JlPC90ZXh0Pgo8L3N2Zz4K",
+              "badge": "Store",
+              "category": "高级Svelte",
+              "codeFile": "./svelte/default-svelte-components.json",
+              "props": {
+                "store": "writable"
+              }
+            },
+            {
+              "id": "animations",
+              "name": "动画过渡",
+              "description": "Svelte内置动画和过渡效果",
+              "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjZmZlNGU2Ii8+CjxjaXJjbGUgY3g9IjEwMCIgY3k9IjYwIiByPSIyNSIgZmlsbD0iI2RlMDI2MCI+PC9jaXJjbGU+Cjwvc3ZnPgo=",
+              "badge": "动画",
+              "category": "高级Svelte",
+              "codeFile": "./svelte/default-svelte-components.json",
+              "props": {
+                "transition": "fade"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cesiumjs",
+      "name": "CesiumJS",
+      "categories": [
+        {
+          "id": "cesium-basics",
+          "name": "基础Cesium",
+          "components": [
+            {
+              "id": "hello-cesium",
+              "name": "Hello Cesium",
+              "description": "最基础的Cesium 3D地球示例",
+              "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjZTZmZmZmIi8+CjxjaXJjbGUgY3g9IjEwMCIgY3k9IjYwIiByPSI0NSIgZmlsbD0iIzAwOTlkOSIgc3Ryb2tlPSIjMDA3N2I2IiBzdHJva2Utd2lkdGg9IjIiLz4KPC9zdmc+Cg==",
+              "badge": "入门",
+              "category": "基础Cesium",
+              "codeFile": "./cesiumjs/default-cesium-components.json",
+              "props": {
+                "terrain": true,
+                "baseLayer": "Bing"
+              }
+            },
+            {
+              "id": "camera-controls",
+              "name": "相机控制",
+              "description": "Cesium相机视角控制示例",
+              "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjZTZmZmZmIi8+CjxjaXJjbGUgY3g9IjEwMCIgY3k9IjYwIiByPSI0NSIgZmlsbD0iIzAwOTlkOSIgc3Ryb2tlPSIjMDA3N2I2IiBzdHJva2Utd2lkdGg9IjIiLz4KPGNpcmNsZSBjeD0iMTAwIiBjeT0iNjAiIHI9IjIwIiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iMiIvPgo8L3N2Zz4K",
+              "badge": "相机",
+              "category": "基础Cesium",
+              "codeFile": "./cesiumjs/default-cesium-components.json",
+              "props": {
+                "position": "default",
+                "duration": 3
+              }
+            }
+          ]
+        },
+        {
+          "id": "cesium-entities",
+          "name": "实体与标注",
+          "components": [
+            {
+              "id": "add-marker",
+              "name": "添加标记",
+              "description": "在Cesium中添加标记和实体",
+              "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjZTZmZmZmIi8+CjxjaXJjbGUgY3g9IjEwMCIgY3k9IjYwIiByPSI0NSIgZmlsbD0iIzAwOTlkOSIgc3Ryb2tlPSIjMDA3N2I2IiBzdHJva2Utd2lkdGg9IjIiLz4KPGNpcmNsZSBjeD0iMTAwIiBjeT0iNjAiIHI9IjUiIGZpbGw9IiNmZjY2MDAiLz4KPC9zdmc+Cg==",
+              "badge": "标记",
+              "category": "实体与标注",
+              "codeFile": "./cesiumjs/default-cesium-components.json",
+              "props": {
+                "position": [
+                  116.4074,
+                  39.9042
+                ],
+                "label": "北京"
+              }
+            },
+            {
+              "id": "draw-polygon",
+              "name": "绘制多边形",
+              "description": "在Cesium中绘制多边形区域",
+              "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjZTZmZmZmIi8+CjxjaXJjbGUgY3g9IjEwMCIgY3k9IjYwIiByPSI0NSIgZmlsbD0iIzAwOTlkOSIgc3Ryb2tlPSIjMDA3N2I2IiBzdHJva2Utd2lkdGg9IjIiLz4KPHBvbHlnb24gcG9pbnRzPSI4MCw0MCAxMjAsNDAgMTAwLDgwIiBmaWxsPSIjZmY2NjAwIiBmaWxsLW9wYWNpdHk9IjAuNSIvPgo8L3N2Zz4K",
+              "badge": "多边形",
+              "category": "实体与标注",
+              "codeFile": "./cesiumjs/default-cesium-components.json",
+              "props": {
+                "positions": [
+                  [
+                    116.3,
+                    39.9
+                  ],
+                  [
+                    116.4,
+                    39.9
+                  ],
+                  [
+                    116.4,
+                    39.8
+                  ],
+                  [
+                    116.3,
+                    39.8
+                  ]
+                ],
+                "color": "#ff6600"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "babylonjs",
+      "name": "BabylonJS",
+      "categories": [
+        {
+          "id": "babylon-basics",
+          "name": "基础Babylon",
+          "components": [
+            {
+              "id": "hello-babylon",
+              "name": "Hello Babylon",
+              "description": "最基础的Babylon 3D场景示例",
+              "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjZmFmMGZmIi8+CjxyZWN0IHg9IjUwIiB5PSI0MCIgd2lkdGg9IjEwMCIgaGVpZ2h0PSI0MCIgZmlsbD0iI2FhMDBmZiIgcng9IjgiLz4KPC9zdmc+Cg==",
+              "badge": "入门",
+              "category": "基础Babylon",
+              "codeFile": "./babylonjs/default-babylon-components.json",
+              "props": {
+                "scene": "basic",
+                "light": true
+              }
+            },
+            {
+              "id": "basic-shapes",
+              "name": "基础形状",
+              "description": "Babylon基础3D形状创建示例",
+              "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjZmFmMGZmIi8+CjxjaXJjbGUgY3g9IjEwMCIgY3k9IjYwIiByPSIzMCIgZmlsbD0iI2FhMDBmZiIvPgo8L3N2Zz4K",
+              "badge": "形状",
+              "category": "基础Babylon",
+              "codeFile": "./babylonjs/default-babylon-components.json",
+              "props": {
+                "shapes": [
+                  "box",
+                  "sphere",
+                  "cylinder"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "babylon-materials",
+          "name": "材质与光照",
+          "components": [
+            {
+              "id": "basic-materials",
+              "name": "基础材质",
+              "description": "Babylon材质和纹理应用示例",
+              "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjZmFmMGZmIi8+CjxyZWN0IHg9IjQwIiB5PSI0MCIgd2lkdGg9IjEyMCIgaGVpZ2h0PSI0MCIgZmlsbD0iI2ZmNjYwMCIgcng9IjgiLz4KPC9zdmc+Cg==",
+              "badge": "材质",
+              "category": "材质与光照",
+              "codeFile": "./babylonjs/default-babylon-components.json",
+              "props": {
+                "material": "standard",
+                "color": "#ff6600"
+              }
+            },
+            {
+              "id": "light-setup",
+              "name": "光照设置",
+              "description": "Babylon场景光照配置示例",
+              "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjZmFmMGZmIi8+CjxjaXJjbGUgY3g9IjEwMCIgY3k9IjMwIiByPSIxNSIgZmlsbD0iI2ZmZmYwMCIvPgo8cmVjdCB4PSI0MCIgeT0iNjAiIHdpZHRoPSIxMjAiIGhlaWdodD0iNDAiIGZpbGw9IiNhYTAwZmYiIHJ4PSI4Ii8+Cjwvc3ZnPgo=",
+              "badge": "光照",
+              "category": "材质与光照",
+              "codeFile": "./babylonjs/default-babylon-components.json",
+              "props": {
+                "lights": [
+                  "hemispheric",
+                  "directional",
+                  "point"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -44,18 +44,25 @@
     let searchQuery = $state('')
     let selectedListItem = $state<string | null>('1')
 
-    // 所有可用组件
+    // 从JSON导入导航配置数据
+    import demoNavigation from '../../examples/demo-navigation.json'
+
+    // 所有可用组件 - 从JSON配置派生
     let allComponents = $derived([
-        {
-            id: 'realtime-clock',
-            name: '实时时钟',
-            category: '官方示例',
-            component: RealTimeClock,
-            props: { format: 'datetime-weekday', displayMode: 'multi-line' },
-            description: '显示实时时间的响应式时钟组件，支持多种显示格式',
-            image: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjMWUyOTNiIi8+CjxjaXJjbGUgY3g9IjEwMCIgY3k9IjYwIiByPSI0MCIgc3Ryb2tlPSIjNjM2NmYxIiBzdHJva2Utd2lkdGg9IjIiIGZpbGw9Im5vbmUiLz4KPGxpbmUgeDE9IjEwMCIgeTE9IjYwIiB4Mj0iMTAwIiB5Mj0iNDAiIHN0cm9rZT0iIzYzNjZmMSIgc3Ryb2tlLXdpZHRoPSIyIi8+CjxsaW5lIHgxPSIxMDAiIHkxPSI2MCIgeDI9IjEyMCIgeTI9IjYwIiBzdHJva2U9IiM2MzY2ZjEiIHN0cm9rZS13aWR0aD0iMiIvPgo8L3N2Zz4K',
-            badge: '组合'
-        }
+        ...demoNavigation.modules.flatMap((module) =>
+            module.categories.flatMap((category) =>
+                category.components.map((comp) => ({
+                    id: comp.id,
+                    name: comp.name,
+                    category: comp.category,
+                    component: RealTimeClock, // 实际组件映射需要根据ID动态处理
+                    props: comp.props,
+                    description: comp.description,
+                    image: comp.image,
+                    badge: comp.badge
+                }))
+            )
+        )
     ])
 
     /**
@@ -76,23 +83,30 @@
         children: CategoryItem[]
     }
 
-    // 统一后的三层数据（根据 allComponents 派生）
-    let modulesData = $derived((): ModuleItem[] => [
-        {
-            id: 'ui',
-            name: 'UI组件',
-            children: [
-                { id: '官方示例', name: '官方示例', children: allComponents.filter((c) => c.category === '官方示例') },
-                { id: '基础示例', name: '基础示例', children: allComponents.filter((c) => c.category === '基础示例') },
-                { id: '交互', name: '交互', children: allComponents.filter((c) => c.category === '交互') }
-            ]
-        },
-        { id: 'map', name: '电子地图', children: [] },
-        { id: 'engine', name: '三维引擎', children: [] }
-    ])
+    // 从JSON配置动态生成三层数据结构
+    let modulesData = $derived((): ModuleItem[] =>
+        demoNavigation.modules.map((module) => ({
+            id: module.id,
+            name: module.name,
+            children: module.categories.map((category) => ({
+                id: category.id,
+                name: category.name,
+                children: category.components.map((comp) => ({
+                    id: comp.id,
+                    name: comp.name,
+                    category: comp.category,
+                    component: RealTimeClock, // 实际组件映射需要根据ID动态处理
+                    props: comp.props,
+                    description: comp.description,
+                    image: comp.image,
+                    badge: comp.badge
+                }))
+            }))
+        }))
+    )
 
-    // 当前选中的顶部按钮组
-    let selectedModule = $state('UI组件')
+    // 当前选中的顶部按钮组 - 默认选中第一个模块
+    let selectedModule = $state(demoNavigation.modules[0]?.name || 'HTML')
 
     // 顶部按钮组数据（第 1 层）
     let moduleButtons = $derived(() =>
@@ -113,8 +127,8 @@
         }))
     )
 
-    // 当前选中的菜单项
-    let selectedMenuItem = $state('官方示例')
+    // 当前选中的菜单项 - 默认选中第一个模块的第一个分类
+    let selectedMenuItem = $state(demoNavigation.modules[0]?.categories[0]?.id || '')
 
     // 过滤后的组件列表（第 3 层）
     let filteredComponents = $derived(() =>
@@ -180,7 +194,7 @@
     <ResponsiveBox style="flex: 1; display: flex; overflow: hidden;">
         <!-- 左侧边栏 - 使用DragDropList列表组件 -->
         <ResponsiveBox style="width: 250px; min-width: 200px; max-width: 300px; background: rgba(30, 41, 59, 0.8); border-right: 1px solid rgba(99, 102, 241, 0.2); padding: 16px;">
-            <DragDropList items={menuItems()} enableDrag={false} direction="vertical" selectedId={selectedMenuItem} onSelect={(id: string) => (selectedMenuItem = String(id))} style="background: none; padding: 0;color: #fff;" />
+            <DragDropList items={menuItems()} enableDrag={false} direction="vertical" selectedId={selectedMenuItem} onSelect={(id: string) => (selectedMenuItem = id)} style="background: none; padding: 0;color: #fff;" />
         </ResponsiveBox>
 
         <!-- 内容区域 -->
@@ -197,7 +211,7 @@
                 <!-- 当前分类组件列表 -->
                 <ResponsiveBox style="margin-bottom: 12px;">
                     <ResponsiveBox style="color: #f8fafc; margin: 0 0 6px 0; font-size:26px; font-weight: 600;">
-                        {selectedMenuItem}
+                        {menuItems().find((item) => item.id === selectedMenuItem)?.name || ''}
                     </ResponsiveBox>
 
                     <ResponsiveBox style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px;">
