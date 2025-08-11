@@ -150,52 +150,6 @@
     }
 
     /**
-     * 递归创建 DOM 元素
-     * @param node DOM 节点数据
-     * @returns 创建的 DOM 元素
-     */
-    function createDomElement(node: DomNode): HTMLElement {
-        // 创建元素，若未指定 tagName 则默认使用 'div'
-        const tagName = node.tagName ?? 'div'
-        const element = document.createElement(tagName)
-        const nodeKey = node.dataId ?? node.id
-
-        // 设置元素 ID 和数据属性
-        element.dataset.id = nodeKey
-
-        // 添加点击事件
-        element.addEventListener('click', (e) => handleSelectNode(nodeKey, e))
-
-        // 设置属性
-        if (node.attributes) {
-            Object.entries(node.attributes).forEach(([key, value]) => {
-                element.setAttribute(key, value)
-            })
-        }
-
-        // 设置样式
-        if (node.styles) {
-            Object.entries(node.styles).forEach(([key, value]) => {
-                element.style[key as any] = value
-            })
-        }
-
-        // 添加默认样式
-        element.style.transition = 'all 0.2s ease'
-        element.style.border = 'calc(1px * var(--scale-ratio, 1)) dashed transparent'
-
-        // 递归处理子节点
-        if (node.children && node.children.length > 0) {
-            node.children.forEach((childNode) => {
-                const childElement = createDomElement(childNode)
-                element.appendChild(childElement)
-            })
-        }
-
-        return element
-    }
-
-    /**
      * DOM 树渲染交由 NodeRenderer 递归组件处理
      */
 
