@@ -22,6 +22,8 @@
     import { javascript } from '@codemirror/lang-javascript'
     import { lintGutter, linter } from '@codemirror/lint'
     import { oneDark } from '@codemirror/theme-one-dark'
+    import { indentOnInput } from '@codemirror/language'
+    import { autocompletion } from '@codemirror/autocomplete'
 
     // --------------------------- Props ---------------------------
     /* --------------------------- Props (Runes) --------------------------- */
@@ -48,6 +50,8 @@
             keymap.of(defaultKeymap),
             history(),
             lineNumbers(),
+            indentOnInput(),
+            autocompletion(),
             EditorView.updateListener.of((v) => {
                 if (v.docChanged) {
                     // 细粒度同步外部 code
