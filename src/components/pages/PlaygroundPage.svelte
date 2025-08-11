@@ -60,7 +60,7 @@
 
         <!-- 右侧预览区 -->
         <Pane>
-            <iframe src={htmlUrl} title="preview" sandbox="allow-scripts allow-same-origin" style="width: 100%; height: 100%; border: none; background: #fff;"></iframe>
+            <iframe src={htmlUrl} title="preview" sandbox="allow-scripts allow-same-origin" style="font-size: calc(14px * var(--scale-ratio, 1));width: 100%; height: 100%; border: none; background: #fff;"></iframe>
         </Pane>
     </Splitpanes>
 </div>
@@ -73,7 +73,9 @@
         push({ path: '/demo' })
     }}
     class="back-to-demo"
->← 返回</a>
+>
+    ← 返回
+</a>
 
 <style>
     /* 返回 Demo 按钮样式 */
