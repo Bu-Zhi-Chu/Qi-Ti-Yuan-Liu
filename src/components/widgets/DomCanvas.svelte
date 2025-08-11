@@ -131,16 +131,7 @@
         }
     })
 
-    /**
-     * 选中节点事件处理
-     * @param nodeId 要选中的节点 ID
-     */
-    function handleSelectNode(nodeId: string, event: MouseEvent) {
-        // 阻止事件冒泡，避免重复触发
-        event.stopPropagation()
-        // 更新选中的节点 ID
-        selectedId = nodeId
-    }
+
 
     /**
      * 处理 NodeRenderer 选中事件
