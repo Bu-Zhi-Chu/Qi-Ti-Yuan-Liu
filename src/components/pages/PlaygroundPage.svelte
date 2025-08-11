@@ -71,7 +71,7 @@
                     runes: true
                 })
                 // 将 ESM 默认导出转换为组件变量，便于后续实例化
-                const compiledCode = js.code.replace(/export\s+default/g, 'const Component =')
+                const compiledCode = 'const _unknown_ = {};' + "\n" + js.code.replace(/export\s+default/g, 'const Component =')
                 finalJsCode = transformBareImports(compiledCode) + '\nnew Component({ target: document.body });'
             }
         } catch (err) {
