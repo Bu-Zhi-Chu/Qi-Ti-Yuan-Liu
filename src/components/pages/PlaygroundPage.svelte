@@ -24,8 +24,8 @@
     // 侧栏比例 (0~1)
     let ratio: number = 0.4
 
-    // 运行代码 -> 生成 Blob URL
-    function runCode() {
+    // 运行代码 -> 生成 Blob URL（支持 Svelte5 单文件组件）
+    async function runCode() {
         // 释放旧 URL
         if (htmlUrl) URL.revokeObjectURL(htmlUrl)
 
@@ -35,7 +35,25 @@
         // 注入 console hook
         const consoleHook = `(() => {const levels = ['log','info','warn','error'];levels.forEach(level => {const orig = console[level];console[level] = (...args) => {window.parent.postMessage({ type: 'console', level, msg: args.map(a => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ') }, '*');orig.apply(console, args);};});})();`
 
-        const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${cssCode}</style></head><body>${htmlCode}<script type="module">${consoleHook + jsCode}<\/script></body></html>`
+        // ---------------- Svelte5 编译支持 ----------------
+        let finalJsCode: string = jsCode
+        try {
+            // 简单启发式：如果 js 区域以 "<" 开头，视为 Svelte 单文件组件源码
+            if (jsCode.trim().startsWith('<')) {
+                const { compile } = await import(/* @vite-ignore */ 'https://cdn.jsdelivr.net/npm/svelte@next/src/compiler/index.js')
+                const { js } = compile(jsCode, {
+                    generate: 'dom',
+                    format: 'esm',
+                    dev: true // 保留调试信息
+                })
+                finalJsCode = js.code
+            }
+        } catch (err) {
+            logs = [...logs, `[error] Svelte compile error: ${err instanceof Error ? err.message : String(err)}`]
+        }
+        // ---------------------------------------------------
+
+        const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${cssCode}</style></head><body>${htmlCode}<script type="module">${consoleHook + finalJsCode}<\/script></body></html>`
         htmlUrl = URL.createObjectURL(new Blob([html], { type: 'text/html' }))
     }
 
@@ -133,13 +151,21 @@
         width: 100% !important;
         cursor: row-resize;
     }
-    :global(.default-theme.splitpanes--vertical > .splitpanes__splitter:before, .default-theme.splitpanes--vertical > .splitpanes__splitter:after, .default-theme .splitpanes--vertical > .splitpanes__splitter:before, .default-theme .splitpanes--vertical > .splitpanes__splitter:after,
-        .default-theme.splitpanes--horizontal > .splitpanes__splitter:before, .default-theme.splitpanes--horizontal > .splitpanes__splitter:after, .default-theme .splitpanes--horizontal > .splitpanes__splitter:before, .default-theme .splitpanes--horizontal > .splitpanes__splitter:after) {
+    :global(
+            .default-theme.splitpanes--vertical > .splitpanes__splitter:before,
+            .default-theme.splitpanes--vertical > .splitpanes__splitter:after,
+            .default-theme .splitpanes--vertical > .splitpanes__splitter:before,
+            .default-theme .splitpanes--vertical > .splitpanes__splitter:after,
+            .default-theme.splitpanes--horizontal > .splitpanes__splitter:before,
+            .default-theme.splitpanes--horizontal > .splitpanes__splitter:after,
+            .default-theme .splitpanes--horizontal > .splitpanes__splitter:before,
+            .default-theme .splitpanes--horizontal > .splitpanes__splitter:after
+        ) {
         display: none !important;
     }
 
     /* 控制台样式 */
-    /* svelte-ignore css_unused_selector */
+
     .console-output {
         margin: 0;
         padding: calc(8px * var(--scale-ratio, 1));
