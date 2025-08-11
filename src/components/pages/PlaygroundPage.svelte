@@ -9,12 +9,14 @@
 <script lang="ts">
     import { onDestroy } from 'svelte'
     import { Splitpanes, Pane } from 'svelte-splitpanes'
-    import CodeEditor from '../widgets/CodeEditor.svelte'
+    import TabbedCodeEditor from '../widgets/TabbedCodeEditor.svelte'
     import { useNavigate } from '@dvcol/svelte-simple-router/router'
 
     // --------------------------- 状态 ---------------------------
-    // 编辑器代码内容
-    let code: string = `// 欢迎使用 Playground\nconsole.log('Hello, Qi Qiao Ban!')\ndocument.body.innerHTML = '<h1 style=\"text-align:center;\">Hello, Qi Qiao Ban!</h1>'`
+    // HTML / CSS / JS 代码内容
+    let htmlCode: string = '<h1 style="text-align:center;">Hello, Qi Qiao Ban!</h1>'
+    let cssCode: string = 'body { font-family: sans-serif; }'
+    let jsCode: string = "console.log('Hello, Qi Qiao Ban!')"
     // iframe 预览 URL（Blob）
     let htmlUrl: string = ''
     // 侧栏比例 (0~1)
@@ -25,13 +27,15 @@
         // 释放旧 URL
         if (htmlUrl) URL.revokeObjectURL(htmlUrl)
 
-        const html = `<!DOCTYPE html><html><head><meta charset=\"utf-8\"></head><body><script type=\"module\">${code}<\/script></body></html>`
+        const html = `<!DOCTYPE html><html><head><meta charset=\"utf-8\"><style>${cssCode}</style></head><body>${htmlCode}<script type=\"module\">${jsCode}<\/script></body></html>`
         htmlUrl = URL.createObjectURL(new Blob([html], { type: 'text/html' }))
     }
 
     // 重置代码到默认模板
     function resetCode() {
-        code = `// 欢迎使用 Playground\nconsole.log('Hello, Qi Qiao Ban!')\ndocument.body.innerHTML = '<h1 style=\"text-align:center;\">Hello, Qi Qiao Ban!</h1>'`
+        htmlCode = '<h1 style="text-align:center;">Hello, Qi Qiao Ban!</h1>'
+        cssCode = 'body { font-family: sans-serif; }'
+        jsCode = "console.log('Hello, Qi Qiao Ban!')"
         runCode()
     }
 
@@ -55,7 +59,7 @@
     <Splitpanes on:resized={handleResizeEnd}>
         <!-- 左侧代码编辑区 -->
         <Pane size={ratio * 100}>
-            <CodeEditor bind:code run={runCode} reset={resetCode} />
+            <TabbedCodeEditor bind:htmlCode bind:cssCode bind:jsCode run={runCode} reset={resetCode} />
         </Pane>
 
         <!-- 右侧预览区 -->
