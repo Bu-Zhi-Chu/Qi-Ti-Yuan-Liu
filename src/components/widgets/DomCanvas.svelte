@@ -56,7 +56,12 @@
         offsetY = y
     }
 
-
+    // 缩放回调处理函数
+    function handleZoom({ scale: newScale, x, y, event }: { scale: number; x: number; y: number; event: WheelEvent }) {
+        offsetX = x
+        offsetY = y
+        scale = newScale
+    }
 
     /**
      * 处理 NodeRenderer 选中事件
@@ -85,7 +90,9 @@
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <div
     bind:this={canvasContainerRef}
+    class="canvas-container"
     class:editing
+    style="--offset-x: {offsetX}px; --offset-y: {offsetY}px; --scale: {scale};"
     use:usePan={{ key: 'Space', onPan: handlePan, scaleAccessor: () => getScaleRatio(), offsetAccessor: () => ({ x: offsetX, y: offsetY }) }}
     use:useWheelZoom={{
         key: 'Alt',
@@ -96,18 +103,16 @@
             offsetX = x
             offsetY = y
         },
-        minScale: 0.1,
-        maxScale: 4,
-        step: 0.08,
-        stopDelay: 150
+        onZoom: handleZoom,
+        minScale: 0.2,
+        maxScale: 3,
+        step: 0.1,
+        stopDelay: 200
     }}
     use:drawModeAction={{
         editingAccessor: () => editing,
         scaleAccessor: () => (editing ? scale * 0.5 : scale)
     }}
-    style={`width: 100%; height: 100%; transform: ${
-        editing ? `translate(calc(-50% + calc(${offsetX}px * var(--scale-ratio, 1))), calc(-50% + calc(${offsetY}px * var(--scale-ratio, 1)))) scale(${scale * 0.5})` : `translate(calc(${offsetX}px * var(--scale-ratio, 1)), calc(${offsetY}px * var(--scale-ratio, 1))) scale(${scale})`
-    }; transform-origin: center center; transition: transform 0.12s cubic-bezier(0.25, 0.46, 0.45, 0.94);`}
     role="application"
     onpointerdown={() => (isDragging = true)}
     onpointerup={() => (isDragging = false)}
@@ -120,14 +125,17 @@
 </div>
 
 <style>
-    .editing {
+    .canvas-container {
+        width: 100%;
+        height: 100%;
+        position: relative;
+    }
+
+    .canvas-container.editing {
         position: absolute;
         left: 50%;
         top: 50%;
-        width: 100%;
-        height: 100%;
-        display: block;
-        /* 平移由内联 style 控制 */
+        transform: translate(calc(-50% + calc(var(--offset-x, 0px) * var(--scale-ratio, 1))), calc(-50% + calc(var(--offset-y, 0px) * var(--scale-ratio, 1)))) scale(calc(var(--scale, 1) * 0.5));
         transform-origin: center center;
         z-index: 5;
     }

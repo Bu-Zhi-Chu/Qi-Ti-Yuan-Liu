@@ -76,3 +76,15 @@
         <div style="width: 100%; height: 2%;background: rgba(1, 255, 255, 0.3);"></div>
     </div>
 {/if}
+
+<style>
+    .workspace {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        top: 0;
+        left: 0;
+        z-index: 10;
+        pointer-events: none;
+    }
+</style>
