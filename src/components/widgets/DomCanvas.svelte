@@ -25,10 +25,10 @@
 
     /** DOM 节点类型 */
     import NodeRenderer from './NodeRenderer.svelte'
-    import usePan from '../../services/utils/use-pan.action'
-    import useWheelZoom from '../../services/utils/use-wheel-zoom.action'
+    import usePan from '../../services/actions/use-pan.action'
+    import useWheelZoom from '../../services/actions/use-wheel-zoom.action'
     import { getScaleRatio } from '../../services/utils/get-scale-ratio.util'
-    import drawModeAction from '../../services/utils/draw-mode.action'
+    import drawModeAction from '../../services/actions/draw-mode.action'
     import DrawModeOverlay from './DrawModeOverlay.svelte'
     import { isDrawMode } from '../../services/repository/draw-mode.store.svelte'
 </script>

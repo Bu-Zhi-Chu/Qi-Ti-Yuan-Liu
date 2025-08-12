@@ -28,9 +28,9 @@ import {
   updateDrawRect,
   resetDrawState,
 } from '../repository/draw-mode.store.svelte'
-import { registerMouseLeftPressRelease } from './shortcut.service'
-import { calculateRelativeRect, createDrawNode } from './draw-mode.util'
-import { getElementByNodeId } from './dom-geometry.util'
+import { registerMouseLeftPressRelease } from '../interactions/shortcut.service'
+import { calculateRelativeRect, createDrawNode } from '../utils/draw-mode.util'
+import { getElementByNodeId } from '../utils/dom-geometry.util'
 import { selectedId, addNodeToParent } from '../repository/dom-tree.store.svelte'
 
 export interface DrawModeOptions {
