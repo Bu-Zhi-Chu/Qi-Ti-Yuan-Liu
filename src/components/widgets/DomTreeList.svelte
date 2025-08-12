@@ -27,8 +27,7 @@
 </script>
 
 <script lang="ts">
-    /* 组件属性 - 使用 Runes $props */
-    let { domTree, selectedId = $bindable(null) } = $props<{ domTree: import('../../types/dom-node.types').DomNode; selectedId?: string | null }>()
+    import { domTree, selectedId, setSelectedId } from '../../services/repository/dom-tree.store.svelte'
 
     /** 点击节点，更新选中 ID（事件委托） */
     function handleClick(event: MouseEvent) {
@@ -38,7 +37,7 @@
         if (nodeItem) {
             const id = nodeItem.getAttribute('data-id')
             if (id) {
-                selectedId = id
+                setSelectedId(id)
             }
         }
     }
@@ -63,7 +62,7 @@
         `
     }
 
-    const htmlString = $derived(() => (domTree ? renderNode(domTree, 0, selectedId) : ''))
+    const htmlString = $derived(() => (domTree ? renderNode(domTree, 0, selectedId()) : ''))
 </script>
 
 <!-- 容器使用事件委托监听 -->

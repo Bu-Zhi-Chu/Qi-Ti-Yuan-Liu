@@ -20,93 +20,9 @@
     import DomCanvas from '../widgets/DomCanvas.svelte'
     import DomTreeList from '../widgets/DomTreeList.svelte'
 
-    // 引入 DomNode 类型，统一维护
+    // 引入 DOM 树集中式状态管理
+    import { domTree, selectedId, setSelectedId } from '../../services/repository/dom-tree.store.svelte'
     import type { DomNode } from '../../types/dom-node.types'
-
-    // DOM 树作为单一数据源（普通 let 声明以避免类型检查问题）
-    let domTree: DomNode = {
-        id: 'root',
-        dataId: 'root',
-        componentType: 'SimpleBox', // 根容器使用 SimpleBox
-        styles: {
-            width: '100%',
-            height: '100%',
-            backgroundColor: '#ffffff'
-        },
-        expanded: true,
-        children: [
-            {
-                id: 'header',
-                dataId: 'header',
-                componentType: 'SimpleBox', // 头部区域使用 SimpleBox
-                styles: {
-                    height: '10%',
-                    width: '10%',
-                    top: '10%',
-                    left: '10%',
-                    position: 'absolute',
-                    backgroundColor: '#f87171'
-                },
-                children: []
-            },
-            {
-                id: 'clock',
-                dataId: 'clock',
-                componentType: 'RealTimeClock', // 实时时钟组件
-                styles: {
-                    height: '8%',
-                    width: '15%',
-                    top: '25%',
-                    left: '10%',
-                    position: 'absolute',
-                    backgroundColor: '#60a5fa',
-                    color: '#ffffff',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    borderRadius: '8px'
-                },
-                componentProps: {
-                    format: 'HH:mm:ss' // 传递给时钟组件的格式参数
-                },
-                children: []
-            },
-            {
-                id: 'responsive-container',
-                dataId: 'responsive-container',
-                componentType: 'ResponsiveBox', // 响应式容器
-                styles: {
-                    height: '20%',
-                    width: '30%',
-                    top: '40%',
-                    left: '10%',
-                    position: 'absolute',
-                    backgroundColor: '#34d399',
-                    borderRadius: '12px'
-                },
-                componentProps: {
-                    padding: '16px' // 传递给响应式容器的内边距
-                },
-                children: [
-                    {
-                        id: 'inner-box',
-                        dataId: 'inner-box',
-                        componentType: 'SimpleBox',
-                        styles: {
-                            width: '100%',
-                            height: '50%',
-                            backgroundColor: '#fbbf24',
-                            borderRadius: '8px'
-                        },
-                        children: []
-                    }
-                ]
-            }
-        ]
-    }
-
-    // 当前选中的节点 nodeId
-    let selectedId: string | null = 'root'
 
     // 是否显示工作区，默认正常模式隐藏
     let showWorkspace = false
@@ -128,7 +44,7 @@
 <div style="width: 100%;height: 100%;position: absolute;background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);z-index: 0;overflow: hidden;">
     <!-- 画布包裹元素，承担缩放与定位 -->
     <!-- @ts-ignore: props typing still WIP -->
-    <DomCanvas editing={showWorkspace} {domTree} bind:selectedId />
+    <DomCanvas editing={showWorkspace} />
 </div>
 
 <!-- 工作区 -->
@@ -145,7 +61,7 @@
                 <!-- dom树列表 -->
                 <div style="width: 88%;height: 100%;background: rgba(30, 41, 59, 0.8);pointer-events: auto;">
                     <!-- @ts-ignore: props typing still WIP -->
-                    <DomTreeList {domTree} bind:selectedId />
+                    <DomTreeList />
                 </div>
             </div>
 
