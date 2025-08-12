@@ -29,7 +29,7 @@ import {
   resetDrawState,
 } from '../repository/draw-mode.store.svelte'
 import { registerMouseLeftPressRelease } from '../interactions/shortcut.service'
-import { calculateRelativeRect, createDrawNode } from '../utils/draw-mode.util'
+import { calculateRelativeRect, createDrawNode, clampPointToRect } from '../utils/draw-mode.util'
 import { getElementByNodeId } from '../utils/dom-geometry.util'
 import { selectedId, addNodeToParent } from '../repository/dom-tree.store.svelte'
 
@@ -71,9 +71,10 @@ const drawModeAction: Action<HTMLElement, DrawModeOptions> = (node, opts) => {
 
     const rect = targetEl.getBoundingClientRect()
     const scale = options.scaleAccessor()
+    const endPoint = clampPointToRect({ x: e.clientX, y: e.clientY }, rect)
     const nextRect = calculateRelativeRect(
       drawStartGetter() as { x: number; y: number },
-      { x: e.clientX, y: e.clientY },
+      endPoint,
       rect,
       scale,
     )
@@ -137,10 +138,11 @@ const drawModeAction: Action<HTMLElement, DrawModeOptions> = (node, opts) => {
 
         const rect = targetEl.getBoundingClientRect()
         const scale = options.scaleAccessor()
-        const start = { x: e.clientX, y: e.clientY }
+        const clampedStart = clampPointToRect({ x: e.clientX, y: e.clientY }, rect)
+        const start = clampedStart
         const initRect = {
-          left: ((e.clientX - rect.left) / scale / rect.width) * 100,
-          top: ((e.clientY - rect.top) / scale / rect.height) * 100,
+          left: ((clampedStart.x - rect.left) / scale / rect.width) * 100,
+          top: ((clampedStart.y - rect.top) / scale / rect.height) * 100,
           width: 0,
           height: 0,
         }
@@ -161,7 +163,8 @@ const drawModeAction: Action<HTMLElement, DrawModeOptions> = (node, opts) => {
 
         const rect = targetEl.getBoundingClientRect()
         const scale = options.scaleAccessor()
-        const finalRect = calculateRelativeRect(drawStartGetter() as { x: number; y: number }, { x: e.clientX, y: e.clientY }, rect, scale)
+        const endPoint = clampPointToRect({ x: e.clientX, y: e.clientY }, rect)
+        const finalRect = calculateRelativeRect(drawStartGetter() as { x: number; y: number }, endPoint, rect, scale)
 
         if ((finalRect.width * rect.width) / 100 > 5 && (finalRect.height * rect.height) / 100 > 5) {
           const newNode = createDrawNode(finalRect)

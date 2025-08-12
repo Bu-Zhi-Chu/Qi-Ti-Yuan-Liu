@@ -45,6 +45,16 @@ export function calculateRelativeRect(
 }
 
 /**
+ * 将给定屏幕坐标限制在目标 DOMRect 内部。
+ */
+export function clampPointToRect(point: { x: number; y: number }, rect: DOMRect): { x: number; y: number } {
+    return {
+        x: Math.min(Math.max(point.x, rect.left), rect.right),
+        y: Math.min(Math.max(point.y, rect.top), rect.bottom)
+    }
+}
+
+/**
  * 生成绘制完成后的新 DomNode。
  */
 export function createDrawNode(rect: RelativeRect): DomNode {
