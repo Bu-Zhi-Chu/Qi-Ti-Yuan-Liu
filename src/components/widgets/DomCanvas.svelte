@@ -93,7 +93,7 @@
     class="canvas-container"
     class:editing
     style="--offset-x: {offsetX}px; --offset-y: {offsetY}px; --scale: {scale};"
-    use:usePan={{ key: 'Space', onPan: handlePan, scaleAccessor: () => getScaleRatio(), offsetAccessor: () => ({ x: offsetX, y: offsetY }) }}
+    use:usePan={{ key: 'Space', onPan: handlePan, scaleAccessor: () => getScaleRatio(), offsetAccessor: () => ({ x: offsetX, y: offsetY }), editingAccessor: () => editing }}
     use:useWheelZoom={{
         key: 'Alt',
         getScale: () => scale,
@@ -107,7 +107,8 @@
         minScale: 0.2,
         maxScale: 3,
         step: 0.1,
-        stopDelay: 200
+        stopDelay: 200,
+        editingAccessor: () => editing
     }}
     use:drawModeAction={{
         editingAccessor: () => editing,

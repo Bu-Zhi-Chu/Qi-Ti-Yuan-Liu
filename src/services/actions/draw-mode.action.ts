@@ -91,6 +91,7 @@ const drawModeAction: Action<HTMLElement, DrawModeOptions> = (node, opts) => {
     const keydownHandler = (e: KeyboardEvent) => {
       if (e.repeat) return // 忽略长按自动重复事件
       if (e.key === 'b' || e.key === 'B') {
+        if (options.editingAccessor && !options.editingAccessor()) return
         if (!isDrawModeGetter()) {
           enterDrawMode()
           node.style.cursor = 'crosshair'
@@ -125,6 +126,7 @@ const drawModeAction: Action<HTMLElement, DrawModeOptions> = (node, opts) => {
       (e: MouseEvent) => {
         // 按下左键开始绘制
         if (!isDrawModeGetter() || isDrawingGetter()) return
+        if (options.editingAccessor && !options.editingAccessor()) return
         let id = selectedId()
         if (!id) {
           // 若未选中任何节点，则默认使用根节点 id

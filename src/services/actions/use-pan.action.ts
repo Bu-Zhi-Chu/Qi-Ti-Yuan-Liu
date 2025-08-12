@@ -43,6 +43,8 @@ export interface UsePanOptions {
   }) => void;
   /** 当前偏移读取函数, 用于在按下时初始化总位移 */
   offsetAccessor?: () => { x: number; y: number };
+  /** 是否处于编辑模式的 accessor */
+  editingAccessor?: () => boolean;
 }
 
 interface InternalState {
@@ -78,6 +80,7 @@ export default function usePan(node: HTMLElement, opts: UsePanOptions = {}) {
   /** ----------------- 键盘监听 ---------------- */
   function handleKeyDown(e: KeyboardEvent) {
     if (e.code !== options.key) return;
+    if (options.editingAccessor && !options.editingAccessor()) return;
     if (!state.keyPressed) {
       state.keyPressed = true;
       if (!state.panActive) {
@@ -103,6 +106,7 @@ export default function usePan(node: HTMLElement, opts: UsePanOptions = {}) {
   function onPointerDown(e: PointerEvent) {
     if (e.button !== 0) return; // 限制左键
     if (options.key && !state.keyPressed) return; // 未按触发键
+    if (options.editingAccessor && !options.editingAccessor()) return;
 
     // 初始化累计位移为当前偏移, 解决缩放后首次拖动跳动
     const initOffset = options.offsetAccessor?.() ?? { x: 0, y: 0 };

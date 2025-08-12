@@ -33,6 +33,8 @@ export interface WheelZoomOptions extends WheelZoomContext {
   step?: number
   /** 滚动结束判定延迟，默认 200ms */
   stopDelay?: number
+  /** 是否处于编辑模式的 accessor */
+  editingAccessor?: () => boolean
 }
 
 const DEFAULTS: Required<Pick<WheelZoomOptions, 'key' | 'minScale' | 'maxScale' | 'step' | 'stopDelay'>> = {
@@ -67,6 +69,7 @@ const useWheelZoom: Action<HTMLElement, WheelZoomOptions> = (node, opts) => {
 
   function handleKeyDown(e: KeyboardEvent) {
     if (e.key === options.key && !keyPressed) {
+      if (options.editingAccessor && !options.editingAccessor()) return;
       e.preventDefault()
       keyPressed = true
       node.style.cursor = 'ns-resize'
@@ -91,6 +94,7 @@ const useWheelZoom: Action<HTMLElement, WheelZoomOptions> = (node, opts) => {
 
   function handleWheel(e: WheelEvent) {
     if (!keyPressed) return
+    if (options.editingAccessor && !options.editingAccessor()) return
 
     e.preventDefault()
 
