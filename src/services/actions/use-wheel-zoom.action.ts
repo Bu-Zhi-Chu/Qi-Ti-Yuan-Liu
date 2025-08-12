@@ -54,10 +54,8 @@ const useWheelZoom: Action<HTMLElement, WheelZoomOptions> = (node, opts) => {
 
   let keyPressed = false
   let sequenceTimer: number | null = null
-  let pivot: { x: number; y: number } | null = null
 
   function resetSequence() {
-    pivot = null
     if (!keyPressed) {
       node.style.cursor = ''
       document.body.style.cursor = ''
@@ -88,7 +86,7 @@ const useWheelZoom: Action<HTMLElement, WheelZoomOptions> = (node, opts) => {
       // 立即恢复默认光标
       node.style.cursor = ''
       document.body.style.cursor = ''
-      pivot = null
+
     }
   }
 
@@ -102,11 +100,10 @@ const useWheelZoom: Action<HTMLElement, WheelZoomOptions> = (node, opts) => {
     if (sequenceTimer) window.clearTimeout(sequenceTimer)
     sequenceTimer = window.setTimeout(resetSequence, options.stopDelay!)
 
-    // 记录序列 pivot
-    if (!pivot) {
-      const rect = node.getBoundingClientRect()
-      pivot = { x: e.clientX - rect.left, y: e.clientY - rect.top }
-    }
+    // 获取当前鼠标位置作为缩放中心
+    const rect = node.getBoundingClientRect()
+    const mouseX = e.clientX - rect.left
+    const mouseY = e.clientY - rect.top
 
     // 根据滚轮方向计算新缩放
     const dir = e.deltaY < 0 ? 1 : -1
@@ -115,10 +112,14 @@ const useWheelZoom: Action<HTMLElement, WheelZoomOptions> = (node, opts) => {
     const newScale = clamp(currentScale * factor, options.minScale!, options.maxScale!)
     const scaleFactor = newScale / currentScale
 
-    // 计算基于 pivot 的位移调整
+    // 计算补偿位移，使视觉上以鼠标为中心缩放
     const { x: offsetX, y: offsetY } = options.getOffsets()
-    const newOffsetX = offsetX - (pivot!.x - offsetX) * (scaleFactor - 1)
-    const newOffsetY = offsetY - (pivot!.y - offsetY) * (scaleFactor - 1)
+    const centerX = rect.width / 2
+    const centerY = rect.height / 2
+    const dx = -(mouseX - centerX) * (scaleFactor - 1) / newScale
+    const dy = -(mouseY - centerY) * (scaleFactor - 1) / newScale
+    const newOffsetX = offsetX + dx
+    const newOffsetY = offsetY + dy
 
     // 更新状态
     options.setScale(newScale)
