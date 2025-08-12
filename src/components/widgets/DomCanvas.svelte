@@ -30,7 +30,7 @@
     import { getScaleRatio } from '../../services/utils/get-scale-ratio.util'
     import drawModeAction from '../../services/utils/draw-mode.action'
     import DrawModeOverlay from './DrawModeOverlay.svelte'
-    import { isDrawMode } from '../../services/utils/draw-mode.store.svelte'
+    import { isDrawMode } from '../../services/repository/draw-mode.store.svelte'
 </script>
 
 <script lang="ts">

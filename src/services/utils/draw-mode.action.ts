@@ -27,7 +27,7 @@ import {
   startDrawing,
   updateDrawRect,
   resetDrawState,
-} from './draw-mode.store.svelte'
+} from '../repository/draw-mode.store.svelte'
 import { registerMouseLeftPressRelease } from './shortcut.service'
 import { calculateRelativeRect, createDrawNode } from './draw-mode.util'
 import { getElementByNodeId } from './dom-geometry.util'
