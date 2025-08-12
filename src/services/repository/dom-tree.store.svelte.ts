@@ -20,73 +20,7 @@ const domTreeData = $state<DomNode>({
   },
   expanded: true,
   children: [
-    {
-      id: 'header',
-      dataId: 'header',
-      componentType: 'SimpleBox',
-      styles: {
-        height: '10%',
-        width: '10%',
-        top: '10%',
-        left: '10%',
-        position: 'absolute',
-        backgroundColor: '#f87171'
-      },
-      children: []
-    },
-    {
-      id: 'clock',
-      dataId: 'clock',
-      componentType: 'RealTimeClock',
-      styles: {
-        height: '8%',
-        width: '15%',
-        top: '25%',
-        left: '10%',
-        position: 'absolute',
-        backgroundColor: '#60a5fa',
-        color: '#ffffff',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: '8px'
-      },
-      componentProps: {
-        format: 'HH:mm:ss'
-      },
-      children: []
-    },
-    {
-      id: 'responsive-container',
-      dataId: 'responsive-container',
-      componentType: 'ResponsiveBox',
-      styles: {
-        height: '20%',
-        width: '30%',
-        top: '40%',
-        left: '10%',
-        position: 'absolute',
-        backgroundColor: '#34d399',
-        borderRadius: '12px'
-      },
-      componentProps: {
-        padding: '16px'
-      },
-      children: [
-        {
-          id: 'inner-box',
-          dataId: 'inner-box',
-          componentType: 'SimpleBox',
-          styles: {
-            width: '100%',
-            height: '50%',
-            backgroundColor: '#fbbf24',
-            borderRadius: '8px'
-          },
-          children: []
-        }
-      ]
-    }
+
   ]
 });
 
