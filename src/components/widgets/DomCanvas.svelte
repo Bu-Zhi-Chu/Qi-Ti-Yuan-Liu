@@ -94,7 +94,7 @@
 <div
     bind:this={canvasContainerRef}
     class:editing
-    use:usePan={{ key: 'Space', onPan: handlePan, scaleAccessor: () => getScaleRatio() * scale, offsetAccessor: () => ({ x: offsetX, y: offsetY }) }}
+    use:usePan={{ key: 'Space', onPan: handlePan, scaleAccessor: () => getScaleRatio(), offsetAccessor: () => ({ x: offsetX, y: offsetY }) }}
     use:useWheelZoom={{
         key: 'Alt',
         getScale: () => scale,
