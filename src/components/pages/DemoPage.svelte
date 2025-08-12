@@ -40,9 +40,9 @@
     }
 
     // 状态管理
-    let selectedComponent = $state<ComponentItem | null>(null)
+    // 已移除: let selectedComponent = $state<ComponentItem | null>(null)
+    // 已移除: let selectedListItem = $state<string | null>('1')
     let searchQuery = $state('')
-    let selectedListItem = $state<string | null>('1')
 
     // 从JSON导入导航配置数据
     import demoNavigation from '../../examples/demo-navigation.json'
@@ -142,16 +142,6 @@
     // 处理搜索
     function handleSearch(query: string) {
         searchQuery = query
-    }
-
-    // 处理卡片点击
-    function handleCardClick(component: ComponentItem) {
-        selectedComponent = component
-    }
-
-    // 处理返回
-    function handleBack() {
-        selectedComponent = null
     }
 </script>
 

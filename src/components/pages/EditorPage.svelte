@@ -21,8 +21,6 @@
     import DomTreeList from '../widgets/DomTreeList.svelte'
 
     // 引入 DOM 树集中式状态管理
-    import { domTree, selectedId, setSelectedId } from '../../services/repository/dom-tree.store.svelte'
-    import type { DomNode } from '../../types/dom-node.types'
 
     // 是否显示工作区，默认正常模式隐藏
     let showWorkspace = false
