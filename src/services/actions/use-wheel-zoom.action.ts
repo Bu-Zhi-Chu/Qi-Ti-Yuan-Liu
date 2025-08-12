@@ -86,7 +86,6 @@ const useWheelZoom: Action<HTMLElement, WheelZoomOptions> = (node, opts) => {
       // 立即恢复默认光标
       node.style.cursor = ''
       document.body.style.cursor = ''
-
     }
   }
 
@@ -112,19 +111,10 @@ const useWheelZoom: Action<HTMLElement, WheelZoomOptions> = (node, opts) => {
     const newScale = clamp(currentScale * factor, options.minScale!, options.maxScale!)
     const scaleFactor = newScale / currentScale
 
-    // 计算补偿位移，使视觉上以鼠标为中心缩放
-    const { x: offsetX, y: offsetY } = options.getOffsets()
-    const centerX = rect.width / 2
-    const centerY = rect.height / 2
-    const dx = -(mouseX - centerX) * (scaleFactor - 1) / newScale
-    const dy = -(mouseY - centerY) * (scaleFactor - 1) / newScale
-    const newOffsetX = offsetX + dx
-    const newOffsetY = offsetY + dy
-
-    // 更新状态
+    // 更新状态 - 只改变缩放值，不改变位移
     options.setScale(newScale)
-    options.setOffsets({ x: newOffsetX, y: newOffsetY })
-    options.onZoom?.({ scale: newScale, x: newOffsetX, y: newOffsetY, event: e })
+    const { x: offsetX, y: offsetY } = options.getOffsets()
+    options.onZoom?.({ scale: newScale, x: offsetX, y: offsetY, event: e })
 
     // 更新光标样式
     const cursor = dir > 0 ? 'zoom-in' : 'zoom-out'
