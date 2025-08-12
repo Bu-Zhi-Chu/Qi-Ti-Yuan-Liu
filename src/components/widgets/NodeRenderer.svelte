@@ -32,7 +32,7 @@
 
     /** 点击选中 - 精确点击，不冒泡 */
     function handleClick(event: MouseEvent) {
-        console.log(`[NodeRenderer] 点击事件触发: ${nodeKey}, target:`, event.target, 'currentTarget:', event.currentTarget)
+        // console.log(`[NodeRenderer] 点击事件触发: ${nodeKey}, target:`, event.target, 'currentTarget:', event.currentTarget)
 
         // 检查是否是直接点击当前元素（不是子元素冒泡上来的）
         const isDirectClick = event.target === event.currentTarget
@@ -44,9 +44,9 @@
 
             // 选中当前元素
             select?.(nodeKey)
-            console.log(`[NodeRenderer] 直接点击选中: ${nodeKey}`)
+            // console.log(`[NodeRenderer] 直接点击选中: ${nodeKey}`)
         } else {
-            console.log(`[NodeRenderer] 忽略子元素冒泡: ${nodeKey}`)
+            // console.log(`[NodeRenderer] 忽略子元素冒泡: ${nodeKey}`)
         }
     }
 
@@ -57,7 +57,7 @@
     let previousSelected = $state(false)
     $effect(() => {
         if (isSelected !== previousSelected) {
-            console.log(`[NodeRenderer ${nodeKey}] isSelected 状态改变: ${previousSelected} -> ${isSelected}, selectedId: ${selectedId}`)
+            // console.log(`[NodeRenderer ${nodeKey}] isSelected 状态改变: ${previousSelected} -> ${isSelected}, selectedId: ${selectedId}`)
             previousSelected = isSelected
         }
     })
@@ -91,7 +91,7 @@
         const result = styleStr ? `${styleStr}; ${defaultStyles}` : defaultStyles
 
         // 调试：输出最终样式
-        console.log(`[NodeRenderer ${nodeKey}] editing:${editing}, isSelected:${isSelected}, finalStyle:`, result)
+        // console.log(`[NodeRenderer ${nodeKey}] editing:${editing}, isSelected:${isSelected}, finalStyle:`, result)
 
         return result
     })
