@@ -57,7 +57,7 @@
                 <!-- 工具栏 -->
                 <div style="width: 12%; height: 100%;background: rgba(255, 1, 255, 0.3);"></div>
                 <!-- dom树列表 -->
-                <div style="width: 88%;height: 100%;background: rgba(30, 41, 59, 0.8);pointer-events: auto;">
+                <div style="width: 88%;height: 100%;background: rgba(30, 41, 59, 0.8);pointer-events: auto;padding: 3%;">
                     <!-- @ts-ignore: props typing still WIP -->
                     <DomTreeList />
                 </div>

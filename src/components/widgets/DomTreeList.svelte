@@ -140,7 +140,7 @@
 <style>
     .tree-container {
         position: relative;
-        padding: calc(12px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));
+        padding: calc(12px * var(--scale-ratio, 1)) calc(0px * var(--scale-ratio, 1));
         font-size: calc(13px * var(--scale-ratio, 1));
         color: #cbd5e1;
         overflow-y: auto;
@@ -158,7 +158,7 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: calc(6px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));
+        padding: calc(6px * var(--scale-ratio, 1)) calc(4px * var(--scale-ratio, 1));
         border-radius: calc(6px * var(--scale-ratio, 1));
         transition: all 0.2s ease;
         min-height: calc(32px * var(--scale-ratio, 1));
