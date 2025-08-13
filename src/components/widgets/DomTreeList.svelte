@@ -47,7 +47,7 @@
         // 添加全局事件监听器
         window.addEventListener('pointermove', handlePointerMove)
         window.addEventListener('pointerup', handlePointerUp)
-        
+
         return () => {
             dragDropService?.destroy()
             window.removeEventListener('pointermove', handlePointerMove)
@@ -109,7 +109,7 @@
         const childrenHtml = hasChildren && node.expanded ? node.children!.map((child: DomNode) => renderNode(child, level + 1, currentSelectedId)).join('') : ''
 
         return /*html*/ `
-          <div class="tree-node" style="padding-left: calc(12px * var(--scale-ratio, 1));" data-id="${nodeKey}" data-level="${level}">
+          <div class="tree-node" style="padding-left: calc(16px * var(--scale-ratio, 1));" data-id="${nodeKey}" data-level="${level}">
             <div class="node-content">
               <div class="node-left">
                 <span class="icon expand" data-action="toggle-expand" data-id="${nodeKey}">${expandIcon}</span>
