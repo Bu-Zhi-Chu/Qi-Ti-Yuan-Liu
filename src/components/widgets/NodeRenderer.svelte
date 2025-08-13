@@ -62,7 +62,7 @@
         }
     })
 
-    /** 派生最终内联样式，依赖 selectedId 和 node.styles 实时更新 */
+    /** 派生最终内联样式，依赖 selectedId、node.styles、node.hidden 实时更新 */
     let finalStyle = $derived.by(() => {
         const styleEntries = Object.entries(node.styles ?? {})
         const styleStr = styleEntries
@@ -81,17 +81,13 @@
         if (editing && isSelected) {
             borderStyles = `border: calc(${borderWidth}px * var(--scale-ratio, 1)) solid #00ff00 !important`
             boxShadowStyles = `box-shadow: inset 0 0 0 calc(2px * var(--scale-ratio, 1)) #00ff00, 0 0 calc(8px * var(--scale-ratio, 1)) rgba(0, 255, 0, 0.5) !important`
-        } else {
-            // 非选中状态下保留节点原有边框样式，不进行覆盖
-            borderStyles = ''
-            boxShadowStyles = ''
         }
 
-        const defaultStyles = `transition: all 0.2s ease !important; ${borderStyles}; ${boxShadowStyles}`
-        const result = styleStr ? `${styleStr}; ${defaultStyles}` : defaultStyles
+        // 根据 hidden 属性控制显示/隐藏
+        const hiddenStyle = node.hidden ? 'display:none !important;' : ''
 
-        // 调试：输出最终样式
-        // console.log(`[NodeRenderer ${nodeKey}] editing:${editing}, isSelected:${isSelected}, finalStyle:`, result)
+        const defaultStyles = `transition: all 0.2s ease !important; ${borderStyles}; ${boxShadowStyles}; ${hiddenStyle}`
+        const result = styleStr ? `${styleStr}; ${defaultStyles}` : defaultStyles
 
         return result
     })
