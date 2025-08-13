@@ -183,6 +183,7 @@
         align-items: center;
         gap: calc(4px * var(--scale-ratio, 1));
         flex-shrink: 0;
+        margin-right: 5%;
     }
 
     /* 图标样式 */
