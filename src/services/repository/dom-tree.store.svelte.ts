@@ -77,6 +77,10 @@ export function addNodeToParent(parentId: string, newNode: DomNode): boolean {
     if (!parent.children) {
       parent.children = [];
     }
+    // 确保新节点默认展开
+    if (newNode.expanded === undefined) {
+      newNode.expanded = true;
+    }
     // 添加新节点并触发响应式更新
     parent.children = [...parent.children, newNode];
     return true;
