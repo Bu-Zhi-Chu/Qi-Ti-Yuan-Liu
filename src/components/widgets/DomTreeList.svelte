@@ -145,7 +145,7 @@
         const nodeKey = node.dataId ?? node.id
         const isSelected = nodeKey === currentSelectedId
         const labelClass = `${isSelected ? 'node-label selected' : 'node-label'} ${node.hidden ? 'hidden' : ''}`
-        const displayName = level === 0 ? '画布' : nodeKey
+        const displayName = level === 0 ? '画布' : node.attributes?.name || node.tagName || '元素'
         const hasChildren = node.children && node.children.length
         const expandIcon = hasChildren ? (node.expanded ? '▼' : '▶') : ''
         const hideIcon = level === 0 ? '' : node.hidden ? '🙈' : '👁'
