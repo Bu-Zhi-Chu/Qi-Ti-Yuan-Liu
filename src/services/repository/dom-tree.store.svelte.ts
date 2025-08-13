@@ -85,6 +85,50 @@ export function addNodeToParent(parentId: string, newNode: DomNode): boolean {
 }
 
 /**
+ * 切换节点展开状态
+ * @param nodeId 节点ID
+ * @returns 是否切换成功
+ */
+export function toggleExpanded(nodeId: string): boolean {
+  const node = findNodeById(domTreeData, nodeId);
+  if (node) {
+    node.expanded = !node.expanded;
+    return true;
+  }
+  return false;
+}
+
+/**
+ * 切换节点隐藏状态
+ * @param nodeId 节点ID
+ * @returns 是否切换成功
+ */
+export function toggleHidden(nodeId: string): boolean {
+  if (nodeId === 'root') return false; // 根节点不可隐藏
+  const node = findNodeById(domTreeData, nodeId);
+  if (node) {
+    node.hidden = !node.hidden;
+    return true;
+  }
+  return false;
+}
+
+/**
+ * 移动节点到新的父节点
+ * @param nodeId 要移动的节点ID
+ * @param newParentId 新父节点ID
+ * @returns 是否移动成功
+ */
+export function moveNode(nodeId: string, newParentId: string): boolean {
+  if (nodeId === 'root' || nodeId === newParentId) return false;
+  const node = findNodeById(domTreeData, nodeId);
+  if (!node) return false;
+  const removed = removeNodeById(nodeId);
+  if (!removed) return false;
+  return addNodeToParent(newParentId, node);
+}
+
+/**
  * 从父节点移除指定节点
  * @param nodeId 要移除的节点ID
  * @returns 是否移除成功

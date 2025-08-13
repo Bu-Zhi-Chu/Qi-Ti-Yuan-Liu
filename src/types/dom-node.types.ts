@@ -24,4 +24,6 @@ export interface DomNode {
   events?: Record<string, Function>
   /** 是否展开（树形控件用） */
   expanded?: boolean
+  /** 是否隐藏（树形控件用） */
+  hidden?: boolean
 }

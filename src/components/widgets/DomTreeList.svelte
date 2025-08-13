@@ -27,18 +27,28 @@
 </script>
 
 <script lang="ts">
-    import { domTree, selectedId, setSelectedId } from '../../services/repository/dom-tree.store.svelte'
+    import { domTree, selectedId, setSelectedId, toggleExpanded, toggleHidden, removeNodeById } from '../../services/repository/dom-tree.store.svelte'
 
-    /** 点击节点，更新选中 ID（事件委托） */
+    /** 事件委托：根据 data-action 处理不同操作 */
     function handleClick(event: MouseEvent) {
         const target = event.target as HTMLElement | null
         if (!target) return
-        const nodeItem = target.closest('[data-id]')
-        if (nodeItem) {
-            const id = nodeItem.getAttribute('data-id')
-            if (id) {
+        const action = target.getAttribute('data-action')
+        const id = target.getAttribute('data-id') || target.closest('[data-id]')?.getAttribute('data-id')
+        if (!id) return
+
+        switch (action) {
+            case 'toggle-expand':
+                toggleExpanded(id)
+                break
+            case 'toggle-hidden':
+                toggleHidden(id)
+                break
+            case 'delete-node':
+                removeNodeById(id)
+                break
+            default:
                 setSelectedId(id)
-            }
         }
     }
 
@@ -47,17 +57,22 @@
         const padding = level * 16
         const nodeKey = node.dataId ?? node.id
         const isSelected = nodeKey === currentSelectedId
-        const labelClass = isSelected ? 'node-label selected' : 'node-label'
-
-        // 根节点显示“画布”，其余层显示 nodeId
+        const labelClass = `${isSelected ? 'node-label selected' : 'node-label'} ${node.hidden ? 'hidden' : ''}`
         const displayName = level === 0 ? '画布' : nodeKey
+        const hasChildren = node.children && node.children.length
+        const expandIcon = hasChildren ? (node.expanded ? '▼' : '▶') : ''
+        const hideIcon = level === 0 ? '' : (node.hidden ? '🙈' : '👁')
+        const deleteIcon = level === 0 ? '' : '🗑'
 
-        const childrenHtml = node.children && node.children.length ? node.children.map((child: DomNode) => renderNode(child, level + 1, currentSelectedId)).join('') : ''
+        const childrenHtml = hasChildren && node.expanded ? node.children!.map((child: DomNode) => renderNode(child, level + 1, currentSelectedId)).join('') : ''
 
         return /*html*/ `
           <div class="tree-node" style="padding-left: calc(${padding}px * var(--scale-ratio, 1));">
-                <div class="${labelClass}" data-id="${nodeKey}">${displayName}</div>
-                ${childrenHtml}
+            <span class="icon expand" data-action="toggle-expand" data-id="${nodeKey}">${expandIcon}</span>
+            <span class="icon hide" data-action="toggle-hidden" data-id="${nodeKey}">${hideIcon}</span>
+            <span class="icon delete" data-action="delete-node" data-id="${nodeKey}">${deleteIcon}</span>
+            <span class="${labelClass}" data-id="${nodeKey}">${displayName}</span>
+            ${childrenHtml}
           </div>
         `
     }
