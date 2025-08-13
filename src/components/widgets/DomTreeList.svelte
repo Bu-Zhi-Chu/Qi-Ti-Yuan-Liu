@@ -214,4 +214,8 @@
         pointer-events: none;
         display: none;
     }
+
+    .tree-container:focus {
+        outline: none;
+    }
 </style>
