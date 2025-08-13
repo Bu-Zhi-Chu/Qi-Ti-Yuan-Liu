@@ -85,7 +85,6 @@ export default function usePan(node: HTMLElement, opts: UsePanOptions = {}) {
       state.keyPressed = true;
       if (!state.panActive) {
         node.style.cursor = 'grab';
-        document.body.style.cursor = 'grab';
       }
     }
   }
@@ -94,7 +93,6 @@ export default function usePan(node: HTMLElement, opts: UsePanOptions = {}) {
     state.keyPressed = false;
     if (!state.panActive) {
       node.style.cursor = '';
-      document.body.style.cursor = '';
     }
   }
   if (options.key) {
@@ -118,7 +116,6 @@ export default function usePan(node: HTMLElement, opts: UsePanOptions = {}) {
     state.lastY = e.clientY;
     node.setPointerCapture(e.pointerId);
     node.style.cursor = 'grabbing';
-    document.body.style.cursor = 'grabbing';
   }
 
   function onPointerMove(e: PointerEvent) {
@@ -172,7 +169,6 @@ export default function usePan(node: HTMLElement, opts: UsePanOptions = {}) {
     node.releasePointerCapture(e.pointerId);
     const nextCursor = state.keyPressed ? 'grab' : '';
     node.style.cursor = nextCursor;
-    document.body.style.cursor = nextCursor;
   }
 
   node.addEventListener('pointerdown', onPointerDown);
