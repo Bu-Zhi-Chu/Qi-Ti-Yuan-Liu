@@ -130,7 +130,11 @@
             case 'delete-node':
                 removeNodeById(id)
                 break
+            case 'drag-handle':
+                // 拖拽手柄的点击事件由 pointerdown 处理
+                break
             default:
+                // 点击节点文本或空白区域时选中节点
                 setSelectedId(id)
         }
     }
@@ -150,12 +154,18 @@
         const childrenHtml = hasChildren && node.expanded ? node.children!.map((child: DomNode) => renderNode(child, level + 1, currentSelectedId)).join('') : ''
 
         return /*html*/ `
-          <div class="tree-node" style="padding-left: calc(${padding}px * var(--scale-ratio, 1));">
-            <span class="icon expand" data-action="toggle-expand" data-id="${nodeKey}">${expandIcon}</span>
-            <span class="icon hide" data-action="toggle-hidden" data-id="${nodeKey}">${hideIcon}</span>
-            <span class="icon delete" data-action="delete-node" data-id="${nodeKey}">${deleteIcon}</span>
-            <span class="icon drag-handle" data-action="drag-handle" data-id="${nodeKey}" style="cursor: grab;">⋮⋮</span>
-            <span class="${labelClass}" data-id="${nodeKey}">${displayName}</span>
+          <div class="tree-node" style="padding-left: calc(${padding}px * var(--scale-ratio, 1));" data-id="${nodeKey}" data-level="${level}">
+            <div class="node-content">
+              <div class="node-left">
+                <span class="icon expand" data-action="toggle-expand" data-id="${nodeKey}">${expandIcon}</span>
+                ${level > 0 ? `<span class="icon drag-handle" data-action="drag-handle" data-id="${nodeKey}">⋮⋮</span>` : ''}
+                <span class="node-id" data-id="${nodeKey}">${displayName}</span>
+              </div>
+              <div class="node-actions">
+                ${level > 0 ? `<span class="icon action-btn hide-btn" data-action="toggle-hidden" data-id="${nodeKey}">${hideIcon}</span>` : ''}
+                ${level > 0 ? `<span class="icon action-btn delete-btn" data-action="delete-node" data-id="${nodeKey}">${deleteIcon}</span>` : ''}
+              </div>
+            </div>
             ${childrenHtml}
           </div>
         `
@@ -175,47 +185,176 @@
 <style>
     .tree-container {
         position: relative;
-        padding: calc(8px * var(--scale-ratio, 1)) calc(4px * var(--scale-ratio, 1));
-        font-size: calc(12px * var(--scale-ratio, 1));
+        padding: calc(12px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));
+        font-size: calc(13px * var(--scale-ratio, 1));
         color: #cbd5e1;
         overflow-y: auto;
         height: 100%;
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     }
 
-    /* svelte-ignore css_unused_selector */
-    :global(.node-label) {
-        padding: calc(4px * var(--scale-ratio, 1)) calc(6px * var(--scale-ratio, 1));
+    /* 现代树节点布局 */
+    :global(.tree-node) {
+        margin: calc(1px * var(--scale-ratio, 1)) 0;
+    }
+
+    :global(.node-content) {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: calc(6px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));
+        border-radius: calc(6px * var(--scale-ratio, 1));
+        transition: all 0.2s ease;
+        min-height: calc(32px * var(--scale-ratio, 1));
+        position: relative;
+    }
+
+    :global(.node-content:hover) {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+    }
+
+    :global(.node-left) {
+        display: flex;
+        align-items: center;
+        gap: calc(8px * var(--scale-ratio, 1));
+        flex: 1;
+        min-width: 0;
+    }
+
+    :global(.node-actions) {
+        display: flex;
+        align-items: center;
+        gap: calc(4px * var(--scale-ratio, 1));
+        flex-shrink: 0;
+    }
+
+    /* 图标样式 */
+    :global(.icon) {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: calc(20px * var(--scale-ratio, 1));
+        height: calc(20px * var(--scale-ratio, 1));
+        font-size: calc(12px * var(--scale-ratio, 1));
         cursor: pointer;
         border-radius: calc(4px * var(--scale-ratio, 1));
-        transition: background 0.2s ease;
-        display: inline-block;
+        transition: all 0.2s ease;
+        user-select: none;
+        flex-shrink: 0;
     }
 
-    /* svelte-ignore css_unused_selector */
-    :global(.node-label:hover) {
+    :global(.icon:hover) {
+        background: rgba(255, 255, 255, 0.1);
+        transform: scale(1.1);
+    }
+
+    :global(.expand) {
+        color: #94a3b8;
+        font-size: calc(10px * var(--scale-ratio, 1));
+    }
+
+    :global(.expand:hover) {
+        color: #f8fafc;
+        background: rgba(99, 102, 241, 0.2);
+    }
+
+    :global(.drag-handle) {
+        color: #64748b;
+        cursor: grab;
+        font-size: calc(14px * var(--scale-ratio, 1));
+        letter-spacing: calc(-2px * var(--scale-ratio, 1));
+    }
+
+    :global(.drag-handle:hover) {
+        color: #e2e8f0;
+        background: rgba(139, 92, 246, 0.2);
+    }
+
+    :global(.drag-handle:active) {
+        cursor: grabbing;
+    }
+
+    :global(.action-btn) {
+        color: #64748b;
+        border-radius: calc(4px * var(--scale-ratio, 1));
+        padding: calc(2px * var(--scale-ratio, 1));
+    }
+
+    :global(.action-btn:hover) {
+        color: #f8fafc;
+    }
+
+    :global(.hide-btn:hover) {
+        background: rgba(251, 191, 36, 0.2);
+        color: #fbbf24;
+    }
+
+    :global(.delete-btn:hover) {
+        background: rgba(239, 68, 68, 0.2);
+        color: #f87171;
+    }
+
+    :global(.node-id) {
+        color: #e2e8f0;
+        font-weight: 500;
+        cursor: pointer;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        transition: all 0.2s ease;
+        padding: calc(2px * var(--scale-ratio, 1)) calc(4px * var(--scale-ratio, 1));
+        border-radius: calc(4px * var(--scale-ratio, 1));
+    }
+
+    :global(.node-id:hover) {
+        color: #f8fafc;
         background: rgba(255, 255, 255, 0.08);
     }
 
-    /* svelte-ignore css_unused_selector */
-    :global(.node-label.selected) {
+    :global(.node-id.selected) {
         background: rgba(99, 102, 241, 0.35);
         color: #e0e7ff;
+        box-shadow: 0 0 calc(8px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.3);
     }
 
-    /* svelte-ignore css_unused_selector */
-    :global(.node-id) {
-        opacity: 0.7;
+    :global(.node-id.hidden) {
+        opacity: 0.5;
+        text-decoration: line-through;
     }
 
     .drop-indicator {
         position: absolute;
-        height: 2px;
-        background: #6366f1;
+        height: calc(2px * var(--scale-ratio, 1));
+        background: linear-gradient(90deg, #6366f1, #8b5cf6);
         pointer-events: none;
         display: none;
+        border-radius: calc(1px * var(--scale-ratio, 1));
+        box-shadow: 0 0 calc(4px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.5);
     }
 
     .tree-container:focus {
         outline: none;
+    }
+
+    /* 滚动条样式 */
+    .tree-container::-webkit-scrollbar {
+        width: calc(6px * var(--scale-ratio, 1));
+    }
+
+    .tree-container::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: calc(3px * var(--scale-ratio, 1));
+    }
+
+    .tree-container::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: calc(3px * var(--scale-ratio, 1));
+        transition: background 0.2s ease;
+    }
+
+    .tree-container::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.3);
     }
 </style>
