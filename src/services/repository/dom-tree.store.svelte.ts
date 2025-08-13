@@ -129,6 +129,51 @@ export function moveNode(nodeId: string, newParentId: string): boolean {
 }
 
 /**
+ * 重新排序同一父节点下的子节点
+ * @param parentId 父节点 ID
+ * @param newChildren 新的子节点数组（保持 DomNode 引用顺序）
+ * @returns 是否重排成功
+ */
+export function reorderChildren(parentId: string, newChildren: DomNode[]): boolean {
+  const parent = findNodeById(domTreeData, parentId)
+  if (!parent || parentId === 'root') return false
+  parent.children = [...newChildren]
+  return true
+}
+
+/**
+ * 移动节点到新的父节点并指定插入位置
+ * @param nodeId 节点 ID
+ * @param newParentId 新父节点 ID
+ * @param insertIndex 插入到新父节点 children 的索引
+ * @returns 是否移动成功
+ */
+export function moveNodeToParent(nodeId: string, newParentId: string, insertIndex: number = -1): boolean {
+  if (nodeId === 'root' || nodeId === newParentId) return false
+  const node = findNodeById(domTreeData, nodeId)
+  if (!node) return false
+
+  // 从旧父节点移除
+  const removed = removeNodeById(nodeId)
+  if (!removed) return false
+
+  // 插入到新父节点指定位置
+  const newParent = findNodeById(domTreeData, newParentId)
+  if (!newParent) return false
+  if (!newParent.children) newParent.children = []
+  if (insertIndex < 0 || insertIndex >= newParent.children.length) {
+    newParent.children = [...newParent.children, node]
+  } else {
+    newParent.children = [
+      ...newParent.children.slice(0, insertIndex),
+      node,
+      ...newParent.children.slice(insertIndex)
+    ]
+  }
+  return true
+}
+
+/**
  * 从父节点移除指定节点
  * @param nodeId 要移除的节点ID
  * @returns 是否移除成功

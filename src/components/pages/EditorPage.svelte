@@ -18,7 +18,7 @@
 
     /* 新增：Dom 区域与 Dom 树列表组件 */
     import DomCanvas from '../widgets/DomCanvas.svelte'
-    import DomTreeList from '../widgets/DomTreeList.svelte'
+    import DomTreeDndList from '../widgets/DomTreeDndList.svelte'
 
     // 引入 DOM 树集中式状态管理
 
@@ -59,7 +59,7 @@
                 <!-- dom树列表 -->
                 <div style="width: 88%;height: 100%;background: rgba(30, 41, 59, 0.8);pointer-events: auto;">
                     <!-- @ts-ignore: props typing still WIP -->
-                    <DomTreeList />
+                    <DomTreeDndList />
                 </div>
             </div>
 
