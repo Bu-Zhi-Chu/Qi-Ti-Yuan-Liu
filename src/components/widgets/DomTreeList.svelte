@@ -27,9 +27,92 @@
 </script>
 
 <script lang="ts">
-    import { domTree, selectedId, setSelectedId, toggleExpanded, toggleHidden, removeNodeById } from '../../services/repository/dom-tree.store.svelte'
+    import { domTree, selectedId, setSelectedId, toggleExpanded, toggleHidden, removeNodeById, moveNode, insertNodeBefore, insertNodeAfter } from '../../services/repository/dom-tree.store.svelte'
 
-    /** 事件委托：根据 data-action 处理不同操作 */
+    // 拖拽相关状态
+let draggingId: string | null = null
+let hoverTargetId: string | null = null
+let hoverZone: 'above' | 'inside' | 'below' | null = null
+
+// 指示线元素引用
+let indicatorTop: HTMLDivElement | null = null
+let indicatorBottom: HTMLDivElement | null = null
+
+function updateIndicators(rect: DOMRect, zone: 'above' | 'inside' | 'below') {
+    if (!indicatorTop || !indicatorBottom) return
+    const containerRect = indicatorTop.parentElement?.getBoundingClientRect()
+    if (!containerRect) return
+    const left = rect.left - containerRect.left
+    const width = rect.width
+    indicatorTop.style.left = `${left}px`
+    indicatorTop.style.width = `${width}px`
+    indicatorBottom.style.left = `${left}px`
+    indicatorBottom.style.width = `${width}px`
+    indicatorTop.style.top = `${rect.top - containerRect.top}px`
+    indicatorBottom.style.top = `${rect.bottom - containerRect.top - 2}px`
+    indicatorTop.style.display = zone === 'above' ? 'block' : 'none'
+    indicatorBottom.style.display = zone === 'below' ? 'block' : 'none'
+    if (zone === 'inside') {
+        indicatorTop.style.display = 'none'
+        indicatorBottom.style.display = 'none'
+    }
+}
+
+function clearDragState() {
+    draggingId = null
+    hoverTargetId = null
+    hoverZone = null
+    if (indicatorTop) indicatorTop.style.display = 'none'
+    if (indicatorBottom) indicatorBottom.style.display = 'none'
+}
+
+function handlePointerDown(event: PointerEvent) {
+    const target = event.target as HTMLElement | null
+    if (!target) return
+    if (target.getAttribute('data-action') !== 'drag-handle') return
+    draggingId = target.getAttribute('data-id')
+    if (!draggingId) return
+    event.preventDefault()
+    window.addEventListener('pointermove', handlePointerMove)
+    window.addEventListener('pointerup', handlePointerUp)
+}
+
+function handlePointerMove(event: PointerEvent) {
+    if (!draggingId) return
+    const el = document.elementFromPoint(event.clientX, event.clientY) as HTMLElement | null
+    if (!el) return
+    const id = el.getAttribute('data-id') || el.closest('[data-id]')?.getAttribute('data-id')
+    if (!id || id === 'root' || id === draggingId) return
+    const nodeEl = el.closest('.tree-node') as HTMLElement | null
+    if (!nodeEl) return
+    const rect = nodeEl.getBoundingClientRect()
+    const offsetY = event.clientY - rect.top
+    let zone: 'above' | 'inside' | 'below'
+    if (offsetY < rect.height / 3) zone = 'above'
+    else if (offsetY > (rect.height * 2) / 3) zone = 'below'
+    else zone = 'inside'
+
+    hoverTargetId = id
+    hoverZone = zone
+    updateIndicators(rect, zone)
+}
+
+function handlePointerUp() {
+    if (draggingId && hoverTargetId && hoverZone) {
+        if (hoverZone === 'inside') {
+            moveNode(draggingId, hoverTargetId)
+        } else if (hoverZone === 'above') {
+            insertNodeBefore(hoverTargetId, draggingId)
+        } else if (hoverZone === 'below') {
+            insertNodeAfter(hoverTargetId, draggingId)
+        }
+    }
+    window.removeEventListener('pointermove', handlePointerMove)
+    window.removeEventListener('pointerup', handlePointerUp)
+    clearDragState()
+}
+
+/** 事件委托：根据 data-action 处理不同操作 */
     function handleClick(event: MouseEvent) {
         const target = event.target as HTMLElement | null
         if (!target) return
@@ -71,6 +154,7 @@
             <span class="icon expand" data-action="toggle-expand" data-id="${nodeKey}">${expandIcon}</span>
             <span class="icon hide" data-action="toggle-hidden" data-id="${nodeKey}">${hideIcon}</span>
             <span class="icon delete" data-action="delete-node" data-id="${nodeKey}">${deleteIcon}</span>
+            <span class="icon drag-handle" data-action="drag-handle" data-id="${nodeKey}" style="cursor: grab;">⋮⋮</span>
             <span class="${labelClass}" data-id="${nodeKey}">${displayName}</span>
             ${childrenHtml}
           </div>
@@ -82,12 +166,15 @@
 
 <!-- 容器使用事件委托监听 -->
 <!-- svelte-ignore a11y_no_static_element_interactions, a11y_click_events_have_key_events -->
-<div class="tree-container" onclick={handleClick} role="tree" tabindex="0">
+<div class="tree-container" onclick={handleClick} onpointerdown={handlePointerDown} role="tree" tabindex="0">
     {@html htmlString()}
+    <div bind:this={indicatorTop} class="drop-indicator"></div>
+    <div bind:this={indicatorBottom} class="drop-indicator"></div>
 </div>
 
 <style>
     .tree-container {
+        position: relative;
         padding: calc(8px * var(--scale-ratio, 1)) calc(4px * var(--scale-ratio, 1));
         font-size: calc(12px * var(--scale-ratio, 1));
         color: #cbd5e1;
@@ -118,5 +205,13 @@
     /* svelte-ignore css_unused_selector */
     :global(.node-id) {
         opacity: 0.7;
+    }
+
+    .drop-indicator {
+        position: absolute;
+        height: 2px;
+        background: #6366f1;
+        pointer-events: none;
+        display: none;
     }
 </style>

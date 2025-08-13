@@ -85,6 +85,101 @@ export function addNodeToParent(parentId: string, newNode: DomNode): boolean {
 }
 
 /**
+ * 判断 node 是否为 targetId 对应节点的祖先
+ */
+function isDescendant(root: DomNode, targetId: string): boolean {
+  if (!root.children) return false;
+  for (const child of root.children) {
+    if ((child.id === targetId) || (child.dataId === targetId)) return true;
+    if (isDescendant(child, targetId)) return true;
+  }
+  return false;
+}
+
+/**
+ * 查找 targetId 的直接父节点
+ */
+function findParentById(node: DomNode, targetId: string): DomNode | null {
+  if (!node.children) return null;
+  for (const child of node.children) {
+    if ((child.id === targetId) || (child.dataId === targetId)) return node;
+    const found = findParentById(child, targetId);
+    if (found) return found;
+  }
+  return null;
+}
+
+/**
+ * 将 nodeId 对应节点插入到 targetId 对应节点之前（同级）
+ */
+export function insertNodeBefore(targetId: string, nodeId: string): boolean {
+  if (targetId === 'root' || nodeId === 'root' || targetId === nodeId) return false;
+  const parent = findParentById(domTreeData, targetId);
+  const movingNode = findNodeById(domTreeData, nodeId);
+  if (!parent || !parent.children || !movingNode) return false;
+  if (isDescendant(movingNode, targetId)) return false;
+  // 先从原位置移除
+  removeNodeById(nodeId);
+  const index = parent.children.findIndex(c => (c.id === targetId) || (c.dataId === targetId));
+  parent.children.splice(index, 0, movingNode);
+  return true;
+}
+
+/**
+ * 将 nodeId 对应节点插入到 targetId 对应节点之后（同级）
+ */
+export function insertNodeAfter(targetId: string, nodeId: string): boolean {
+  if (targetId === 'root' || nodeId === 'root' || targetId === nodeId) return false;
+  const parent = findParentById(domTreeData, targetId);
+  const movingNode = findNodeById(domTreeData, nodeId);
+  if (!parent || !parent.children || !movingNode) return false;
+  if (isDescendant(movingNode, targetId)) return false;
+  // 先从原位置移除
+  removeNodeById(nodeId);
+  const index = parent.children.findIndex(c => (c.id === targetId) || (c.dataId === targetId));
+  parent.children.splice(index + 1, 0, movingNode);
+  return true;
+}
+
+/**
+ * 重新排序指定父节点的子节点顺序
+ * @param parentId 父节点 ID
+ * @param orderedChildIds 子节点 ID 的新顺序数组
+ * @returns 是否排序成功
+ */
+export function reorderChildren(parentId: string, orderedChildIds: string[] | DomNode[], _opts?: any): boolean {
+  const parent = findNodeById(domTreeData, parentId);
+  if (!parent || !parent.children) return false;
+  // 创建一个映射，快速根据 id 查找节点
+  const idToNode = new Map<string, DomNode>();
+  for (const child of parent.children) {
+    idToNode.set(child.dataId ?? child.id, child);
+  }
+  const newChildren: DomNode[] = [];
+  for (const cidOrNode of orderedChildIds) {
+    const cid = typeof cidOrNode === 'string' ? cidOrNode : (cidOrNode.dataId ?? cidOrNode.id);
+    const node = idToNode.get(cid);
+    if (node) {
+      newChildren.push(node);
+    }
+  }
+  // 如果新数组与旧数组长度不一致，说明有未知 ID，放弃操作
+  if (newChildren.length !== parent.children.length) return false;
+  parent.children = newChildren;
+  return true;
+}
+
+/**
+ * 将节点移动到新的父节点（兼容旧 API 名称）
+ * @param nodeId 要移动的节点 ID
+ * @param newParentId 新的父节点 ID
+ * @returns 是否移动成功
+ */
+export function moveNodeToParent(nodeId: string, newParentId: string): boolean {
+  return moveNode(nodeId, newParentId);
+}
+
+/**
  * 切换节点展开状态
  * @param nodeId 节点ID
  * @returns 是否切换成功
@@ -126,51 +221,6 @@ export function moveNode(nodeId: string, newParentId: string): boolean {
   const removed = removeNodeById(nodeId);
   if (!removed) return false;
   return addNodeToParent(newParentId, node);
-}
-
-/**
- * 重新排序同一父节点下的子节点
- * @param parentId 父节点 ID
- * @param newChildren 新的子节点数组（保持 DomNode 引用顺序）
- * @returns 是否重排成功
- */
-export function reorderChildren(parentId: string, newChildren: DomNode[]): boolean {
-  const parent = findNodeById(domTreeData, parentId)
-  if (!parent || parentId === 'root') return false
-  parent.children = [...newChildren]
-  return true
-}
-
-/**
- * 移动节点到新的父节点并指定插入位置
- * @param nodeId 节点 ID
- * @param newParentId 新父节点 ID
- * @param insertIndex 插入到新父节点 children 的索引
- * @returns 是否移动成功
- */
-export function moveNodeToParent(nodeId: string, newParentId: string, insertIndex: number = -1): boolean {
-  if (nodeId === 'root' || nodeId === newParentId) return false
-  const node = findNodeById(domTreeData, nodeId)
-  if (!node) return false
-
-  // 从旧父节点移除
-  const removed = removeNodeById(nodeId)
-  if (!removed) return false
-
-  // 插入到新父节点指定位置
-  const newParent = findNodeById(domTreeData, newParentId)
-  if (!newParent) return false
-  if (!newParent.children) newParent.children = []
-  if (insertIndex < 0 || insertIndex >= newParent.children.length) {
-    newParent.children = [...newParent.children, node]
-  } else {
-    newParent.children = [
-      ...newParent.children.slice(0, insertIndex),
-      node,
-      ...newParent.children.slice(insertIndex)
-    ]
-  }
-  return true
 }
 
 /**
