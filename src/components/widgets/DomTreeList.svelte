@@ -30,89 +30,89 @@
     import { domTree, selectedId, setSelectedId, toggleExpanded, toggleHidden, removeNodeById, moveNode, insertNodeBefore, insertNodeAfter } from '../../services/repository/dom-tree.store.svelte'
 
     // 拖拽相关状态
-let draggingId: string | null = null
-let hoverTargetId: string | null = null
-let hoverZone: 'above' | 'inside' | 'below' | null = null
+    let draggingId: string | null = null
+    let hoverTargetId: string | null = null
+    let hoverZone: 'above' | 'inside' | 'below' | null = null
 
-// 指示线元素引用
-let indicatorTop: HTMLDivElement | null = null
-let indicatorBottom: HTMLDivElement | null = null
+    // 指示线元素引用
+    let indicatorTop: HTMLDivElement | null = null
+    let indicatorBottom: HTMLDivElement | null = null
 
-function updateIndicators(rect: DOMRect, zone: 'above' | 'inside' | 'below') {
-    if (!indicatorTop || !indicatorBottom) return
-    const containerRect = indicatorTop.parentElement?.getBoundingClientRect()
-    if (!containerRect) return
-    const left = rect.left - containerRect.left
-    const width = rect.width
-    indicatorTop.style.left = `${left}px`
-    indicatorTop.style.width = `${width}px`
-    indicatorBottom.style.left = `${left}px`
-    indicatorBottom.style.width = `${width}px`
-    indicatorTop.style.top = `${rect.top - containerRect.top}px`
-    indicatorBottom.style.top = `${rect.bottom - containerRect.top - 2}px`
-    indicatorTop.style.display = zone === 'above' ? 'block' : 'none'
-    indicatorBottom.style.display = zone === 'below' ? 'block' : 'none'
-    if (zone === 'inside') {
-        indicatorTop.style.display = 'none'
-        indicatorBottom.style.display = 'none'
-    }
-}
-
-function clearDragState() {
-    draggingId = null
-    hoverTargetId = null
-    hoverZone = null
-    if (indicatorTop) indicatorTop.style.display = 'none'
-    if (indicatorBottom) indicatorBottom.style.display = 'none'
-}
-
-function handlePointerDown(event: PointerEvent) {
-    const target = event.target as HTMLElement | null
-    if (!target) return
-    if (target.getAttribute('data-action') !== 'drag-handle') return
-    draggingId = target.getAttribute('data-id')
-    if (!draggingId) return
-    event.preventDefault()
-    window.addEventListener('pointermove', handlePointerMove)
-    window.addEventListener('pointerup', handlePointerUp)
-}
-
-function handlePointerMove(event: PointerEvent) {
-    if (!draggingId) return
-    const el = document.elementFromPoint(event.clientX, event.clientY) as HTMLElement | null
-    if (!el) return
-    const id = el.getAttribute('data-id') || el.closest('[data-id]')?.getAttribute('data-id')
-    if (!id || id === 'root' || id === draggingId) return
-    const nodeEl = el.closest('.tree-node') as HTMLElement | null
-    if (!nodeEl) return
-    const rect = nodeEl.getBoundingClientRect()
-    const offsetY = event.clientY - rect.top
-    let zone: 'above' | 'inside' | 'below'
-    if (offsetY < rect.height / 3) zone = 'above'
-    else if (offsetY > (rect.height * 2) / 3) zone = 'below'
-    else zone = 'inside'
-
-    hoverTargetId = id
-    hoverZone = zone
-    updateIndicators(rect, zone)
-}
-
-function handlePointerUp() {
-    if (draggingId && hoverTargetId && hoverZone) {
-        if (hoverZone === 'inside') {
-            moveNode(draggingId, hoverTargetId)
-        } else if (hoverZone === 'above') {
-            insertNodeBefore(hoverTargetId, draggingId)
-        } else if (hoverZone === 'below') {
-            insertNodeAfter(hoverTargetId, draggingId)
+    function updateIndicators(rect: DOMRect, zone: 'above' | 'inside' | 'below') {
+        if (!indicatorTop || !indicatorBottom) return
+        const containerRect = indicatorTop.parentElement?.getBoundingClientRect()
+        if (!containerRect) return
+        const left = rect.left - containerRect.left
+        const width = rect.width
+        indicatorTop.style.left = `${left}px`
+        indicatorTop.style.width = `${width}px`
+        indicatorBottom.style.left = `${left}px`
+        indicatorBottom.style.width = `${width}px`
+        indicatorTop.style.top = `${rect.top - containerRect.top}px`
+        indicatorBottom.style.top = `${rect.bottom - containerRect.top - 2}px`
+        indicatorTop.style.display = zone === 'above' ? 'block' : 'none'
+        indicatorBottom.style.display = zone === 'below' ? 'block' : 'none'
+        if (zone === 'inside') {
+            indicatorTop.style.display = 'none'
+            indicatorBottom.style.display = 'none'
         }
     }
-    window.removeEventListener('pointermove', handlePointerMove)
-    window.removeEventListener('pointerup', handlePointerUp)
-    clearDragState()
-}
 
-/** 事件委托：根据 data-action 处理不同操作 */
+    function clearDragState() {
+        draggingId = null
+        hoverTargetId = null
+        hoverZone = null
+        if (indicatorTop) indicatorTop.style.display = 'none'
+        if (indicatorBottom) indicatorBottom.style.display = 'none'
+    }
+
+    function handlePointerDown(event: PointerEvent) {
+        const target = event.target as HTMLElement | null
+        if (!target) return
+        if (target.getAttribute('data-action') !== 'drag-handle') return
+        draggingId = target.getAttribute('data-id')
+        if (!draggingId) return
+        event.preventDefault()
+        window.addEventListener('pointermove', handlePointerMove)
+        window.addEventListener('pointerup', handlePointerUp)
+    }
+
+    function handlePointerMove(event: PointerEvent) {
+        if (!draggingId) return
+        const el = document.elementFromPoint(event.clientX, event.clientY) as HTMLElement | null
+        if (!el) return
+        const id = el.getAttribute('data-id') || el.closest('[data-id]')?.getAttribute('data-id')
+        if (!id || id === 'root' || id === draggingId) return
+        const nodeEl = el.closest('.tree-node') as HTMLElement | null
+        if (!nodeEl) return
+        const rect = nodeEl.getBoundingClientRect()
+        const offsetY = event.clientY - rect.top
+        let zone: 'above' | 'inside' | 'below'
+        if (offsetY < rect.height / 3) zone = 'above'
+        else if (offsetY > (rect.height * 2) / 3) zone = 'below'
+        else zone = 'inside'
+
+        hoverTargetId = id
+        hoverZone = zone
+        updateIndicators(rect, zone)
+    }
+
+    function handlePointerUp() {
+        if (draggingId && hoverTargetId && hoverZone) {
+            if (hoverZone === 'inside') {
+                moveNode(draggingId, hoverTargetId)
+            } else if (hoverZone === 'above') {
+                insertNodeBefore(hoverTargetId, draggingId)
+            } else if (hoverZone === 'below') {
+                insertNodeAfter(hoverTargetId, draggingId)
+            }
+        }
+        window.removeEventListener('pointermove', handlePointerMove)
+        window.removeEventListener('pointerup', handlePointerUp)
+        clearDragState()
+    }
+
+    /** 事件委托：根据 data-action 处理不同操作 */
     function handleClick(event: MouseEvent) {
         const target = event.target as HTMLElement | null
         if (!target) return
@@ -144,7 +144,7 @@ function handlePointerUp() {
         const displayName = level === 0 ? '画布' : nodeKey
         const hasChildren = node.children && node.children.length
         const expandIcon = hasChildren ? (node.expanded ? '▼' : '▶') : ''
-        const hideIcon = level === 0 ? '' : (node.hidden ? '🙈' : '👁')
+        const hideIcon = level === 0 ? '' : node.hidden ? '🙈' : '👁'
         const deleteIcon = level === 0 ? '' : '🗑'
 
         const childrenHtml = hasChildren && node.expanded ? node.children!.map((child: DomNode) => renderNode(child, level + 1, currentSelectedId)).join('') : ''
