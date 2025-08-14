@@ -70,7 +70,8 @@ export function createDrawNode(rect: RelativeRect): DomNode {
             width: `${rect.width}%`,
             height: `${rect.height}%`,
             background: '#ffffff',
-            border: '1px solid #94a3b8'
+            border: 'calc(1px * var(--scale-ratio, 1)) solid #94a3b8'
+
         },
         children: []
     }
