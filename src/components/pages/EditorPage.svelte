@@ -27,12 +27,8 @@
     let showWorkspace = false
 
     // 属性面板标签控制
-    const tabs = [
-        { key: 'attr', icon: '⚙️', title: '属性' },
-        { key: 'style', icon: '🎨', title: '样式' },
-        { key: 'event', icon: '📡', title: '事件' }
-    ] as const
-    let activeTab: 'attr' | 'style' | 'event' = 'attr'
+    const tabs = [{ key: 'attr', icon: '⚙️', title: '属性' }] as const
+    let activeTab: 'attr' = 'attr'
     function setTab(k: (typeof tabs)[number]['key']) {
         activeTab = k
     }
