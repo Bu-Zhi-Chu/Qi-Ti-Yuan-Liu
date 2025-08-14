@@ -2,7 +2,7 @@
   PropertyPanel.svelte
   右侧属性面板完整组件
   包含三个 Tab：属性、样式、事件，以及撤销/重做功能
-  
+
   使用说明：
   - showToolbar: 是否显示顶部工具栏，由外部控制，默认为true
   - activeTab: 当前激活的标签页，由外部控制
@@ -17,7 +17,7 @@
 
     // 当前激活的 Tab
     export let activeTab: 'attr' | 'style' | 'event' = 'attr'
-    
+
     // 是否显示工具栏，由外部控制
     export let showToolbar: boolean = true
 
@@ -58,34 +58,17 @@
         <div class="toolbar">
             <div class="tab-buttons">
                 {#each tabs as tab}
-                    <button
-                        class="tab-button"
-                        class:active={activeTab === tab.key}
-                        on:click={() => activeTab = tab.key}
-                        title={tab.label}
-                    >
+                    <button class="tab-button" class:active={activeTab === tab.key} on:click={() => (activeTab = tab.key)} title={tab.label}>
                         <span class="tab-icon">{tab.icon}</span>
                         <span class="tab-label">{tab.label}</span>
                     </button>
                 {/each}
             </div>
-            
+
             {#if currentId}
                 <div class="history-buttons">
-                    <button 
-                        class="history-btn" 
-                        on:click={undo}
-                        title="撤销 (Ctrl+Z)"
-                    >
-                        ↶
-                    </button>
-                    <button 
-                        class="history-btn" 
-                        on:click={redo}
-                        title="重做 (Ctrl+Y)"
-                    >
-                        ↷
-                    </button>
+                    <button class="history-btn" on:click={undo} title="撤销 (Ctrl+Z)">↶</button>
+                    <button class="history-btn" on:click={redo} title="重做 (Ctrl+Y)">↷</button>
                 </div>
             {/if}
         </div>
