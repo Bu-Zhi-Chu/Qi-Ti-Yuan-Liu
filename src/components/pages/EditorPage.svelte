@@ -26,6 +26,17 @@
     // 是否显示工作区，默认正常模式隐藏
     let showWorkspace = false
 
+    // 属性面板标签控制
+    const tabs = [
+        { key: 'attr', icon: '⚙️', title: '属性' },
+        { key: 'style', icon: '🎨', title: '样式' },
+        { key: 'event', icon: '📡', title: '事件' }
+    ] as const
+    let activeTab: 'attr' | 'style' | 'event' = 'attr'
+    function setTab(k: (typeof tabs)[number]['key']) {
+        activeTab = k
+    }
+
     // 注册/注销快捷键
     let unregister: () => void
     onMount(() => {
@@ -69,10 +80,16 @@
                 <!-- 属性面板 -->
                 <div style="width: 88%;height: 100%;pointer-events: auto;">
                     <!-- @ts-ignore: Work In Progress -->
-                    <PropertyPanel showToolbar={false} />
+                    <PropertyPanel showToolbar={false} {activeTab} />
                 </div>
-                <!-- 预留按钮栏 -->
-                <div style="width: 12%;height: 100%;background: rgba(255, 1, 255, 0.3);"></div>
+                <!-- 标签切换按钮栏 -->
+                <div class="prop-tabbar">
+                    {#each tabs as t}
+                        <button class:active={activeTab === t.key} on:click={() => setTab(t.key)} title={t.title}>
+                            {t.icon}
+                        </button>
+                    {/each}
+                </div>
             </div>
         </div>
 
@@ -90,5 +107,41 @@
         left: 0;
         z-index: 10;
         pointer-events: none;
+    }
+    .prop-tabbar {
+        width: 12%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        justify-content: flex-start;
+        padding-top: calc(12px * var(--scale-ratio, 1));
+        gap: calc(12px * var(--scale-ratio, 1));
+        pointer-events: auto;
+        background: rgba(255, 255, 255, 0.04);
+    }
+    .prop-tabbar button {
+        width: 100%;
+        height: calc(40px * var(--scale-ratio, 1));
+        border: none;
+        background: transparent;
+        color: #e2e8f0;
+        cursor: pointer;
+        font-size: calc(18px * var(--scale-ratio, 1));
+        transition:
+            background 0.2s ease,
+            border-color 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-left: 4px solid transparent;
+    }
+    .prop-tabbar button:hover {
+        background: rgba(255, 255, 255, 0.06);
+    }
+    .prop-tabbar button.active {
+        background: rgba(59, 130, 246, 0.18);
+        border-left-color: #3b82f6;
+        color: #fff;
     }
 </style>

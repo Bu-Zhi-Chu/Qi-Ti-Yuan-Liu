@@ -29,8 +29,6 @@
         { key: 'style', label: '样式', icon: '🎨' },
         { key: 'event', label: '事件', icon: '📡' }
     ] as const
-
-    
 </script>
 
 <div class="panel">
@@ -45,8 +43,6 @@
                     </button>
                 {/each}
             </div>
-
-            
         </div>
     {/if}
 
@@ -124,8 +120,6 @@
         font-size: calc(12px * var(--scale-ratio, 1));
         font-weight: 500;
     }
-
-
 
     .body {
         flex: 1;
