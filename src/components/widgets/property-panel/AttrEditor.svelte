@@ -37,6 +37,7 @@
             <div class="attr-item">
                 <label for="node-id">id:</label>
                 <input id="node-id" type="text" bind:value={currentId} oninput={(e) => handleIdChange(e.currentTarget.value)} placeholder="输入节点ID..." />
+                <span class="unit-placeholder"></span>
             </div>
         </div>
     {:else}
@@ -61,13 +62,18 @@
         gap: calc(12px * var(--scale-ratio, 1));
     }
     .attr-item {
-        display: flex;
+        display: grid;
+        grid-template-columns: calc(40px * var(--scale-ratio, 1)) 1fr calc(40px * var(--scale-ratio, 1));
         align-items: center;
-        gap: calc(12px * var(--scale-ratio, 1));
+        gap: calc(8px * var(--scale-ratio, 1));
         padding: calc(12px * var(--scale-ratio, 1));
         background: rgba(255, 255, 255, 0.05);
         border-radius: calc(8px * var(--scale-ratio, 1));
         transition: all 0.3s ease;
+    }
+    .unit-placeholder {
+        width: 100%;
+        height: 100%;
     }
     .attr-item:hover {
         background: rgba(255, 255, 255, 0.08);
@@ -82,7 +88,7 @@
     input {
         flex: 1;
         padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.2);
         border-radius: calc(6px * var(--scale-ratio, 1));
         font-size: calc(13px * var(--scale-ratio, 1));
         background: rgba(255, 255, 255, 0.1);

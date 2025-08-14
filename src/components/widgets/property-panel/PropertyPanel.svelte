@@ -10,19 +10,17 @@
 -->
 <script lang="ts">
     import AttrEditor from './AttrEditor.svelte'
-    import StyleEditor from './StyleEditor.svelte'
-    import EventEditor from './EventEditor.svelte'
+        import EventEditor from './EventEditor.svelte'
     import { selectedId as getSelectedId } from '../../../services/repository/dom-tree.store.svelte'
 
     // Runes props - 使用 $props 代替 export let
-    let { activeTab = 'attr', showToolbar = true } = $props<{ activeTab?: 'attr' | 'style' | 'event'; showToolbar?: boolean }>()
+    let { activeTab = 'attr', showToolbar = true } = $props<{ activeTab?: 'attr' | 'event'; showToolbar?: boolean }>()
 
     // 当前选中节点 id，响应式刷新
     const currentId = $derived.by(() => getSelectedId())
 
     const tabs = [
         { key: 'attr', label: '属性', icon: '⚙️' },
-        { key: 'style', label: '样式', icon: '🎨' },
         { key: 'event', label: '事件', icon: '📡' }
     ] as const
 </script>
@@ -46,8 +44,6 @@
     <div class="body">
         {#if activeTab === 'attr'}
             <AttrEditor selectedId={currentId} />
-        {:else if activeTab === 'style'}
-            <StyleEditor selectedId={currentId} />
         {:else}
             <EventEditor selectedId={currentId} />
         {/if}
