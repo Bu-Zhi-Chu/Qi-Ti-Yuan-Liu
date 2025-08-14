@@ -19,6 +19,7 @@
     /* 新增：Dom 区域与 Dom 树列表组件 */
     import DomCanvas from '../widgets/DomCanvas.svelte'
     import DomTreeList from '../widgets/DomTreeList.svelte'
+    import PropertyPanel from '../widgets/property-panel/PropertyPanel.svelte'
 
     // 引入 DOM 树集中式状态管理
 
@@ -65,9 +66,12 @@
 
             <!-- 右侧 -->
             <div style="display: flex;width: 22.5%;height: 100%;">
-                <!-- 属性栏 -->
-                <div style="width: 88%;height: 100%;background: rgba(1, 1, 255, 0.3);"></div>
-                <!-- 属性切换按钮 -->
+                <!-- 属性面板 -->
+                <div style="width: 88%;height: 100%;pointer-events: auto;">
+                    <!-- @ts-ignore: Work In Progress -->
+                    <PropertyPanel />
+                </div>
+                <!-- 预留按钮栏 -->
                 <div style="width: 12%;height: 100%;background: rgba(255, 1, 255, 0.3);"></div>
             </div>
         </div>

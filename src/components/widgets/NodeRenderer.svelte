@@ -94,14 +94,12 @@
 
     /** 透传除 styles 之外的 attributes */
     const extraAttr = node.attributes ?? {}
-// 计算最终 id（默认等于 data-id，可被用户修改）
-const displayId: string = (extraAttr as Record<string, any>).id ?? node.id
-// 移除 id，防止与显式 id 属性重复
-const { id: _omitId, ...restAttrs } = extraAttr
-// 计算展示名称，供 data-name 使用，保持与 DomTreeList 显示逻辑一致
-const dataNameAttr: string = nodeKey === 'root'
-    ? '画布'
-    : (restAttrs as Record<string, any>)?.name ?? node.tagName ?? '元素'
+    // 计算最终 id（默认等于 data-id，可被用户修改）
+    const displayId: string = (extraAttr as Record<string, any>).id ?? node.id
+    // 移除 id，防止与显式 id 属性重复
+    const { id: _omitId, ...restAttrs } = extraAttr
+    // 计算展示名称，供 data-name 使用，保持与 DomTreeList 显示逻辑一致
+    const dataNameAttr: string = nodeKey === 'root' ? '画布' : ((restAttrs as Record<string, any>)?.name ?? node.tagName ?? '元素')
 
     /** 获取组件类型，默认为 SimpleBox */
     const componentType = node.componentType ?? 'SimpleBox'
