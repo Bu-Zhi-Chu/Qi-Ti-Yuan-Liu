@@ -14,7 +14,7 @@
 -->
 
 <script lang="ts">
-    import ResponsiveBox from '../Core/ResponsiveBox.svelte'
+    import ResponsiveBox from '../core/ResponsiveBox.svelte'
     import { onDestroy } from 'svelte'
 
     interface Props {

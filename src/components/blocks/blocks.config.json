@@ -1,0 +1,17 @@
+[
+  {
+    "type": "SimpleBox",
+    "nameZh": "简单容器",
+    "path": "../Core/SimpleBox.svelte"
+  },
+  {
+    "type": "ResponsiveBox",
+    "nameZh": "自适应容器",
+    "path": "../core/ResponsiveBox.svelte"
+  },
+  {
+    "type": "RealTimeClock",
+    "nameZh": "实时钟表",
+    "path": "../core/RealTimeClock.svelte"
+  }
+]

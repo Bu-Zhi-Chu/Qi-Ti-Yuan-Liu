@@ -26,8 +26,8 @@
 -->
 
 <script lang="ts">
-    import ResponsiveBox from '../Core/ResponsiveBox.svelte'
-    import SimpleBox from '../Core/SimpleBox.svelte'
+    import ResponsiveBox from '../core/ResponsiveBox.svelte'
+    import SimpleBox from '../core1/SimpleBox.svelte'
     import { onMount } from 'svelte'
 
     /* --------------------------- Props (Runes) --------------------------- */

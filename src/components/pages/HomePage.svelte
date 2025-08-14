@@ -6,7 +6,7 @@
 -->
 
 <script lang="ts">
-    import ResponsiveBox from '../Core/ResponsiveBox.svelte'
+    import ResponsiveBox from '../core/ResponsiveBox.svelte'
     import TangramBackground from '../widgets/TangramBackground.svelte'
     import ActionButton from '../widgets/ActionButton.svelte'
     import GenericCard from '../widgets/GenericCard.svelte'

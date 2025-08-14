@@ -48,11 +48,11 @@
     import { dndzone } from 'svelte-dnd-action'
     import type { DndEvent } from 'svelte-dnd-action'
     import { flip } from 'svelte/animate'
-     
-    
 
-    import ResponsiveBox from '../Core/ResponsiveBox.svelte'
-    import SimpleBox from '../Core/SimpleBox.svelte'
+
+
+    import ResponsiveBox from '../core/ResponsiveBox.svelte'
+    import SimpleBox from '../core1/SimpleBox.svelte'
 
     // 使用泛型提升类型安全，T 至少需要 id 字段供拖拽与选中逻辑使用
 export interface Props {

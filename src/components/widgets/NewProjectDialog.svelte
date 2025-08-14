@@ -9,7 +9,7 @@
 
 <script lang="ts">
     import { onMount, onDestroy } from 'svelte'
-    import ResponsiveBox from '../Core/ResponsiveBox.svelte'
+    import ResponsiveBox from '../core/ResponsiveBox.svelte'
     import GenericCard from './GenericCard.svelte'
     import DexieService from '../../services/database/dexie-service'
     import Dexie from 'dexie'

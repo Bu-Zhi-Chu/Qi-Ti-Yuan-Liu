@@ -18,7 +18,7 @@
 </script>
 
 <script lang="ts">
-    import DynamicComponent from '../Core/DynamicComponent.svelte'
+    import DynamicComponent from '../core/DynamicComponent.svelte'
     // 递归自引入，替代 <svelte:self>（Svelte5 已弃用）
     import NodeRenderer from './NodeRenderer.svelte'
 

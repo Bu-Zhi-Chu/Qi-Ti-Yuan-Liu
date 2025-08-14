@@ -2058,7 +2058,7 @@ Misc 章节收录了 **测试、TypeScript 支持、自定义元素编译** 与 
 ## 8 Reference
 Reference 章节集中汇总 Svelte 官方各模块 API，便于查阅与对照。本章仅做 **索引与速览**，详细参数与示例请参见对应文档。
 
-### 8.1 Core runtime <mcreference link="https://svelte.dev/docs/svelte/svelte" index="0">0</mcreference>
+### 8.1 core runtime <mcreference link="https://svelte.dev/docs/svelte/svelte" index="0">0</mcreference>
 - **组件基类**：`Component`（替代 Svelte 4 的 `SvelteComponent`）。
 - **生命周期与副作用**：`onMount`、`onDestroy`、`tick`、`flushSync` 等。
 - **Context**：`setContext` / `getContext` / `hasContext` / `getAllContexts`。

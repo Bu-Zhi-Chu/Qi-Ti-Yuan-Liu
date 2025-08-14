@@ -6,19 +6,18 @@
 -->
 <script lang="ts">
     import type { Component, Snippet } from 'svelte'
+    import blocksConfig from '../blocks/blocks.config.json'
 
-    // 支持的组件类型映射
-    const componentMap = {
-        SimpleBox: () => import('./SimpleBox.svelte'),
-        ResponsiveBox: () => import('./ResponsiveBox.svelte'),
-        RealTimeClock: () => import('../widgets/RealTimeClock.svelte')
-
-        // 可扩展更多组件类型
+    // 根据 JSON 配置直接生成组件映射（动态 import）
+    // 使用 /* @vite-ignore */ 提示 Vite 允许基于变量路径的动态加载
+    const componentMap: Record<string, () => Promise<{ default: Component }>> = {}
+    for (const item of blocksConfig) {
+        componentMap[item.type] = () => import(/* @vite-ignore */ item.path)
     }
 
     // 组件属性定义
     interface Props {
-        type: keyof typeof componentMap
+        type: string // 使用字符串，运行时校验是否存在于 componentMap
         props?: Record<string, any>
         children?: Snippet // Svelte 5 snippet 类型
         style?: string

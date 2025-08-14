@@ -4,7 +4,7 @@
 -->
 
 <script lang="ts">
-    import ResponsiveBox from '../Core/ResponsiveBox.svelte'
+    import ResponsiveBox from '../core/ResponsiveBox.svelte'
 </script>
 
 <ResponsiveBox style="width: 100vw; height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px; box-sizing: border-box;">

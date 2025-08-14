@@ -1,4 +1,4 @@
-# 核心组件文档 - Core Components
+# 核心组件文档 - core Components
 
 ## 架构概述
 
@@ -24,7 +24,7 @@
 
 ```svelte
 <script>
-  import ResponsiveBox from '$lib/components/Core/ResponsiveBox.svelte'
+  import ResponsiveBox from '$lib/components/core/ResponsiveBox.svelte'
 </script>
 
 <ResponsiveBox style="width: 100px; height: 50px; background: red;">
@@ -249,7 +249,7 @@ interface Props {
 
 ```svelte
 <script>
-  import SimpleBox from '$lib/components/Core/SimpleBox.svelte'
+  import SimpleBox from '$lib/components/core/SimpleBox.svelte'
 </script>
 
 <!-- 基础用法 -->

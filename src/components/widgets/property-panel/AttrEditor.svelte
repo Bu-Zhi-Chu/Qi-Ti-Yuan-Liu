@@ -4,6 +4,13 @@
 -->
 <script lang="ts">
     import { getNodeProps, updateNodeProps } from '../../../services/property-panel/property-panel.service'
+    import blocksConfig from '../../blocks/blocks.config.json' assert { type: 'json' }
+    interface BlockItem {
+        type: string
+        nameZh: string
+        path: string
+    }
+    const componentOptions: BlockItem[] = blocksConfig as BlockItem[]
 
     // 当前选中节点 id（来自外部）
     export let selectedId: string | null = null
@@ -18,7 +25,8 @@
     $: isRoot = selectedId === 'root'
 
     // 可用的组件类型列表
-    const componentTypes = ['SimpleBox', 'ResponsiveBox', 'RealTimeClock']
+    // 删除原先硬编码
+    // const componentTypes = ['SimpleBox', 'ResponsiveBox', 'RealTimeClock']
 
     // 当选中节点变化时，刷新快照与输入框值
     $: if (selectedId) {
@@ -86,8 +94,8 @@
                     <label for="node-type">type:</label>
                     <select id="node-type" bind:value={currentType} onchange={(e) => handleTypeChange(e.currentTarget.value)}>
                         <option value="">请选择组件类型...</option>
-                        {#each componentTypes as type}
-                            <option value={type}>{type}</option>
+                        {#each componentOptions as item}
+                            <option value={item.type}>{item.nameZh}</option>
                         {/each}
                     </select>
                     <span class="unit-placeholder"></span>
@@ -175,6 +183,11 @@
         border-color: #cbd5e1;
         background: rgba(255, 255, 255, 0.15);
         box-shadow: 0 0 0 calc(3px * var(--scale-ratio, 1)) rgba(255, 255, 255, 0.1);
+    }
+    /* 新增：下拉选项面板默认白底，统一成深色背景提高可读性 */
+    select option {
+        background: #1e293b;
+        color: #e2e8f0;
     }
     .placeholder {
         color: #64748b;

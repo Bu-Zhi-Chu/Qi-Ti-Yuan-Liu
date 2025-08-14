@@ -28,7 +28,7 @@
     │   │       ├── icon-192.png                   # PWA图标192x192
     │   │       └── icon-512.png                   # PWA图标512x512
     │   ├── components/                            # 组件层（UI层）
-    │   │   ├── Core/                              # 核心机制组件
+    │   │   ├── core/                              # 核心机制组件
     │   │   │   └── DynamicComponent.svelte        # 能切换组件类型的通用容器
     │   │   │   └── ResponsiveBox.svelte           # 自适应的基础容器 所有自定义组件的原型
     │   │   ├── modules/                           # 模块组件

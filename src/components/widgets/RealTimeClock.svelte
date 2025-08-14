@@ -28,7 +28,7 @@
 -->
 
 <script lang="ts">
-    import ResponsiveBox from '../Core/ResponsiveBox.svelte'
+    import ResponsiveBox from '../core/ResponsiveBox.svelte'
     import { SvelteDate } from 'svelte/reactivity'
 
     interface Props {

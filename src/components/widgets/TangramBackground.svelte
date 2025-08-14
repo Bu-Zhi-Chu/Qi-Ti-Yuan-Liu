@@ -1,6 +1,6 @@
 <script lang="ts">
-    import SimpleBox from '../Core/SimpleBox.svelte'
-    import ResponsiveBox from '../Core/ResponsiveBox.svelte'
+    import SimpleBox from '../core/SimpleBox.svelte'
+    import ResponsiveBox from '../core/ResponsiveBox.svelte'
 </script>
 
 <!-- 七巧板背景动画层 -->
