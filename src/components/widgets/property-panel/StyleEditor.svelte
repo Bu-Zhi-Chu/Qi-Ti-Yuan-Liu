@@ -41,9 +41,9 @@
             {#each STYLE_WHITELIST as styleKey}
                 <div class="style-item">
                     <label for="style-{styleKey}">{styleKey}:</label>
-                    <input id="style-{styleKey}" type="text" value={currentStyles[styleKey] || ''} on:input={(e) => handleStyleChange(styleKey, e.currentTarget.value)} placeholder={`输入${styleKey}值...`} />
+                    <input id="style-{styleKey}" type="text" value={currentStyles[styleKey] || ''} oninput={(e) => handleStyleChange(styleKey, e.currentTarget.value)} placeholder={`输入${styleKey}值...`} />
                     {#if currentStyles[styleKey]}
-                        <button class="remove-btn" on:click={() => handleStyleRemove(styleKey)} title="移除样式">×</button>
+                        <button class="remove-btn" onclick={() => handleStyleRemove(styleKey)} title="移除样式">×</button>
                     {/if}
                 </div>
             {/each}

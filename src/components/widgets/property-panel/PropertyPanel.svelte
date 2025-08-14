@@ -14,15 +14,11 @@
     import EventEditor from './EventEditor.svelte'
     import { selectedId as getSelectedId } from '../../../services/repository/dom-tree.store.svelte'
 
-    // 当前激活的 Tab
-    export let activeTab: 'attr' | 'style' | 'event' = 'attr'
-
-    // 是否显示工具栏，由外部控制
-    export let showToolbar: boolean = true
+    // Runes props - 使用 $props 代替 export let
+    let { activeTab = 'attr', showToolbar = true } = $props<{ activeTab?: 'attr' | 'style' | 'event'; showToolbar?: boolean }>()
 
     // 当前选中节点 id，响应式刷新
-    let currentId: string | null = getSelectedId()
-    $: currentId = getSelectedId()
+    const currentId = $derived.by(() => getSelectedId())
 
     const tabs = [
         { key: 'attr', label: '属性', icon: '⚙️' },
@@ -37,7 +33,7 @@
         <div class="toolbar">
             <div class="tab-buttons">
                 {#each tabs as tab}
-                    <button class="tab-button" class:active={activeTab === tab.key} on:click={() => (activeTab = tab.key)} title={tab.label}>
+                    <button class="tab-button" class:active={activeTab === tab.key} onclick={() => (activeTab = tab.key)} title={tab.label}>
                         <span class="tab-icon">{tab.icon}</span>
                         <span class="tab-label">{tab.label}</span>
                     </button>
