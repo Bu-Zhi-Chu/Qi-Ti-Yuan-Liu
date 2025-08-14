@@ -73,20 +73,22 @@
     let { style = '', buttons = [], direction = 'row', dataId = '', onButtonClick, onbuttonClick, ...rest }: Props = $props()
 
     // 计算按钮容器的样式
-    const containerStyle = $derived(direction === 'row' ? `display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 8px; ${style}` : `display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; ${style}`)
+    const containerStyle = $derived(
+        direction === 'row' ? `display: flex; flex-direction: row; align-items: center; justify-content: center; gap: calc(8px * var(--scale-ratio, 1)); ${style}` : `display: flex; flex-direction: column; align-items: center; justify-content: center; gap: calc(4px * var(--scale-ratio, 1)); ${style}`
+    )
 
     // 预计算样式映射，避免在每次渲染时重复创建闭包
     const VARIANT_STYLE_MAP: Record<string, string> = {
-        primary: 'background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: #ffffff; border: 1px solid transparent; box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);',
-        secondary: 'background: rgba(255, 255, 255, 0.1); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.2); backdrop-filter: blur(10px);',
-        ghost: 'background: transparent; color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.3);',
-        danger: 'background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: #ffffff; border: 1px solid transparent; box-shadow: 0 4px 16px rgba(239, 68, 68, 0.3);'
+        primary: 'background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: #ffffff; border: calc(1px * var(--scale-ratio, 1)) solid transparent; box-shadow:  0 4px 16px rgba(99, 102, 241, 0.3);',
+        secondary: 'background: rgba(255, 255, 255, 0.1); color: #ffffff; border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.2); backdrop-filter: blur(10px);',
+        ghost: 'background: transparent; color: #ffffff; border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.3);',
+        danger: 'background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: #ffffff; border: calc(1px * var(--scale-ratio, 1)) solid transparent; box-shadow: 0 4px 16px rgba(239, 68, 68, 0.3);'
     }
 
     const SIZE_STYLE_MAP: Record<string, string> = {
-        small: 'padding: 8px 16px; font-size: 14px; border-radius: 6px;',
-        medium: 'padding: 12px 24px; font-size: 16px; border-radius: 8px;',
-        large: 'padding: 16px 32px; font-size: 18px; border-radius: 10px;'
+        small: 'padding: calc(8px * var(--scale-ratio, 1)) calc(16px * var(--scale-ratio, 1)); font-size: calc(14px * var(--scale-ratio, 1)); border-radius: calc(6px * var(--scale-ratio, 1));',
+        medium: 'padding: calc(12px * var(--scale-ratio, 1)) calc(24px * var(--scale-ratio, 1)); font-size: calc(16px * var(--scale-ratio, 1)); border-radius: calc(8px * var(--scale-ratio, 1));',
+        large: 'padding: calc(16px * var(--scale-ratio, 1)) calc(32px * var(--scale-ratio, 1)); font-size: calc(18px * var(--scale-ratio, 1)); border-radius: calc(10px * var(--scale-ratio, 1));'
     }
 
     // 计算单个按钮的样式
@@ -94,7 +96,7 @@
         const variantStyle = VARIANT_STYLE_MAP[button.variant || 'primary']
         const sizeStyle = SIZE_STYLE_MAP[button.size || 'medium']
 
-        const directionStyle = direction === 'row' ? 'flex: 1; min-height: 32px;' : 'width: 100%; min-height: 36px;'
+        const directionStyle = direction === 'row' ? 'flex: 1; min-height: calc(32px * var(--scale-ratio, 1));' : 'width: 100%; min-height: calc(36px * var(--scale-ratio, 1));'
         const baseStyle = `${directionStyle} border: none; cursor: pointer; transition: all 0.3s ease; display: inline-flex; align-items: center; justify-content: center; text-align: center;`
 
         let stateStyle = ''

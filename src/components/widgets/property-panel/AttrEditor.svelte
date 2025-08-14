@@ -12,9 +12,13 @@
     let propsSnapshot: ReturnType<typeof getNodeProps> | null = null
     let currentId: string = ''
     let currentName: string = ''
+    let currentType: string = ''
     // 新增根节点判断
     let isRoot = false
     $: isRoot = selectedId === 'root'
+
+    // 可用的组件类型列表
+    const componentTypes = ['SimpleBox', 'ResponsiveBox', 'RealTimeClock']
 
     // 当选中节点变化时，刷新快照与输入框值
     $: if (selectedId) {
@@ -27,9 +31,13 @@
             const el = document.querySelector<HTMLElement>(`[data-id="${selectedId}"]`)
             currentName = el?.getAttribute('data-name') ?? ''
         }
+
+        // 获取当前组件类型
+        currentType = propsSnapshot?.attributes?.type ?? ''
     } else {
         currentId = ''
         currentName = ''
+        currentType = ''
     }
 
     // 修改 id —— 通过 attributes.id，而不是节点主键 node.id
@@ -48,6 +56,15 @@
             attributes: { 'data-name': newName }
         })
     }
+
+    // 修改组件类型
+    function handleTypeChange(newType: string) {
+        if (!selectedId) return
+        currentType = newType
+        updateNodeProps(selectedId, {
+            attributes: { type: newType }
+        })
+    }
 </script>
 
 <div class="attr-editor">
@@ -63,6 +80,16 @@
                 <div class="attr-item">
                     <label for="node-name">name:</label>
                     <input id="node-name" type="text" bind:value={currentName} oninput={(e) => handleNameChange(e.currentTarget.value)} placeholder="输入节点名称..." />
+                    <span class="unit-placeholder"></span>
+                </div>
+                <div class="attr-item">
+                    <label for="node-type">type:</label>
+                    <select id="node-type" bind:value={currentType} onchange={(e) => handleTypeChange(e.currentTarget.value)}>
+                        <option value="">请选择组件类型...</option>
+                        {#each componentTypes as type}
+                            <option value={type}>{type}</option>
+                        {/each}
+                    </select>
                     <span class="unit-placeholder"></span>
                 </div>
             {/if}
@@ -126,10 +153,28 @@
         outline: none;
         border-color: #cbd5e1;
         background: rgba(255, 255, 255, 0.15);
-        box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+        box-shadow: 0 0 0 calc(3px * var(--scale-ratio, 1)) rgba(255, 255, 255, 0.1);
     }
     input::placeholder {
         color: #9ca3af;
+    }
+    /* 新增：统一下拉框样式 */
+    select {
+        flex: 1;
+        padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
+        border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.2);
+        border-radius: calc(6px * var(--scale-ratio, 1));
+        font-size: calc(13px * var(--scale-ratio, 1));
+        background: rgba(255, 255, 255, 0.1);
+        color: #e2e8f0;
+        transition: all 0.3s ease;
+        appearance: none;
+    }
+    select:focus {
+        outline: none;
+        border-color: #cbd5e1;
+        background: rgba(255, 255, 255, 0.15);
+        box-shadow: 0 0 0 calc(3px * var(--scale-ratio, 1)) rgba(255, 255, 255, 0.1);
     }
     .placeholder {
         color: #64748b;

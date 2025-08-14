@@ -114,7 +114,7 @@
 
     textarea {
         padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.2);
         border-radius: calc(6px * var(--scale-ratio, 1));
         font-size: calc(13px * var(--scale-ratio, 1));
         font-family: 'Consolas', 'Monaco', 'Courier New', monospace;

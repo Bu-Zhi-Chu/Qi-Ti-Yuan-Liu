@@ -32,7 +32,7 @@
 
     let imageSrc = $state<string | undefined>()
     let objectUrls = $state<string[]>([])
-let isHovered = $state(false)
+    let isHovered = $state(false)
 
     $effect(() => {
         if (prop4) {
@@ -50,13 +50,13 @@ let isHovered = $state(false)
         }
 
         return () => {
-            objectUrls.forEach(url => URL.revokeObjectURL(url))
+            objectUrls.forEach((url) => URL.revokeObjectURL(url))
             objectUrls = []
         }
     })
 
     onDestroy(() => {
-        objectUrls.forEach(url => URL.revokeObjectURL(url))
+        objectUrls.forEach((url) => URL.revokeObjectURL(url))
     })
 
     function handleDelete() {
@@ -65,7 +65,7 @@ let isHovered = $state(false)
 </script>
 
 <ResponsiveBox
-    style="position: relative; background: rgba(30, 41, 59, 0.5); border-radius: 16px; padding: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); cursor: pointer; transition: all 0.3s ease; width: 100%; border: 1px solid rgba(99, 102, 241, 0.2); backdrop-filter: blur(10px); transform: translateY(0px);"
+    style="position: relative; background: rgba(30, 41, 59, 0.5); border-radius: calc(16px * var(--scale-ratio, 1)); padding: calc(20px * var(--scale-ratio, 1)); box-shadow: 0 calc(8px * var(--scale-ratio, 1)) calc(32px * var(--scale-ratio, 1)) rgba(0,0,0,0.3); cursor: pointer; transition: all 0.3s ease; width: 100%; border: calc(1px * var(--scale-ratio, 1)) solid rgba(99, 102, 241, 0.2); backdrop-filter: blur(calc(10px * var(--scale-ratio, 1))); transform: translateY(0px);"
     onclick={onClick}
     onmouseenter={(e: MouseEvent) => {
         isHovered = true
@@ -83,7 +83,9 @@ let isHovered = $state(false)
     }}
 >
     <!-- 图片区域 -->
-    <ResponsiveBox style="width: 100%; height: 160px; background: rgba(15, 23, 42, 0.5); border-radius: 12px; margin-bottom: 16px; overflow: hidden; border: 1px solid rgba(99, 102, 241, 0.1);">
+    <ResponsiveBox
+        style="width: 100%; height: calc(160px * var(--scale-ratio, 1)); background: rgba(15, 23, 42, 0.5); border-radius: calc(12px * var(--scale-ratio, 1)); margin-bottom: calc(16px * var(--scale-ratio, 1)); overflow: hidden; border: calc(1px * var(--scale-ratio, 1)) solid rgba(99, 102, 241, 0.1);"
+    >
         {#if imageSrc}
             <img src={imageSrc} alt={prop2 || '卡片图片'} style="width: 100%; height: 100%; object-fit: cover;" />
         {:else}
@@ -94,7 +96,7 @@ let isHovered = $state(false)
     <!-- 删除按钮 -->
     {#if showDelete && isHovered}
         <ResponsiveBox
-            style="position: absolute; top: 12px; left: 12px; background: rgba(220,38,38,0.8); color:#f8fafc; font-size:12px; padding:4px 8px; border-radius:4px; cursor:pointer; z-index:20;"
+            style="position: absolute; top: calc(12px * var(--scale-ratio, 1)); left: calc(12px * var(--scale-ratio, 1)); background: rgba(220,38,38,0.8); color:#f8fafc; font-size: calc(12px * var(--scale-ratio, 1)); padding: calc(4px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1)); border-radius: calc(4px * var(--scale-ratio, 1)); cursor:pointer; z-index:20;"
             onclick={handleDelete}
         >
             删除
@@ -104,7 +106,7 @@ let isHovered = $state(false)
     <!-- 右上角悬浮标签 -->
     {#if prop5}
         <ResponsiveBox
-            style="position: absolute; top: 12px; right: 12px; background: rgba(15, 23, 42, 0.8); color: #c7d2fe; font-size: 11px; padding: 6px 10px; border-radius: 20px; backdrop-filter: blur(10px); border: 1px solid rgba(99, 102, 241, 0.3); font-weight: 500; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 10;"
+            style="position: absolute; top: calc(12px * var(--scale-ratio, 1)); right: calc(12px * var(--scale-ratio, 1)); background: rgba(15, 23, 42, 0.8); color: #c7d2fe; font-size: calc(11px * var(--scale-ratio, 1)); padding: calc(6px * var(--scale-ratio, 1)) calc(10px * var(--scale-ratio, 1)); border-radius: calc(20px * var(--scale-ratio, 1)); backdrop-filter: blur(calc(10px * var(--scale-ratio, 1))); border: calc(1px * var(--scale-ratio, 1)) solid rgba(99, 102, 241, 0.3); font-weight: 500; box-shadow: 0 calc(4px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1)) rgba(0,0,0,0.3); z-index: 10;"
         >
             {prop5}
         </ResponsiveBox>
@@ -112,14 +114,14 @@ let isHovered = $state(false)
 
     <!-- 主标题 -->
     {#if prop2}
-        <ResponsiveBox style="font-size: 16px; font-weight: 600; color: #f8fafc; margin-bottom: 8px; line-height: 1.4;">
+        <ResponsiveBox style="font-size: calc(16px * var(--scale-ratio, 1)); font-weight: 600; color: #f8fafc; margin-bottom: calc(8px * var(--scale-ratio, 1)); line-height: 1.4;">
             {prop2}
         </ResponsiveBox>
     {/if}
 
     <!-- 描述信息（单行省略） -->
     {#if prop3}
-        <ResponsiveBox style="font-size: 13px; color: #94a3b8; font-weight: 400; line-height: 1.5; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; max-width: 100%;">
+        <ResponsiveBox style="font-size: calc(13px * var(--scale-ratio, 1)); color: #94a3b8; font-weight: 400; line-height: 1.5; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; max-width: 100%;">
             {prop3}
         </ResponsiveBox>
     {/if}
