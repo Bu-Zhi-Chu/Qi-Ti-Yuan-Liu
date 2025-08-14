@@ -13,7 +13,6 @@
     import StyleEditor from './StyleEditor.svelte'
     import EventEditor from './EventEditor.svelte'
     import { selectedId as getSelectedId } from '../../../services/repository/dom-tree.store.svelte'
-    import { undo, redo } from '../../../services/property-panel/property-panel.service'
 
     // 当前激活的 Tab
     export let activeTab: 'attr' | 'style' | 'event' = 'attr'
@@ -31,25 +30,7 @@
         { key: 'event', label: '事件', icon: '📡' }
     ] as const
 
-    // 键盘快捷键支持
-    function handleKeyDown(event: KeyboardEvent) {
-        if ((event.ctrlKey || event.metaKey) && event.key === 'z' && !event.shiftKey) {
-            event.preventDefault()
-            undo()
-        } else if ((event.ctrlKey || event.metaKey) && (event.key === 'y' || (event.key === 'z' && event.shiftKey))) {
-            event.preventDefault()
-            redo()
-        }
-    }
-
-    // 添加和移除键盘事件监听
-    import { onMount, onDestroy } from 'svelte'
-    onMount(() => {
-        window.addEventListener('keydown', handleKeyDown)
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown)
-        }
-    })
+    
 </script>
 
 <div class="panel">
@@ -65,12 +46,7 @@
                 {/each}
             </div>
 
-            {#if currentId}
-                <div class="history-buttons">
-                    <button class="history-btn" on:click={undo} title="撤销 (Ctrl+Z)">↶</button>
-                    <button class="history-btn" on:click={redo} title="重做 (Ctrl+Y)">↷</button>
-                </div>
-            {/if}
+            
         </div>
     {/if}
 
@@ -149,34 +125,7 @@
         font-weight: 500;
     }
 
-    .history-buttons {
-        display: flex;
-        gap: calc(4px * var(--scale-ratio, 1));
-    }
 
-    .history-btn {
-        width: calc(28px * var(--scale-ratio, 1));
-        height: calc(28px * var(--scale-ratio, 1));
-        padding: 0;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: calc(6px * var(--scale-ratio, 1));
-        cursor: pointer;
-        font-size: calc(14px * var(--scale-ratio, 1));
-        color: rgba(255, 255, 255, 0.8);
-        transition: all 0.3s ease;
-        backdrop-filter: blur(10px);
-    }
-
-    .history-btn:hover {
-        background: rgba(255, 255, 255, 0.2);
-        color: white;
-        transform: translateY(-1px);
-    }
-
-    .history-btn:active {
-        transform: scale(0.9);
-    }
 
     .body {
         flex: 1;
