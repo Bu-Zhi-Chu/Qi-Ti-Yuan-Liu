@@ -76,9 +76,6 @@
         if (!id) return
 
         switch (action) {
-            case 'toggle-expand':
-                toggleExpanded(id)
-                break
             case 'toggle-hidden':
                 toggleHidden(id)
                 break
@@ -94,6 +91,20 @@
         }
     }
 
+    /** 双击事件：展开/收起节点 */
+    function handleDoubleClick(event: MouseEvent) {
+        const target = event.target as HTMLElement | null
+        if (!target) return
+        const nodeContent = target.closest('.node-content')
+        if (!nodeContent) return
+
+        const id = nodeContent.parentElement?.getAttribute('data-id')
+        if (!id) return
+
+        // 双击节点内容时展开/收起
+        toggleExpanded(id)
+    }
+
     // 递归生成 HTML 字符串
     function renderNode(node: DomNode, level = 0, currentSelectedId: string | null): string {
         const padding = 16
@@ -101,7 +112,6 @@
         const isSelected = nodeKey === currentSelectedId
         const displayName = level === 0 ? '画布' : node.attributes?.name || node.tagName || '元素'
         const hasChildren = node.children && node.children.length
-        const expandIcon = hasChildren ? (node.expanded ? '▼' : '▶') : ''
         const hideIcon = level === 0 ? '' : node.hidden ? '🙈' : '👁'
         const deleteIcon = level === 0 ? '' : '🗑'
 
@@ -109,10 +119,9 @@
 
         return /*html*/ `
           <div class="tree-node" style="padding-left: calc(16px * var(--scale-ratio, 1));" data-id="${nodeKey}" data-level="${level}">
-            <div class="node-content ${isSelected ? 'selected' : ''} ${node.hidden ? 'hidden' : ''}">
+            <div class="node-content ${isSelected ? 'selected' : ''} ${node.hidden ? 'hidden' : ''} ${hasChildren && !node.expanded ? 'collapsed' : ''}">
               <div class="node-left">
-                <span class="icon expand" data-action="toggle-expand" data-id="${nodeKey}">${expandIcon}</span>
-                ${level > 0 ? `<span class="icon drag-handle" data-action="drag-handle" data-id="${nodeKey}">⋮⋮</span>` : ''}
+                <span class="icon drag-handle ${level === 0 ? 'disabled' : ''}" data-action="${level === 0 ? '' : 'drag-handle'}" data-id="${nodeKey}">⋮⋮</span>
                 <span class="node-id" data-id="${nodeKey}">${displayName}</span>
               </div>
               <div class="node-actions">
@@ -130,7 +139,7 @@
 
 <!-- 容器使用事件委托监听 -->
 <!-- svelte-ignore a11y_no_static_element_interactions, a11y_click_events_have_key_events -->
-<div class="tree-container" onclick={handleClick} onpointerdown={handlePointerDown} role="tree" tabindex="0">
+<div class="tree-container" onclick={handleClick} ondblclick={handleDoubleClick} onpointerdown={handlePointerDown} role="tree" tabindex="0">
     {@html htmlString()}
     <div bind:this={indicatorTop} class="drop-indicator"></div>
     <div bind:this={indicatorBottom} class="drop-indicator"></div>
@@ -231,6 +240,17 @@
         cursor: grabbing;
     }
 
+    :global(.drag-handle.disabled) {
+        color: #475569;
+        cursor: not-allowed;
+        opacity: 0.5;
+    }
+
+    :global(.drag-handle.disabled:hover) {
+        background: none;
+        transform: none;
+    }
+
     :global(.action-btn) {
         color: #64748b;
         border-radius: calc(4px * var(--scale-ratio, 1));
@@ -277,6 +297,17 @@
 
     :global(.node-content.hidden) {
         opacity: 0.5;
+    }
+
+    /* 收起状态的阴影提示 */
+    :global(.node-content.collapsed) {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        border-bottom: 2px solid rgba(100, 116, 139, 0.5);
+    }
+
+    :global(.node-content.collapsed:hover) {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        border-bottom-color: rgba(100, 116, 139, 0.8);
     }
 
     :global(.node-content.selected .node-id) {
