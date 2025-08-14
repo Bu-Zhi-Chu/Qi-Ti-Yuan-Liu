@@ -10,7 +10,7 @@
 -->
 <script lang="ts">
     import AttrEditor from './AttrEditor.svelte'
-        import EventEditor from './EventEditor.svelte'
+    import EventEditor from './EventEditor.svelte'
     import { selectedId as getSelectedId } from '../../../services/repository/dom-tree.store.svelte'
 
     // Runes props - 使用 $props 代替 export let

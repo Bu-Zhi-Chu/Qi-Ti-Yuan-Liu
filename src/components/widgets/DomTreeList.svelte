@@ -110,7 +110,7 @@
         const padding = 16
         const nodeKey = node.dataId ?? node.id
         const isSelected = nodeKey === currentSelectedId
-        const displayName = level === 0 ? '画布' : node.attributes?.name || node.tagName || '元素'
+        const displayName = level === 0 ? '画布' : node.attributes?.['data-name'] || node.tagName || '元素'
         const hasChildren = node.children && node.children.length
         const hideIcon = level === 0 ? '' : node.hidden ? '🙈' : '👁'
         const deleteIcon = level === 0 ? '' : '🗑'

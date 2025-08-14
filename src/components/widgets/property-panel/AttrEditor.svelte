@@ -11,13 +11,25 @@
     // 当前节点属性快照 & id 值
     let propsSnapshot: ReturnType<typeof getNodeProps> | null = null
     let currentId: string = ''
+    let currentName: string = ''
+    // 新增根节点判断
+    let isRoot = false
+    $: isRoot = selectedId === 'root'
 
     // 当选中节点变化时，刷新快照与输入框值
     $: if (selectedId) {
         propsSnapshot = getNodeProps(selectedId)
         currentId = propsSnapshot?.attributes?.id ?? selectedId
+        const snapshotName = propsSnapshot?.attributes?.['data-name']
+        if (snapshotName !== undefined) {
+            currentName = snapshotName
+        } else {
+            const el = document.querySelector<HTMLElement>(`[data-id="${selectedId}"]`)
+            currentName = el?.getAttribute('data-name') ?? ''
+        }
     } else {
         currentId = ''
+        currentName = ''
     }
 
     // 修改 id —— 通过 attributes.id，而不是节点主键 node.id
@@ -26,6 +38,14 @@
         currentId = newId
         updateNodeProps(selectedId, {
             attributes: { id: newId }
+        })
+    }
+
+    function handleNameChange(newName: string) {
+        if (!selectedId) return
+        currentName = newName
+        updateNodeProps(selectedId, {
+            attributes: { 'data-name': newName }
         })
     }
 </script>
@@ -39,6 +59,13 @@
                 <input id="node-id" type="text" bind:value={currentId} oninput={(e) => handleIdChange(e.currentTarget.value)} placeholder="输入节点ID..." />
                 <span class="unit-placeholder"></span>
             </div>
+            {#if !isRoot}
+                <div class="attr-item">
+                    <label for="node-name">name:</label>
+                    <input id="node-name" type="text" bind:value={currentName} oninput={(e) => handleNameChange(e.currentTarget.value)} placeholder="输入节点名称..." />
+                    <span class="unit-placeholder"></span>
+                </div>
+            {/if}
         </div>
     {:else}
         <p class="placeholder">请选择一个节点来编辑属性</p>
