@@ -12,6 +12,6 @@
   {
     "type": "RealTimeClock",
     "nameZh": "实时钟表",
-    "path": "../core/RealTimeClock.svelte"
+    "path": "../blocks/RealTimeClock.svelte"
   }
 ]

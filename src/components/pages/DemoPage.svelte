@@ -17,7 +17,7 @@
 <script lang="ts">
     import ResponsiveBox from '../core/ResponsiveBox.svelte'
 
-    import RealTimeClock from '../widgets/RealTimeClock.svelte'
+    import RealTimeClock from '../blocks/RealTimeClock.svelte'
 
     import ActionButton from '../widgets/ActionButton.svelte'
     import DragDropList from '../widgets/DragDropList.svelte'
