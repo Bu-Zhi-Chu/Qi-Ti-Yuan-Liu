@@ -4,7 +4,9 @@
  */
 
 export const ATTR_WHITELIST: string[] = [
+  'id',
   'name',
+  '类型',
   'title',
   'alt',
   'placeholder'
