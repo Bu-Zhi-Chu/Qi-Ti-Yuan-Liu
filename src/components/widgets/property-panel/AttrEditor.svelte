@@ -6,73 +6,20 @@
     import type { DomNode } from '../../../types/dom-node.types'
     import { ATTR_WHITELIST } from '../../../services/property-panel/constants'
     import { getNodeProps, updateNodeProps } from '../../../services/property-panel/property-panel.service'
-    import { findNodeById, domTree } from '../../../services/repository/dom-tree.store.svelte'
 
     // 属性面板需要的参数
     export let selectedId: string | null = null
     let propsSnapshot: ReturnType<typeof getNodeProps> | null = null
     let currentAttributes: Record<string, string> = {}
-    let selectedNode: DomNode | null = null
 
     $: if (selectedId) {
         propsSnapshot = getNodeProps(selectedId)
         currentAttributes = propsSnapshot?.attributes || {}
-        selectedNode = findNodeById(domTree, selectedId)
     }
 
-    // 获取映射后的属性值
-    function getMappedValue(key: string): string {
-        if (!selectedNode) return ''
-
-        // id 映射到真实 id
-        if (key === 'id') {
-            return currentAttributes['id'] || selectedNode.id || ''
-        }
-        
-        // name 映射到 data-name
-        if (key === 'name') {
-            return currentAttributes['name'] || ''
-        }
-        
-        // 类型 映射到 componentType
-        if (key === '类型') {
-            return selectedNode.componentType || 'SimpleBox'
-        }
-        
-        return currentAttributes[key] || ''
-    }
-
-    // 设置映射后的属性值
     function handleAttributeChange(key: string, value: string) {
-        if (!selectedId || !selectedNode) return
+        if (!selectedId) return
 
-        // 特殊属性映射处理
-        if (key === 'id') {
-            // 直接更新真实 id
-            currentAttributes['id'] = value
-            updateNodeProps(selectedId, {
-                attributes: { 'id': value }
-            })
-            return
-        }
-        
-        if (key === 'name') {
-            // 更新 data-name（实际是 name 属性）
-            currentAttributes['name'] = value
-            updateNodeProps(selectedId, {
-                attributes: { 'name': value }
-            })
-            return
-        }
-        
-        if (key === '类型') {
-            // 更新组件类型 - 这需要通过其他方式处理
-            // 目前我们只显示类型，暂不支持修改
-            // 如需支持修改，需要修改 DomNode 中的 componentType
-            return
-        }
-
-        // 常规属性处理
         currentAttributes[key] = value
         updateNodeProps(selectedId, {
             attributes: { [key]: value }
@@ -81,9 +28,6 @@
 
     function handleAttributeRemove(key: string) {
         if (!selectedId) return
-
-        // 特殊属性不允许删除
-        if (key === 'id' || key === '类型') return
 
         delete currentAttributes[key]
         updateNodeProps(selectedId, {
@@ -99,8 +43,8 @@
             {#each ATTR_WHITELIST as attrKey}
                 <div class="attr-item">
                     <label for="attr-{attrKey}">{attrKey}:</label>
-                    <input id="attr-{attrKey}" type="text" value={getMappedValue(attrKey)} on:input={(e) => handleAttributeChange(attrKey, e.currentTarget.value)} placeholder={`输入${attrKey}值...`} disabled={attrKey==='类型' || attrKey==='id'} />
-                    {#if currentAttributes[attrKey] && attrKey !== 'id' && attrKey !== '类型' }
+                    <input id="attr-{attrKey}" type="text" value={currentAttributes[attrKey] || ''} on:input={(e) => handleAttributeChange(attrKey, e.currentTarget.value)} placeholder={`输入${attrKey}值...`} />
+                    {#if currentAttributes[attrKey]}
                         <button class="remove-btn" on:click={() => handleAttributeRemove(attrKey)} title="移除属性">×</button>
                     {/if}
                 </div>

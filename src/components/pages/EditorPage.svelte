@@ -83,7 +83,7 @@
                     <PropertyPanel showToolbar={false} {activeTab} />
                 </div>
                 <!-- 标签切换按钮栏 -->
-                <div class="prop-tabbar">
+                <div class="prop-tabbar" style="width: 12%;height: 100%;display: flex;flex-direction: column;align-items: center;justify-content: flex-start;padding-top: calc(12px * var(--scale-ratio, 1));gap: calc(8px * var(--scale-ratio, 1));pointer-events: auto;">
                     {#each tabs as t}
                         <button class:active={activeTab === t.key} on:click={() => setTab(t.key)} title={t.title}>
                             {t.icon}
@@ -108,40 +108,24 @@
         z-index: 10;
         pointer-events: none;
     }
-    .prop-tabbar {
-        width: 12%;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        align-items: stretch;
-        justify-content: flex-start;
-        padding-top: calc(12px * var(--scale-ratio, 1));
-        gap: calc(12px * var(--scale-ratio, 1));
-        pointer-events: auto;
-        background: rgba(255, 255, 255, 0.04);
-    }
     .prop-tabbar button {
-        width: 100%;
-        height: calc(40px * var(--scale-ratio, 1));
+        width: calc(32px * var(--scale-ratio, 1));
+        height: calc(32px * var(--scale-ratio, 1));
         border: none;
-        background: transparent;
-        color: #e2e8f0;
+        background: rgba(255, 255, 255, 0.08);
+        color: #fff;
+        border-radius: calc(6px * var(--scale-ratio, 1));
         cursor: pointer;
-        font-size: calc(18px * var(--scale-ratio, 1));
-        transition:
-            background 0.2s ease,
-            border-color 0.2s ease;
+        font-size: calc(16px * var(--scale-ratio, 1));
+        transition: all 0.2s ease;
         display: flex;
         align-items: center;
         justify-content: center;
-        border-left: 4px solid transparent;
     }
     .prop-tabbar button:hover {
-        background: rgba(255, 255, 255, 0.06);
+        background: rgba(255, 255, 255, 0.18);
     }
     .prop-tabbar button.active {
-        background: rgba(59, 130, 246, 0.18);
-        border-left-color: #3b82f6;
-        color: #fff;
+        background: rgba(255, 255, 255, 0.28);
     }
 </style>
