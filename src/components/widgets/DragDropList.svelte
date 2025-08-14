@@ -49,13 +49,11 @@
     import type { DndEvent } from 'svelte-dnd-action'
     import { flip } from 'svelte/animate'
 
-
-
     import ResponsiveBox from '../core/ResponsiveBox.svelte'
-    import SimpleBox from '../core1/SimpleBox.svelte'
+    import SimpleBox from '../core/SimpleBox.svelte'
 
     // 使用泛型提升类型安全，T 至少需要 id 字段供拖拽与选中逻辑使用
-export interface Props {
+    export interface Props {
         /** 列表数据 */
         items: { id: string; [key: string]: any }[]
         /** 是否启用拖拽功能 */
@@ -87,28 +85,11 @@ export interface Props {
     }
 
     // 解构 props（仅调用一次 $props()）
-let {
-    items: initialItems = [],
-    enableDrag = true,
-    enableHierarchy = false,
-    direction = 'vertical',
-    onReorder,
-    onNodeToggle,
-    onMenuClick,
-    onSelect,
-    selectedId: selectedIdProp = '',
-    style = '',
-    itemStyle = '',
-    dataId = '',
-    children,
-    ...rest
-} : Props = $props()
+    let { items: initialItems = [], enableDrag = true, enableHierarchy = false, direction = 'vertical', onReorder, onNodeToggle, onMenuClick, onSelect, selectedId: selectedIdProp = '', style = '', itemStyle = '', dataId = '', children, ...rest }: Props = $props()
 
-type DragItem = { id: string; [key: string]: any }
-let items = $state<DragItem[]>(initialItems as DragItem[])
-const selectedId = $derived(() => selectedIdProp)
-
-
+    type DragItem = { id: string; [key: string]: any }
+    let items = $state<DragItem[]>(initialItems as DragItem[])
+    const selectedId = $derived(() => selectedIdProp)
 
     // 拖拽事件处理
     function handleDndConsider(event: CustomEvent<DndEvent>) {
@@ -158,25 +139,25 @@ const selectedId = $derived(() => selectedIdProp)
     }
 
     // 预构建常量映射，避免每次渲染拼接
-const BASE_CONTAINER_STYLE = 'display: flex; gap: calc(10px * var(--scale-ratio, 1)); padding: calc(10px * var(--scale-ratio, 1)); background: rgba(255,255,255,0.1); border-radius: calc(8px * var(--scale-ratio, 1));'
-const DIRECTION_CONTAINER_STYLE_MAP: Record<'vertical' | 'horizontal', string> = {
-    vertical: '; flex-direction: column;',
-    horizontal: '; flex-direction: row; flex-wrap: wrap;'
-}
+    const BASE_CONTAINER_STYLE = 'display: flex; gap: calc(10px * var(--scale-ratio, 1)); padding: calc(10px * var(--scale-ratio, 1)); background: rgba(255,255,255,0.1); border-radius: calc(8px * var(--scale-ratio, 1));'
+    const DIRECTION_CONTAINER_STYLE_MAP: Record<'vertical' | 'horizontal', string> = {
+        vertical: '; flex-direction: column;',
+        horizontal: '; flex-direction: row; flex-wrap: wrap;'
+    }
 
-const containerStyle = $derived(`${BASE_CONTAINER_STYLE}${DIRECTION_CONTAINER_STYLE_MAP[direction as 'vertical' | 'horizontal']}${style}`) // style 透传附加
+    const containerStyle = $derived(`${BASE_CONTAINER_STYLE}${DIRECTION_CONTAINER_STYLE_MAP[direction as 'vertical' | 'horizontal']}${style}`) // style 透传附加
 
+    const BASE_ITEM_STYLE =
+        'padding: calc(5px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1)); margin: calc(2px * var(--scale-ratio, 1)) 0; background: rgba(99, 102, 241, 0.1); border: calc(1px * var(--scale-ratio, 1)) solid rgba(99, 102, 241, 0.2); border-radius: calc(4px * var(--scale-ratio, 1)); color: #e2e8f0; transition: all 0.2s ease;'
+    const SELECTED_ITEM_EXTRA = '; background: rgba(99, 102, 241, 0.3); border-color: rgba(99, 102, 241, 0.5); box-shadow: 0 0 calc(10px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.3);'
+    const DIRECTION_ITEM_STYLE_MAP: Record<'vertical' | 'horizontal', string> = {
+        vertical: '; width: 100%;',
+        horizontal: '; flex: 1; min-width: calc(120px * var(--scale-ratio, 1)); text-align: center;'
+    }
 
-    const BASE_ITEM_STYLE = 'padding: calc(5px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1)); margin: calc(2px * var(--scale-ratio, 1)) 0; background: rgba(99, 102, 241, 0.1); border: calc(1px * var(--scale-ratio, 1)) solid rgba(99, 102, 241, 0.2); border-radius: calc(4px * var(--scale-ratio, 1)); color: #e2e8f0; transition: all 0.2s ease;'
-const SELECTED_ITEM_EXTRA = '; background: rgba(99, 102, 241, 0.3); border-color: rgba(99, 102, 241, 0.5); box-shadow: 0 0 calc(10px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.3);'
-const DIRECTION_ITEM_STYLE_MAP: Record<'vertical' | 'horizontal', string> = {
-    vertical: '; width: 100%;',
-    horizontal: '; flex: 1; min-width: calc(120px * var(--scale-ratio, 1)); text-align: center;'
-}
-
-function getItemStyle(isSelected: boolean = false) {
-    return `${BASE_ITEM_STYLE} cursor: ${enableDrag ? 'grab' : 'default'};${DIRECTION_ITEM_STYLE_MAP[direction as 'vertical' | 'horizontal']}${isSelected ? SELECTED_ITEM_EXTRA : ''} ${itemStyle}`
-}
+    function getItemStyle(isSelected: boolean = false) {
+        return `${BASE_ITEM_STYLE} cursor: ${enableDrag ? 'grab' : 'default'};${DIRECTION_ITEM_STYLE_MAP[direction as 'vertical' | 'horizontal']}${isSelected ? SELECTED_ITEM_EXTRA : ''} ${itemStyle}`
+    }
 
     // 拖拽时的样式
     function getDragStyle(isDragged: boolean) {
