@@ -69,7 +69,7 @@
                 <!-- 属性面板 -->
                 <div style="width: 88%;height: 100%;pointer-events: auto;">
                     <!-- @ts-ignore: Work In Progress -->
-                    <PropertyPanel />
+                    <PropertyPanel showToolbar={false} />
                 </div>
                 <!-- 预留按钮栏 -->
                 <div style="width: 12%;height: 100%;background: rgba(255, 1, 255, 0.3);"></div>

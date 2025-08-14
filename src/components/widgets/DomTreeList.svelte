@@ -99,7 +99,6 @@
         const padding = 16
         const nodeKey = node.dataId ?? node.id
         const isSelected = nodeKey === currentSelectedId
-        const labelClass = `${isSelected ? 'node-label selected' : 'node-label'} ${node.hidden ? 'hidden' : ''}`
         const displayName = level === 0 ? '画布' : node.attributes?.name || node.tagName || '元素'
         const hasChildren = node.children && node.children.length
         const expandIcon = hasChildren ? (node.expanded ? '▼' : '▶') : ''
@@ -110,7 +109,7 @@
 
         return /*html*/ `
           <div class="tree-node" style="padding-left: calc(16px * var(--scale-ratio, 1));" data-id="${nodeKey}" data-level="${level}">
-            <div class="node-content">
+            <div class="node-content ${isSelected ? 'selected' : ''} ${node.hidden ? 'hidden' : ''}">
               <div class="node-left">
                 <span class="icon expand" data-action="toggle-expand" data-id="${nodeKey}">${expandIcon}</span>
                 ${level > 0 ? `<span class="icon drag-handle" data-action="drag-handle" data-id="${nodeKey}">⋮⋮</span>` : ''}
@@ -269,15 +268,19 @@
         background: rgba(255, 255, 255, 0.08);
     }
 
-    :global(.node-id.selected) {
-        background: rgba(99, 102, 241, 0.35);
+    :global(.node-content.selected) {
+        background: rgba(99, 102, 241, 0.35) !important;
         color: #e0e7ff;
         box-shadow: 0 0 calc(8px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.3);
+        border-left: calc(3px * var(--scale-ratio, 1)) solid #6366f1;
     }
 
-    :global(.node-id.hidden) {
+    :global(.node-content.hidden) {
         opacity: 0.5;
-        text-decoration: line-through;
+    }
+
+    :global(.node-content.selected .node-id) {
+        color: #e0e7ff;
     }
 
     .drop-indicator {
