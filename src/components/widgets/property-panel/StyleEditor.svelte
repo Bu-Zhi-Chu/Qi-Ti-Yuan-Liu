@@ -19,6 +19,7 @@
     let currentWidthUnit: '%' | 'px' = '%'
     let currentHeightValue: string = ''
     let currentHeightUnit: '%' | 'px' = '%'
+    let currentPosition: 'static' | 'relative' | 'absolute' | 'fixed' | 'sticky' = 'static'
 
     // 工具函数：解析如 "100px"、"50%" 等字符串，拆分为数值与单位
     function parseSize(size: string | undefined): [string, '%' | 'px'] {
@@ -45,6 +46,7 @@
         styleSnapshot = getNodeProps(selectedId)
         ;[currentWidthValue, currentWidthUnit] = parseSize(styleSnapshot?.styles?.width)
         ;[currentHeightValue, currentHeightUnit] = parseSize(styleSnapshot?.styles?.height)
+        currentPosition = (styleSnapshot?.styles?.position as any) || 'static'
         if (currentWidthUnit === '%') currentWidthValue = String(Math.round(parseFloat(currentWidthValue) * 10) / 10)
         if (currentHeightUnit === '%') currentHeightValue = String(Math.round(parseFloat(currentHeightValue) * 10) / 10)
     } else {
@@ -52,6 +54,7 @@
         currentWidthUnit = 'px'
         currentHeightValue = ''
         currentHeightUnit = 'px'
+        currentPosition = 'static'
     }
 
     // 宽度数值变更
@@ -122,6 +125,11 @@
         currentHeightUnit = nextUnit
         updateNodeProps(selectedId, { styles: { height: formatSize(currentHeightValue, currentHeightUnit) } })
     }
+    function handlePositionChange(val: string) {
+        if (!selectedId || isRoot) return
+        currentPosition = val as any
+        updateNodeProps(selectedId, { styles: { position: val } })
+    }
 </script>
 
 <div class="style-editor">
@@ -137,6 +145,21 @@
                 <label for="node-height">高度:</label>
                 <input id="node-height" type="number" step={currentHeightUnit === '%' ? 0.1 : 1} bind:value={currentHeightValue} disabled={isRoot} oninput={(e) => handleHeightValueChange(e.currentTarget.value)} placeholder="数字" />
                 <button type="button" class="unit-toggle" onclick={toggleHeightUnit} aria-label="切换高度单位" disabled={isRoot}>{currentHeightUnit}</button>
+            </div>
+            <div class="style-item">
+                <label for="node-position">定位:</label>
+                {#if isRoot}
+                    <input id="node-position-text" type="text" value="static" disabled />
+                {:else}
+                    <select id="node-position" bind:value={currentPosition} onchange={(e) => handlePositionChange(e.currentTarget.value)}>
+                        <option value="static">静态 (static)</option>
+                        <option value="relative">相对 (relative)</option>
+                        <option value="absolute">绝对 (absolute)</option>
+                        <option value="fixed">固定 (fixed)</option>
+                        <option value="sticky">粘性 (sticky)</option>
+                    </select>
+                {/if}
+                <span class="unit-placeholder"></span>
             </div>
         </div>
     {:else}
@@ -202,7 +225,8 @@
         font-weight: 500;
         color: #94a3b8;
     }
-    input {
+    input,
+    select {
         flex: 1;
         padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
         border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.2);
@@ -211,6 +235,23 @@
         background: rgba(255, 255, 255, 0.1);
         color: #e2e8f0;
         transition: all 0.3s ease;
+        appearance: none;
+    }
+    select:focus {
+        outline: none;
+        border-color: #cbd5e1;
+        background: rgba(255, 255, 255, 0.15);
+        box-shadow: 0 0 0 calc(3px * var(--scale-ratio, 1)) rgba(255, 255, 255, 0.1);
+    }
+    /* 新增：下拉选项面板深色背景 */
+    select option {
+        background: #1e293b;
+        color: #e2e8f0;
+    }
+    /* 统一禁用态样式 */
+    select:disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
     }
     /* 隐藏原生 number 输入框的上下箭头 */
     input[type='number']::-webkit-inner-spin-button,
