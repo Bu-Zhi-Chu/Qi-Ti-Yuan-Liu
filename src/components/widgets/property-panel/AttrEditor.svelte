@@ -4,7 +4,11 @@
 -->
 <script lang="ts">
     import { getNodeProps, updateNodeProps } from '../../../services/property-panel/property-panel.service'
+    import { findNodeById, domTree } from '../../../services/repository/dom-tree.store.svelte'
     import blocksConfig from '../../blocks/blocks.config.json' assert { type: 'json' }
+    import { getElementByNodeId } from '../../../services/utils/dom-geometry.util'
+    import { getScaleRatio } from '../../../services/utils/get-scale-ratio.util'
+
     interface BlockItem {
         type: string
         nameZh: string
@@ -23,7 +27,37 @@
     let currentRemark: string = ''
     // 新增根节点判断
     let isRoot = false
+    // 根节点判定
     $: isRoot = selectedId === 'root'
+
+    // 宽度和高度相关变量
+    let currentWidthValue: string = ''
+    let currentWidthUnit: '%' | 'px' = '%'
+    let currentHeightValue: string = ''
+    let currentHeightUnit: '%' | 'px' = '%'
+
+    // 当选中节点变化时，同步宽高
+    $: if (selectedId) {
+        const nodeProps = getNodeProps(selectedId)
+        const node = findNodeById(domTree, selectedId)
+        currentId = nodeProps?.attributes?.id || ''
+        currentName = nodeProps?.attributes?.name || ''
+        currentType = node?.componentType || ''
+        currentRemark = nodeProps?.attributes?.['data-remark'] || ''
+        ;[currentWidthValue, currentWidthUnit] = parseSize(nodeProps?.styles?.width)
+        ;[currentHeightValue, currentHeightUnit] = parseSize(nodeProps?.styles?.height)
+        if (currentWidthUnit === '%') currentWidthValue = String(Math.round(parseFloat(currentWidthValue) * 10) / 10)
+        if (currentHeightUnit === '%') currentHeightValue = String(Math.round(parseFloat(currentHeightValue) * 10) / 10)
+    } else {
+        currentId = ''
+        currentName = ''
+        currentType = ''
+        currentRemark = ''
+        currentWidthValue = ''
+        currentWidthUnit = '%'
+        currentHeightValue = ''
+        currentHeightUnit = '%'
+    }
 
     // 可用的组件类型列表
     // 删除原先硬编码
@@ -90,6 +124,95 @@
             attributes: { 'data-remark': newRemark }
         })
     }
+
+    // 工具函数：解析如 "100px"、"50%" 等字符串，拆分为数值与单位
+    function parseSize(size: string | undefined): [string, '%' | 'px'] {
+        if (!size) return ['', '%']
+        // 支持解析 calc(100px * var(--scale-ratio, 1)) 形式
+        const calcMatch = size.match(/^calc\(\s*(\d+(?:\.\d+)?)\s*px\b.*\)$/i)
+        if (calcMatch) {
+            return [calcMatch[1], 'px']
+        }
+        const match = size.match(/^(\d+(?:\.\d+)?)\s*(px|%)?$/i)
+        return match ? [match[1], (match[2] as any) || '%'] : [size, '%']
+    }
+
+    // 统一格式化尺寸，px 单位使用 calc 结合 --scale-ratio 实现自适应
+    function formatSize(val: string, unit: '%' | 'px'): string {
+        return unit === 'px' ? `calc(${val}px * var(--scale-ratio, 1))` : `${val}%`
+    }
+
+    // 宽度数值变更
+    function handleWidthValueChange(val: string) {
+        if (!selectedId || isRoot) return
+        const rounded = currentWidthUnit === '%' ? String(Math.round(parseFloat(val) * 10) / 10) : val
+        currentWidthValue = rounded
+        updateNodeProps(selectedId, { styles: { width: formatSize(rounded, currentWidthUnit) } })
+    }
+
+    // 将宽度从一个单位转换到另一个单位
+    function convertWidth(val: number, from: '%' | 'px', to: '%' | 'px'): number {
+        if (from === to) return val
+        const el = getElementByNodeId(selectedId!)
+        const parent = el?.parentElement as HTMLElement | null
+        if (!el || !parent) return val
+        const parentWidth = parent.offsetWidth
+        if (parentWidth === 0) return val
+        const sr = getScaleRatio()
+        if (from === 'px') {
+            // 设计px → % (需乘全局缩放比)
+            return ((val * sr) / parentWidth) * 100
+        } else {
+            // % → 设计px (需除全局缩放比)
+            return ((val / 100) * parentWidth) / sr
+        }
+    }
+
+    // 宽度单位切换（% ↔ px）
+    function toggleWidthUnit() {
+        if (!selectedId || isRoot) return
+        const numericVal = parseFloat(currentWidthValue) || 0
+        const nextUnit: '%' | 'px' = currentWidthUnit === '%' ? 'px' : '%'
+        const converted = convertWidth(numericVal, currentWidthUnit, nextUnit)
+        currentWidthValue = String(nextUnit === '%' ? Math.round(converted * 10) / 10 : Math.round(converted * 100) / 100)
+        currentWidthUnit = nextUnit
+        updateNodeProps(selectedId, { styles: { width: formatSize(currentWidthValue, currentWidthUnit) } })
+    }
+
+    // 高度数值变更
+    function handleHeightValueChange(val: string) {
+        if (!selectedId || isRoot) return
+        const rounded = currentHeightUnit === '%' ? String(Math.round(parseFloat(val) * 10) / 10) : val
+        currentHeightValue = rounded
+        updateNodeProps(selectedId, { styles: { height: formatSize(rounded, currentHeightUnit) } })
+    }
+
+    // 将高度从一个单位转换到另一个单位
+    function convertHeight(val: number, from: '%' | 'px', to: '%' | 'px'): number {
+        if (from === to) return val
+        const el = getElementByNodeId(selectedId!)
+        const parent = el?.parentElement as HTMLElement | null
+        if (!el || !parent) return val
+        const parentHeight = parent.offsetHeight
+        if (parentHeight === 0) return val
+        const sr = getScaleRatio()
+        if (from === 'px') {
+            return ((val * sr) / parentHeight) * 100
+        } else {
+            return ((val / 100) * parentHeight) / sr
+        }
+    }
+
+    // 高度单位切换（% ↔ px）
+    function toggleHeightUnit() {
+        if (!selectedId || isRoot) return
+        const numericVal = parseFloat(currentHeightValue) || 0
+        const nextUnit: '%' | 'px' = currentHeightUnit === '%' ? 'px' : '%'
+        const converted = convertHeight(numericVal, currentHeightUnit, nextUnit)
+        currentHeightValue = String(nextUnit === '%' ? Math.round(converted * 10) / 10 : Math.round(converted * 100) / 100)
+        currentHeightUnit = nextUnit
+        updateNodeProps(selectedId, { styles: { height: formatSize(currentHeightValue, currentHeightUnit) } })
+    }
 </script>
 
 <div class="attr-editor">
@@ -120,6 +243,25 @@
                 {/if}
                 <span class="unit-placeholder"></span>
             </div>
+
+            <!-- 宽度输入 -->
+            <div class="attr-item">
+                <label for="node-width">宽度:</label>
+                <input id="node-width" type="number" step={currentWidthUnit === '%' ? 0.1 : 1} bind:value={currentWidthValue} oninput={(e) => handleWidthValueChange(e.currentTarget.value)} placeholder="宽度值..." disabled={isRoot} />
+                <button class="unit-toggle" onclick={toggleWidthUnit} disabled={isRoot}>
+                    {currentWidthUnit}
+                </button>
+            </div>
+
+            <!-- 高度输入 -->
+            <div class="attr-item">
+                <label for="node-height">高度:</label>
+                <input id="node-height" type="number" step={currentHeightUnit === '%' ? 0.1 : 1} bind:value={currentHeightValue} oninput={(e) => handleHeightValueChange(e.currentTarget.value)} placeholder="高度值..." disabled={isRoot} />
+                <button class="unit-toggle" onclick={toggleHeightUnit} disabled={isRoot}>
+                    {currentHeightUnit}
+                </button>
+            </div>
+
             <!-- 新增备注字段 -->
             <div class="attr-item">
                 <label for="node-remark">备注:</label>
@@ -149,22 +291,9 @@
         gap: calc(12px * var(--scale-ratio, 1));
     }
     .attr-item {
-        display: grid;
-        grid-template-columns: calc(40px * var(--scale-ratio, 1)) 1fr calc(40px * var(--scale-ratio, 1));
+        display: flex;
         align-items: center;
-        gap: calc(8px * var(--scale-ratio, 1));
-        padding: calc(12px * var(--scale-ratio, 1));
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: calc(8px * var(--scale-ratio, 1));
-        transition: all 0.3s ease;
-    }
-    .unit-placeholder {
-        width: 100%;
-        height: 100%;
-    }
-    .attr-item:hover {
-        background: rgba(255, 255, 255, 0.08);
-        transform: translateY(-1px);
+        gap: calc(10px * var(--scale-ratio, 1));
     }
     label {
         min-width: calc(80px * var(--scale-ratio, 1));
@@ -172,27 +301,9 @@
         font-weight: 500;
         color: #94a3b8;
     }
-    input {
-        flex: 1;
-        padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
-        border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.2);
-        border-radius: calc(6px * var(--scale-ratio, 1));
-        font-size: calc(13px * var(--scale-ratio, 1));
-        background: rgba(255, 255, 255, 0.1);
-        color: #e2e8f0;
-        transition: all 0.3s ease;
-    }
-    input:focus {
-        outline: none;
-        border-color: #cbd5e1;
-        background: rgba(255, 255, 255, 0.15);
-        box-shadow: 0 0 0 calc(3px * var(--scale-ratio, 1)) rgba(255, 255, 255, 0.1);
-    }
-    input::placeholder {
-        color: #9ca3af;
-    }
-    /* 新增：统一下拉框样式 */
-    select {
+    input,
+    select,
+    textarea {
         flex: 1;
         padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
         border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.2);
@@ -203,22 +314,49 @@
         transition: all 0.3s ease;
         appearance: none;
     }
-    select:focus {
+
+    /* 单位切换按钮样式 */
+    .unit-toggle {
+        width: calc(40px * var(--scale-ratio, 1));
+        padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
+        border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.2);
+        border-radius: calc(6px * var(--scale-ratio, 1));
+        font-size: calc(13px * var(--scale-ratio, 1));
+        background: rgba(255, 255, 255, 0.1);
+        color: #e2e8f0;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    .unit-toggle:hover {
+        background: rgba(255, 255, 255, 0.15);
+    }
+    /* 禁用状态光标与视觉提示 */
+    .unit-toggle:disabled,
+    input:disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+    }
+
+    .unit-placeholder {
+        width: calc(40px * var(--scale-ratio, 1));
+    }
+
+    select:focus,
+    input:focus,
+    textarea:focus {
         outline: none;
         border-color: #cbd5e1;
         background: rgba(255, 255, 255, 0.15);
         box-shadow: 0 0 0 calc(3px * var(--scale-ratio, 1)) rgba(255, 255, 255, 0.1);
     }
-    /* 新增：下拉选项面板默认白底，统一成深色背景提高可读性 */
     select option {
         background: #1e293b;
         color: #e2e8f0;
     }
-    /* 统一禁用态样式 */
-    input:disabled,
-    select:disabled {
-        cursor: not-allowed;
-        opacity: 0.6;
+    input::placeholder,
+    textarea::placeholder {
+        color: #9ca3af;
     }
     .placeholder {
         color: #64748b;
@@ -227,25 +365,18 @@
         margin-top: calc(40px * var(--scale-ratio, 1));
         font-size: calc(14px * var(--scale-ratio, 1));
     }
-    /* 新增：textarea 样式与 input 保持一致 */
     textarea {
-        flex: 1;
-        padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
-        border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.2);
-        border-radius: calc(6px * var(--scale-ratio, 1));
-        font-size: calc(13px * var(--scale-ratio, 1));
-        background: rgba(255, 255, 255, 0.1);
-        color: #e2e8f0;
-        transition: all 0.3s ease;
-        min-height: calc(60px * var(--scale-ratio, 1));
+        min-height: calc(80px * var(--scale-ratio, 1));
     }
-    textarea:focus {
-        outline: none;
-        border-color: #cbd5e1;
-        background: rgba(255, 255, 255, 0.15);
-        box-shadow: 0 0 0 calc(3px * var(--scale-ratio, 1)) rgba(255, 255, 255, 0.1);
+
+    /* 隐藏原生 number 输入框的上下箭头 */
+    input[type='number']::-webkit-inner-spin-button,
+    input[type='number']::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
     }
-    textarea::placeholder {
-        color: #9ca3af;
+    input[type='number'] {
+        appearance: textfield; /* 标准属性 */
+        -moz-appearance: textfield; /* Firefox */
     }
 </style>
