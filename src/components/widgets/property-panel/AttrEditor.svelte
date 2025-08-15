@@ -20,6 +20,7 @@
     let currentId: string = ''
     let currentName: string = ''
     let currentType: string = ''
+    let currentRemark: string = ''
     // 新增根节点判断
     let isRoot = false
     $: isRoot = selectedId === 'root'
@@ -42,7 +43,8 @@
 
         // 获取当前组件类型
         currentType = propsSnapshot?.attributes?.type ?? ''
-
+        // 新增：备注字段读取
+        currentRemark = propsSnapshot?.attributes?.['data-remark'] ?? ''
         // 若为根节点，固定名称为“画布”
         if (isRoot) {
             currentName = '画布'
@@ -51,6 +53,7 @@
         currentId = ''
         currentName = ''
         currentType = ''
+        currentRemark = ''
     }
 
     // 修改 id —— 通过 attributes.id，而不是节点主键 node.id
@@ -76,6 +79,15 @@
         currentType = newType
         updateNodeProps(selectedId, {
             attributes: { type: newType }
+        })
+    }
+
+    // 新增：修改备注
+    function handleRemarkChange(newRemark: string) {
+        if (!selectedId) return
+        currentRemark = newRemark
+        updateNodeProps(selectedId, {
+            attributes: { 'data-remark': newRemark }
         })
     }
 </script>
@@ -106,6 +118,12 @@
                         {/each}
                     </select>
                 {/if}
+                <span class="unit-placeholder"></span>
+            </div>
+            <!-- 新增备注字段 -->
+            <div class="attr-item">
+                <label for="node-remark">备注:</label>
+                <textarea id="node-remark" rows="3" bind:value={currentRemark} oninput={(e) => handleRemarkChange(e.currentTarget.value)} placeholder="输入备注..." style="resize: vertical;"></textarea>
                 <span class="unit-placeholder"></span>
             </div>
         </div>
@@ -208,5 +226,26 @@
         text-align: center;
         margin-top: calc(40px * var(--scale-ratio, 1));
         font-size: calc(14px * var(--scale-ratio, 1));
+    }
+    /* 新增：textarea 样式与 input 保持一致 */
+    textarea {
+        flex: 1;
+        padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
+        border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.2);
+        border-radius: calc(6px * var(--scale-ratio, 1));
+        font-size: calc(13px * var(--scale-ratio, 1));
+        background: rgba(255, 255, 255, 0.1);
+        color: #e2e8f0;
+        transition: all 0.3s ease;
+        min-height: calc(60px * var(--scale-ratio, 1));
+    }
+    textarea:focus {
+        outline: none;
+        border-color: #cbd5e1;
+        background: rgba(255, 255, 255, 0.15);
+        box-shadow: 0 0 0 calc(3px * var(--scale-ratio, 1)) rgba(255, 255, 255, 0.1);
+    }
+    textarea::placeholder {
+        color: #9ca3af;
     }
 </style>
