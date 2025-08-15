@@ -73,10 +73,10 @@
         const sr = getScaleRatio()
         if (from === 'px') {
             // 设计px → % (需乘全局缩放比)
-            return (val * sr / parentWidth) * 100
+            return ((val * sr) / parentWidth) * 100
         } else {
             // % → 设计px (需除全局缩放比)
-            return (val / 100 * parentWidth) / sr
+            return ((val / 100) * parentWidth) / sr
         }
     }
 
@@ -86,9 +86,7 @@
         const numericVal = parseFloat(currentWidthValue) || 0
         const nextUnit: '%' | 'px' = currentWidthUnit === '%' ? 'px' : '%'
         const converted = convertWidth(numericVal, currentWidthUnit, nextUnit)
-        currentWidthValue = String(
-            nextUnit === '%' ? Math.round(converted * 10) / 10 : Math.round(converted * 100) / 100
-        )
+        currentWidthValue = String(nextUnit === '%' ? Math.round(converted * 10) / 10 : Math.round(converted * 100) / 100)
         currentWidthUnit = nextUnit
         updateNodeProps(selectedId, { styles: { width: formatSize(currentWidthValue, currentWidthUnit) } })
     }
@@ -108,9 +106,9 @@
         if (parentHeight === 0) return val
         const sr = getScaleRatio()
         if (from === 'px') {
-            return (val * sr / parentHeight) * 100
+            return ((val * sr) / parentHeight) * 100
         } else {
-            return (val / 100 * parentHeight) / sr
+            return ((val / 100) * parentHeight) / sr
         }
     }
 
@@ -120,9 +118,7 @@
         const numericVal = parseFloat(currentHeightValue) || 0
         const nextUnit: '%' | 'px' = currentHeightUnit === '%' ? 'px' : '%'
         const converted = convertHeight(numericVal, currentHeightUnit, nextUnit)
-        currentHeightValue = String(
-            nextUnit === '%' ? Math.round(converted * 10) / 10 : Math.round(converted * 100) / 100
-        )
+        currentHeightValue = String(nextUnit === '%' ? Math.round(converted * 10) / 10 : Math.round(converted * 100) / 100)
         currentHeightUnit = nextUnit
         updateNodeProps(selectedId, { styles: { height: formatSize(currentHeightValue, currentHeightUnit) } })
     }
@@ -134,12 +130,12 @@
         <div class="style-list">
             <div class="style-item">
                 <label for="node-width">宽度:</label>
-                <input id="node-width" type="number" bind:value={currentWidthValue} disabled={isRoot} oninput={(e) => handleWidthValueChange(e.currentTarget.value)} placeholder="数字" />
+                <input id="node-width" type="number" step={currentWidthUnit === '%' ? 0.1 : 1} bind:value={currentWidthValue} disabled={isRoot} oninput={(e) => handleWidthValueChange(e.currentTarget.value)} placeholder="数字" />
                 <button type="button" class="unit-toggle" onclick={toggleWidthUnit} aria-label="切换宽度单位" disabled={isRoot}>{currentWidthUnit}</button>
             </div>
             <div class="style-item">
                 <label for="node-height">高度:</label>
-                <input id="node-height" type="number" bind:value={currentHeightValue} disabled={isRoot} oninput={(e) => handleHeightValueChange(e.currentTarget.value)} placeholder="数字" />
+                <input id="node-height" type="number" step={currentHeightUnit === '%' ? 0.1 : 1} bind:value={currentHeightValue} disabled={isRoot} oninput={(e) => handleHeightValueChange(e.currentTarget.value)} placeholder="数字" />
                 <button type="button" class="unit-toggle" onclick={toggleHeightUnit} aria-label="切换高度单位" disabled={isRoot}>{currentHeightUnit}</button>
             </div>
         </div>
@@ -215,6 +211,16 @@
         background: rgba(255, 255, 255, 0.1);
         color: #e2e8f0;
         transition: all 0.3s ease;
+    }
+    /* 隐藏原生 number 输入框的上下箭头 */
+    input[type='number']::-webkit-inner-spin-button,
+    input[type='number']::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+    input[type='number'] {
+        appearance: textfield; /* 标准属性 */
+        -moz-appearance: textfield; /* Firefox */
     }
     input:focus {
         outline: none;
