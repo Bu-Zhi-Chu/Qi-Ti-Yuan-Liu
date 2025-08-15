@@ -97,17 +97,17 @@
         <h3>节点属性</h3>
         <div class="attr-list">
             <div class="attr-item">
-                <label for="node-id">id:</label>
-                <input id="node-id" type="text" bind:value={currentId} oninput={(e) => handleIdChange(e.currentTarget.value)} placeholder="输入节点ID..." />
+                <label for="node-id">编号:</label>
+                <input id="node-id" type="text" bind:value={currentId} oninput={(e) => handleIdChange(e.currentTarget.value)} placeholder="输入节点编号..." />
                 <span class="unit-placeholder"></span>
             </div>
             <div class="attr-item">
-                <label for="node-name">name:</label>
+                <label for="node-name">名称:</label>
                 <input id="node-name" type="text" bind:value={currentName} oninput={(e) => handleNameChange(e.currentTarget.value)} placeholder="输入节点名称..." disabled={isRoot} />
                 <span class="unit-placeholder"></span>
             </div>
             <div class="attr-item">
-                <label for="node-type">type:</label>
+                <label for="node-type">类型:</label>
                 {#if isRoot}
                     <input id="node-type-text" type="text" value="画布" disabled />
                 {:else}
