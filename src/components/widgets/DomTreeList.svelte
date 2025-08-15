@@ -80,7 +80,10 @@
                 toggleHidden(id)
                 break
             case 'delete-node':
-                removeNodeById(id)
+                if (removeNodeById(id)) {
+                    // 删除成功后默认选中根节点
+                    setSelectedId('root')
+                }
                 break
             case 'drag-handle':
                 // 拖拽手柄的点击事件由 pointerdown 处理

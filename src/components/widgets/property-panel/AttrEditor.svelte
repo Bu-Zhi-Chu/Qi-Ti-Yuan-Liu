@@ -42,6 +42,11 @@
 
         // 获取当前组件类型
         currentType = propsSnapshot?.attributes?.type ?? ''
+
+        // 若为根节点，固定名称为“画布”
+        if (isRoot) {
+            currentName = '画布'
+        }
     } else {
         currentId = ''
         currentName = ''
@@ -84,23 +89,25 @@
                 <input id="node-id" type="text" bind:value={currentId} oninput={(e) => handleIdChange(e.currentTarget.value)} placeholder="输入节点ID..." />
                 <span class="unit-placeholder"></span>
             </div>
-            {#if !isRoot}
-                <div class="attr-item">
-                    <label for="node-name">name:</label>
-                    <input id="node-name" type="text" bind:value={currentName} oninput={(e) => handleNameChange(e.currentTarget.value)} placeholder="输入节点名称..." />
-                    <span class="unit-placeholder"></span>
-                </div>
-                <div class="attr-item">
-                    <label for="node-type">type:</label>
+            <div class="attr-item">
+                <label for="node-name">name:</label>
+                <input id="node-name" type="text" bind:value={currentName} oninput={(e) => handleNameChange(e.currentTarget.value)} placeholder="输入节点名称..." disabled={isRoot} />
+                <span class="unit-placeholder"></span>
+            </div>
+            <div class="attr-item">
+                <label for="node-type">type:</label>
+                {#if isRoot}
+                    <input id="node-type-text" type="text" value="画布" disabled />
+                {:else}
                     <select id="node-type" bind:value={currentType} onchange={(e) => handleTypeChange(e.currentTarget.value)}>
                         <option value="">请选择组件类型...</option>
                         {#each componentOptions as item}
                             <option value={item.type}>{item.nameZh}</option>
                         {/each}
                     </select>
-                    <span class="unit-placeholder"></span>
-                </div>
-            {/if}
+                {/if}
+                <span class="unit-placeholder"></span>
+            </div>
         </div>
     {:else}
         <p class="placeholder">请选择一个节点来编辑属性</p>
@@ -188,6 +195,12 @@
     select option {
         background: #1e293b;
         color: #e2e8f0;
+    }
+    /* 统一禁用态样式 */
+    input:disabled,
+    select:disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
     }
     .placeholder {
         color: #64748b;
