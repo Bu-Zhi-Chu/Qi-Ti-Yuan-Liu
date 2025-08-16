@@ -39,6 +39,9 @@
     // 鼠标穿透相关变量
     let currentPointerEvents: 'auto' | 'none' = 'auto'
 
+    // box-sizing 相关变量
+    let currentBoxSizing: 'content-box' | 'border-box' = 'border-box'
+
     // overflow 相关变量
     let currentOverflow: 'hidden' | 'auto' | 'scroll' | 'visible' = 'hidden'
 
@@ -69,6 +72,7 @@
         currentHeightUnit = '%'
         currentPointerEvents = 'auto'
         currentOverflow = 'hidden'
+        currentBoxSizing = 'border-box'
     }
 
     // 当选中节点变化时，同步所有属性
@@ -107,6 +111,8 @@
         currentPointerEvents = (propsSnapshot?.styles?.pointerEvents as 'auto' | 'none') || 'auto'
         // 同步 overflow 属性
         currentOverflow = (propsSnapshot?.styles?.overflow as 'hidden' | 'auto' | 'scroll' | 'visible') || 'hidden'
+        // 同步 box-sizing 属性
+        currentBoxSizing = (propsSnapshot?.styles?.boxSizing as 'content-box' | 'border-box') || 'border-box'
 
         // 若为根节点，固定名称为"画布"
         if (isRoot) {
@@ -267,6 +273,13 @@
         currentOverflow = value as 'hidden' | 'auto' | 'scroll' | 'visible'
         updateNodeProps(selectedId, { styles: { overflow: value } })
     }
+
+    // 处理 box-sizing 属性变更
+    function handleBoxSizingChange(value: string) {
+        if (!selectedId) return
+        currentBoxSizing = value as 'content-box' | 'border-box'
+        updateNodeProps(selectedId, { styles: { boxSizing: value } })
+    }
 </script>
 
 <div class="attr-editor">
@@ -314,6 +327,16 @@
                 <button class="unit-toggle" class:disabled-input={isRoot} onclick={toggleHeightUnit} disabled={isRoot}>
                     {currentHeightUnit}
                 </button>
+            </div>
+
+            <!-- box-sizing 下拉框 -->
+            <div class="attr-item">
+                <label for="node-box-sizing">盒子类型</label>
+                <select id="node-box-sizing" bind:value={currentBoxSizing} onchange={(e) => handleBoxSizingChange(e.currentTarget.value)}>
+                    <option value="border-box">边框盒模型 (border-box)</option>
+                    <option value="content-box">内容盒模型 (content-box)</option>
+                </select>
+                <span class="unit-placeholder"></span>
             </div>
 
             <!-- overflow 下拉框 -->
