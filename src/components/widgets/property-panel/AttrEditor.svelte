@@ -4,7 +4,7 @@
 -->
 <script lang="ts">
     import { getNodeProps, updateNodeProps } from '../../../services/property-panel/property-panel.service'
-    import { findNodeById, domTree } from '../../../services/repository/dom-tree.store.svelte'
+    import { findNodeById, domTree, updateNodeProperties } from '../../../services/repository/dom-tree.store.svelte'
     import blocksConfig from '../../blocks/blocks.config.json' assert { type: 'json' }
     import { getElementByNodeId } from '../../../services/utils/dom-geometry.util'
     import { getScaleRatio } from '../../../services/utils/get-scale-ratio.util'
@@ -81,8 +81,8 @@
         propsSnapshot = getNodeProps(selectedId)
         const node = findNodeById(domTree, selectedId)
 
-        // 同步基本属性
-        currentId = propsSnapshot?.attributes?.id ?? selectedId
+        // 同步基本属性 - 优先显示 dataId，其次显示 id
+        currentId = node?.dataId ?? selectedId
 
         // 同步名称
         const snapshotName = propsSnapshot?.attributes?.['data-name']
@@ -136,13 +136,12 @@
     // 删除原先硬编码
     // const componentTypes = ['SimpleBox', 'ResponsiveBox', 'RealTimeClock']
 
-    // 修改 id —— 通过 attributes.id，而不是节点主键 node.id
+    // 修改 id —— 更新节点的 dataId（对应数据库中的 domId 字段）
     function handleIdChange(newId: string) {
         if (!selectedId) return
         currentId = newId
-        updateNodeProps(selectedId, {
-            attributes: { id: newId }
-        })
+        // 直接更新 dataId 字段，这将同步更新到数据库
+        updateNodeProperties(selectedId, { dataId: newId })
     }
 
     function handleNameChange(newName: string) {
