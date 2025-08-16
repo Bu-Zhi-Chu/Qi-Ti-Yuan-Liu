@@ -38,6 +38,9 @@
 
     // 鼠标穿透相关变量
     let currentPointerEvents: 'auto' | 'none' = 'auto'
+    
+    // overflow 相关变量
+    let currentOverflow: 'hidden' | 'auto' | 'scroll' | 'visible' = 'hidden'
 
     // 当选中节点变化时，同步宽高
     $: if (selectedId) {
@@ -53,6 +56,8 @@
         if (currentHeightUnit === '%') currentHeightValue = String(Math.round(parseFloat(currentHeightValue) * 10) / 10)
         // 同步鼠标穿透属性
         currentPointerEvents = (nodeProps?.styles?.pointerEvents as 'auto' | 'none') || 'auto'
+        // 同步 overflow 属性
+        currentOverflow = (nodeProps?.styles?.overflow as 'hidden' | 'auto' | 'scroll' | 'visible') || 'hidden'
     } else {
         currentId = ''
         currentName = ''
@@ -63,6 +68,7 @@
         currentHeightValue = ''
         currentHeightUnit = '%'
         currentPointerEvents = 'auto'
+        currentOverflow = 'hidden'
     }
 
     // 当选中节点变化时，同步所有属性
@@ -99,6 +105,8 @@
 
         // 同步鼠标穿透属性
         currentPointerEvents = (propsSnapshot?.styles?.pointerEvents as 'auto' | 'none') || 'auto'
+        // 同步 overflow 属性
+        currentOverflow = (propsSnapshot?.styles?.overflow as 'hidden' | 'auto' | 'scroll' | 'visible') || 'hidden'
 
         // 若为根节点，固定名称为"画布"
         if (isRoot) {
@@ -252,6 +260,13 @@
         currentPointerEvents = value as 'auto' | 'none'
         updateNodeProps(selectedId, { styles: { pointerEvents: value } })
     }
+    
+    // 处理 overflow 属性变更
+    function handleOverflowChange(value: string) {
+        if (!selectedId) return
+        currentOverflow = value as 'hidden' | 'auto' | 'scroll' | 'visible'
+        updateNodeProps(selectedId, { styles: { overflow: value } })
+    }
 </script>
 
 <div class="attr-editor">
@@ -259,17 +274,17 @@
         <h3>主要属性</h3>
         <div class="attr-list">
             <div class="attr-item">
-                <label for="node-id">节点编号:</label>
+                <label for="node-id">节点编号</label>
                 <input id="node-id" type="text" bind:value={currentId} oninput={(e) => handleIdChange(e.currentTarget.value)} placeholder="输入节点编号..." />
                 <span class="unit-placeholder"></span>
             </div>
             <div class="attr-item">
-                <label for="node-name">节点名称:</label>
+                <label for="node-name">节点名称</label>
                 <input id="node-name" type="text" bind:value={currentName} oninput={(e) => handleNameChange(e.currentTarget.value)} placeholder="输入节点名称..." disabled={isRoot} class:disabled-input={isRoot} />
                 <span class="unit-placeholder"></span>
             </div>
             <div class="attr-item">
-                <label for="node-type">节点类型:</label>
+                <label for="node-type">节点类型</label>
                 {#if isRoot}
                     <input id="node-type-text" type="text" value="画布" disabled class="disabled-input" />
                 {:else}
@@ -285,7 +300,7 @@
 
             <!-- 宽度输入 -->
             <div class="attr-item">
-                <label for="node-width">节点宽度:</label>
+                <label for="node-width">节点宽度</label>
                 <input id="node-width" type="number" step={currentWidthUnit === '%' ? 0.1 : 1} bind:value={currentWidthValue} oninput={(e) => handleWidthValueChange(e.currentTarget.value)} placeholder="宽度值..." disabled={isRoot} class:disabled-input={isRoot} />
                 <button class="unit-toggle" class:disabled-input={isRoot} onclick={toggleWidthUnit} disabled={isRoot}>
                     {currentWidthUnit}
@@ -294,16 +309,28 @@
 
             <!-- 高度输入 -->
             <div class="attr-item">
-                <label for="node-height">节点高度:</label>
+                <label for="node-height">节点高度</label>
                 <input id="node-height" type="number" step={currentHeightUnit === '%' ? 0.1 : 1} bind:value={currentHeightValue} oninput={(e) => handleHeightValueChange(e.currentTarget.value)} placeholder="高度值..." disabled={isRoot} class:disabled-input={isRoot} />
                 <button class="unit-toggle" class:disabled-input={isRoot} onclick={toggleHeightUnit} disabled={isRoot}>
                     {currentHeightUnit}
                 </button>
             </div>
 
+            <!-- overflow 下拉框 -->
+            <div class="attr-item">
+                <label for="node-overflow">溢出处理</label>
+                <select id="node-overflow" bind:value={currentOverflow} onchange={(e) => handleOverflowChange(e.currentTarget.value)}>
+                    <option value="hidden">隐藏 (hidden)</option>
+                    <option value="auto">自动 (auto)</option>
+                    <option value="scroll">滚动 (scroll)</option>
+                    <option value="visible">显示 (visible)</option>
+                </select>
+                <span class="unit-placeholder"></span>
+            </div>
+            
             <!-- 鼠标穿透下拉框 -->
             <div class="attr-item">
-                <label for="node-pointer-events">鼠标穿透:</label>
+                <label for="node-pointer-events">鼠标穿透</label>
                 <select id="node-pointer-events" bind:value={currentPointerEvents} onchange={(e) => handlePointerEventsChange(e.currentTarget.value)}>
                     <option value="auto">阻挡 (auto)</option>
                     <option value="none">穿透 (none)</option>
@@ -313,7 +340,7 @@
 
             <!-- 新增备注字段 -->
             <div class="attr-item">
-                <label for="node-remark">节点备注:</label>
+                <label for="node-remark">节点备注</label>
                 <textarea id="node-remark" rows="3" bind:value={currentRemark} oninput={(e) => handleRemarkChange(e.currentTarget.value)} placeholder="输入备注..." style="resize: vertical;"></textarea>
                 <span class="unit-placeholder"></span>
             </div>

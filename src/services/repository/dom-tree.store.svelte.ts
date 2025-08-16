@@ -16,7 +16,9 @@ const domTreeData = $state<DomNode>({
   styles: {
     width: '100%',
     height: '100%',
-    backgroundColor: '#ffffff'
+    backgroundColor: '#ffffff',
+    overflow: 'hidden',
+    pointerEvents: 'auto'
   },
   expanded: true,
   children: [
