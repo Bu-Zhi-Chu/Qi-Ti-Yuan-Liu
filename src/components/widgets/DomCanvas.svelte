@@ -31,24 +31,134 @@
     import drawModeAction from '../../services/actions/draw-mode.action'
     import DrawModeOverlay from './DrawModeOverlay.svelte'
     import { isDrawMode } from '../../services/repository/draw-mode.store.svelte'
+    import DexieService from '../../services/database/dexie-service'
 </script>
 
 <script lang="ts">
     // 组件属性 - 使用 Runes $props 声明，selectedId 支持双向绑定
     let { editing = false } = $props<{ editing?: boolean }>()
 
+    import { onMount } from 'svelte'
     import { domTree, selectedId, setSelectedId } from '../../services/repository/dom-tree.store.svelte'
+    import Dexie from 'dexie'
     // 顶部容器引用，用于渲染画布内容
     let canvasContainerRef: HTMLDivElement | null = null
 
     /* =================== 画布移动与缩放逻辑 =================== */
-    // 位移状态
+    // 位移状态 - 从数据库加载
     let offsetX = $state(0)
     let offsetY = $state(0)
-    // 缩放状态
+    // 缩放状态 - 从数据库加载
     let scale = $state(1)
     // 拖动状态
     let isDragging = $state(false)
+
+    // 项目ID - 从路由参数获取
+    let projectId = $state('')
+
+    // 从URL获取项目ID
+    onMount(() => {
+        console.log('当前URL:', window.location.href)
+        console.log('当前hash:', window.location.hash)
+        console.log('当前pathname:', window.location.pathname)
+        
+        // 支持多种路由格式：hash路由和path路由
+        let match = window.location.hash.match(/\/editor\/([^\/]+)/)
+        if (!match) {
+            match = window.location.pathname.match(/\/editor\/([^\/]+)/)
+        }
+        if (!match) {
+            match = window.location.pathname.match(/\/search\/editor\/([^\/]+)/)
+        }
+        
+        if (match) {
+            projectId = match[1]
+            console.log('提取到项目ID:', projectId)
+            loadCanvasState()
+        } else {
+            console.warn('未从URL中提取到项目ID，当前URL:', window.location.href)
+        }
+    })
+
+    // 从项目数据加载canvas状态
+    async function loadCanvasState() {
+        if (!projectId) {
+            console.warn('项目ID为空，无法加载canvas状态')
+            return
+        }
+        try {
+            console.log('开始加载项目:', projectId)
+            const project = await DexieService.getRecord<any>('qi-qiao-ban', 'projects', projectId)
+            console.log('加载到的项目数据:', project)
+            if (project && project.canvasState) {
+                console.log('找到canvasState:', project.canvasState)
+                offsetX = project.canvasState.x || 0
+                offsetY = project.canvasState.y || 0
+                scale = project.canvasState.scale || 1
+                console.log('已应用canvas状态:', { offsetX, offsetY, scale })
+                
+                // 强制刷新DOM状态
+                if (canvasContainerRef) {
+                    console.log('DOM元素样式更新前:', {
+                        offsetX: canvasContainerRef.style.getPropertyValue('--offset-x'),
+                        offsetY: canvasContainerRef.style.getPropertyValue('--offset-y'),
+                        scale: canvasContainerRef.style.getPropertyValue('--scale')
+                    })
+                    canvasContainerRef.style.setProperty('--offset-x', `${offsetX}px`)
+                    canvasContainerRef.style.setProperty('--offset-y', `${offsetY}px`)
+                    canvasContainerRef.style.setProperty('--scale', `${scale}`)
+                    console.log('DOM元素样式更新后:', {
+                        offsetX: canvasContainerRef.style.getPropertyValue('--offset-x'),
+                        offsetY: canvasContainerRef.style.getPropertyValue('--offset-y'),
+                        scale: canvasContainerRef.style.getPropertyValue('--scale')
+                    })
+                }
+            } else {
+                console.log('未找到canvas状态，使用默认值')
+            }
+        } catch (error) {
+            console.error('加载canvas状态失败:', error)
+        }
+    }
+
+    // 保存canvas状态到项目数据
+    async function saveCanvasState() {
+        if (!projectId) {
+            console.warn('项目ID为空，无法保存canvas状态')
+            return
+        }
+        try {
+            const canvasState = { x: offsetX, y: offsetY, scale: scale }
+            console.log('准备保存canvas状态:', canvasState, '到项目:', projectId)
+            const success = await DexieService.updateRecord('qi-qiao-ban', 'projects', projectId, {
+                canvasState,
+                updatedAt: Date.now()
+            })
+            if (success) {
+                console.log('已保存canvas状态:', canvasState)
+                // 验证保存是否成功
+                const verify = await DexieService.getRecord<any>('qi-qiao-ban', 'projects', projectId)
+                console.log('验证保存结果:', verify?.canvasState)
+            } else {
+                console.warn('保存canvas状态失败，可能项目不存在')
+            }
+        } catch (error) {
+            console.error('保存canvas状态失败:', error)
+        }
+    }
+
+    // 当画布状态变化时自动保存
+    $effect(() => {
+        // 依赖画布状态，状态变化时触发保存
+        const currentState = { x: offsetX, y: offsetY, scale: scale }
+        if (projectId) {
+            // 防抖保存，避免频繁更新
+            const timeout = setTimeout(() => {
+                saveCanvasState()
+            }, 300)
+            return () => clearTimeout(timeout)
+        }
+    })
 
     // 平移回调处理函数
     function handlePan({ x, y, event }: { x: number; y: number; event: PointerEvent }) {
@@ -76,14 +186,13 @@
     }
 
     /*
-     * 当退出编辑模式时，重置画布位移和缩放，确保"正常模式"回到原位
+     * 当退出编辑模式时，不再重置画布位移和缩放
+     * 正常模式下保持用户设置的画布位置
      */
+    let wasEditing = $state(false)
     $effect(() => {
-        if (!editing && (offsetX !== 0 || offsetY !== 0 || scale !== 1)) {
-            offsetX = 0
-            offsetY = 0
-            scale = 1
-        }
+        // 仅记录状态变化，不再重置画布位置
+        wasEditing = editing
     })
 </script>
 

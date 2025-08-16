@@ -71,7 +71,8 @@
             templateId: 'blank',
             data: {},
             createdAt: now,
-            updatedAt: now
+            updatedAt: now,
+            canvasState: { x: 0, y: 0, scale: 1 }
         })
         projects = [...projects, { id, name, createTime: new Date(now).toLocaleString(), thumbnail: undefined }]
         window.location.hash = `#/editor/${id}`
