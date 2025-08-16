@@ -7,6 +7,7 @@
  */
 
 import type { DomNode } from '../../types/dom-node.types';
+import DexieService from '../database/dexie-service';
 
 // 初始 domTree 数据结构
 const domTreeData = $state<DomNode>({
@@ -29,6 +30,9 @@ const domTreeData = $state<DomNode>({
 // 当前选中的节点ID
 let selectedNodeId = $state<string | null>('root');
 
+// 当前项目ID
+let currentProjectId = $state<string>('');
+
 // 导出只读引用
 export const domTree = domTreeData;
 const _selectedId = $derived(() => selectedNodeId);
@@ -36,6 +40,87 @@ const _selectedId = $derived(() => selectedNodeId);
 // 导出函数以获取当前选中节点 ID，避免直接导出派生状态
 export function selectedId() {
   return _selectedId();
+}
+
+/**
+ * 设置当前项目ID
+ */
+export function setProjectId(projectId: string): void {
+  currentProjectId = projectId;
+}
+
+/**
+ * 从数据库加载domTree数据
+ */
+export async function loadDomTreeFromDatabase(projectId: string): Promise<boolean> {
+  if (!projectId) {
+    console.warn('项目ID为空，无法加载domTree数据');
+    return false;
+  }
+
+  try {
+    const project = await DexieService.getRecord<any>('qi-qiao-ban', 'projects', projectId);
+    if (project && project.data) {
+      try {
+        const loadedData = JSON.parse(project.data);
+        // 更新domTree数据
+        Object.assign(domTreeData, loadedData);
+        console.log('已从数据库加载domTree数据');
+        return true;
+      } catch (error) {
+        console.error('解析domTree数据失败:', error);
+        return false;
+      }
+    } else {
+      console.log('未找到domTree数据，使用默认结构');
+      return false;
+    }
+  } catch (error) {
+    console.error('加载domTree数据失败:', error);
+    return false;
+  }
+}
+
+// 防抖定时器
+let saveTimeout: ReturnType<typeof setTimeout> | null = null;
+
+/**
+ * 保存domTree数据到数据库
+ */
+async function saveDomTreeToDatabase(): Promise<void> {
+  if (!currentProjectId) {
+    console.warn('项目ID为空，无法保存domTree数据');
+    return;
+  }
+
+  try {
+    console.log('保存domTree数据到项目:', currentProjectId);
+    const success = await DexieService.updateRecord('qi-qiao-ban', 'projects', currentProjectId, {
+      data: JSON.stringify(domTreeData),
+      updatedAt: Date.now()
+    });
+
+    if (success) {
+      console.log('domTree数据已保存到数据库');
+    } else {
+      console.warn('保存domTree数据失败');
+    }
+  } catch (error) {
+    console.error('保存domTree数据失败:', error);
+  }
+}
+
+/**
+ * 防抖保存domTree数据
+ */
+function debouncedSaveDomTree(): void {
+  if (saveTimeout) {
+    clearTimeout(saveTimeout);
+  }
+
+  saveTimeout = setTimeout(() => {
+    saveDomTreeToDatabase();
+  }, 500); // 500ms防抖
 }
 
 /**
@@ -87,6 +172,8 @@ export function addNodeToParent(parentId: string, newNode: DomNode): boolean {
     parent.expanded = true;
     // 添加新节点并触发响应式更新
     parent.children = [...parent.children, newNode];
+    // 保存到数据库
+    debouncedSaveDomTree();
     return true;
   }
   return false;
@@ -196,6 +283,8 @@ export function toggleExpanded(nodeId: string): boolean {
   const node = findNodeById(domTreeData, nodeId);
   if (node) {
     node.expanded = !node.expanded;
+    // 保存到数据库
+    debouncedSaveDomTree();
     return true;
   }
   return false;
@@ -211,6 +300,8 @@ export function toggleHidden(nodeId: string): boolean {
   const node = findNodeById(domTreeData, nodeId);
   if (node) {
     node.hidden = !node.hidden;
+    // 保存到数据库
+    debouncedSaveDomTree();
     return true;
   }
   return false;
@@ -228,7 +319,12 @@ export function moveNode(nodeId: string, newParentId: string): boolean {
   if (!node) return false;
   const removed = removeNodeById(nodeId);
   if (!removed) return false;
-  return addNodeToParent(newParentId, node);
+  const added = addNodeToParent(newParentId, node);
+  if (added) {
+    // 保存到数据库
+    debouncedSaveDomTree();
+  }
+  return added;
 }
 
 /**
@@ -261,6 +357,8 @@ export function removeNodeById(nodeId: string): boolean {
     parent.children = parent.children.filter(child =>
       (child.id !== nodeId) && (child.dataId !== nodeId)
     );
+    // 保存到数据库
+    debouncedSaveDomTree();
     return true;
   }
 
@@ -278,6 +376,8 @@ export function updateNodeProperties(nodeId: string, updates: Partial<DomNode>):
   if (node) {
     // 合并更新并触发响应式更新
     Object.assign(node, updates);
+    // 保存到数据库
+    debouncedSaveDomTree();
     return true;
   }
   return false;
@@ -298,6 +398,8 @@ export function updateNodeStyles(nodeId: string, styles: Record<string, string>)
     }
     // 合并样式并触发响应式更新
     node.styles = { ...node.styles, ...styles };
+    // 保存到数据库
+    debouncedSaveDomTree();
     return true;
   }
   return false;

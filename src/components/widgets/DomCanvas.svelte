@@ -39,7 +39,7 @@
     let { editing = false } = $props<{ editing?: boolean }>()
 
     import { onMount } from 'svelte'
-    import { domTree, selectedId, setSelectedId } from '../../services/repository/dom-tree.store.svelte'
+    import { domTree, selectedId, setSelectedId, setProjectId, loadDomTreeFromDatabase } from '../../services/repository/dom-tree.store.svelte'
     import Dexie from 'dexie'
     // 顶部容器引用，用于渲染画布内容
     let canvasContainerRef: HTMLDivElement | null = null
@@ -86,10 +86,16 @@
             console.warn('项目ID为空，无法加载canvas状态')
             return
         }
+
+        // 设置项目ID到domTree store
+        setProjectId(projectId)
+
         try {
             console.log('开始加载项目:', projectId)
             const project = await DexieService.getRecord<any>('qi-qiao-ban', 'projects', projectId)
             console.log('加载到的项目数据:', project)
+
+            // 加载canvas状态
             if (project && project.canvasState) {
                 console.log('找到canvasState:', project.canvasState)
                 offsetX = project.canvasState.x || 0
@@ -116,6 +122,9 @@
             } else {
                 console.log('未找到canvas状态，使用默认值')
             }
+
+            // 加载domTree数据
+            await loadDomTreeFromDatabase(projectId)
         } catch (error) {
             console.error('加载canvas状态失败:', error)
         }
@@ -201,6 +210,7 @@
     bind:this={canvasContainerRef}
     class="canvas-container"
     class:editing
+    data-id="画板"
     data-name="画板"
     style="--offset-x: {offsetX}px; --offset-y: {offsetY}px; --scale: {scale};"
     use:usePan={{ key: 'Space', onPan: handlePan, scaleAccessor: () => getScaleRatio(), offsetAccessor: () => ({ x: offsetX, y: offsetY }), editingAccessor: () => editing }}
