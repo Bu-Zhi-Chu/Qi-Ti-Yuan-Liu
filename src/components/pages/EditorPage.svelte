@@ -20,11 +20,44 @@
     import DomCanvas from '../widgets/DomCanvas.svelte'
     import DomTreeList from '../widgets/DomTreeList.svelte'
     import PropertyPanel from '../widgets/property-panel/PropertyPanel.svelte'
+    import DexieService from '../../services/database/dexie-service'
 
     // 引入 DOM 树集中式状态管理
 
     // 是否显示工作区，默认正常模式隐藏
-    let showWorkspace = false
+    let showWorkspace = $state(false)
+
+    // 画布变换状态（持久化）
+    let translateX = $state(0)
+    let translateY = $state(0)
+    let scale = $state(1)
+
+    // 当前项目 ID
+    let projectId: string | undefined
+
+    // 画布变换回调，实时保存至 IndexedDB
+    async function handleTransformChange({ x, y, scale: s }: { x: number; y: number; scale: number }) {
+        translateX = x
+        translateY = y
+        scale = s
+        if (projectId) {
+            await DexieService.updateRecord('qi-qiao-ban', 'projects', { id: projectId, translateX: x, translateY: y, scale: s, updatedAt: Date.now() })
+        }
+    }
+
+    onMount(async () => {
+        // 解析路由中的项目 ID（#/editor/<id>）
+        const match = window.location.hash.match(/#\/editor\/([^/?#]+)/)
+        projectId = match ? match[1] : undefined
+        if (projectId) {
+            const record = await DexieService.getRecord<any>('qi-qiao-ban', 'projects', projectId)
+            if (record) {
+                translateX = record.translateX ?? 0
+                translateY = record.translateY ?? 0
+                scale = record.scale ?? 1
+            }
+        }
+    })
 
     // 属性面板标签控制
     const tabs = [
@@ -53,7 +86,7 @@
 <div style="width: 100%;height: 100%;position: absolute;background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);z-index: 0;overflow: hidden;">
     <!-- 画布包裹元素，承担缩放与定位 -->
     <!-- @ts-ignore: props typing still WIP -->
-    <DomCanvas editing={showWorkspace} />
+    <DomCanvas editing={showWorkspace} initTranslateX={translateX} initTranslateY={translateY} initScale={scale} onTransformChange={handleTransformChange} />
 </div>
 
 <!-- 工作区 -->

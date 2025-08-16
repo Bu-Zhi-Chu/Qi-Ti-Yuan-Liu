@@ -29,7 +29,7 @@ export default class DexieService {
         db.version(1).stores({
             // 使用字符串 UUID 作为主键，不再自增
             templates: '++id, name, desc, cover, tag, thumbnailUrl',
-            projects: 'id, name, templateId, data, createdAt, updatedAt',
+            projects: 'id, name, templateId, data, translateX, translateY, scale, createdAt, updatedAt',
             // doms 表：记录页面节点信息，projectId 字段关联所属项目
             doms: '++id, projectId, nodeId, parentNodeId, type, attributes, style, textContent'
         })
@@ -98,6 +98,43 @@ export default class DexieService {
         } catch (error) {
             console.error(`新增记录失败: ${tableName}`, error)
             throw error
+        }
+    }
+
+    /**
+     * 更新表中指定主键记录
+     * @param dbName    数据库名称
+     * @param tableName 表名
+     * @param data      要更新的数据（必须包含主键字段）
+     * @returns 更新是否成功
+     */
+    static async updateRecord<T extends { id: string | number }>(dbName: string, tableName: string, data: Partial<T>): Promise<boolean> {
+        try {
+            const db = new Dexie(dbName)
+            await db.open()
+            await db.table(tableName).update(data.id, data)
+            return true
+        } catch (error) {
+            console.error(`更新记录失败: ${tableName}.${data.id}`, error)
+            return false
+        }
+    }
+
+    /**
+     * 获取表中指定主键记录
+     * @param dbName    数据库名称
+     * @param tableName 表名
+     * @param key       主键值
+     * @returns 记录数据或 undefined
+     */
+    static async getRecord<T>(dbName: string, tableName: string, key: any): Promise<T | undefined> {
+        try {
+            const db = new Dexie(dbName)
+            await db.open()
+            return await db.table(tableName).get(key) as T | undefined
+        } catch (error) {
+            console.error(`获取记录失败: ${tableName}.${key}`, error)
+            return undefined
         }
     }
 }
