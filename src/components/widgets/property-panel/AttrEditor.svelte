@@ -287,7 +287,7 @@
         <div class="attr-list">
             <div class="attr-item">
                 <label for="node-id">节点编号</label>
-                <input id="node-id" type="text" bind:value={currentId} oninput={(e) => handleIdChange(e.currentTarget.value)} placeholder="输入节点编号..." />
+                <input id="node-id" type="text" bind:value={currentId} oninput={(e) => handleIdChange(e.currentTarget.value)} placeholder="输入节点编号..." disabled={isRoot} class:disabled-input={isRoot} />
                 <span class="unit-placeholder"></span>
             </div>
             <div class="attr-item">
