@@ -93,7 +93,15 @@
 
     <!-- 删除按钮 -->
     {#if showDelete && isHovered}
-        <ResponsiveBox style="position: absolute; top: 12px; left: 12px; background: rgba(220,38,38,0.8); color:#f8fafc; font-size:12px; padding:4px 8px; border-radius:4px; cursor:pointer; z-index:20;" onclick={handleDelete}>删除</ResponsiveBox>
+        <ResponsiveBox
+            style="position: absolute; top: 12px; left: 12px; background: rgba(220,38,38,0.8); color:#f8fafc; font-size:12px; padding:4px 8px; border-radius:4px; cursor:pointer; z-index:20;"
+            onclick={(e: MouseEvent) => {
+                e.stopPropagation()
+                handleDelete()
+            }}
+        >
+            删除
+        </ResponsiveBox>
     {/if}
 
     <!-- 右上角悬浮标签 -->

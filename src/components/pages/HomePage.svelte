@@ -27,7 +27,11 @@
     let projects: Project[] = $state([])
 
     onMount(async () => {
-        const rows = await DexieService.queryRecords<any>('qi-qiao-ban', 'projects')
+        const dbName = 'qi-qiao-ban'
+        if (!(await DexieService.databaseExists(dbName))) {
+            await DexieService.createDatabase(dbName)
+        }
+        const rows = await DexieService.queryRecords<any>(dbName, 'projects')
         projects = rows.map((r: any) => ({
             id: String(r.id),
             name: r.name,
@@ -43,11 +47,14 @@
         showWindow = true
     }
 
-    function openProject(projectId: string) {}
+    function openProject(projectId: string) {
+        // 跳转到编辑器并携带项目ID
+        window.location.hash = `#/editor/${projectId}`
+    }
 
     async function deleteProject(projectId?: string | number) {
         if (projectId == null) return
-        const ok = await DexieService.deleteRecord('qi-qiao-ban', 'projects', Number(projectId))
+        const ok = await DexieService.deleteRecord('qi-qiao-ban', 'projects', projectId)
         if (ok) {
             projects = projects.filter((p) => p.id !== String(projectId))
         } else {
@@ -55,8 +62,22 @@
         }
     }
 
-    function confirmNewProject(name: string) {
-        window.location.hash = '#/editor'
+    async function confirmNewProject(name: string) {
+        const id = crypto.randomUUID()
+        const now = Date.now()
+        await DexieService.addRecord('qi-qiao-ban', 'projects', {
+            id,
+            name,
+            templateId: 'blank',
+            data: {},
+            createdAt: now,
+            updatedAt: now
+        })
+        projects = [
+            ...projects,
+            { id, name, createTime: new Date(now).toLocaleString(), thumbnail: undefined }
+        ]
+        window.location.hash = `#/editor/${id}`
         showWindow = false
     }
 </script>

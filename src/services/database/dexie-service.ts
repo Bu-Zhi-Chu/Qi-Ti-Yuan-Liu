@@ -89,4 +89,15 @@ export default class DexieService {
             return false
         }
     }
+
+    static async addRecord<T>(dbName: string, tableName: string, data: T): Promise<any> {
+        try {
+            const db = new Dexie(dbName)
+            await db.open()
+            return await db.table(tableName).add(data as any)
+        } catch (error) {
+            console.error(`新增记录失败: ${tableName}`, error)
+            throw error
+        }
+    }
 }
