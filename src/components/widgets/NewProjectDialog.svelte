@@ -12,7 +12,7 @@
     import ResponsiveBox from '../core/ResponsiveBox.svelte'
     import GenericCard from './GenericCard.svelte'
     import DexieService from '../../services/database/dexie-service'
-    import Dexie from 'dexie'
+    
 
     // Props定义
     interface Props {
@@ -58,21 +58,12 @@
         })
     })
 
-    const confirm = async () => {
+    const confirm = () => {
         const name = projectName.trim()
         if (!name) {
             alert('请输入项目名称')
             return
         }
-        const tpl = templates.find((t) => t.id === selected)
-        const db = new Dexie('qi-qiao-ban')
-        await db.open()
-        await db.table('projects').add({
-            name,
-            createdAt: Date.now(),
-            templateId: selected,
-            thumbnailUrl: tpl?.thumbnailUrl ?? tpl?.cover ?? ''
-        })
         onConfirm?.(name)
     }
 

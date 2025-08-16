@@ -73,10 +73,7 @@
             createdAt: now,
             updatedAt: now
         })
-        projects = [
-            ...projects,
-            { id, name, createTime: new Date(now).toLocaleString(), thumbnail: undefined }
-        ]
+        projects = [...projects, { id, name, createTime: new Date(now).toLocaleString(), thumbnail: undefined }]
         window.location.hash = `#/editor/${id}`
         showWindow = false
     }
