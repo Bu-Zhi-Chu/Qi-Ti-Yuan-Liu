@@ -61,7 +61,7 @@
         console.log('当前URL:', window.location.href)
         console.log('当前hash:', window.location.hash)
         console.log('当前pathname:', window.location.pathname)
-        
+
         // 支持多种路由格式：hash路由和path路由
         let match = window.location.hash.match(/\/editor\/([^\/]+)/)
         if (!match) {
@@ -70,7 +70,7 @@
         if (!match) {
             match = window.location.pathname.match(/\/search\/editor\/([^\/]+)/)
         }
-        
+
         if (match) {
             projectId = match[1]
             console.log('提取到项目ID:', projectId)
@@ -96,7 +96,7 @@
                 offsetY = project.canvasState.y || 0
                 scale = project.canvasState.scale || 1
                 console.log('已应用canvas状态:', { offsetX, offsetY, scale })
-                
+
                 // 强制刷新DOM状态
                 if (canvasContainerRef) {
                     console.log('DOM元素样式更新前:', {
@@ -201,6 +201,7 @@
     bind:this={canvasContainerRef}
     class="canvas-container"
     class:editing
+    data-name="画板"
     style="--offset-x: {offsetX}px; --offset-y: {offsetY}px; --scale: {scale};"
     use:usePan={{ key: 'Space', onPan: handlePan, scaleAccessor: () => getScaleRatio(), offsetAccessor: () => ({ x: offsetX, y: offsetY }), editingAccessor: () => editing }}
     use:useWheelZoom={{
