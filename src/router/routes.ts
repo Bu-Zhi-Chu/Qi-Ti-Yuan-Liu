@@ -56,6 +56,12 @@ export const routes: Readonly<Route<any>[]> = [
         name: 'playground-base'
     },
     {
+        // 编辑器页面-带项目ID
+        path: '/editor/:id',
+        component: EditorPage,
+        name: 'editor-project'
+    },
+    {
         // 编辑器页面
         path: '/editor',
         component: EditorPage,
