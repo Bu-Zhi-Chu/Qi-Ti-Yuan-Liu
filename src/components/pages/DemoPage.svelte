@@ -234,11 +234,11 @@
 <style>
     .back-to-home {
         position: fixed;
-        bottom: 20px;
-        right: 20px;
+        bottom: calc(20px * var(--scale-ratio, 1));
+        right: calc(20px * var(--scale-ratio, 1));
         color: rgba(255, 255, 255, 0.7);
         text-decoration: none;
-        font-size: 14px;
+        font-size: calc(14px * var(--scale-ratio, 1));
         transition: color 0.2s ease;
         z-index: 10;
     }

@@ -8,6 +8,7 @@
 
 import type { DomNode } from '../../types/dom-node.types';
 import DexieService from '../database/dexie-service';
+import Dexie from 'dexie';
 
 // 初始 domTree 数据结构
 const domTreeData = $state<DomNode>({
@@ -50,6 +51,63 @@ export function setProjectId(projectId: string): void {
 }
 
 /**
+ * 从doms表加载DOM树数据
+ */
+async function loadDomNodesFromDomsTable(projectId: string): Promise<DomNode | null> {
+  try {
+    const db = new Dexie('qi-qiao-ban');
+    await db.open();
+    const nodes = await db.table('doms').where('projectId').equals(projectId).toArray();
+
+    if (nodes.length === 0) {
+      return null;
+    }
+
+    // 构建节点映射
+    const nodeMap = new Map<string, DomNode>();
+
+    // 创建所有节点
+    for (const nodeData of nodes) {
+      const node: DomNode = {
+        id: nodeData.nodeId, // 不变的节点UUID
+        dataId: nodeData.domId || nodeData.nodeId, // DOM的真实id
+        componentType: nodeData.type,
+        styles: nodeData.style || {},
+        attributes: nodeData.attributes || {},
+        textContent: nodeData.textContent,
+        expanded: nodeData.attributes?.expanded !== false,
+        hidden: nodeData.attributes?.hidden || false,
+        children: []
+      };
+      nodeMap.set(nodeData.nodeId, node);
+    }
+
+    // 构建树结构
+    let rootNode: DomNode | null = null;
+    for (const nodeData of nodes) {
+      const node = nodeMap.get(nodeData.nodeId)!;
+
+      if (nodeData.parentNodeId === null) {
+        // 根节点
+        rootNode = node;
+      } else {
+        // 子节点，添加到父节点
+        const parent = nodeMap.get(nodeData.parentNodeId);
+        if (parent) {
+          if (!parent.children) parent.children = [];
+          parent.children.push(node);
+        }
+      }
+    }
+
+    return rootNode;
+  } catch (error) {
+    console.error('从doms表加载DOM树失败:', error);
+    return null;
+  }
+}
+
+/**
  * 从数据库加载domTree数据
  */
 export async function loadDomTreeFromDatabase(projectId: string): Promise<boolean> {
@@ -59,13 +117,37 @@ export async function loadDomTreeFromDatabase(projectId: string): Promise<boolea
   }
 
   try {
+    // 首先尝试从doms表加载
+    const domTreeFromDoms = await loadDomNodesFromDomsTable(projectId);
+    if (domTreeFromDoms) {
+      Object.assign(domTreeData, domTreeFromDoms);
+      console.log('已从doms表加载DOM树数据');
+      return true;
+    }
+
+    // 如果doms表没有数据，尝试从projects表加载
     const project = await DexieService.getRecord<any>('qi-qiao-ban', 'projects', projectId);
     if (project && project.data) {
       try {
-        const loadedData = JSON.parse(project.data);
+        let loadedData: any;
+
+        // 检查数据类型，避免重复解析
+        if (typeof project.data === 'string') {
+          loadedData = JSON.parse(project.data);
+        } else if (typeof project.data === 'object') {
+          loadedData = project.data;
+        } else {
+          console.error('不支持的domTree数据格式:', typeof project.data);
+          return false;
+        }
+
         // 更新domTree数据
         Object.assign(domTreeData, loadedData);
-        console.log('已从数据库加载domTree数据');
+        console.log('已从projects表加载domTree数据');
+
+        // 同时迁移到doms表
+        await saveDomNodesToDomsTable(projectId, domTreeData);
+
         return true;
       } catch (error) {
         console.error('解析domTree数据失败:', error);
@@ -85,41 +167,96 @@ export async function loadDomTreeFromDatabase(projectId: string): Promise<boolea
 let saveTimeout: ReturnType<typeof setTimeout> | null = null;
 
 /**
- * 保存domTree数据到数据库
+ * 将DOM树节点保存到doms表
  */
-async function saveDomTreeToDatabase(): Promise<void> {
+async function saveDomNodesToDomsTable(projectId: string, domTree: DomNode): Promise<void> {
+  try {
+    // 先删除该项目的所有旧节点
+    const db = new Dexie('qi-qiao-ban');
+    await db.open();
+    await db.table('doms').where('projectId').equals(projectId).delete();
+
+    // 递归保存所有节点到doms表
+    const saveNode = async (node: DomNode, parentNodeId: string | null) => {
+      // 确保数据是可序列化的
+      const safeAttributes = node.attributes ? JSON.parse(JSON.stringify(node.attributes)) : {};
+      const safeStyles = node.styles ? JSON.parse(JSON.stringify(node.styles)) : {};
+
+      await DexieService.addRecord('qi-qiao-ban', 'doms', {
+        projectId,
+        nodeId: node.id, // 不变的节点UUID
+        domId: node.dataId, // DOM的真实id（可修改的）
+        parentNodeId,
+        type: node.componentType,
+        attributes: {
+          dataName: node.dataName,
+          expanded: node.expanded,
+          hidden: node.hidden,
+          ...safeAttributes
+        },
+        style: safeStyles,
+        textContent: node.textContent || ''
+      });
+
+      // 递归保存子节点
+      if (node.children) {
+        for (const child of node.children) {
+          await saveNode(child, node.id);
+        }
+      }
+    };
+
+    // 从根节点开始保存
+    await saveNode(domTree, null);
+    console.log('所有DOM节点已保存到doms表');
+  } catch (error) {
+    console.error('保存DOM节点到doms表失败:', error);
+  }
+}
+
+/**
+ * 手动保存domTree数据到projects表的data字段
+ * 由用户点击按钮触发，避免频繁自动保存
+ */
+export async function saveDomTreeToProjectsData(): Promise<boolean> {
   if (!currentProjectId) {
     console.warn('项目ID为空，无法保存domTree数据');
-    return;
+    return false;
   }
 
   try {
-    console.log('保存domTree数据到项目:', currentProjectId);
+    console.log('手动保存domTree数据到projects表:', currentProjectId);
+
     const success = await DexieService.updateRecord('qi-qiao-ban', 'projects', currentProjectId, {
       data: JSON.stringify(domTreeData),
       updatedAt: Date.now()
     });
 
     if (success) {
-      console.log('domTree数据已保存到数据库');
+      console.log('domTree数据已手动保存到projects表');
+      return true;
     } else {
       console.warn('保存domTree数据失败');
+      return false;
     }
   } catch (error) {
     console.error('保存domTree数据失败:', error);
+    return false;
   }
 }
 
 /**
- * 防抖保存domTree数据
+ * 自动保存到doms表（细粒度存储，性能影响小）
  */
-function debouncedSaveDomTree(): void {
+function autoSaveToDomsTable(): void {
   if (saveTimeout) {
     clearTimeout(saveTimeout);
   }
 
   saveTimeout = setTimeout(() => {
-    saveDomTreeToDatabase();
+    if (currentProjectId) {
+      saveDomNodesToDomsTable(currentProjectId, domTreeData);
+    }
   }, 500); // 500ms防抖
 }
 
@@ -172,8 +309,8 @@ export function addNodeToParent(parentId: string, newNode: DomNode): boolean {
     parent.expanded = true;
     // 添加新节点并触发响应式更新
     parent.children = [...parent.children, newNode];
-    // 保存到数据库
-    debouncedSaveDomTree();
+    // 自动保存到doms表（不影响projects表）
+    autoSaveToDomsTable();
     return true;
   }
   return false;
@@ -283,8 +420,8 @@ export function toggleExpanded(nodeId: string): boolean {
   const node = findNodeById(domTreeData, nodeId);
   if (node) {
     node.expanded = !node.expanded;
-    // 保存到数据库
-    debouncedSaveDomTree();
+    // 自动保存到doms表（不影响projects表）
+    autoSaveToDomsTable();
     return true;
   }
   return false;
@@ -300,8 +437,8 @@ export function toggleHidden(nodeId: string): boolean {
   const node = findNodeById(domTreeData, nodeId);
   if (node) {
     node.hidden = !node.hidden;
-    // 保存到数据库
-    debouncedSaveDomTree();
+    // 自动保存到doms表（不影响projects表）
+    autoSaveToDomsTable();
     return true;
   }
   return false;
@@ -321,8 +458,8 @@ export function moveNode(nodeId: string, newParentId: string): boolean {
   if (!removed) return false;
   const added = addNodeToParent(newParentId, node);
   if (added) {
-    // 保存到数据库
-    debouncedSaveDomTree();
+    // 自动保存到doms表（不影响projects表）
+    autoSaveToDomsTable();
   }
   return added;
 }
@@ -357,8 +494,8 @@ export function removeNodeById(nodeId: string): boolean {
     parent.children = parent.children.filter(child =>
       (child.id !== nodeId) && (child.dataId !== nodeId)
     );
-    // 保存到数据库
-    debouncedSaveDomTree();
+    // 自动保存到doms表（不影响projects表）
+    autoSaveToDomsTable();
     return true;
   }
 
@@ -376,8 +513,8 @@ export function updateNodeProperties(nodeId: string, updates: Partial<DomNode>):
   if (node) {
     // 合并更新并触发响应式更新
     Object.assign(node, updates);
-    // 保存到数据库
-    debouncedSaveDomTree();
+    // 自动保存到doms表（不影响projects表）
+    autoSaveToDomsTable();
     return true;
   }
   return false;
@@ -398,8 +535,8 @@ export function updateNodeStyles(nodeId: string, styles: Record<string, string>)
     }
     // 合并样式并触发响应式更新
     node.styles = { ...node.styles, ...styles };
-    // 保存到数据库
-    debouncedSaveDomTree();
+    // 自动保存到doms表（不影响projects表）
+    autoSaveToDomsTable();
     return true;
   }
   return false;

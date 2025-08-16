@@ -20,6 +20,10 @@ export interface DomNode {
   attributes?: Record<string, string>
   /** 行内样式 */
   styles?: Record<string, string>
+  /** 节点文本内容 */
+  textContent?: string
+  /** 节点名称（用于显示） */
+  dataName?: string
   /** 事件映射，值为处理函数 */
   events?: Record<string, Function>
   /** 是否展开（树形控件用） */

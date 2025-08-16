@@ -31,7 +31,9 @@ export default class DexieService {
             templates: '++id, name, desc, cover, tag, thumbnailUrl',
             projects: 'id, name, templateId, data, createdAt, updatedAt, canvasState',
             // doms 表：记录页面节点信息，projectId 字段关联所属项目
-            doms: '++id, projectId, nodeId, parentNodeId, type, attributes, style, textContent'
+            // nodeId: 不变的节点UUID（主键）
+            // domId: DOM的真实id（可修改的）
+            doms: 'nodeId, projectId, domId, parentNodeId, type, attributes, style, textContent'
         })
 
 

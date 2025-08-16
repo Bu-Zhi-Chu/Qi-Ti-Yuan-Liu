@@ -47,6 +47,18 @@
     onDestroy(() => {
         unregister && unregister()
     })
+
+    // 手动保存功能
+    import { saveDomTreeToProjectsData } from '../../services/repository/dom-tree.store.svelte'
+
+    async function handleManualSave() {
+        const success = await saveDomTreeToProjectsData()
+        if (success) {
+            console.log('项目数据已手动保存')
+        } else {
+            console.error('保存失败')
+        }
+    }
 </script>
 
 <!-- 背景 -->
@@ -60,7 +72,10 @@
 {#if showWorkspace}
     <div class="workspace" style="position: absolute;width: 100%;height: 100%;z-index: 10;pointer-events: none;">
         <!-- 顶部导航区 -->
-        <div style="display: block;width: 100%;height: 4%;background: rgba(1, 255, 255, 0.3);"></div>
+        <div style="display: flex;align-items: center;justify-content: flex-start;gap: 10px;padding: 0 10px;width: 100%;height: 4%;background: rgba(1, 255, 255, 0.3);pointer-events: auto;">
+            <button on:click={handleManualSave} style="padding: calc(4px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));background: none;border: none;color: white;cursor: pointer;font-size: calc(12px * var(--scale-ratio, 1));">保存</button>
+            <button on:click={() => (window.location.href = '/')} style="padding: calc(4px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));background: none;border: none;color: white;cursor: pointer;font-size: calc(12px * var(--scale-ratio, 1));">首页</button>
+        </div>
 
         <div style="display: flex;justify-content: space-between;width: 100%;height: 94%;">
             <!-- 左侧 -->
