@@ -143,11 +143,89 @@
         return unit === 'px' ? `calc(${value}px * var(--scale-ratio, 1))` : `${value}%`
     }
 
+    // 智能转换函数：将绝对定位的位置值转换为静态定位的margin值，保持原有单位
+    function smartConvertToMargin(value: string, unit: 'px' | '%', prop: 'top' | 'right' | 'bottom' | 'left', parentWidth: number, parentHeight: number): { value: string; unit: 'px' | '%' } {
+        if (!value) return { value: '', unit: unit }
+
+        const numericValue = parseFloat(value) || 0
+        const sr = getScaleRatio()
+
+        if (unit === 'px') {
+            // 对于px单位，保持px单位，进行等值转换
+            return { value: Math.round(numericValue * 100) / 100 + '', unit: 'px' }
+        } else if (unit === '%') {
+            // 对于百分比单位，保持百分比单位，根据属性类型调整
+            if (prop === 'top' || prop === 'bottom') {
+                // 垂直方向的百分比基于高度，转换为基于宽度的百分比
+                if (parentWidth > 0 && parentHeight > 0) {
+                    const heightBasedValue = (numericValue / 100) * parentHeight
+                    const widthBasedPercentage = (heightBasedValue / parentWidth) * 100
+                    return { value: Math.round(widthBasedPercentage * 10) / 10 + '', unit: '%' }
+                }
+            }
+            // 水平方向保持不变
+        }
+
+        return { value, unit }
+    }
+
     // 处理定位类型变更
     function handlePositionChange(val: string) {
         if (!selectedId || isRoot) return
         currentPosition = val as any
         updateNodeProps(selectedId, { styles: { position: val } })
+
+        // 获取父元素尺寸用于智能转换
+        const el = getElementByNodeId(selectedId!)
+        const parent = el?.parentElement as HTMLElement | null
+        const parentWidth = parent?.offsetWidth || 0
+        const parentHeight = parent?.offsetHeight || 0
+
+        if (val === 'static') {
+            // 当切换到静态定位时，使用智能转换将位置属性值同步到外边距属性，保持原有单位
+            if (currentTop) {
+                const converted = smartConvertToMargin(currentTop, currentTopUnit, 'top', parentWidth, parentHeight)
+                currentMarginTop = converted.value
+                currentMarginTopUnit = currentTopUnit // 保持原有单位
+                handleMarginPropChange('marginTop', converted.value, currentTopUnit)
+            }
+
+            if (currentRight) {
+                const converted = smartConvertToMargin(currentRight, currentRightUnit, 'right', parentWidth, parentHeight)
+                currentMarginRight = converted.value
+                currentMarginRightUnit = currentRightUnit // 保持原有单位
+                handleMarginPropChange('marginRight', converted.value, currentRightUnit)
+            }
+
+            if (currentBottom) {
+                const converted = smartConvertToMargin(currentBottom, currentBottomUnit, 'bottom', parentWidth, parentHeight)
+                currentMarginBottom = converted.value
+                currentMarginBottomUnit = currentBottomUnit // 保持原有单位
+                handleMarginPropChange('marginBottom', converted.value, currentBottomUnit)
+            }
+
+            if (currentLeft) {
+                const converted = smartConvertToMargin(currentLeft, currentLeftUnit, 'left', parentWidth, parentHeight)
+                currentMarginLeft = converted.value
+                currentMarginLeftUnit = currentLeftUnit // 保持原有单位
+                handleMarginPropChange('marginLeft', converted.value, currentLeftUnit)
+            }
+        } else {
+            // 当从静态定位切换到非静态定位时，清空margin值
+            currentMarginTop = ''
+            currentMarginRight = ''
+            currentMarginBottom = ''
+            currentMarginLeft = ''
+
+            updateNodeProps(selectedId, {
+                styles: {
+                    marginTop: '',
+                    marginRight: '',
+                    marginBottom: '',
+                    marginLeft: ''
+                }
+            })
+        }
     }
 
     // 处理位置属性变更 - 使用 top/right/bottom/left 属性实现定位（优先于 margin）
@@ -266,8 +344,8 @@
         const parent = el?.parentElement as HTMLElement | null
         if (!el || !parent) return val
 
-        // 获取父元素的宽度或高度
-        const parentSize = prop === 'marginLeft' || prop === 'marginRight' ? parent.offsetWidth : parent.offsetHeight
+        // 在静态定位中，所有margin的百分比都基于父容器宽度
+        const parentSize = parent.offsetWidth
         if (parentSize === 0) return val
 
         const sr = getScaleRatio()
