@@ -28,7 +28,7 @@
     // 新增根节点判断
     let isRoot = false
     // 根节点判定
-    $: isRoot = selectedId === domTree.id
+    $: isRoot = selectedId === 'root'
 
     // 宽度和高度相关变量
     let currentWidthValue: string = ''

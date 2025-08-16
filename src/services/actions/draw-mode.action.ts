@@ -31,7 +31,7 @@ import {
 import { registerMouseLeftPressRelease } from '../interactions/shortcut.service'
 import { calculateRelativeRect, createDrawNode, clampPointToRect } from '../utils/draw-mode.util'
 import { getElementByNodeId } from '../utils/dom-geometry.util'
-import { selectedId, addNodeToParent, domTree } from '../repository/dom-tree.store.svelte'
+import { selectedId, addNodeToParent } from '../repository/dom-tree.store.svelte'
 
 export interface DrawModeOptions {
   /** 是否处于编辑模式的 accessor */
@@ -131,7 +131,7 @@ const drawModeAction: Action<HTMLElement, DrawModeOptions> = (node, opts) => {
         let id = selectedId()
         if (!id) {
           // 若未选中任何节点，则默认使用根节点 id
-          id = domTree.id
+          id = 'root'
         }
         const targetEl = id ? getElementByNodeId(id) : null
         if (!targetEl) return

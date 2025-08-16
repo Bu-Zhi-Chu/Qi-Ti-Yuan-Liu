@@ -15,7 +15,6 @@
     import NewProjectDialog from '../widgets/NewProjectDialog.svelte'
     import { onMount } from 'svelte'
     import DexieService from '../../services/database/dexie-service'
-    import Dexie from 'dexie'
 
     interface Project {
         id: string
@@ -55,24 +54,11 @@
 
     async function deleteProject(projectId?: string | number) {
         if (projectId == null) return
-        
-        try {
-            // 删除关联的doms表数据
-            const dbName = 'qi-qiao-ban'
-            const db = new Dexie(dbName)
-            await db.open()
-            await db.table('doms').where('projectId').equals(String(projectId)).delete()
-            
-            // 删除项目记录
-            const ok = await DexieService.deleteRecord('qi-qiao-ban', 'projects', projectId)
-            if (ok) {
-                projects = projects.filter((p) => p.id !== String(projectId))
-            } else {
-                alert('删除失败，请重试')
-            }
-        } catch (error) {
-            console.error('删除项目失败:', error)
-            alert('删除项目时出错，请重试')
+        const ok = await DexieService.deleteRecord('qi-qiao-ban', 'projects', projectId)
+        if (ok) {
+            projects = projects.filter((p) => p.id !== String(projectId))
+        } else {
+            alert('删除失败，请重试')
         }
     }
 

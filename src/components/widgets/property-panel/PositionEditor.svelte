@@ -62,7 +62,7 @@
     let showMarginProps: boolean = true
 
     // 根节点判定
-    $: isRoot = selectedId === domTree.id
+    $: isRoot = selectedId === 'root'
 
     // 是否显示位置属性（非static定位才显示）
     $: showPositionProps = currentPosition !== 'static'

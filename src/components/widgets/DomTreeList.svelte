@@ -82,7 +82,7 @@
             case 'delete-node':
                 if (removeNodeById(id)) {
                     // 删除成功后默认选中根节点
-                    setSelectedId(domTree.id)
+                    setSelectedId('root')
                 }
                 break
             case 'drag-handle':
@@ -113,11 +113,10 @@
         const padding = 16
         const nodeKey = node.dataId ?? node.id
         const isSelected = nodeKey === currentSelectedId
-        const isRoot = level === 0
-        const displayName = isRoot ? '画布' : node.attributes?.['data-name'] || node.type || '元素'
+        const displayName = level === 0 ? '画布' : node.attributes?.['data-name'] || node.type || '元素'
         const hasChildren = node.children && node.children.length
-        const hideIcon = isRoot ? '' : node.hidden ? '🙈' : '👁'
-        const deleteIcon = isRoot ? '' : '🗑'
+        const hideIcon = level === 0 ? '' : node.hidden ? '🙈' : '👁'
+        const deleteIcon = level === 0 ? '' : '🗑'
 
         const childrenHtml = hasChildren && node.expanded ? node.children!.map((child: DomNode) => renderNode(child, level + 1, currentSelectedId)).join('') : ''
 
