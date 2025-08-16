@@ -64,13 +64,69 @@
 
     /** 派生最终内联样式，依赖 selectedId、node.styles、node.hidden 实时更新 */
     let finalStyle = $derived.by(() => {
-        const styleEntries = Object.entries(node.styles ?? {})
-        const styleStr = styleEntries
-            .map(([k, v]) => {
-                const kebab = k.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
-                return `${kebab}:${v}`
-            })
-            .join(';')
+        const styles = node.styles ?? {}
+        const styleEntries = Object.entries(styles)
+        
+        // 分离transform相关属性和其他样式
+        const transformProps = ['translateX', 'translateY', 'scaleX', 'scaleY', 'rotate', 'skewX', 'skewY']
+        const transformValues: string[] = []
+        const regularStyles: string[] = []
+        
+        // 处理transform相关属性
+        let hasTransform = false
+        
+        // 平移
+        if (styles.translateX || styles.translateY) {
+            const translateX = styles.translateX || '0'
+            const translateY = styles.translateY || '0'
+            transformValues.push(`translate(${translateX}, ${translateY})`)
+            hasTransform = true
+        }
+        
+        // 缩放
+        if (styles.scaleX || styles.scaleY) {
+            const scaleX = styles.scaleX || '1'
+            const scaleY = styles.scaleY || '1'
+            transformValues.push(`scale(${scaleX}, ${scaleY})`)
+            hasTransform = true
+        }
+        
+        // 旋转
+        if (styles.rotate) {
+            transformValues.push(`rotate(${styles.rotate})`)
+            hasTransform = true
+        }
+        
+        // 倾斜
+        if (styles.skewX || styles.skewY) {
+            const skewX = styles.skewX || '0'
+            const skewY = styles.skewY || '0'
+            transformValues.push(`skew(${skewX}, ${skewY})`)
+            hasTransform = true
+        }
+        
+        // 处理其他常规样式
+        for (const [k, v] of styleEntries) {
+            // 跳过已处理的transform相关属性
+            if (transformProps.includes(k) || k === 'transformOriginX' || k === 'transformOriginY') continue
+            
+            const kebab = k.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
+            regularStyles.push(`${kebab}:${v}`)
+        }
+        
+        // 添加组合的transform属性
+        if (hasTransform) {
+            regularStyles.push(`transform:${transformValues.join(' ')}`)
+        }
+        
+        // 处理transform-origin
+        if (styles.transformOriginX || styles.transformOriginY) {
+            const originX = styles.transformOriginX || '50%'
+            const originY = styles.transformOriginY || '50%'
+            regularStyles.push(`transform-origin:${originX} ${originY}`)
+        }
+        
+        const styleStr = regularStyles.join(';')
 
         // 使用更明显的边框宽度和 !important 强制应用
         const borderWidth = 1
