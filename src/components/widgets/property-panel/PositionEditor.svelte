@@ -1,6 +1,6 @@
-<!-- StyleEditor.svelte
-     节点样式编辑器
-     提供样式属性的可视化编辑界面
+<!-- PositionEditor.svelte
+     节点定位属性编辑器
+     提供节点定位相关属性的可视化编辑界面
 -->
 <script lang="ts">
     import { getNodeProps, updateNodeProps } from '../../../services/property-panel/property-panel.service'
@@ -33,11 +33,11 @@
     }
 </script>
 
-<div class="style-editor">
+<div class="position-editor">
     {#if selectedId}
         <h3>定位属性</h3>
-        <div class="style-list">
-            <div class="style-item">
+        <div class="position-list">
+            <div class="position-item">
                 <label for="node-position">定位类型:</label>
                 {#if isRoot}
                     <input id="node-position-text" type="text" value="静态 (static)" disabled class="disabled-input" />
@@ -59,7 +59,7 @@
 </div>
 
 <style>
-    .style-editor {
+    .position-editor {
         padding: calc(20px * var(--scale-ratio, 1));
         color: #e2e8f0;
     }
@@ -69,12 +69,12 @@
         font-weight: 600;
         color: #cbd5e1;
     }
-    .style-list {
+    .position-list {
         display: flex;
         flex-direction: column;
         gap: calc(12px * var(--scale-ratio, 1));
     }
-    .style-item {
+    .position-item {
         display: flex;
         align-items: center;
         gap: calc(10px * var(--scale-ratio, 1));

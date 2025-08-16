@@ -10,7 +10,7 @@
 -->
 <script lang="ts">
     import AttrEditor from './AttrEditor.svelte'
-    import StyleEditor from './StyleEditor.svelte'
+    import PositionEditor from './PositionEditor.svelte'
     import EventEditor from './EventEditor.svelte'
     import { selectedId as getSelectedId } from '../../../services/repository/dom-tree.store.svelte'
 
@@ -22,7 +22,7 @@
 
     const tabs = [
         { key: 'attr', label: '属性', icon: '⚙️' },
-        { key: 'style', label: '样式', icon: '🎨' },
+        { key: 'style', label: '定位', icon: '🎨' },
         { key: 'event', label: '事件', icon: '📡' }
     ] as const
 </script>
@@ -47,7 +47,7 @@
         {#if activeTab === 'attr'}
             <AttrEditor selectedId={currentId} />
         {:else if activeTab === 'style'}
-            <StyleEditor selectedId={currentId} />
+            <PositionEditor selectedId={currentId} />
         {:else}
             <EventEditor selectedId={currentId} />
         {/if}
