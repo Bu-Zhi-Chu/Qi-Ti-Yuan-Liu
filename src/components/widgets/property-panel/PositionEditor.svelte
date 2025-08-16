@@ -42,17 +42,20 @@
     let currentMarginBottom: string = ''
     let currentMarginLeft: string = ''
 
+    // 默认单位设置
+    const defaultUnit: 'px' | '%' = '%'
+
     // 单位选择 - 位置属性
-    let currentTopUnit: 'px' | '%' = 'px'
-    let currentRightUnit: 'px' | '%' = 'px'
-    let currentBottomUnit: 'px' | '%' = 'px'
-    let currentLeftUnit: 'px' | '%' = 'px'
+    let currentTopUnit: 'px' | '%' = defaultUnit
+    let currentRightUnit: 'px' | '%' = defaultUnit
+    let currentBottomUnit: 'px' | '%' = defaultUnit
+    let currentLeftUnit: 'px' | '%' = defaultUnit
 
     // 单位选择 - 外边距属性
-    let currentMarginTopUnit: 'px' | '%' = 'px'
-    let currentMarginRightUnit: 'px' | '%' = 'px'
-    let currentMarginBottomUnit: 'px' | '%' = 'px'
-    let currentMarginLeftUnit: 'px' | '%' = 'px'
+    let currentMarginTopUnit: 'px' | '%' = defaultUnit
+    let currentMarginRightUnit: 'px' | '%' = defaultUnit
+    let currentMarginBottomUnit: 'px' | '%' = defaultUnit
+    let currentMarginLeftUnit: 'px' | '%' = defaultUnit
 
     // 显示控制
     let showPositionProps: boolean = false
@@ -95,24 +98,24 @@
         currentBottom = ''
         currentLeft = ''
         currentZIndex = ''
-        currentTopUnit = 'px'
-        currentRightUnit = 'px'
-        currentBottomUnit = 'px'
-        currentLeftUnit = 'px'
+        currentTopUnit = defaultUnit
+        currentRightUnit = defaultUnit
+        currentBottomUnit = defaultUnit
+        currentLeftUnit = defaultUnit
         // 重置外边距属性
         currentMarginTop = ''
         currentMarginRight = ''
         currentMarginBottom = ''
         currentMarginLeft = ''
-        currentMarginTopUnit = 'px'
-        currentMarginRightUnit = 'px'
-        currentMarginBottomUnit = 'px'
-        currentMarginLeftUnit = 'px'
+        currentMarginTopUnit = defaultUnit
+        currentMarginRightUnit = defaultUnit
+        currentMarginBottomUnit = defaultUnit
+        currentMarginLeftUnit = defaultUnit
     }
 
     // 解析尺寸值和单位
     function parseSize(size: string | undefined): [string, 'px' | '%'] {
-        if (!size) return ['', 'px']
+        if (!size) return ['', defaultUnit]
 
         // 支持解析 calc(100px * var(--scale-ratio, 1)) 形式
         const calcMatch = size?.match(/^calc\(\s*(\d+(?:\.\d+)?)\s*px\b.*\)$/i)
@@ -130,8 +133,8 @@
             return [size.replace('px', ''), 'px']
         }
 
-        // 默认当作像素处理
-        return [size, 'px']
+        // 默认使用全局设置的默认单位
+        return [size, defaultUnit]
     }
 
     // 格式化尺寸，px 单位使用 calc 结合 --scale-ratio 实现自适应
@@ -143,76 +146,8 @@
     // 处理定位类型变更
     function handlePositionChange(val: string) {
         if (!selectedId || isRoot) return
-
-        const oldPosition = currentPosition
         currentPosition = val as any
-
-        // 更新定位类型
         updateNodeProps(selectedId, { styles: { position: val } })
-
-        // 如果从其他定位类型切换到静态定位，将位置属性转换为外边距属性
-        if (val === 'static' && oldPosition !== 'static') {
-            transferPositionToMargin()
-        }
-    }
-
-    // 将位置属性转换为外边距属性（用于切换到静态定位时）
-    function transferPositionToMargin() {
-        if (!selectedId || isRoot) return
-
-        const styles: Record<string, string> = {}
-        let hasChanges = false
-
-        // 只转换有值的属性
-        if (currentTop) {
-            styles.marginTop = formatSize(currentTop, currentTopUnit)
-            currentMarginTop = currentTop
-            currentMarginTopUnit = currentTopUnit
-            hasChanges = true
-        }
-
-        if (currentRight) {
-            styles.marginRight = formatSize(currentRight, currentRightUnit)
-            currentMarginRight = currentRight
-            currentMarginRightUnit = currentRightUnit
-            hasChanges = true
-        }
-
-        if (currentBottom) {
-            styles.marginBottom = formatSize(currentBottom, currentBottomUnit)
-            currentMarginBottom = currentBottom
-            currentMarginBottomUnit = currentBottomUnit
-            hasChanges = true
-        }
-
-        if (currentLeft) {
-            styles.marginLeft = formatSize(currentLeft, currentLeftUnit)
-            currentMarginLeft = currentLeft
-            currentMarginLeftUnit = currentLeftUnit
-            hasChanges = true
-        }
-
-        // 如果有需要更新的样式，则更新节点属性
-        if (hasChanges) {
-            // 更新节点属性
-            updateNodeProps(selectedId, { styles })
-
-            // 强制触发UI更新 - 使用setTimeout确保在下一个事件循环中更新
-            setTimeout(() => {
-                // 克隆当前值以确保Svelte检测到变化
-                currentMarginTop = String(currentMarginTop)
-                currentMarginRight = String(currentMarginRight)
-                currentMarginBottom = String(currentMarginBottom)
-                currentMarginLeft = String(currentMarginLeft)
-
-                console.log('已将位置属性转换为外边距属性:', {
-                    marginTop: currentMarginTop + currentMarginTopUnit,
-                    marginRight: currentMarginRight + currentMarginRightUnit,
-                    marginBottom: currentMarginBottom + currentMarginBottomUnit,
-                    marginLeft: currentMarginLeft + currentMarginLeftUnit
-                })
-            }, 0)
-        }
     }
 
     // 处理位置属性变更 - 使用 top/right/bottom/left 属性实现定位（优先于 margin）
