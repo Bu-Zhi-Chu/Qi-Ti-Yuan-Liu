@@ -65,14 +65,16 @@
         currentPointerEvents = 'auto'
     }
 
-    // 可用的组件类型列表
-    // 删除原先硬编码
-    // const componentTypes = ['SimpleBox', 'ResponsiveBox', 'RealTimeClock']
-
-    // 当选中节点变化时，刷新快照与输入框值
+    // 当选中节点变化时，同步所有属性
     $: if (selectedId) {
+        // 获取节点属性和节点对象
         propsSnapshot = getNodeProps(selectedId)
+        const node = findNodeById(domTree, selectedId)
+
+        // 同步基本属性
         currentId = propsSnapshot?.attributes?.id ?? selectedId
+
+        // 同步名称
         const snapshotName = propsSnapshot?.attributes?.['data-name']
         if (snapshotName !== undefined) {
             currentName = snapshotName
@@ -81,20 +83,44 @@
             currentName = el?.getAttribute('data-name') ?? ''
         }
 
-        // 获取当前组件类型
-        currentType = propsSnapshot?.attributes?.type ?? ''
-        // 新增：备注字段读取
+        // 同步类型
+        currentType = node?.componentType || ''
+
+        // 同步备注
         currentRemark = propsSnapshot?.attributes?.['data-remark'] ?? ''
-        // 若为根节点，固定名称为“画布”
+
+        // 同步宽高
+        ;[currentWidthValue, currentWidthUnit] = parseSize(propsSnapshot?.styles?.width)
+        ;[currentHeightValue, currentHeightUnit] = parseSize(propsSnapshot?.styles?.height)
+
+        // 格式化百分比值，保留一位小数
+        if (currentWidthUnit === '%') currentWidthValue = String(Math.round(parseFloat(currentWidthValue) * 10) / 10)
+        if (currentHeightUnit === '%') currentHeightValue = String(Math.round(parseFloat(currentHeightValue) * 10) / 10)
+
+        // 同步鼠标穿透属性
+        currentPointerEvents = (propsSnapshot?.styles?.pointerEvents as 'auto' | 'none') || 'auto'
+
+        // 若为根节点，固定名称为"画布"
         if (isRoot) {
             currentName = '画布'
         }
     } else {
+        // 清空所有属性
+        propsSnapshot = null
         currentId = ''
         currentName = ''
         currentType = ''
         currentRemark = ''
+        currentWidthValue = ''
+        currentWidthUnit = '%'
+        currentHeightValue = ''
+        currentHeightUnit = '%'
+        currentPointerEvents = 'auto'
     }
+
+    // 可用的组件类型列表
+    // 删除原先硬编码
+    // const componentTypes = ['SimpleBox', 'ResponsiveBox', 'RealTimeClock']
 
     // 修改 id —— 通过 attributes.id，而不是节点主键 node.id
     function handleIdChange(newId: string) {
