@@ -9,17 +9,9 @@
      4. fixed（固定定位）：相对于浏览器窗口，使用 top/right/bottom/left 属性
      5. sticky（粘性定位）：基于用户滚动位置，使用 top/right/bottom/left 属性
 
-     变换属性使用说明：
-     1. translateX/translateY：平移变换，支持 px 和 % 单位
-     2. scaleX/scaleY：缩放变换，无单位
-     3. rotate：旋转变换，无单位
-     4. skewX/skewY：倾斜变换，无单位
-     5. transform-origin：变换原点，支持 px 和 % 单位
-
      注意：
      - 当 relative/absolute/fixed/sticky 定位时，优先使用 top/right/bottom/left 属性而非 margin
      - 当 static 定位时，top/right/bottom/left 属性无效，应使用 margin 属性调整位置
-     - transform 属性在所有定位类型下均可使用
 -->
 <script lang="ts">
     import { getNodeProps, updateNodeProps } from '../../../services/property-panel/property-panel.service'
@@ -50,17 +42,6 @@
     let currentMarginBottom: string = ''
     let currentMarginLeft: string = ''
 
-    // transform相关属性
-    let currentTranslateX: string = ''
-    let currentTranslateY: string = ''
-    let currentScaleX: string = ''
-    let currentScaleY: string = ''
-    let currentRotate: string = ''
-    let currentSkewX: string = ''
-    let currentSkewY: string = ''
-    let currentTransformOriginX: string = ''
-    let currentTransformOriginY: string = ''
-
     // 默认单位设置
     const defaultUnit: 'px' | '%' = '%'
 
@@ -75,12 +56,6 @@
     let currentMarginRightUnit: 'px' | '%' = defaultUnit
     let currentMarginBottomUnit: 'px' | '%' = defaultUnit
     let currentMarginLeftUnit: 'px' | '%' = defaultUnit
-
-    // 单位选择 - transform属性
-    let currentTranslateXUnit: 'px' | '%' = defaultUnit
-    let currentTranslateYUnit: 'px' | '%' = defaultUnit
-    let currentTransformOriginXUnit: 'px' | '%' = defaultUnit
-    let currentTransformOriginYUnit: 'px' | '%' = defaultUnit
 
     // 显示控制
     let showPositionProps: boolean = false
@@ -112,17 +87,6 @@
         ;[currentMarginBottom, currentMarginBottomUnit] = parseSize(styleSnapshot?.styles?.marginBottom)
         ;[currentMarginLeft, currentMarginLeftUnit] = parseSize(styleSnapshot?.styles?.marginLeft)
 
-        // 解析transform相关属性
-        ;[currentTranslateX, currentTranslateXUnit] = parseSize(styleSnapshot?.styles?.translateX)
-        ;[currentTranslateY, currentTranslateYUnit] = parseSize(styleSnapshot?.styles?.translateY)
-        currentScaleX = styleSnapshot?.styles?.scaleX || ''
-        currentScaleY = styleSnapshot?.styles?.scaleY || ''
-        currentRotate = styleSnapshot?.styles?.rotate || ''
-        currentSkewX = styleSnapshot?.styles?.skewX || ''
-        currentSkewY = styleSnapshot?.styles?.skewY || ''
-        ;[currentTransformOriginX, currentTransformOriginXUnit] = parseSize(styleSnapshot?.styles?.transformOriginX)
-        ;[currentTransformOriginY, currentTransformOriginYUnit] = parseSize(styleSnapshot?.styles?.transformOriginY)
-
         // 解析z-index
         currentZIndex = styleSnapshot?.styles?.zIndex || ''
     } else {
@@ -147,20 +111,6 @@
         currentMarginRightUnit = defaultUnit
         currentMarginBottomUnit = defaultUnit
         currentMarginLeftUnit = defaultUnit
-        // 重置transform相关属性
-        currentTranslateX = ''
-        currentTranslateY = ''
-        currentScaleX = ''
-        currentScaleY = ''
-        currentRotate = ''
-        currentSkewX = ''
-        currentSkewY = ''
-        currentTransformOriginX = ''
-        currentTransformOriginY = ''
-        currentTranslateXUnit = defaultUnit
-        currentTranslateYUnit = defaultUnit
-        currentTransformOriginXUnit = defaultUnit
-        currentTransformOriginYUnit = defaultUnit
     }
 
     // 解析尺寸值和单位
@@ -302,93 +252,6 @@
         updateNodeProps(selectedId, { styles: { zIndex: value } })
     }
 
-    // 处理transform属性变更
-    function handleTranslateChange(axis: 'X' | 'Y', value: string, unit: 'px' | '%') {
-        if (!selectedId || isRoot) return
-        const propName = axis === 'X' ? 'translateX' : 'translateY'
-        if (axis === 'X') {
-            currentTranslateX = value
-            currentTranslateXUnit = unit
-        } else {
-            currentTranslateY = value
-            currentTranslateYUnit = unit
-        }
-        updateNodeProps(selectedId, { styles: { [propName]: formatSize(value, unit) } })
-    }
-
-    function handleScaleChange(axis: 'X' | 'Y', value: string) {
-        if (!selectedId || isRoot) return
-        const propName = axis === 'X' ? 'scaleX' : 'scaleY'
-        if (axis === 'X') {
-            currentScaleX = value
-        } else {
-            currentScaleY = value
-        }
-        updateNodeProps(selectedId, { styles: { [propName]: value } })
-    }
-
-    function handleRotateChange(value: string) {
-        if (!selectedId || isRoot) return
-        currentRotate = value
-        updateNodeProps(selectedId, { styles: { rotate: value } })
-    }
-
-    function handleSkewChange(axis: 'X' | 'Y', value: string) {
-        if (!selectedId || isRoot) return
-        const propName = axis === 'X' ? 'skewX' : 'skewY'
-        if (axis === 'X') {
-            currentSkewX = value
-        } else {
-            currentSkewY = value
-        }
-        updateNodeProps(selectedId, { styles: { [propName]: value } })
-    }
-
-    function handleTransformOriginChange(axis: 'X' | 'Y', value: string, unit: 'px' | '%') {
-        if (!selectedId || isRoot) return
-        const propName = axis === 'X' ? 'transformOriginX' : 'transformOriginY'
-        if (axis === 'X') {
-            currentTransformOriginX = value
-            currentTransformOriginXUnit = unit
-        } else {
-            currentTransformOriginY = value
-            currentTransformOriginYUnit = unit
-        }
-        updateNodeProps(selectedId, { styles: { [propName]: formatSize(value, unit) } })
-    }
-
-    function toggleTransformUnit(axis: 'X' | 'Y', propType: 'translate' | 'transformOrigin') {
-        if (!selectedId || isRoot) return
-        let currentUnit: 'px' | '%'
-        let currentValue: string
-        
-        if (propType === 'translate') {
-            if (axis === 'X') {
-                currentUnit = currentTranslateXUnit
-                currentValue = currentTranslateX
-                currentTranslateXUnit = currentUnit === 'px' ? '%' : 'px'
-                handleTranslateChange('X', currentValue, currentTranslateXUnit)
-            } else {
-                currentUnit = currentTranslateYUnit
-                currentValue = currentTranslateY
-                currentTranslateYUnit = currentUnit === 'px' ? '%' : 'px'
-                handleTranslateChange('Y', currentValue, currentTranslateYUnit)
-            }
-        } else {
-            if (axis === 'X') {
-                currentUnit = currentTransformOriginXUnit
-                currentValue = currentTransformOriginX
-                currentTransformOriginXUnit = currentUnit === 'px' ? '%' : 'px'
-                handleTransformOriginChange('X', currentValue, currentTransformOriginXUnit)
-            } else {
-                currentUnit = currentTransformOriginYUnit
-                currentValue = currentTransformOriginY
-                currentTransformOriginYUnit = currentUnit === 'px' ? '%' : 'px'
-                handleTransformOriginChange('Y', currentValue, currentTransformOriginYUnit)
-            }
-        }
-    }
-
     // 将位置属性从一个单位转换到另一个单位
     function convertPosition(val: number, from: '%' | 'px', to: '%' | 'px', prop: 'top' | 'right' | 'bottom' | 'left'): number {
         if (from === to) return val
@@ -419,29 +282,33 @@
         let currentUnit: 'px' | '%' = 'px'
         let nextUnit: 'px' | '%' = 'px'
 
-        // 获取当前值和单位
+        // 从DOM获取最新值，避免状态同步延迟
+        let inputElement: HTMLInputElement | null = null
         switch (prop) {
             case 'top':
-                currentValue = currentTop
+                inputElement = document.getElementById('node-top') as HTMLInputElement
                 currentUnit = currentTopUnit
                 nextUnit = currentUnit === 'px' ? '%' : 'px'
                 break
             case 'right':
-                currentValue = currentRight
+                inputElement = document.getElementById('node-right') as HTMLInputElement
                 currentUnit = currentRightUnit
                 nextUnit = currentUnit === 'px' ? '%' : 'px'
                 break
             case 'bottom':
-                currentValue = currentBottom
+                inputElement = document.getElementById('node-bottom') as HTMLInputElement
                 currentUnit = currentBottomUnit
                 nextUnit = currentUnit === 'px' ? '%' : 'px'
                 break
             case 'left':
-                currentValue = currentLeft
+                inputElement = document.getElementById('node-left') as HTMLInputElement
                 currentUnit = currentLeftUnit
                 nextUnit = currentUnit === 'px' ? '%' : 'px'
                 break
         }
+
+        // 获取输入框中的最新值
+        currentValue = inputElement?.value || ''
 
         // 如果有值，则进行单位转换
         if (currentValue) {
@@ -503,29 +370,33 @@
         let currentUnit: 'px' | '%' = 'px'
         let nextUnit: 'px' | '%' = 'px'
 
-        // 获取当前值和单位
+        // 从DOM获取最新值，避免状态同步延迟
+        let inputElement: HTMLInputElement | null = null
         switch (prop) {
             case 'marginTop':
-                currentValue = currentMarginTop
+                inputElement = document.getElementById('node-margin-top') as HTMLInputElement
                 currentUnit = currentMarginTopUnit
                 nextUnit = currentUnit === 'px' ? '%' : 'px'
                 break
             case 'marginRight':
-                currentValue = currentMarginRight
+                inputElement = document.getElementById('node-margin-right') as HTMLInputElement
                 currentUnit = currentMarginRightUnit
                 nextUnit = currentUnit === 'px' ? '%' : 'px'
                 break
             case 'marginBottom':
-                currentValue = currentMarginBottom
+                inputElement = document.getElementById('node-margin-bottom') as HTMLInputElement
                 currentUnit = currentMarginBottomUnit
                 nextUnit = currentUnit === 'px' ? '%' : 'px'
                 break
             case 'marginLeft':
-                currentValue = currentMarginLeft
+                inputElement = document.getElementById('node-margin-left') as HTMLInputElement
                 currentUnit = currentMarginLeftUnit
                 nextUnit = currentUnit === 'px' ? '%' : 'px'
                 break
         }
+
+        // 获取输入框中的最新值
+        currentValue = inputElement?.value || ''
 
         // 如果有值，则进行单位转换
         if (currentValue) {
@@ -663,75 +534,6 @@
                     </button>
                 </div>
             {/if}
-
-            <!-- Transform相关属性 -->
-            <h4>变换属性</h4>
-            
-            <!-- 平移 -->
-            <div class="position-item">
-                <label for="node-translate-x">水平平移</label>
-                <input id="node-translate-x" type="number" step="1" bind:value={currentTranslateX} oninput={(e) => handleTranslateChange('X', e.currentTarget.value, currentTranslateXUnit)} placeholder="水平平移..." disabled={isRoot} class:disabled-input={isRoot} />
-                <button class="unit-toggle" onclick={() => toggleTransformUnit('X', 'translate')} disabled={isRoot} class:disabled-input={isRoot}>
-                    {currentTranslateXUnit}
-                </button>
-            </div>
-
-            <div class="position-item">
-                <label for="node-translate-y">垂直平移</label>
-                <input id="node-translate-y" type="number" step="1" bind:value={currentTranslateY} oninput={(e) => handleTranslateChange('Y', e.currentTarget.value, currentTranslateYUnit)} placeholder="垂直平移..." disabled={isRoot} class:disabled-input={isRoot} />
-                <button class="unit-toggle" onclick={() => toggleTransformUnit('Y', 'translate')} disabled={isRoot} class:disabled-input={isRoot}>
-                    {currentTranslateYUnit}
-                </button>
-            </div>
-
-            <!-- 缩放 -->
-            <div class="position-item">
-                <label for="node-scale-x">水平缩放</label>
-                <input id="node-scale-x" type="number" step="0.1" bind:value={currentScaleX} oninput={(e) => handleScaleChange('X', e.currentTarget.value)} placeholder="水平缩放..." disabled={isRoot} class:disabled-input={isRoot} />
-                <span class="unit-placeholder"></span>
-            </div>
-
-            <div class="position-item">
-                <label for="node-scale-y">垂直缩放</label>
-                <input id="node-scale-y" type="number" step="0.1" bind:value={currentScaleY} oninput={(e) => handleScaleChange('Y', e.currentTarget.value)} placeholder="垂直缩放..." disabled={isRoot} class:disabled-input={isRoot} />
-                <span class="unit-placeholder"></span>
-            </div>
-
-            <!-- 旋转 -->
-            <div class="position-item">
-                <label for="node-rotate">旋转角度</label>
-                <input id="node-rotate" type="number" step="1" bind:value={currentRotate} oninput={(e) => handleRotateChange(e.currentTarget.value)} placeholder="旋转角度..." disabled={isRoot} class:disabled-input={isRoot} />
-                <span class="unit-placeholder"></span>
-            </div>
-
-            <!-- 倾斜 -->
-            <div class="position-item">
-                <label for="node-skew-x">水平倾斜</label>
-                <input id="node-skew-x" type="number" step="1" bind:value={currentSkewX} oninput={(e) => handleSkewChange('X', e.currentTarget.value)} placeholder="水平倾斜..." disabled={isRoot} class:disabled-input={isRoot} />
-                <span class="unit-placeholder"></span>
-            </div>
-            <div class="position-item">
-                <label for="node-skew-y">垂直倾斜</label>
-                <input id="node-skew-y" type="number" step="1" bind:value={currentSkewY} oninput={(e) => handleSkewChange('Y', e.currentTarget.value)} placeholder="垂直倾斜..." disabled={isRoot} class:disabled-input={isRoot} />
-                <span class="unit-placeholder"></span>
-            </div>
-
-            <!-- 变换原点 -->
-            <div class="position-item">
-                <label for="node-transform-origin-x">原点横轴</label>
-                <input id="node-transform-origin-x" type="number" step="1" bind:value={currentTransformOriginX} oninput={(e) => handleTransformOriginChange('X', e.currentTarget.value, currentTransformOriginXUnit)} placeholder="变换原点X..." disabled={isRoot} class:disabled-input={isRoot} />
-                <button class="unit-toggle" onclick={() => toggleTransformUnit('X', 'transformOrigin')} disabled={isRoot} class:disabled-input={isRoot}>
-                    {currentTransformOriginXUnit}
-                </button>
-            </div>
-
-            <div class="position-item">
-                <label for="node-transform-origin-y">原点竖轴</label>
-                <input id="node-transform-origin-y" type="number" step="1" bind:value={currentTransformOriginY} oninput={(e) => handleTransformOriginChange('Y', e.currentTarget.value, currentTransformOriginYUnit)} placeholder="变换原点Y..." disabled={isRoot} class:disabled-input={isRoot} />
-                <button class="unit-toggle" onclick={() => toggleTransformUnit('Y', 'transformOrigin')} disabled={isRoot} class:disabled-input={isRoot}>
-                    {currentTransformOriginYUnit}
-                </button>
-            </div>
         </div>
     {:else}
         <p class="placeholder">请选择一个节点来编辑样式</p>
@@ -748,14 +550,6 @@
         font-size: calc(16px * var(--scale-ratio, 1));
         font-weight: 600;
         color: #cbd5e1;
-    }
-    h4 {
-        margin: calc(24px * var(--scale-ratio, 1)) 0 calc(12px * var(--scale-ratio, 1)) 0;
-        font-size: calc(14px * var(--scale-ratio, 1));
-        font-weight: 600;
-        color: #cbd5e1;
-        border-top: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.1);
-        padding-top: calc(12px * var(--scale-ratio, 1));
     }
     .position-list {
         display: flex;
