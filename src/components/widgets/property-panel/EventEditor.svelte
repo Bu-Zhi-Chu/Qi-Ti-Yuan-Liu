@@ -58,7 +58,7 @@
         <div class="event-list">
             {#each EVENT_WHITELIST as eventKey}
                 <div class="event-item">
-                    <label for="event-{eventKey}">on{eventKey}:</label>
+                    <label for="event-{eventKey}">事件{eventKey}:</label>
                     <textarea id="event-{eventKey}" value={currentEvents[eventKey] || ''} oninput={(e) => handleEventChange(eventKey, e.currentTarget.value)} placeholder={`输入${eventKey}事件处理函数...\n例如:\nconsole.log('Clicked!');\nreturn false;`} rows="3"></textarea>
                     {#if currentEvents[eventKey]}
                         <button class="remove-btn" onclick={() => handleEventRemove(eventKey)} title="移除事件">×</button>

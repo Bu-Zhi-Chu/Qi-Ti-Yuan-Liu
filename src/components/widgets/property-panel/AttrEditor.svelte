@@ -36,6 +36,9 @@
     let currentHeightValue: string = ''
     let currentHeightUnit: '%' | 'px' = '%'
 
+    // 鼠标穿透相关变量
+    let currentPointerEvents: 'auto' | 'none' = 'auto'
+
     // 当选中节点变化时，同步宽高
     $: if (selectedId) {
         const nodeProps = getNodeProps(selectedId)
@@ -48,6 +51,8 @@
         ;[currentHeightValue, currentHeightUnit] = parseSize(nodeProps?.styles?.height)
         if (currentWidthUnit === '%') currentWidthValue = String(Math.round(parseFloat(currentWidthValue) * 10) / 10)
         if (currentHeightUnit === '%') currentHeightValue = String(Math.round(parseFloat(currentHeightValue) * 10) / 10)
+        // 同步鼠标穿透属性
+        currentPointerEvents = (nodeProps?.styles?.pointerEvents as 'auto' | 'none') || 'auto'
     } else {
         currentId = ''
         currentName = ''
@@ -57,6 +62,7 @@
         currentWidthUnit = '%'
         currentHeightValue = ''
         currentHeightUnit = '%'
+        currentPointerEvents = 'auto'
     }
 
     // 可用的组件类型列表
@@ -213,6 +219,13 @@
         currentHeightUnit = nextUnit
         updateNodeProps(selectedId, { styles: { height: formatSize(currentHeightValue, currentHeightUnit) } })
     }
+
+    // 处理鼠标穿透属性变更
+    function handlePointerEventsChange(value: string) {
+        if (!selectedId) return
+        currentPointerEvents = value as 'auto' | 'none'
+        updateNodeProps(selectedId, { styles: { pointerEvents: value } })
+    }
 </script>
 
 <div class="attr-editor">
@@ -220,17 +233,17 @@
         <h3>主要属性</h3>
         <div class="attr-list">
             <div class="attr-item">
-                <label for="node-id">编号:</label>
+                <label for="node-id">节点编号:</label>
                 <input id="node-id" type="text" bind:value={currentId} oninput={(e) => handleIdChange(e.currentTarget.value)} placeholder="输入节点编号..." />
                 <span class="unit-placeholder"></span>
             </div>
             <div class="attr-item">
-                <label for="node-name">名称:</label>
+                <label for="node-name">节点名称:</label>
                 <input id="node-name" type="text" bind:value={currentName} oninput={(e) => handleNameChange(e.currentTarget.value)} placeholder="输入节点名称..." disabled={isRoot} class:disabled-input={isRoot} />
                 <span class="unit-placeholder"></span>
             </div>
             <div class="attr-item">
-                <label for="node-type">类型:</label>
+                <label for="node-type">节点类型:</label>
                 {#if isRoot}
                     <input id="node-type-text" type="text" value="画布" disabled class="disabled-input" />
                 {:else}
@@ -246,7 +259,7 @@
 
             <!-- 宽度输入 -->
             <div class="attr-item">
-                <label for="node-width">宽度:</label>
+                <label for="node-width">节点宽度:</label>
                 <input id="node-width" type="number" step={currentWidthUnit === '%' ? 0.1 : 1} bind:value={currentWidthValue} oninput={(e) => handleWidthValueChange(e.currentTarget.value)} placeholder="宽度值..." disabled={isRoot} class:disabled-input={isRoot} />
                 <button class="unit-toggle" class:disabled-input={isRoot} onclick={toggleWidthUnit} disabled={isRoot}>
                     {currentWidthUnit}
@@ -255,16 +268,26 @@
 
             <!-- 高度输入 -->
             <div class="attr-item">
-                <label for="node-height">高度:</label>
+                <label for="node-height">节点高度:</label>
                 <input id="node-height" type="number" step={currentHeightUnit === '%' ? 0.1 : 1} bind:value={currentHeightValue} oninput={(e) => handleHeightValueChange(e.currentTarget.value)} placeholder="高度值..." disabled={isRoot} class:disabled-input={isRoot} />
                 <button class="unit-toggle" class:disabled-input={isRoot} onclick={toggleHeightUnit} disabled={isRoot}>
                     {currentHeightUnit}
                 </button>
             </div>
 
+            <!-- 鼠标穿透下拉框 -->
+            <div class="attr-item">
+                <label for="node-pointer-events">鼠标穿透:</label>
+                <select id="node-pointer-events" bind:value={currentPointerEvents} onchange={(e) => handlePointerEventsChange(e.currentTarget.value)}>
+                    <option value="auto">阻挡 (auto)</option>
+                    <option value="none">穿透 (none)</option>
+                </select>
+                <span class="unit-placeholder"></span>
+            </div>
+
             <!-- 新增备注字段 -->
             <div class="attr-item">
-                <label for="node-remark">备注:</label>
+                <label for="node-remark">节点备注:</label>
                 <textarea id="node-remark" rows="3" bind:value={currentRemark} oninput={(e) => handleRemarkChange(e.currentTarget.value)} placeholder="输入备注..." style="resize: vertical;"></textarea>
                 <span class="unit-placeholder"></span>
             </div>
@@ -296,7 +319,7 @@
         gap: calc(10px * var(--scale-ratio, 1));
     }
     label {
-        min-width: calc(80px * var(--scale-ratio, 1));
+        min-width: calc(30px * var(--scale-ratio, 1));
         font-size: calc(13px * var(--scale-ratio, 1));
         font-weight: 500;
         color: #94a3b8;

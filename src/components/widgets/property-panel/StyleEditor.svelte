@@ -38,9 +38,9 @@
         <h3>定位属性</h3>
         <div class="style-list">
             <div class="style-item">
-                <label for="node-position">类型:</label>
+                <label for="node-position">定位类型:</label>
                 {#if isRoot}
-                    <input id="node-position-text" type="text" value="static" disabled />
+                    <input id="node-position-text" type="text" value="静态 (static)" disabled class="disabled-input" />
                 {:else}
                     <select id="node-position" bind:value={currentPosition} onchange={(e) => handlePositionChange(e.currentTarget.value)}>
                         <option value="static">静态 (static)</option>
@@ -75,12 +75,9 @@
         gap: calc(12px * var(--scale-ratio, 1));
     }
     .style-item {
-        display: grid;
-        grid-template-columns: calc(40px * var(--scale-ratio, 1)) 1fr calc(40px * var(--scale-ratio, 1));
+        display: flex;
         align-items: center;
-        gap: calc(8px * var(--scale-ratio, 1));
-        padding: calc(12px * var(--scale-ratio, 1));
-        background: rgba(255, 255, 255, 0.05);
+        gap: calc(10px * var(--scale-ratio, 1));
         border-radius: calc(8px * var(--scale-ratio, 1));
         transition: all 0.3s ease;
     }
@@ -89,14 +86,19 @@
         transform: translateY(-1px);
     }
 
+    .unit-placeholder {
+        width: calc(40px * var(--scale-ratio, 1));
+    }
+
     label {
-        min-width: calc(80px * var(--scale-ratio, 1));
+        min-width: calc(30px * var(--scale-ratio, 1));
         font-size: calc(13px * var(--scale-ratio, 1));
         font-weight: 500;
         color: #94a3b8;
     }
     input,
-    select {
+    select,
+    textarea {
         flex: 1;
         padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
         border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.2);
@@ -107,30 +109,51 @@
         transition: all 0.3s ease;
         appearance: none;
     }
-    select:focus {
+
+    /* 单位切换按钮样式 */
+    .unit-toggle {
+        width: calc(40px * var(--scale-ratio, 1));
+        padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
+        border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.2);
+        border-radius: calc(6px * var(--scale-ratio, 1));
+        font-size: calc(13px * var(--scale-ratio, 1));
+        background: rgba(255, 255, 255, 0.1);
+        color: #e2e8f0;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    .unit-toggle:hover {
+        background: rgba(255, 255, 255, 0.15);
+    }
+    /* 禁用状态光标与视觉提示 */
+    .unit-toggle:disabled,
+    select:focus,
+    input:focus,
+    textarea:focus {
         outline: none;
         border-color: #cbd5e1;
         background: rgba(255, 255, 255, 0.15);
         box-shadow: 0 0 0 calc(3px * var(--scale-ratio, 1)) rgba(255, 255, 255, 0.1);
     }
-    /* 下拉选项面板深色背景 */
     select option {
         background: #1e293b;
         color: #e2e8f0;
     }
+
     /* 统一禁用态样式 */
     select:disabled,
     input:disabled {
         cursor: not-allowed;
-        opacity: 0.6;
+        opacity: 0.5;
     }
-    input:focus {
-        outline: none;
-        border-color: #cbd5e1;
-        background: rgba(255, 255, 255, 0.15);
-        box-shadow: 0 0 0 calc(3px * var(--scale-ratio, 1)) rgba(255, 255, 255, 0.1);
+
+    /* 根节点（画布）禁用输入框的特殊样式 */
+    .disabled-input {
+        color: #64748b !important; /* 使用更灰色的文本颜色 */
     }
-    input::placeholder {
+    input::placeholder,
+    textarea::placeholder {
         color: #9ca3af;
     }
     .placeholder {
@@ -139,5 +162,18 @@
         text-align: center;
         margin-top: calc(40px * var(--scale-ratio, 1));
         font-size: calc(14px * var(--scale-ratio, 1));
+    }
+    textarea {
+        min-height: calc(80px * var(--scale-ratio, 1));
+    }
+
+    /* 隐藏原生 number 输入框的上下箭头 */
+    input[type='number']::-webkit-inner-spin-button,
+    input[type='number']::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+    input[type='number'] {
+        -moz-appearance: textfield;
     }
 </style>
