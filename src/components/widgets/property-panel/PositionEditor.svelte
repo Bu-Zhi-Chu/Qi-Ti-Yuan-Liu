@@ -81,10 +81,6 @@
         border-radius: calc(8px * var(--scale-ratio, 1));
         transition: all 0.3s ease;
     }
-    .style-item:hover {
-        background: rgba(255, 255, 255, 0.08);
-        transform: translateY(-1px);
-    }
 
     .unit-placeholder {
         width: calc(40px * var(--scale-ratio, 1));
@@ -97,8 +93,7 @@
         color: #94a3b8;
     }
     input,
-    select,
-    textarea {
+    select {
         flex: 1;
         padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
         border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.2);
@@ -110,27 +105,8 @@
         appearance: none;
     }
 
-    /* 单位切换按钮样式 */
-    .unit-toggle {
-        width: calc(40px * var(--scale-ratio, 1));
-        padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
-        border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.2);
-        border-radius: calc(6px * var(--scale-ratio, 1));
-        font-size: calc(13px * var(--scale-ratio, 1));
-        background: rgba(255, 255, 255, 0.1);
-        color: #e2e8f0;
-        text-align: center;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-    .unit-toggle:hover {
-        background: rgba(255, 255, 255, 0.15);
-    }
-    /* 禁用状态光标与视觉提示 */
-    .unit-toggle:disabled,
     select:focus,
-    input:focus,
-    textarea:focus {
+    input:focus {
         outline: none;
         border-color: #cbd5e1;
         background: rgba(255, 255, 255, 0.15);
@@ -148,12 +124,7 @@
         opacity: 0.5;
     }
 
-    /* 根节点（画布）禁用输入框的特殊样式 */
-    .disabled-input {
-        color: #64748b !important; /* 使用更灰色的文本颜色 */
-    }
-    input::placeholder,
-    textarea::placeholder {
+    input::placeholder {
         color: #9ca3af;
     }
     .placeholder {
@@ -162,18 +133,5 @@
         text-align: center;
         margin-top: calc(40px * var(--scale-ratio, 1));
         font-size: calc(14px * var(--scale-ratio, 1));
-    }
-    textarea {
-        min-height: calc(80px * var(--scale-ratio, 1));
-    }
-
-    /* 隐藏原生 number 输入框的上下箭头 */
-    input[type='number']::-webkit-inner-spin-button,
-    input[type='number']::-webkit-outer-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
-    }
-    input[type='number'] {
-        -moz-appearance: textfield;
     }
 </style>
