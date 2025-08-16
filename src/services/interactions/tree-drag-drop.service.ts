@@ -102,7 +102,7 @@ export class TreeDragDropService {
     if (!el) return
     
     const id = el.getAttribute('data-id') || el.closest('[data-id]')?.getAttribute('data-id')
-    if (!id || id === 'root' || id === this.draggingId) return
+    if (!id || id === domTree.id || id === this.draggingId) return
     
     const nodeEl = el.closest('.tree-node') as HTMLElement | null
     if (!nodeEl) return

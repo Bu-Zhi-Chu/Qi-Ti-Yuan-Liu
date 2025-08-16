@@ -9,11 +9,12 @@
 import type { DomNode } from '../../types/dom-node.types';
 import DexieService from '../database/dexie-service';
 import Dexie from 'dexie';
+import { generateUUID } from '../utils/uuid.util';
 
 // 初始 domTree 数据结构
 const domTreeData = $state<DomNode>({
-  id: 'root',
-  dataId: 'root',
+  id: generateUUID(),
+  dataId: generateUUID(),
   componentType: 'SimpleBox',
   styles: {
     width: '100%',
@@ -29,7 +30,7 @@ const domTreeData = $state<DomNode>({
 });
 
 // 当前选中的节点ID
-let selectedNodeId = $state<string | null>('root');
+let selectedNodeId = $state<string | null>(domTreeData.id);
 
 // 当前项目ID
 let currentProjectId = $state<string>('');
@@ -345,7 +346,7 @@ function findParentById(node: DomNode, targetId: string): DomNode | null {
  * 将 nodeId 对应节点插入到 targetId 对应节点之前（同级）
  */
 export function insertNodeBefore(targetId: string, nodeId: string): boolean {
-  if (targetId === 'root' || nodeId === 'root' || targetId === nodeId) return false;
+  if (targetId === domTreeData.id || nodeId === domTreeData.id || targetId === nodeId) return false;
   const parent = findParentById(domTreeData, targetId);
   const movingNode = findNodeById(domTreeData, nodeId);
   if (!parent || !parent.children || !movingNode) return false;
@@ -361,7 +362,7 @@ export function insertNodeBefore(targetId: string, nodeId: string): boolean {
  * 将 nodeId 对应节点插入到 targetId 对应节点之后（同级）
  */
 export function insertNodeAfter(targetId: string, nodeId: string): boolean {
-  if (targetId === 'root' || nodeId === 'root' || targetId === nodeId) return false;
+  if (targetId === domTreeData.id || nodeId === domTreeData.id || targetId === nodeId) return false;
   const parent = findParentById(domTreeData, targetId);
   const movingNode = findNodeById(domTreeData, nodeId);
   if (!parent || !parent.children || !movingNode) return false;
@@ -433,7 +434,7 @@ export function toggleExpanded(nodeId: string): boolean {
  * @returns 是否切换成功
  */
 export function toggleHidden(nodeId: string): boolean {
-  if (nodeId === 'root') return false; // 根节点不可隐藏
+  if (nodeId === domTreeData.id) return false; // 根节点不可隐藏
   const node = findNodeById(domTreeData, nodeId);
   if (node) {
     node.hidden = !node.hidden;
@@ -451,7 +452,7 @@ export function toggleHidden(nodeId: string): boolean {
  * @returns 是否移动成功
  */
 export function moveNode(nodeId: string, newParentId: string): boolean {
-  if (nodeId === 'root' || nodeId === newParentId) return false;
+  if (nodeId === domTreeData.id || nodeId === newParentId) return false;
   const node = findNodeById(domTreeData, nodeId);
   if (!node) return false;
   const removed = removeNodeById(nodeId);
@@ -470,7 +471,7 @@ export function moveNode(nodeId: string, newParentId: string): boolean {
  * @returns 是否移除成功
  */
 export function removeNodeById(nodeId: string): boolean {
-  if (nodeId === 'root') return false; // 禁止删除根节点
+  if (nodeId === domTreeData.id) return false; // 禁止删除根节点
 
   // 递归查找节点的父节点
   function findParentNode(node: DomNode, targetId: string): DomNode | null {

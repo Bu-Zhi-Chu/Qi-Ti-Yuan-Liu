@@ -105,7 +105,7 @@
     })
 
     /** 计算展示名称，供 data-name 使用，保持与 DomTreeList 显示逻辑一致 */
-    const dataNameAttr = $derived.by(() => (nodeKey === 'root' ? '画布' : ((restAttrs as Record<string, any>)?.['data-name'] ?? node.type ?? '元素')))
+    const dataNameAttr = $derived.by(() => (node.attributes?.['data-is-root'] === true ? '画布' : ((restAttrs as Record<string, any>)?.['data-name'] ?? node.type ?? '元素')))
 
     /** 获取组件类型，默认为 SimpleBox */
     const componentType = node.componentType ?? 'SimpleBox'
@@ -114,8 +114,8 @@
     const componentProps = $derived.by(() => ({ 'data-name': dataNameAttr, ...restAttrs, ...(node.componentProps ?? {}) }))
 </script>
 
-{#if nodeKey === 'root'}
-    <div data-id={nodeKey} data-name={dataNameAttr} id={displayId} style={finalStyle} {...restAttrs} onclick={handleClick}>
+{#if node.attributes?.['data-is-root'] === true}
+    <div data-id={nodeKey} data-name={dataNameAttr} id={displayId} style={finalStyle} {...restAttrs} data-is-root="true" onclick={handleClick}>
         {#each node.children ?? [] as child}
             <NodeRenderer node={child} {selectedId} {editing} {select} />
         {/each}
