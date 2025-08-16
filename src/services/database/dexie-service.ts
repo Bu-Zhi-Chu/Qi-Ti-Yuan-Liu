@@ -27,9 +27,14 @@ export default class DexieService {
     static async createDatabase(dbName: string): Promise<void> {
         const db = new Dexie(dbName)
         db.version(1).stores({
+            // 使用字符串 UUID 作为主键，不再自增
             templates: '++id, name, desc, cover, tag, thumbnailUrl',
-            projects: '++id, name, templateId, data, createdAt, updatedAt'
+            projects: 'id, name, templateId, data, createdAt, updatedAt',
+            // doms 表：记录页面节点信息，projectId 字段关联所属项目
+            doms: '++id, projectId, nodeId, parentNodeId, type, attributes, style, textContent'
         })
+
+
         await db.open()
 
         // 插入默认模板

@@ -70,15 +70,15 @@
     onmouseenter={(e: MouseEvent) => {
         isHovered = true
         const target = e.currentTarget as HTMLElement
-        target.style.transform = 'translateY(-8px) scale(1.02)'
-        target.style.boxShadow = '0 20px 60px rgba(99, 102, 241, 0.4), 0 0 30px rgba(139, 92, 246, 0.3)'
+        target.style.transform = 'translateY(calc(-8px * var(--scale-ratio, 1))) scale(1.02)'
+        target.style.boxShadow = '0 calc(20px * var(--scale-ratio, 1)) calc(60px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.4), 0 0 calc(30px * var(--scale-ratio, 1)) rgba(139, 92, 246, 0.3)'
         target.style.borderColor = 'rgba(99, 102, 241, 0.5)'
     }}
     onmouseleave={(e: MouseEvent) => {
         isHovered = false
         const target = e.currentTarget as HTMLElement
-        target.style.transform = 'translateY(0px) scale(1)'
-        target.style.boxShadow = '0 8px 32px rgba(0,0,0,0.3)'
+        target.style.transform = 'translateY(calc(0px * var(--scale-ratio, 1))) scale(1)'
+        target.style.boxShadow = '0 calc(8px * var(--scale-ratio, 1)) calc(32px * var(--scale-ratio, 1)) rgba(0,0,0,0.3)'
         target.style.borderColor = 'rgba(99, 102, 241, 0.2)'
     }}
 >
