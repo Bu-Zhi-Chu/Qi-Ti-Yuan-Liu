@@ -217,7 +217,7 @@
 
 <div class="attr-editor">
     {#if selectedId}
-        <h3>节点属性</h3>
+        <h3>主要属性</h3>
         <div class="attr-list">
             <div class="attr-item">
                 <label for="node-id">编号:</label>
@@ -226,13 +226,13 @@
             </div>
             <div class="attr-item">
                 <label for="node-name">名称:</label>
-                <input id="node-name" type="text" bind:value={currentName} oninput={(e) => handleNameChange(e.currentTarget.value)} placeholder="输入节点名称..." disabled={isRoot} />
+                <input id="node-name" type="text" bind:value={currentName} oninput={(e) => handleNameChange(e.currentTarget.value)} placeholder="输入节点名称..." disabled={isRoot} class:disabled-input={isRoot} />
                 <span class="unit-placeholder"></span>
             </div>
             <div class="attr-item">
                 <label for="node-type">类型:</label>
                 {#if isRoot}
-                    <input id="node-type-text" type="text" value="画布" disabled />
+                    <input id="node-type-text" type="text" value="画布" disabled class="disabled-input" />
                 {:else}
                     <select id="node-type" bind:value={currentType} onchange={(e) => handleTypeChange(e.currentTarget.value)}>
                         <option value="">请选择组件类型...</option>
@@ -247,8 +247,8 @@
             <!-- 宽度输入 -->
             <div class="attr-item">
                 <label for="node-width">宽度:</label>
-                <input id="node-width" type="number" step={currentWidthUnit === '%' ? 0.1 : 1} bind:value={currentWidthValue} oninput={(e) => handleWidthValueChange(e.currentTarget.value)} placeholder="宽度值..." disabled={isRoot} />
-                <button class="unit-toggle" onclick={toggleWidthUnit} disabled={isRoot}>
+                <input id="node-width" type="number" step={currentWidthUnit === '%' ? 0.1 : 1} bind:value={currentWidthValue} oninput={(e) => handleWidthValueChange(e.currentTarget.value)} placeholder="宽度值..." disabled={isRoot} class:disabled-input={isRoot} />
+                <button class="unit-toggle" class:disabled-input={isRoot} onclick={toggleWidthUnit} disabled={isRoot}>
                     {currentWidthUnit}
                 </button>
             </div>
@@ -256,8 +256,8 @@
             <!-- 高度输入 -->
             <div class="attr-item">
                 <label for="node-height">高度:</label>
-                <input id="node-height" type="number" step={currentHeightUnit === '%' ? 0.1 : 1} bind:value={currentHeightValue} oninput={(e) => handleHeightValueChange(e.currentTarget.value)} placeholder="高度值..." disabled={isRoot} />
-                <button class="unit-toggle" onclick={toggleHeightUnit} disabled={isRoot}>
+                <input id="node-height" type="number" step={currentHeightUnit === '%' ? 0.1 : 1} bind:value={currentHeightValue} oninput={(e) => handleHeightValueChange(e.currentTarget.value)} placeholder="高度值..." disabled={isRoot} class:disabled-input={isRoot} />
+                <button class="unit-toggle" class:disabled-input={isRoot} onclick={toggleHeightUnit} disabled={isRoot}>
                     {currentHeightUnit}
                 </button>
             </div>
@@ -336,6 +336,11 @@
     input:disabled {
         cursor: not-allowed;
         opacity: 0.5;
+    }
+
+    /* 根节点（画布）禁用输入框的特殊样式 */
+    .disabled-input {
+        color: #64748b !important; /* 使用更灰色的文本颜色 */
     }
 
     .unit-placeholder {

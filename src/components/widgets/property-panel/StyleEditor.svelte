@@ -35,10 +35,10 @@
 
 <div class="style-editor">
     {#if selectedId}
-        <h3>节点样式</h3>
+        <h3>定位属性</h3>
         <div class="style-list">
             <div class="style-item">
-                <label for="node-position">定位:</label>
+                <label for="node-position">类型:</label>
                 {#if isRoot}
                     <input id="node-position-text" type="text" value="static" disabled />
                 {:else}
