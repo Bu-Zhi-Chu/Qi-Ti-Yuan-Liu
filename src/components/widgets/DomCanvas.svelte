@@ -34,31 +34,19 @@
 </script>
 
 <script lang="ts">
-    // 组件属性 - 使用 Runes $props 声明
-    let {
-        editing = false,
-        initTranslateX = 0,
-        initTranslateY = 0,
-        initScale = 1,
-        onTransformChange = undefined
-    } = $props<{
-        editing?: boolean
-        initTranslateX?: number
-        initTranslateY?: number
-        initScale?: number
-        onTransformChange?: (t: { x: number; y: number; scale: number }) => void
-    }>()
+    // 组件属性 - 使用 Runes $props 声明，selectedId 支持双向绑定
+    let { editing = false } = $props<{ editing?: boolean }>()
 
     import { domTree, selectedId, setSelectedId } from '../../services/repository/dom-tree.store.svelte'
     // 顶部容器引用，用于渲染画布内容
     let canvasContainerRef: HTMLDivElement | null = null
 
     /* =================== 画布移动与缩放逻辑 =================== */
-    // 位移状态 - 使用初始化传入的值
-    let offsetX = $state(initTranslateX)
-    let offsetY = $state(initTranslateY)
-    // 缩放状态 - 使用初始化传入的值
-    let scale = $state(initScale)
+    // 位移状态
+    let offsetX = $state(0)
+    let offsetY = $state(0)
+    // 缩放状态
+    let scale = $state(1)
     // 拖动状态
     let isDragging = $state(false)
 
@@ -66,11 +54,6 @@
     function handlePan({ x, y, event }: { x: number; y: number; event: PointerEvent }) {
         offsetX = x
         offsetY = y
-
-        // 通知父组件 transform 发生变化
-        if (onTransformChange) {
-            onTransformChange({ x, y, scale })
-        }
     }
 
     // 缩放回调处理函数
@@ -78,11 +61,6 @@
         offsetX = x
         offsetY = y
         scale = newScale
-
-        // 通知父组件 transform 发生变化
-        if (onTransformChange) {
-            onTransformChange({ x, y, scale: newScale })
-        }
     }
 
     /**

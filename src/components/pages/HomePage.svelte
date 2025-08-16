@@ -70,9 +70,6 @@
             name,
             templateId: 'blank',
             data: {},
-            translateX: 0, // 初始化位移和缩放参数
-            translateY: 0,
-            scale: 1,
             createdAt: now,
             updatedAt: now
         })
