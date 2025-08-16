@@ -15,6 +15,9 @@
 -->
 <script lang="ts">
     import { getNodeProps, updateNodeProps } from '../../../services/property-panel/property-panel.service'
+    import { domTree } from '../../../services/repository/dom-tree.store.svelte'
+    import { getElementByNodeId } from '../../../services/utils/dom-geometry.util'
+    import { getScaleRatio } from '../../../services/utils/get-scale-ratio.util'
 
     // 外部传入当前选中节点 id
     export let selectedId: string | null = null
@@ -44,7 +47,7 @@
     let currentRightUnit: 'px' | '%' = 'px'
     let currentBottomUnit: 'px' | '%' = 'px'
     let currentLeftUnit: 'px' | '%' = 'px'
-    
+
     // 单位选择 - 外边距属性
     let currentMarginTopUnit: 'px' | '%' = 'px'
     let currentMarginRightUnit: 'px' | '%' = 'px'
@@ -60,7 +63,7 @@
 
     // 是否显示位置属性（非static定位才显示）
     $: showPositionProps = currentPosition !== 'static'
-    
+
     // 是否显示外边距属性（在static定位时显示）
     $: showMarginProps = currentPosition === 'static'
 
@@ -111,6 +114,12 @@
     function parseSize(size: string | undefined): [string, 'px' | '%'] {
         if (!size) return ['', 'px']
 
+        // 支持解析 calc(100px * var(--scale-ratio, 1)) 形式
+        const calcMatch = size?.match(/^calc\(\s*(\d+(?:\.\d+)?)\s*px\b.*\)$/i)
+        if (calcMatch) {
+            return [calcMatch[1], 'px']
+        }
+
         // 处理百分比
         if (size.endsWith('%')) {
             return [size.replace('%', ''), '%']
@@ -125,17 +134,85 @@
         return [size, 'px']
     }
 
-    // 格式化尺寸
+    // 格式化尺寸，px 单位使用 calc 结合 --scale-ratio 实现自适应
     function formatSize(value: string, unit: 'px' | '%'): string {
         if (!value) return ''
-        return `${value}${unit}`
+        return unit === 'px' ? `calc(${value}px * var(--scale-ratio, 1))` : `${value}%`
     }
 
     // 处理定位类型变更
     function handlePositionChange(val: string) {
         if (!selectedId || isRoot) return
+
+        const oldPosition = currentPosition
         currentPosition = val as any
+
+        // 更新定位类型
         updateNodeProps(selectedId, { styles: { position: val } })
+
+        // 如果从其他定位类型切换到静态定位，将位置属性转换为外边距属性
+        if (val === 'static' && oldPosition !== 'static') {
+            transferPositionToMargin()
+        }
+    }
+
+    // 将位置属性转换为外边距属性（用于切换到静态定位时）
+    function transferPositionToMargin() {
+        if (!selectedId || isRoot) return
+
+        const styles: Record<string, string> = {}
+        let hasChanges = false
+
+        // 只转换有值的属性
+        if (currentTop) {
+            styles.marginTop = formatSize(currentTop, currentTopUnit)
+            currentMarginTop = currentTop
+            currentMarginTopUnit = currentTopUnit
+            hasChanges = true
+        }
+
+        if (currentRight) {
+            styles.marginRight = formatSize(currentRight, currentRightUnit)
+            currentMarginRight = currentRight
+            currentMarginRightUnit = currentRightUnit
+            hasChanges = true
+        }
+
+        if (currentBottom) {
+            styles.marginBottom = formatSize(currentBottom, currentBottomUnit)
+            currentMarginBottom = currentBottom
+            currentMarginBottomUnit = currentBottomUnit
+            hasChanges = true
+        }
+
+        if (currentLeft) {
+            styles.marginLeft = formatSize(currentLeft, currentLeftUnit)
+            currentMarginLeft = currentLeft
+            currentMarginLeftUnit = currentLeftUnit
+            hasChanges = true
+        }
+
+        // 如果有需要更新的样式，则更新节点属性
+        if (hasChanges) {
+            // 更新节点属性
+            updateNodeProps(selectedId, { styles })
+
+            // 强制触发UI更新 - 使用setTimeout确保在下一个事件循环中更新
+            setTimeout(() => {
+                // 克隆当前值以确保Svelte检测到变化
+                currentMarginTop = String(currentMarginTop)
+                currentMarginRight = String(currentMarginRight)
+                currentMarginBottom = String(currentMarginBottom)
+                currentMarginLeft = String(currentMarginLeft)
+
+                console.log('已将位置属性转换为外边距属性:', {
+                    marginTop: currentMarginTop + currentMarginTopUnit,
+                    marginRight: currentMarginRight + currentMarginRightUnit,
+                    marginBottom: currentMarginBottom + currentMarginBottomUnit,
+                    marginLeft: currentMarginLeft + currentMarginLeftUnit
+                })
+            }, 0)
+        }
     }
 
     // 处理位置属性变更 - 使用 top/right/bottom/left 属性实现定位（优先于 margin）
@@ -146,7 +223,7 @@
         const formattedValue = value ? formatSize(value, unit) : ''
         updateNodeProps(selectedId, { styles: { [prop]: formattedValue } })
     }
-    
+
     // 处理外边距属性变更
     // 注意：static 定位时，应使用 margin 属性调整位置，因为 top/right/bottom/left 属性无效
     function handleMarginPropChange(prop: 'marginTop' | 'marginRight' | 'marginBottom' | 'marginLeft', value: string, unit: 'px' | '%') {
@@ -160,6 +237,28 @@
     function handleZIndexChange(value: string) {
         if (!selectedId || isRoot) return
         updateNodeProps(selectedId, { styles: { zIndex: value } })
+    }
+
+    // 将位置属性从一个单位转换到另一个单位
+    function convertPosition(val: number, from: '%' | 'px', to: '%' | 'px', prop: 'top' | 'right' | 'bottom' | 'left'): number {
+        if (from === to) return val
+        // 使用 dom-geometry.util 中的 getElementByNodeId 函数获取元素
+        const el = getElementByNodeId(selectedId!)
+        const parent = el?.parentElement as HTMLElement | null
+        if (!el || !parent) return val
+
+        // 获取父元素的宽度或高度
+        const parentSize = prop === 'left' || prop === 'right' ? parent.offsetWidth : parent.offsetHeight
+        if (parentSize === 0) return val
+
+        const sr = getScaleRatio()
+        if (from === 'px') {
+            // 设计px → % (需乘全局缩放比)
+            return ((val * sr) / parentSize) * 100
+        } else {
+            // % → 设计px (需除全局缩放比)
+            return ((val / 100) * parentSize) / sr
+        }
     }
 
     // 切换单位 - 位置属性
@@ -176,34 +275,76 @@
                 currentValue = currentTop
                 currentUnit = currentTopUnit
                 nextUnit = currentUnit === 'px' ? '%' : 'px'
-                currentTopUnit = nextUnit
                 break
             case 'right':
                 currentValue = currentRight
                 currentUnit = currentRightUnit
                 nextUnit = currentUnit === 'px' ? '%' : 'px'
-                currentRightUnit = nextUnit
                 break
             case 'bottom':
                 currentValue = currentBottom
                 currentUnit = currentBottomUnit
                 nextUnit = currentUnit === 'px' ? '%' : 'px'
-                currentBottomUnit = nextUnit
                 break
             case 'left':
                 currentValue = currentLeft
                 currentUnit = currentLeftUnit
                 nextUnit = currentUnit === 'px' ? '%' : 'px'
-                currentLeftUnit = nextUnit
                 break
         }
 
-        // 如果有值，则更新
+        // 如果有值，则进行单位转换
         if (currentValue) {
-            handlePositionPropChange(prop, currentValue, nextUnit)
+            const numericVal = parseFloat(currentValue) || 0
+            const converted = convertPosition(numericVal, currentUnit, nextUnit, prop)
+            const roundedValue = String(nextUnit === '%' ? Math.round(converted * 10) / 10 : Math.round(converted * 100) / 100)
+
+            // 更新UI状态和节点属性
+            switch (prop) {
+                case 'top':
+                    currentTop = roundedValue
+                    currentTopUnit = nextUnit
+                    break
+                case 'right':
+                    currentRight = roundedValue
+                    currentRightUnit = nextUnit
+                    break
+                case 'bottom':
+                    currentBottom = roundedValue
+                    currentBottomUnit = nextUnit
+                    break
+                case 'left':
+                    currentLeft = roundedValue
+                    currentLeftUnit = nextUnit
+                    break
+            }
+
+            handlePositionPropChange(prop, roundedValue, nextUnit)
         }
     }
-    
+
+    // 将外边距属性从一个单位转换到另一个单位
+    function convertMargin(val: number, from: '%' | 'px', to: '%' | 'px', prop: 'marginTop' | 'marginRight' | 'marginBottom' | 'marginLeft'): number {
+        if (from === to) return val
+        // 使用 dom-geometry.util 中的 getElementByNodeId 函数获取元素
+        const el = getElementByNodeId(selectedId!)
+        const parent = el?.parentElement as HTMLElement | null
+        if (!el || !parent) return val
+
+        // 获取父元素的宽度或高度
+        const parentSize = prop === 'marginLeft' || prop === 'marginRight' ? parent.offsetWidth : parent.offsetHeight
+        if (parentSize === 0) return val
+
+        const sr = getScaleRatio()
+        if (from === 'px') {
+            // 设计px → % (需乘全局缩放比)
+            return ((val * sr) / parentSize) * 100
+        } else {
+            // % → 设计px (需除全局缩放比)
+            return ((val / 100) * parentSize) / sr
+        }
+    }
+
     // 切换单位 - 外边距属性
     function toggleMarginUnit(prop: 'marginTop' | 'marginRight' | 'marginBottom' | 'marginLeft') {
         if (!selectedId || isRoot) return
@@ -218,31 +359,51 @@
                 currentValue = currentMarginTop
                 currentUnit = currentMarginTopUnit
                 nextUnit = currentUnit === 'px' ? '%' : 'px'
-                currentMarginTopUnit = nextUnit
                 break
             case 'marginRight':
                 currentValue = currentMarginRight
                 currentUnit = currentMarginRightUnit
                 nextUnit = currentUnit === 'px' ? '%' : 'px'
-                currentMarginRightUnit = nextUnit
                 break
             case 'marginBottom':
                 currentValue = currentMarginBottom
                 currentUnit = currentMarginBottomUnit
                 nextUnit = currentUnit === 'px' ? '%' : 'px'
-                currentMarginBottomUnit = nextUnit
                 break
             case 'marginLeft':
                 currentValue = currentMarginLeft
                 currentUnit = currentMarginLeftUnit
                 nextUnit = currentUnit === 'px' ? '%' : 'px'
-                currentMarginLeftUnit = nextUnit
                 break
         }
 
-        // 如果有值，则更新
+        // 如果有值，则进行单位转换
         if (currentValue) {
-            handleMarginPropChange(prop, currentValue, nextUnit)
+            const numericVal = parseFloat(currentValue) || 0
+            const converted = convertMargin(numericVal, currentUnit, nextUnit, prop)
+            const roundedValue = String(nextUnit === '%' ? Math.round(converted * 10) / 10 : Math.round(converted * 100) / 100)
+
+            // 更新UI状态和节点属性
+            switch (prop) {
+                case 'marginTop':
+                    currentMarginTop = roundedValue
+                    currentMarginTopUnit = nextUnit
+                    break
+                case 'marginRight':
+                    currentMarginRight = roundedValue
+                    currentMarginRightUnit = nextUnit
+                    break
+                case 'marginBottom':
+                    currentMarginBottom = roundedValue
+                    currentMarginBottomUnit = nextUnit
+                    break
+                case 'marginLeft':
+                    currentMarginLeft = roundedValue
+                    currentMarginLeftUnit = nextUnit
+                    break
+            }
+
+            handleMarginPropChange(prop, roundedValue, nextUnit)
         }
     }
 </script>
@@ -313,7 +474,7 @@
                     <span class="unit-placeholder"></span>
                 </div>
             {/if}
-            
+
             <!-- 外边距属性 - 在static定位时特别有用 -->
             {#if showMarginProps && !isRoot}
                 <!-- 上外边距 -->

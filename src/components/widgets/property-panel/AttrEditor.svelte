@@ -38,7 +38,7 @@
 
     // 鼠标穿透相关变量
     let currentPointerEvents: 'auto' | 'none' = 'auto'
-    
+
     // overflow 相关变量
     let currentOverflow: 'hidden' | 'auto' | 'scroll' | 'visible' = 'hidden'
 
@@ -260,7 +260,7 @@
         currentPointerEvents = value as 'auto' | 'none'
         updateNodeProps(selectedId, { styles: { pointerEvents: value } })
     }
-    
+
     // 处理 overflow 属性变更
     function handleOverflowChange(value: string) {
         if (!selectedId) return
@@ -327,7 +327,7 @@
                 </select>
                 <span class="unit-placeholder"></span>
             </div>
-            
+
             <!-- 鼠标穿透下拉框 -->
             <div class="attr-item">
                 <label for="node-pointer-events">鼠标穿透</label>
