@@ -19,13 +19,7 @@ export interface DomNode {
   attributes?: Record<string, string>
   /** 行内样式 */
   styles?: Record<string, string>
-  /** 图片Blob存储映射，用于存储背景图片等二进制数据 */
-  imageBlobs?: Record<string, {
-    blobId: string
-    blobUrl: string
-    fileName: string
-    fileType: string
-  }>
+
   /** 节点文本内容 */
   textContent?: string
   /** 节点名称（用于显示） */

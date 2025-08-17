@@ -5,7 +5,7 @@
  */
 
 import type { DomNode } from '../../types/dom-node.types';
-import { findNodeById, domTree } from '../repository/dom-tree.store.svelte';
+import { domTree, findNodeById } from '../repository/dom-tree.store.svelte';
 
 // -------------------- 类型定义 --------------------
 export interface PropPatch {
@@ -21,14 +21,13 @@ export interface PropPatch {
  */
 export function getNodeProps(
   id: string,
-): Required<Pick<DomNode, 'attributes' | 'styles' | 'events' | 'imageBlobs'>> | null {
+): Required<Pick<DomNode, 'attributes' | 'styles' | 'events'>> | null {
   const node = findNodeById(domTree, id);
   if (!node) return null;
   return {
     attributes: { ...(node.attributes ?? {}) },
     styles: { ...(node.styles ?? {}) },
     events: { ...(node.events ?? {}) },
-    imageBlobs: { ...(node.imageBlobs ?? {}) },
   };
 }
 
@@ -76,19 +75,7 @@ export function updateNodeProps(id: string, patch: PropPatch): boolean {
     }
   }
 
-  // imageBlobs
-  if (patch.imageBlobs) {
-    for (const [key, val] of Object.entries(patch.imageBlobs)) {
-      if (val === undefined || val === null) {
-        if (node.imageBlobs) delete node.imageBlobs[key];
-      } else {
-        if (!node.imageBlobs) node.imageBlobs = {};
-        node.imageBlobs[key] = val;
-      }
-    }
-  }
-
-  // 触发自动保存到数据库
+    // 触发自动保存到数据库
   import('../repository/dom-tree.store.svelte').then(({ updateNodeProperties, updateNodeStyles }) => {
     if (patch.attributes) {
       const validAttributes: Record<string, string> = {};
@@ -108,9 +95,7 @@ export function updateNodeProps(id: string, patch: PropPatch): boolean {
       });
       updateNodeStyles(id, validStyles);
     }
-    if (patch.imageBlobs) {
-      updateNodeProperties(id, { imageBlobs: patch.imageBlobs });
-    }
+
   });
 
   return true;

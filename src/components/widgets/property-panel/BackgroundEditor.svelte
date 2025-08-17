@@ -59,25 +59,20 @@
     $: if (selectedId) {
         const styleSnapshot = getNodeProps(selectedId)
 
-        // 同步Blob引用信息
-        const imageBlobs = styleSnapshot?.imageBlobs || {}
-        const bgImageData = imageBlobs.backgroundImage || {}
-        backgroundImageBlobId = bgImageData.blobId || ''
-        backgroundImageFileName = bgImageData.fileName || ''
-        backgroundImageFileType = bgImageData.fileType || ''
+        // 直接从styles获取背景图片URL
+        const bgImage = styleSnapshot?.styles?.backgroundImage || ''
+        backgroundImage = bgImage
 
-        // 使用Blob URL
-        if (backgroundImageBlobId) {
-            // 异步获取Blob URL
-            ImageBlobService.getImageBlobUrl(backgroundImageBlobId).then((url) => {
-                if (url) {
-                    backgroundImage = `url(${url})`
-                } else {
-                    backgroundImage = ''
-                }
-            })
-        } else {
-            backgroundImage = ''
+        // 重置Blob相关信息（这些现在用于内部管理，不存储在数据中）
+        backgroundImageBlobId = ''
+        backgroundImageFileName = ''
+        backgroundImageFileType = ''
+
+        // 如果背景图片是Blob URL，提取Blob ID用于清理
+        if (bgImage && bgImage.startsWith('url(blob:')) {
+            const blobUrl = bgImage.replace(/^url\((.*)\)$/, '$1').replace(/"/g, '')
+            // 这里需要从Blob URL反向查找Blob ID，但由于没有存储映射，暂时无法直接获取
+            // 在实际清理时，需要遍历所有Blob并检查URL匹配
         }
 
         // 解析背景尺寸
@@ -172,7 +167,7 @@
             // 保存为Blob对象
             const blobId = await ImageBlobService.storeImageBlob(file)
             const blobUrl = await ImageBlobService.getImageBlobUrl(blobId)
-
+            
             if (blobUrl) {
                 backgroundImage = `url(${blobUrl})`
                 backgroundImageBlobId = blobId
@@ -213,18 +208,7 @@
         // 背景重复
         styles.backgroundRepeat = backgroundRepeat
 
-        // 构建imageBlobs数据
-        const imageBlobs: Record<string, any> = {}
-        if (backgroundImageBlobId) {
-            imageBlobs.backgroundImage = {
-                blobId: backgroundImageBlobId,
-                blobUrl: backgroundImage.replace(/^url\((.*)\)$/, '$1').replace(/"/g, ''),
-                fileName: backgroundImageFileName,
-                fileType: backgroundImageFileType
-            }
-        }
-
-        updateNodeProps(selectedId, { styles, imageBlobs })
+        updateNodeProps(selectedId, { styles })
     }
 
     // 清除背景图片

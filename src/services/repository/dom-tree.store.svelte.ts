@@ -68,14 +68,12 @@ async function loadDomNodesFromDomsTable(projectId: string): Promise<DomNode | n
     // 创建所有节点
     for (const nodeData of nodes) {
       const attributes = nodeData.attributes || {};
-      const imageBlobs = nodeData.imageBlobs || {};
 
       const node: DomNode = {
         id: nodeData.id, // 唯一标识符
         componentType: nodeData.type,
         styles: nodeData.style || {},
         attributes: attributes,
-        imageBlobs: imageBlobs,
         textContent: nodeData.textContent,
         expanded: nodeData.attributes?.expanded !== false,
         hidden: nodeData.attributes?.hidden || false,
@@ -183,7 +181,6 @@ async function saveDomNodesToDomsTable(projectId: string, domTree: DomNode): Pro
       // 确保数据是可序列化的
       const safeAttributes = node.attributes ? JSON.parse(JSON.stringify(node.attributes)) : {};
       const safeStyles = node.styles ? JSON.parse(JSON.stringify(node.styles)) : {};
-      const safeImageBlobs = node.imageBlobs ? JSON.parse(JSON.stringify(node.imageBlobs)) : {};
 
       await DexieService.addRecord('qi-qiao-ban', 'doms', {
         projectId,
@@ -196,7 +193,6 @@ async function saveDomNodesToDomsTable(projectId: string, domTree: DomNode): Pro
           ...safeAttributes
         },
         style: safeStyles,
-        imageBlobs: safeImageBlobs,
         textContent: node.textContent || ''
       });
 
