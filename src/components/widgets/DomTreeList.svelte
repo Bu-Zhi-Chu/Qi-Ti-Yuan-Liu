@@ -115,21 +115,54 @@
         const isSelected = nodeKey === currentSelectedId
         const displayName = level === 0 ? '画布' : node.attributes?.['data-name'] || node.type || '元素'
         const hasChildren = node.children && node.children.length
-        const hideIcon = level === 0 ? '' : node.hidden ? '🙈' : '👁'
-        const deleteIcon = level === 0 ? '' : '🗑'
 
         const childrenHtml = hasChildren && node.expanded ? node.children!.map((child: DomNode) => renderNode(child, level + 1, currentSelectedId)).join('') : ''
+
+        // 使用 Lucide 图标库的 SVG 图标替换 emoji
+        const dragHandleSvg = level === 0 ? '' : `
+          <svg class="icon drag-handle" data-action="drag-handle" id="${nodeKey}" title="拖拽排序" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="9" cy="12" r="1"></circle>
+            <circle cx="9" cy="5" r="1"></circle>
+            <circle cx="9" cy="19" r="1"></circle>
+            <circle cx="15" cy="12" r="1"></circle>
+            <circle cx="15" cy="5" r="1"></circle>
+            <circle cx="15" cy="19" r="1"></circle>
+          </svg>
+        `
+
+        const hideIconSvg = level === 0 ? '' : node.hidden ? `
+          <svg class="icon action-btn hide-btn" data-action="toggle-hidden" id="${nodeKey}" title="显示元素" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"></path>
+            <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path>
+            <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path>
+            <line x1="2" x2="22" y1="2" y2="22"></line>
+          </svg>
+        ` : `
+          <svg class="icon action-btn hide-btn" data-action="toggle-hidden" id="${nodeKey}" title="隐藏元素" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+          </svg>
+        `
+
+        const deleteIconSvg = level === 0 ? '' : `
+          <svg class="icon action-btn delete-btn" data-action="delete-node" id="${nodeKey}" title="删除元素" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 6h18"></path>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            <path d="M10 11v6"></path>
+            <path d="M14 11v6"></path>
+          </svg>
+        `
 
         return /*html*/ `
           <div class="tree-node" style="padding-left: calc(16px * var(--scale-ratio, 1));" id="${nodeKey}" data-level="${level}">
             <div class="node-content ${isSelected ? 'selected' : ''} ${node.hidden ? 'hidden' : ''} ${hasChildren && !node.expanded ? 'collapsed' : ''}">
               <div class="node-left">
-                <span class="icon drag-handle ${level === 0 ? 'disabled' : ''}" data-action="${level === 0 ? '' : 'drag-handle'}" id="${nodeKey}">⋮⋮</span>
+                ${dragHandleSvg}
                 <span class="node-id" id="${nodeKey}">${displayName}</span>
               </div>
               <div class="node-actions">
-                ${level > 0 ? `<span class="icon action-btn hide-btn" data-action="toggle-hidden" id="${nodeKey}">${hideIcon}</span>` : ''}
-                ${level > 0 ? `<span class="icon action-btn delete-btn" data-action="delete-node" id="${nodeKey}">${deleteIcon}</span>` : ''}
+                ${hideIconSvg}
+                ${deleteIconSvg}
               </div>
             </div>
             ${childrenHtml}
