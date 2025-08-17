@@ -50,31 +50,59 @@
     let isUploading = false
     let uploadProgress = 0
 
-    // 当选中节点变化时，同步背景样式
+    // 从样式对象初始化背景属性
+    function initBackgroundProps() {
+        if (!selectedId) return
+
+        const nodeProps = getNodeProps(selectedId)
+        const styles = nodeProps?.styles || {}
+
+        // 背景图片
+        backgroundImage = styles.backgroundImage || ''
+
+        // 背景尺寸 - 优先使用新的存储格式，兼容旧格式
+        if (styles.backgroundSizeX !== undefined) {
+            backgroundSizeX = styles.backgroundSizeX || '100'
+            backgroundSizeY = styles.backgroundSizeY || '100'
+            sizeUnitX = (styles.backgroundSizeUnitX || '%') as 'px' | '%'
+            sizeUnitY = (styles.backgroundSizeUnitY || '%') as 'px' | '%'
+        } else {
+            // 兼容旧格式：从CSS表达式解析
+            const backgroundSize = styles.backgroundSize || '100% 100%'
+            const [sizeX, sizeY] = backgroundSize.split(' ')
+            const [parsedSizeX, parsedUnitX] = parseSize(sizeX || '100%')
+            const [parsedSizeY, parsedUnitY] = parseSize(sizeY || '100%')
+            backgroundSizeX = parsedSizeX
+            backgroundSizeY = parsedSizeY
+            sizeUnitX = parsedUnitX
+            sizeUnitY = parsedUnitY
+        }
+
+        // 背景位置 - 优先使用新的存储格式，兼容旧格式
+        if (styles.backgroundPositionX !== undefined) {
+            backgroundPositionX = styles.backgroundPositionX || '50'
+            backgroundPositionY = styles.backgroundPositionY || '50'
+            positionUnitX = (styles.backgroundPositionUnitX || '%') as 'px' | '%'
+            positionUnitY = (styles.backgroundPositionUnitY || '%') as 'px' | '%'
+        } else {
+            // 兼容旧格式：从CSS表达式解析
+            const backgroundPosition = styles.backgroundPosition || '50% 50%'
+            const [posX, posY] = backgroundPosition.split(' ')
+            const [parsedPosX, parsedUnitX] = parseSize(posX || '50%')
+            const [parsedPosY, parsedUnitY] = parseSize(posY || '50%')
+            backgroundPositionX = parsedPosX
+            backgroundPositionY = parsedPosY
+            positionUnitX = parsedUnitX
+            positionUnitY = parsedUnitY
+        }
+
+        // 背景重复
+        backgroundRepeat = styles.backgroundRepeat || 'no-repeat'
+    }
+
+    // 监听 selectedId 变化，自动调用初始化函数
     $: if (selectedId) {
-        const styleSnapshot = getNodeProps(selectedId)
-
-        // 直接从styles获取背景图片URL
-        const bgImage = styleSnapshot?.styles?.backgroundImage || ''
-        backgroundImage = bgImage
-
-        // 解析背景尺寸
-        const size = styleSnapshot?.styles?.backgroundSize || '100% 100%'
-        if (size && size !== 'auto') {
-            const [x, y] = size.split(' ')
-            ;[backgroundSizeX, sizeUnitX] = parseSize(x || '100%')
-            ;[backgroundSizeY, sizeUnitY] = parseSize(y || '100%')
-        }
-
-        // 解析背景位置
-        const position = styleSnapshot?.styles?.backgroundPosition || '50% 50%'
-        if (position) {
-            const [x, y] = position.split(' ')
-            ;[backgroundPositionX, positionUnitX] = parseSize(x || '50%')
-            ;[backgroundPositionY, positionUnitY] = parseSize(y || '50%')
-        }
-
-        backgroundRepeat = styleSnapshot?.styles?.backgroundRepeat || 'no-repeat'
+        initBackgroundProps()
     } else {
         // 重置所有属性
         backgroundImage = ''
@@ -89,11 +117,11 @@
         positionUnitY = '%'
     }
 
-    // 解析尺寸值和单位，支持calc表达式
+    // 解析尺寸值和单位
     function parseSize(size: string): [string, 'px' | '%'] {
         if (!size) return ['100', '%']
 
-        // 处理百分比 - 四舍五入保留1位小数
+        // 处理百分比
         if (size.trim().endsWith('%')) {
             const value = parseFloat(size.trim().replace('%', ''))
             return [value ? Math.round(value * 10) / 10 + '' : '100', '%']
@@ -104,21 +132,14 @@
             return [size.trim().replace('px', ''), 'px']
         }
 
-        // 支持解析 calc(...) 形式 - 提取数字值
-        const calcMatch = size.match(/(\d+(?:\.\d+)?)\s*(px|%)/i)
-        if (calcMatch) {
-            const [, value, unit] = calcMatch
-            return [value, unit === 'px' ? 'px' : '%']
-        }
-
         // 默认使用百分比
         return [size.trim(), '%']
     }
 
-    // 格式化尺寸，px单位使用calc结合--scale-ratio实现自适应
+    // 格式化尺寸，直接返回数值和单位
     function formatSize(value: string, unit: 'px' | '%'): string {
         if (!value) return '0'
-        return unit === 'px' ? `calc(${value}px * var(--scale-ratio, 1))` : `${value}%`
+        return unit === 'px' ? `${value}px` : `${value}%`
     }
 
     // 处理图片上传
@@ -167,15 +188,23 @@
         // 背景图片 - 始终设置，包括空值以移除背景
         styles.backgroundImage = backgroundImage || ''
 
-        // 背景尺寸
-        const sizeX = formatSize(backgroundSizeX, sizeUnitX)
-        const sizeY = formatSize(backgroundSizeY, sizeUnitY)
-        styles.backgroundSize = `${sizeX} ${sizeY}`
+        // 背景尺寸 - 直接存储数值和单位
+        styles.backgroundSize = `${formatSize(backgroundSizeX, sizeUnitX)} ${formatSize(backgroundSizeY, sizeUnitY)}`
 
-        // 背景位置
-        const posX = formatSize(backgroundPositionX, positionUnitX)
-        const posY = formatSize(backgroundPositionY, positionUnitY)
-        styles.backgroundPosition = `${posX} ${posY}`
+        // 存储背景尺寸的原始数值和单位，便于编辑
+        styles.backgroundSizeX = backgroundSizeX
+        styles.backgroundSizeY = backgroundSizeY
+        styles.backgroundSizeUnitX = sizeUnitX
+        styles.backgroundSizeUnitY = sizeUnitY
+
+        // 背景位置 - 直接存储数值和单位
+        styles.backgroundPosition = `${formatSize(backgroundPositionX, positionUnitX)} ${formatSize(backgroundPositionY, positionUnitY)}`
+
+        // 存储背景位置的原始数值和单位
+        styles.backgroundPositionX = backgroundPositionX
+        styles.backgroundPositionY = backgroundPositionY
+        styles.backgroundPositionUnitX = positionUnitX
+        styles.backgroundPositionUnitY = positionUnitY
 
         // 背景重复
         styles.backgroundRepeat = backgroundRepeat
