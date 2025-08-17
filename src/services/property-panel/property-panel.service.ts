@@ -12,7 +12,6 @@ export interface PropPatch {
   attributes?: Record<string, string | undefined>;
   styles?: Record<string, string | undefined>;
   events?: Record<string, Function | undefined>;
-  imageBlobs?: Record<string, any>;
 }
 
 // -------------------- 查询接口 --------------------

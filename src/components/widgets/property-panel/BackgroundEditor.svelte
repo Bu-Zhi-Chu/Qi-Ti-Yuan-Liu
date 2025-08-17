@@ -2,21 +2,22 @@
   BackgroundEditor.svelte
   背景样式编辑器组件
   功能：
-  - 图片上传并存储为data URL
+  - 图片上传并存储为Blob URL
   - 背景尺寸设置（横轴/纵轴，默认100%）
   - 背景位置设置（横轴/纵轴，默认50%）
   - 平铺方式选择（默认不重复）
 
   使用说明：
   - 支持拖拽上传图片
-  - 图片以data URL形式存储在doms表的style字段中
+  - 图片以Blob URL形式存储在doms表的style字段中
   - 背景样式直接应用于DOM元素
 -->
 <script lang="ts">
+    import { onDestroy } from 'svelte'
     import { getNodeProps, updateNodeProps } from '../../../services/property-panel/property-panel.service'
     import { domTree } from '../../../services/repository/dom-tree.store.svelte'
     import { getScaleRatio } from '../../../services/utils/get-scale-ratio.util'
-    import { ImageBlobService } from '../../../services/storage/image-blob.service'
+
 
     // 外部传入当前选中节点 id
     export let selectedId: string | null = null
@@ -29,10 +30,7 @@
     let backgroundPositionY: string = '50'
     let backgroundRepeat: string = 'no-repeat'
 
-    // Blob存储相关状态
-    let backgroundImageBlobId: string = ''
-    let backgroundImageFileName: string = ''
-    let backgroundImageFileType: string = ''
+
 
     // 单位设置 - 支持px和%切换
     let sizeUnitX: 'px' | '%' = '%'
@@ -63,17 +61,7 @@
         const bgImage = styleSnapshot?.styles?.backgroundImage || ''
         backgroundImage = bgImage
 
-        // 重置Blob相关信息（这些现在用于内部管理，不存储在数据中）
-        backgroundImageBlobId = ''
-        backgroundImageFileName = ''
-        backgroundImageFileType = ''
 
-        // 如果背景图片是Blob URL，提取Blob ID用于清理
-        if (bgImage && bgImage.startsWith('url(blob:')) {
-            const blobUrl = bgImage.replace(/^url\((.*)\)$/, '$1').replace(/"/g, '')
-            // 这里需要从Blob URL反向查找Blob ID，但由于没有存储映射，暂时无法直接获取
-            // 在实际清理时，需要遍历所有Blob并检查URL匹配
-        }
 
         // 解析背景尺寸
         const size = styleSnapshot?.styles?.backgroundSize || '100% 100%'
@@ -95,9 +83,6 @@
     } else {
         // 重置所有属性
         backgroundImage = ''
-        backgroundImageBlobId = ''
-        backgroundImageFileName = ''
-        backgroundImageFileType = ''
         backgroundSizeX = '100'
         backgroundSizeY = '100'
         backgroundPositionX = '50'
@@ -164,18 +149,10 @@
         uploadProgress = 0
 
         try {
-            // 保存为Blob对象
-            const blobId = await ImageBlobService.storeImageBlob(file)
-            const blobUrl = await ImageBlobService.getImageBlobUrl(blobId)
-            
-            if (blobUrl) {
-                backgroundImage = `url(${blobUrl})`
-                backgroundImageBlobId = blobId
-                backgroundImageFileName = file.name
-                backgroundImageFileType = file.type
-                updateBackgroundStyles()
-            }
-
+            // 使用Blob URL存储图片
+            const blobUrl = URL.createObjectURL(file)
+            backgroundImage = `url(${blobUrl})`
+            updateBackgroundStyles()
             isUploading = false
             uploadProgress = 100
         } catch (error) {
@@ -212,21 +189,24 @@
     }
 
     // 清除背景图片
-    async function clearBackgroundImage() {
+    function clearBackgroundImage() {
         if (!selectedId) return
 
-        // 清除Blob存储
-        if (backgroundImageBlobId) {
-            await ImageBlobService.removeImageBlob(backgroundImageBlobId)
+        // 释放Blob URL内存
+        const match = backgroundImage.match(/url\(([^)]+)\)/)
+        if (match && match[1] && match[1].startsWith('blob:')) {
+            URL.revokeObjectURL(match[1])
         }
 
         // 清除本地状态
         backgroundImage = ''
-        backgroundImageBlobId = ''
-        backgroundImageFileName = ''
-        backgroundImageFileType = ''
         updateBackgroundStyles()
     }
+
+    // 组件卸载时清理Blob URL
+    onDestroy(() => {
+        cleanupBlobUrls()
+    })
 
     // 单位切换函数
     function toggleSizeUnitX() {
@@ -247,6 +227,14 @@
     function togglePositionUnitY() {
         positionUnitY = positionUnitY === '%' ? 'px' : '%'
         updateBackgroundStyles()
+    }
+
+    // 清理Blob URL
+    function cleanupBlobUrls() {
+        const match = backgroundImage.match(/url\(([^)]+)\)/)
+        if (match && match[1] && match[1].startsWith('blob:')) {
+            URL.revokeObjectURL(match[1])
+        }
     }
 
     // 拖拽上传处理

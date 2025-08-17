@@ -30,7 +30,6 @@ export default class DexieService {
             templates: '++id, name, desc, cover, tag, thumbnailUrl',
             projects: 'id, name, templateId, data, createdAt, updatedAt, canvasState',
             doms: 'id, projectId, parentId, type, attributes, style, textContent',
-            imageBlobs: 'blobId, fileName, fileType, createdAt',
         })
 
 
