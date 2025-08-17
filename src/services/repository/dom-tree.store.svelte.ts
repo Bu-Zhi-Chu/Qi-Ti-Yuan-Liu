@@ -13,7 +13,6 @@ import Dexie from 'dexie';
 // 初始 domTree 数据结构
 const domTreeData = $state<DomNode>({
   id: 'root',
-  dataId: 'root',
   componentType: 'SimpleBox',
   styles: {
     width: '100%',
@@ -70,7 +69,6 @@ async function loadDomNodesFromDomsTable(projectId: string): Promise<DomNode | n
     for (const nodeData of nodes) {
       const node: DomNode = {
         id: nodeData.nodeId, // 唯一标识符
-        dataId: nodeData.domId, // DOM元素的真实id属性（可选，仅用于HTML id属性）
         componentType: nodeData.type,
         styles: nodeData.style || {},
         attributes: nodeData.attributes || {},
@@ -185,7 +183,6 @@ async function saveDomNodesToDomsTable(projectId: string, domTree: DomNode): Pro
       await DexieService.addRecord('qi-qiao-ban', 'doms', {
         projectId,
         nodeId: node.id, // 不变的节点UUID
-        domId: node.dataId, // DOM的真实id（可修改的）
         parentNodeId,
         type: node.componentType,
         attributes: {
@@ -322,7 +319,7 @@ export function addNodeToParent(parentId: string, newNode: DomNode): boolean {
 function isDescendant(root: DomNode, targetId: string): boolean {
   if (!root.children) return false;
   for (const child of root.children) {
-    if ((child.id === targetId) || (child.dataId === targetId)) return true;
+    if (child.id === targetId) return true;
     if (isDescendant(child, targetId)) return true;
   }
   return false;

@@ -8,8 +8,7 @@ export interface DomNode {
   id: string
   /** 节点类型（属性面板中的类型），可选 */
   type?: string
-  /** 已废弃：DOM元素的真实id属性，不再用于节点标识 */
-  dataId?: string
+
   /** 组件类型，指定使用 DynamicComponent 中的哪种组件，默认为 'SimpleBox' */
   componentType?: 'RealTimeClock' | 'ResponsiveBox' | 'SimpleBox'
   /** 传递给组件的属性 */

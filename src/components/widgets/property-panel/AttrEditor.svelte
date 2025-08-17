@@ -81,8 +81,8 @@
         propsSnapshot = getNodeProps(selectedId)
         const node = findNodeById(domTree, selectedId)
 
-        // 同步基本属性 - 优先显示 dataId，其次显示 id
-        currentId = node?.dataId ?? selectedId
+        // 同步基本属性 - 只使用id
+        currentId = selectedId
 
         // 同步名称
         const snapshotName = propsSnapshot?.attributes?.['data-name']
@@ -136,12 +136,12 @@
     // 删除原先硬编码
     // const componentTypes = ['SimpleBox', 'ResponsiveBox', 'RealTimeClock']
 
-    // 修改 id —— 更新节点的 dataId（对应数据库中的 domId 字段）
+    // 修改 id —— 更新节点的id字段
     function handleIdChange(newId: string) {
         if (!selectedId) return
-        currentId = newId
-        // 直接更新 dataId 字段，这将同步更新到数据库
-        updateNodeProperties(selectedId, { dataId: newId })
+        // 注意：id是系统内部标识符，修改id会影响所有引用，需要谨慎处理
+        // 这里暂时不支持直接修改系统内部id，可以考虑添加重命名功能
+        console.warn('系统内部ID不可直接修改，如需重命名请使用专门的节点重命名功能')
     }
 
     function handleNameChange(newName: string) {
