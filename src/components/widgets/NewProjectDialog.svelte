@@ -84,8 +84,8 @@
     <span style="font-size:calc(14px*var(--scale-ratio,1)); color:#cbd5e1; margin:calc(16px*var(--scale-ratio,1)) 0 calc(8px*var(--scale-ratio,1));">选择模板</span>
     <div class="grid">
         {#each templates as tpl}
-            <button type="button" class="tpl-btn" style="border:calc(2px*var(--scale-ratio,1)) solid {selected === tpl.id ? 'rgba(99,102,241,0.8)' : 'rgba(99,102,241,0.2)'}; border-radius:calc(8px*var(--scale-ratio,1));" onclick={() => (selected = tpl.id)}>
-                <GenericCard prop1={tpl.id} prop2={tpl.name} prop3={tpl.desc} prop4={tpl.thumbnailUrl} prop5={tpl.tag} />
+            <button type="button" class="tpl-btn" onclick={() => (selected = tpl.id)}>
+                <GenericCard prop1={tpl.id} prop2={tpl.name} prop3={tpl.desc} prop4={tpl.thumbnailUrl} prop5={tpl.tag} selected={selected === tpl.id} />
             </button>
         {/each}
     </div>
@@ -101,8 +101,8 @@
     .grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(calc(180px * var(--scale-ratio, 1)), 1fr));
-        gap: calc(16px * var(--scale-ratio, 1));
-        padding: calc(32px * var(--scale-ratio, 1)) 0;
+        gap: calc(24px * var(--scale-ratio, 1));
+        padding: calc(32px * var(--scale-ratio, 1)) calc(16px * var(--scale-ratio, 1));
         overflow-y: auto;
     }
     .btn-group {
@@ -136,10 +136,15 @@
         padding: 0;
         background: transparent;
         cursor: pointer;
-        transition: border-color 0.2s;
+        border: none;
+        outline: none;
+        transition: none;
+        border-radius: calc(16px * var(--scale-ratio, 1));
     }
     .tpl-btn:focus-visible {
         outline: calc(2px * var(--scale-ratio, 1)) solid rgba(99, 102, 241, 0.8);
         outline-offset: calc(2px * var(--scale-ratio, 1));
     }
+    
+
 </style>

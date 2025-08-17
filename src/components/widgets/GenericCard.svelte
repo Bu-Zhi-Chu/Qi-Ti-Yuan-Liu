@@ -24,11 +24,12 @@
         prop4?: string | Blob
         prop5?: string
         showDelete?: boolean
+        selected?: boolean
         onDelete?: (id?: string | number) => void | Promise<void>
         onClick?: () => void
     }
 
-    let { prop1, prop2, prop3, prop4, prop5, onClick, showDelete = false, onDelete }: Props = $props()
+    let { prop1, prop2, prop3, prop4, prop5, onClick, showDelete = false, selected = false, onDelete }: Props = $props()
 
     let imageSrc = $state<string | undefined>()
     let objectUrls = $state<string[]>([])
@@ -65,7 +66,7 @@
 </script>
 
 <ResponsiveBox
-    style="position: relative; background: rgba(30, 41, 59, 0.5); border-radius: 16px; padding: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); cursor: pointer; transition: all 0.3s ease; width: 100%; border: 1px solid rgba(99, 102, 241, 0.2); backdrop-filter: blur(10px); transform: translateY(0px);"
+    style="position: relative; background: rgba(30, 41, 59, 0.5); border-radius: 16px; padding: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); cursor: pointer; transition: all 0.3s ease; width: 100%; border: 1px solid {selected ? 'rgba(99, 102, 241, 0.8)' : 'rgba(99, 102, 241, 0.2)'}; backdrop-filter: blur(10px); transform: translateY(0px);"
     onclick={onClick}
     onmouseenter={(e: MouseEvent) => {
         isHovered = true
