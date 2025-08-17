@@ -1,7 +1,7 @@
 <!--
   PropertyPanel.svelte
   右侧属性面板完整组件
-  包含三个 Tab：属性、样式、事件，以及撤销/重做功能
+  包含四个 Tab：属性、定位、背景、事件，以及撤销/重做功能
 
   使用说明：
   - showToolbar: 是否显示顶部工具栏，由外部控制，默认为true
@@ -11,12 +11,13 @@
 <script lang="ts">
     import AttrEditor from './AttrEditor.svelte'
     import PositionEditor from './PositionEditor.svelte'
+    import BackgroundEditor from './BackgroundEditor.svelte'
     import EventEditor from './EventEditor.svelte'
     import { selectedId as getSelectedId } from '../../../services/repository/dom-tree.store.svelte'
     import Icon from '../Icon.svelte'
 
     // Runes props - 使用 $props 代替 export let
-    let { activeTab = 'attr', showToolbar = true } = $props<{ activeTab?: 'attr' | 'style' | 'event'; showToolbar?: boolean }>()
+    let { activeTab = 'attr', showToolbar = true } = $props<{ activeTab?: 'attr' | 'style' | 'background' | 'event'; showToolbar?: boolean }>()
 
     // 当前选中节点 id，响应式刷新
     const currentId = $derived.by(() => getSelectedId())
@@ -24,6 +25,7 @@
     const tabs = [
         { key: 'attr', label: '属性', icon: 'Settings' },
         { key: 'style', label: '定位', icon: 'Move' },
+        { key: 'background', label: '背景', icon: 'Image' },
         { key: 'event', label: '事件', icon: 'Code' }
     ] as const
 </script>
@@ -49,6 +51,8 @@
             <AttrEditor selectedId={currentId} />
         {:else if activeTab === 'style'}
             <PositionEditor selectedId={currentId} />
+        {:else if activeTab === 'background'}
+            <BackgroundEditor selectedId={currentId} />
         {:else}
             <EventEditor selectedId={currentId} />
         {/if}
