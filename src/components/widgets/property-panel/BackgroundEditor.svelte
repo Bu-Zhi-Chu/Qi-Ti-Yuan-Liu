@@ -233,6 +233,61 @@
         cleanupBlobUrls()
     })
 
+    // 获取背景图片的实际尺寸
+    async function getBackgroundImageSize(): Promise<{ width: number; height: number }> {
+        if (!backgroundImage || !backgroundImage.startsWith('url(')) {
+            return { width: 0, height: 0 }
+        }
+
+        const urlMatch = backgroundImage.match(/url\(['"]?([^'"]+)['"]?\)/)
+        if (!urlMatch) return { width: 0, height: 0 }
+
+        const imageUrl = urlMatch[1] || ''
+        
+        return new Promise((resolve) => {
+            const img = new Image()
+            img.onload = () => {
+                resolve({ width: img.naturalWidth, height: img.naturalHeight })
+            }
+            img.onerror = () => {
+                resolve({ width: 0, height: 0 })
+            }
+            img.src = imageUrl
+        })
+    }
+
+    // 获取背景图片的显示尺寸（考虑background-size）
+    async function getBackgroundDisplaySize(): Promise<{ width: number; height: number }> {
+        const imageSize = await getBackgroundImageSize()
+        if (imageSize.width === 0) return imageSize
+
+        if (!selectedId) return imageSize
+        const el = getElementByNodeId(selectedId)
+        if (!el) return imageSize
+
+        // 解析background-size值
+        const sizeX = parseFloat(backgroundSizeX) || 0
+        const sizeY = parseFloat(backgroundSizeY) || 0
+
+        let displayWidth = imageSize.width
+        let displayHeight = imageSize.height
+
+        // 根据background-size计算显示尺寸
+        if (sizeUnitX === '%') {
+            displayWidth = (sizeX / 100) * el.offsetWidth
+        } else if (sizeUnitX === 'px') {
+            displayWidth = sizeX
+        }
+
+        if (sizeUnitY === '%') {
+            displayHeight = (sizeY / 100) * el.offsetHeight
+        } else if (sizeUnitY === 'px') {
+            displayHeight = sizeY
+        }
+
+        return { width: displayWidth, height: displayHeight }
+    }
+
     // 单位换算函数 - 背景尺寸
     function convertBackgroundSize(val: number, from: 'px' | '%', to: 'px' | '%', axis: 'x' | 'y'): number {
         if (from === to) return val
@@ -255,7 +310,7 @@
     }
 
     // 单位换算函数 - 背景位置
-    function convertBackgroundPosition(val: number, from: 'px' | '%', to: 'px' | '%', axis: 'x' | 'y'): number {
+    async function convertBackgroundPosition(val: number, from: 'px' | '%', to: 'px' | '%', axis: 'x' | 'y'): Promise<number> {
         if (from === to) return val
         if (!selectedId) return val
 
@@ -265,13 +320,23 @@
         const elementSize = axis === 'x' ? el.offsetWidth : el.offsetHeight
         if (elementSize === 0) return val
 
+        const displaySize = await getBackgroundDisplaySize()
+        const imageSize = axis === 'x' ? displaySize.width : displaySize.height
+
         const sr = getScaleRatio()
+        
         if (from === 'px') {
             // 设计px → % (需乘全局缩放比)
-            return ((val * sr) / elementSize) * 100
+            if (imageSize === 0) {
+                return ((val * sr) / elementSize) * 100
+            }
+            return ((val * sr) / (elementSize - imageSize)) * 100
         } else {
             // % → 设计px (需除全局缩放比)
-            return ((val / 100) * elementSize) / sr
+            if (imageSize === 0) {
+                return ((val / 100) * elementSize) / sr
+            }
+            return ((val / 100) * (elementSize - imageSize)) / sr
         }
     }
 
@@ -296,21 +361,21 @@
         updateBackgroundStyles()
     }
 
-    function togglePositionUnitX() {
+    async function togglePositionUnitX() {
         if (!selectedId) return
         const numericVal = parseFloat(backgroundPositionX) || 0
         const nextUnit: 'px' | '%' = positionUnitX === '%' ? 'px' : '%'
-        const converted = convertBackgroundPosition(numericVal, positionUnitX, nextUnit, 'x')
+        const converted = await convertBackgroundPosition(numericVal, positionUnitX, nextUnit, 'x')
         backgroundPositionX = String(nextUnit === '%' ? Math.round(converted * 10) / 10 : Math.round(converted * 100) / 100)
         positionUnitX = nextUnit
         updateBackgroundStyles()
     }
 
-    function togglePositionUnitY() {
+    async function togglePositionUnitY() {
         if (!selectedId) return
         const numericVal = parseFloat(backgroundPositionY) || 0
         const nextUnit: 'px' | '%' = positionUnitY === '%' ? 'px' : '%'
-        const converted = convertBackgroundPosition(numericVal, positionUnitY, nextUnit, 'y')
+        const converted = await convertBackgroundPosition(numericVal, positionUnitY, nextUnit, 'y')
         backgroundPositionY = String(nextUnit === '%' ? Math.round(converted * 10) / 10 : Math.round(converted * 100) / 100)
         positionUnitY = nextUnit
         updateBackgroundStyles()
@@ -318,6 +383,7 @@
 
     // 清理Blob URL
     function cleanupBlobUrls() {
+        if (!backgroundImage) return
         const match = backgroundImage.match(/url\(([^)]+)\)/)
         if (match && match[1] && match[1].startsWith('blob:')) {
             URL.revokeObjectURL(match[1])
