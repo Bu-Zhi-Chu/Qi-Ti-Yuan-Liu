@@ -66,12 +66,12 @@ function validateProjectIdConsistency(): boolean {
     console.warn('无法从路由获取项目ID');
     return false;
   }
-  
+
   if (currentProjectId !== routeProjectId) {
     console.warn('项目ID不匹配，当前:', currentProjectId, '路由:', routeProjectId);
     return false;
   }
-  
+
   return true;
 }
 
@@ -98,11 +98,11 @@ function handleRouteChange() {
 
 export function startRouteListener(): void {
   if (routeListenerActive) return;
-  
+
   // 监听hash变化和popstate事件
   window.addEventListener('hashchange', handleRouteChange);
   window.addEventListener('popstate', handleRouteChange);
-  
+
   routeListenerActive = true;
   console.log('路由监听器已启动');
 }
@@ -112,10 +112,10 @@ export function startRouteListener(): void {
  */
 export function stopRouteListener(): void {
   if (!routeListenerActive) return;
-  
+
   window.removeEventListener('hashchange', handleRouteChange);
   window.removeEventListener('popstate', handleRouteChange);
-  
+
   routeListenerActive = false;
   console.log('路由监听器已停止');
 }
@@ -190,6 +190,23 @@ export async function loadDomTreeFromDatabase(projectId: string): Promise<boolea
   }
 
   try {
+    // 立即清空旧数据，确保无残影
+    console.log('立即清空DOM树数据，避免残影');
+    Object.assign(domTreeData, {
+      id: 'root',
+      componentType: 'SimpleBox',
+      styles: {
+        width: '100%',
+        height: '100%',
+        backgroundColor: '#ffffff',
+        overflow: 'hidden',
+        pointerEvents: 'auto'
+      },
+      expanded: true,
+      children: []
+    });
+    selectedNodeId = 'root';
+    
     // 首先尝试从doms表加载
     const domTreeFromDoms = await loadDomNodesFromDomsTable(projectId);
     if (domTreeFromDoms) {
@@ -335,13 +352,13 @@ function autoSaveToDomsTable(): void {
       console.warn('项目ID为空，跳过自动保存');
       return;
     }
-    
+
     // 验证项目ID与路由一致性
     if (!validateProjectIdConsistency()) {
       console.warn('项目ID与路由不匹配，跳过自动保存');
       return;
     }
-    
+
     saveDomNodesToDomsTable(currentProjectId, domTreeData);
   }, 500); // 500ms防抖
 }
@@ -626,4 +643,27 @@ export function updateNodeStyles(nodeId: string, styles: Record<string, string>)
     return true;
   }
   return false;
+}
+
+/**
+ * 清理内存状态的函数
+ */
+export function clearMemoryState(): void {
+  // 重置根节点
+  Object.assign(domTreeData, {
+    id: 'root',
+    componentType: 'SimpleBox',
+    styles: {
+      width: '100%',
+      height: '100%',
+      backgroundColor: '#ffffff',
+      overflow: 'hidden',
+      pointerEvents: 'auto'
+    },
+    expanded: true,
+    children: []
+  });
+  selectedNodeId = 'root';
+  currentProjectId = '';
+  console.log('内存状态已清理');
 }

@@ -18,6 +18,7 @@
     import { domTree } from '../../../services/repository/dom-tree.store.svelte'
     import { getElementByNodeId } from '../../../services/utils/dom-geometry.util'
     import { getScaleRatio } from '../../../services/utils/get-scale-ratio.util'
+    import { BlobStorageService } from '../../../services/storage/blob-storage.service'
 
     // 外部传入当前选中节点 id
     export let selectedId: string | null = null
@@ -166,9 +167,9 @@
         uploadProgress = 0
 
         try {
-            // 使用Blob URL存储图片
-            const blobUrl = URL.createObjectURL(file)
-            backgroundImage = `url(${blobUrl})`
+            // 使用base64持久化存储图片
+            const base64Data = await BlobStorageService.fileToBase64(file)
+            backgroundImage = `url(${base64Data})`
             updateBackgroundStyles()
             isUploading = false
             uploadProgress = 100

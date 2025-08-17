@@ -55,6 +55,7 @@
 
     // 项目ID - 从路由参数获取
     let projectId = $state('')
+    let isLoading = $state(true)
 
     // 从URL获取项目ID
     onMount(() => {
@@ -78,6 +79,31 @@
         } else {
             console.warn('未从URL中提取到项目ID，当前URL:', window.location.href)
         }
+
+        // 监听路由变化
+        const handleRouteChange = () => {
+            let newMatch = window.location.hash.match(/\/editor\/([^\/]+)/)
+            if (!newMatch) {
+                newMatch = window.location.pathname.match(/\/editor\/([^\/]+)/)
+            }
+            if (!newMatch) {
+                newMatch = window.location.pathname.match(/\/search\/editor\/([^\/]+)/)
+            }
+
+            if (newMatch && newMatch[1] !== projectId) {
+                projectId = newMatch[1]
+                console.log('检测到项目切换，新项目ID:', projectId)
+                loadCanvasState()
+            }
+        }
+
+        window.addEventListener('hashchange', handleRouteChange)
+        window.addEventListener('popstate', handleRouteChange)
+
+        return () => {
+            window.removeEventListener('hashchange', handleRouteChange)
+            window.removeEventListener('popstate', handleRouteChange)
+        }
     })
 
     // 从项目数据加载canvas状态
@@ -87,15 +113,25 @@
             return
         }
 
-        // 设置项目ID到domTree store
+        // 立即显示加载状态，阻止渲染旧数据
+        isLoading = true
+        
+        // 立即清空当前项目ID，确保dom-tree.store.ts立即清理数据
+        setProjectId('')
+        
+        // 设置新项目ID
         setProjectId(projectId)
 
         try {
             console.log('开始加载项目:', projectId)
+            
+            // 立即加载domTree数据，确保数据是最新的
+            await loadDomTreeFromDatabase(projectId)
+            
+            // 然后加载canvas状态
             const project = await DexieService.getRecord<any>('qi-qiao-ban', 'projects', projectId)
             console.log('加载到的项目数据:', project)
 
-            // 加载canvas状态
             if (project && project.canvasState) {
                 console.log('找到canvasState:', project.canvasState)
                 offsetX = project.canvasState.x || 0
@@ -105,28 +141,24 @@
 
                 // 强制刷新DOM状态
                 if (canvasContainerRef) {
-                    console.log('DOM元素样式更新前:', {
-                        offsetX: canvasContainerRef.style.getPropertyValue('--offset-x'),
-                        offsetY: canvasContainerRef.style.getPropertyValue('--offset-y'),
-                        scale: canvasContainerRef.style.getPropertyValue('--scale')
-                    })
                     canvasContainerRef.style.setProperty('--offset-x', `${offsetX}px`)
                     canvasContainerRef.style.setProperty('--offset-y', `${offsetY}px`)
                     canvasContainerRef.style.setProperty('--scale', `${scale}`)
-                    console.log('DOM元素样式更新后:', {
-                        offsetX: canvasContainerRef.style.getPropertyValue('--offset-x'),
-                        offsetY: canvasContainerRef.style.getPropertyValue('--offset-y'),
-                        scale: canvasContainerRef.style.getPropertyValue('--scale')
-                    })
                 }
             } else {
                 console.log('未找到canvas状态，使用默认值')
+                // 重置为默认状态
+                offsetX = 0
+                offsetY = 0
+                scale = 1
             }
 
-            // 加载domTree数据
-            await loadDomTreeFromDatabase(projectId)
+            // 数据完全加载完成后隐藏加载状态
+            isLoading = false
+            console.log('项目加载完成:', projectId)
         } catch (error) {
             console.error('加载canvas状态失败:', error)
+            isLoading = false
         }
     }
 
@@ -239,10 +271,26 @@
     onpointerup={() => (isDragging = false)}
     onpointercancel={() => (isDragging = false)}
 >
-    <NodeRenderer node={domTree} selectedId={selectedId()} {editing} select={handleSelect} />
+    {#if !isLoading}
+        <NodeRenderer node={domTree} selectedId={selectedId()} {editing} select={handleSelect} />
+    {/if}
 
     <!-- 使用独立的DrawModeOverlay组件渲染预览矩形 -->
     <DrawModeOverlay {editing} />
+
+    <!-- 加载状态 -->
+    {#if isLoading}
+        <div style="position: absolute;top: 50%;left: 50%;transform: translate(-50%, -50%);color: white;font-size: 16px;text-align: center;z-index: 100;">
+            <div style="width: 40px;height: 40px;border: 3px solid rgba(255,255,255,0.3);border-top: 3px solid white;border-radius: 50%;animation: spin 1s linear infinite;margin: 0 auto 10px;"></div>
+            加载中...
+        </div>
+        <style>
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        </style>
+    {/if}
 </div>
 
 <style>

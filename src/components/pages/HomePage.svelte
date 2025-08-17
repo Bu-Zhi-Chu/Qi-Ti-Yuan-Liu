@@ -15,6 +15,7 @@
     import NewProjectDialog from '../widgets/NewProjectDialog.svelte'
     import { onMount } from 'svelte'
     import DexieService from '../../services/database/dexie-service'
+    import { clearMemoryState } from '../../services/repository/dom-tree.store.svelte'
 
     interface Project {
         id: string
@@ -76,6 +77,9 @@
     }
 
     async function confirmNewProject(name: string) {
+        // 清理内存中的旧项目数据
+        clearMemoryState()
+        
         const id = crypto.randomUUID()
         const now = Date.now()
         await DexieService.addRecord('qi-qiao-ban', 'projects', {
