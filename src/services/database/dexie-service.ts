@@ -127,4 +127,18 @@ export default class DexieService {
             return false
         }
     }
+
+    /**
+     * 获取数据库实例
+     */
+    static async getDatabase(dbName: string): Promise<Dexie | null> {
+        try {
+            const db = new Dexie(dbName)
+            await db.open()
+            return db
+        } catch (error) {
+            console.error(`获取数据库实例失败: ${dbName}`, error)
+            return null
+        }
+    }
 }

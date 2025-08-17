@@ -54,7 +54,20 @@
 
     async function deleteProject(projectId?: string | number) {
         if (projectId == null) return
-        const ok = await DexieService.deleteRecord('qi-qiao-ban', 'projects', projectId)
+        
+        // 先删除doms表中对应项目ID的所有记录
+        const dbName = 'qi-qiao-ban'
+        try {
+            const db = await DexieService.getDatabase(dbName)
+            if (db) {
+                await db.table('doms').where('projectId').equals(String(projectId)).delete()
+            }
+        } catch (error) {
+            console.error('删除项目DOM数据失败:', error)
+        }
+        
+        // 删除projects表中的项目记录
+        const ok = await DexieService.deleteRecord(dbName, 'projects', projectId)
         if (ok) {
             projects = projects.filter((p) => p.id !== String(projectId))
         } else {

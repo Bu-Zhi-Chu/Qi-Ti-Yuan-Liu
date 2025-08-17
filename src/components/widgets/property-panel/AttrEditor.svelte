@@ -136,8 +136,6 @@
     // 删除原先硬编码
     // const componentTypes = ['SimpleBox', 'ResponsiveBox', 'RealTimeClock']
 
-
-
     function handleNameChange(newName: string) {
         if (!selectedId) return
         currentName = newName
@@ -279,7 +277,6 @@
     {#if selectedId}
         <h3>主要属性</h3>
         <div class="attr-list">
-
             <div class="attr-item">
                 <label for="node-id">节点编号</label>
                 <input id="node-id" type="text" value={selectedId} readonly class="disabled-input" title="系统内部ID，不可编辑" />

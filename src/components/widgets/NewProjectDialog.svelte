@@ -12,7 +12,6 @@
     import ResponsiveBox from '../core/ResponsiveBox.svelte'
     import GenericCard from './GenericCard.svelte'
     import DexieService from '../../services/database/dexie-service'
-    
 
     // Props定义
     interface Props {
@@ -48,7 +47,7 @@
     })
 
     onDestroy(() => {
-        templates.forEach(tpl => {
+        templates.forEach((tpl) => {
             if (typeof tpl.cover === 'string' && tpl.cover.startsWith('blob:')) {
                 URL.revokeObjectURL(tpl.cover)
             }
