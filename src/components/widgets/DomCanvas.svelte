@@ -115,19 +115,19 @@
 
         // 立即显示加载状态，阻止渲染旧数据
         isLoading = true
-        
+
         // 立即清空当前项目ID，确保dom-tree.store.ts立即清理数据
         setProjectId('')
-        
+
         // 设置新项目ID
         setProjectId(projectId)
 
         try {
             console.log('开始加载项目:', projectId)
-            
+
             // 立即加载domTree数据，确保数据是最新的
             await loadDomTreeFromDatabase(projectId)
-            
+
             // 然后加载canvas状态
             const project = await DexieService.getRecord<any>('qi-qiao-ban', 'projects', projectId)
             console.log('加载到的项目数据:', project)
@@ -286,8 +286,12 @@
         </div>
         <style>
             @keyframes spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
+                0% {
+                    transform: rotate(0deg);
+                }
+                100% {
+                    transform: rotate(360deg);
+                }
             }
         </style>
     {/if}

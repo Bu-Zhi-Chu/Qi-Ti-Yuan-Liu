@@ -206,7 +206,7 @@ export async function loadDomTreeFromDatabase(projectId: string): Promise<boolea
       children: []
     });
     selectedNodeId = 'root';
-    
+
     // 首先尝试从doms表加载
     const domTreeFromDoms = await loadDomNodesFromDomsTable(projectId);
     if (domTreeFromDoms) {
