@@ -93,8 +93,8 @@
             currentName = el?.getAttribute('data-name') ?? ''
         }
 
-        // 同步类型
-        currentType = node?.componentType || ''
+        // 同步类型，如果为空则使用第一个组件类型作为默认值
+        currentType = node?.componentType || componentOptions[0]?.type || ''
 
         // 同步备注
         currentRemark = propsSnapshot?.attributes?.['data-remark'] ?? ''
@@ -147,9 +147,11 @@
     // 修改组件类型
     function handleTypeChange(newType: string) {
         if (!selectedId) return
-        currentType = newType
+        // 如果为空，使用第一个组件类型作为默认值
+        const finalType = newType || componentOptions[0]?.type || ''
+        currentType = finalType
         updateNodeProps(selectedId, {
-            attributes: { type: newType }
+            attributes: { type: finalType }
         })
     }
 
@@ -293,7 +295,9 @@
                     <input id="node-type-text" type="text" value="画布" disabled class="disabled-input" />
                 {:else}
                     <select id="node-type" bind:value={currentType} onchange={(e) => handleTypeChange(e.currentTarget.value)}>
-                        <option value="">请选择组件类型...</option>
+                        {#if !currentType}
+                            <option value="">请选择组件类型...</option>
+                        {/if}
                         {#each componentOptions as item}
                             <option value={item.type}>{item.nameZh}</option>
                         {/each}
