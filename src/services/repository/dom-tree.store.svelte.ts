@@ -67,30 +67,32 @@ async function loadDomNodesFromDomsTable(projectId: string): Promise<DomNode | n
 
     // 创建所有节点
     for (const nodeData of nodes) {
+      const attributes = nodeData.attributes || {};
+
       const node: DomNode = {
-        id: nodeData.nodeId, // 唯一标识符
+        id: nodeData.id, // 唯一标识符
         componentType: nodeData.type,
         styles: nodeData.style || {},
-        attributes: nodeData.attributes || {},
+        attributes: attributes,
         textContent: nodeData.textContent,
         expanded: nodeData.attributes?.expanded !== false,
         hidden: nodeData.attributes?.hidden || false,
         children: []
       };
-      nodeMap.set(nodeData.nodeId, node);
+      nodeMap.set(nodeData.id, node);
     }
 
     // 构建树结构
     let rootNode: DomNode | null = null;
     for (const nodeData of nodes) {
-      const node = nodeMap.get(nodeData.nodeId)!;
+      const node = nodeMap.get(nodeData.id)!;
 
-      if (nodeData.parentNodeId === null) {
+      if (nodeData.parentId === null) {
         // 根节点
         rootNode = node;
       } else {
         // 子节点，添加到父节点
-        const parent = nodeMap.get(nodeData.parentNodeId);
+        const parent = nodeMap.get(nodeData.parentId);
         if (parent) {
           if (!parent.children) parent.children = [];
           parent.children.push(node);
@@ -175,18 +177,17 @@ async function saveDomNodesToDomsTable(projectId: string, domTree: DomNode): Pro
     await db.table('doms').where('projectId').equals(projectId).delete();
 
     // 递归保存所有节点到doms表
-    const saveNode = async (node: DomNode, parentNodeId: string | null) => {
+    const saveNode = async (node: DomNode, parentId: string | null) => {
       // 确保数据是可序列化的
       const safeAttributes = node.attributes ? JSON.parse(JSON.stringify(node.attributes)) : {};
       const safeStyles = node.styles ? JSON.parse(JSON.stringify(node.styles)) : {};
 
       await DexieService.addRecord('qi-qiao-ban', 'doms', {
         projectId,
-        nodeId: node.id, // 不变的节点UUID
-        parentNodeId,
+        id: node.id, // 不变的节点UUID
+        parentId,
         type: node.componentType,
         attributes: {
-          dataName: node.dataName,
           expanded: node.expanded,
           hidden: node.hidden,
           ...safeAttributes
@@ -380,10 +381,10 @@ export function reorderChildren(parentId: string, orderedChildIds: string[] | Do
   const parent = findNodeById(domTreeData, parentId);
   if (!parent || !parent.children) return false;
   // 创建一个映射，快速根据 id 查找节点
-    const idToNode = new Map<string, DomNode>();
-    for (const child of parent.children) {
-      idToNode.set(child.id, child);
-    }
+  const idToNode = new Map<string, DomNode>();
+  for (const child of parent.children) {
+    idToNode.set(child.id, child);
+  }
   const newChildren: DomNode[] = [];
   for (const cidOrNode of orderedChildIds) {
     const cid = typeof cidOrNode === 'string' ? cidOrNode : cidOrNode.id;

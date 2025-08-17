@@ -74,5 +74,10 @@ export function updateNodeProps(id: string, patch: PropPatch): boolean {
     }
   }
 
+  // 触发自动保存到数据库
+  import('../repository/dom-tree.store.svelte').then(({ updateNodeProperties }) => {
+    updateNodeProperties(id, patch.attributes || {});
+  });
+
   return true;
 }

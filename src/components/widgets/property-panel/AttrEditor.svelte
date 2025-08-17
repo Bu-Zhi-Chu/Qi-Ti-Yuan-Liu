@@ -136,13 +136,7 @@
     // 删除原先硬编码
     // const componentTypes = ['SimpleBox', 'ResponsiveBox', 'RealTimeClock']
 
-    // 修改 id —— 更新节点的id字段
-    function handleIdChange(newId: string) {
-        if (!selectedId) return
-        // 注意：id是系统内部标识符，修改id会影响所有引用，需要谨慎处理
-        // 这里暂时不支持直接修改系统内部id，可以考虑添加重命名功能
-        console.warn('系统内部ID不可直接修改，如需重命名请使用专门的节点重命名功能')
-    }
+
 
     function handleNameChange(newName: string) {
         if (!selectedId) return
@@ -285,14 +279,15 @@
     {#if selectedId}
         <h3>主要属性</h3>
         <div class="attr-list">
+
             <div class="attr-item">
                 <label for="node-id">节点编号</label>
-                <input id="node-id" type="text" bind:value={currentId} oninput={(e) => handleIdChange(e.currentTarget.value)} placeholder="输入节点编号..." disabled={isRoot} class:disabled-input={isRoot} />
+                <input id="node-id" type="text" value={selectedId} readonly class="disabled-input" title="系统内部ID，不可编辑" />
                 <span class="unit-placeholder"></span>
             </div>
             <div class="attr-item">
                 <label for="node-name">节点名称</label>
-                <input id="node-name" type="text" bind:value={currentName} oninput={(e) => handleNameChange(e.currentTarget.value)} placeholder="输入节点名称..." disabled={isRoot} class:disabled-input={isRoot} />
+                <input id="node-name" type="text" bind:value={currentName} oninput={(e) => handleNameChange(e.currentTarget.value)} placeholder="输入节点名称..." disabled={isRoot} class:disabled-input={isRoot} autocomplete="off" />
                 <span class="unit-placeholder"></span>
             </div>
             <div class="attr-item">

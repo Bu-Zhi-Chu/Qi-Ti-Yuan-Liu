@@ -78,6 +78,7 @@
         bind:value={projectName}
         placeholder="请输入项目名称"
         style="height:calc(36px*var(--scale-ratio,1)); font-size:calc(14px*var(--scale-ratio,1)); padding:0 calc(12px*var(--scale-ratio,1)); border-radius:calc(8px*var(--scale-ratio,1)); border:calc(1px*var(--scale-ratio,1)) solid rgba(148,163,184,0.3); background:rgba(15,23,42,0.4); color:#f1f5f9; outline:none;"
+        autocomplete="off"
     />
 
     <!-- 模板选择 -->

@@ -73,6 +73,9 @@ export function createDrawNode(rect: RelativeRect): DomNode {
             overflow: 'hidden',
             pointerEvents: 'auto'
         },
+        attributes: {
+            'data-name': '元素'
+        },
         children: []
     }
 }
