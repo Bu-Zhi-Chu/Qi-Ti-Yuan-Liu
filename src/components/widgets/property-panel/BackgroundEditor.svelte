@@ -28,7 +28,7 @@
     let backgroundPositionX: string = '50'
     let backgroundPositionY: string = '50'
     let backgroundRepeat: string = 'no-repeat'
-    
+
     // Blob存储相关状态
     let backgroundImageBlobId: string = ''
     let backgroundImageFileName: string = ''
@@ -58,18 +58,18 @@
     // 当选中节点变化时，同步背景样式
     $: if (selectedId) {
         const styleSnapshot = getNodeProps(selectedId)
-        
+
         // 同步Blob引用信息
         const imageBlobs = styleSnapshot?.imageBlobs || {}
         const bgImageData = imageBlobs.backgroundImage || {}
         backgroundImageBlobId = bgImageData.blobId || ''
         backgroundImageFileName = bgImageData.fileName || ''
         backgroundImageFileType = bgImageData.fileType || ''
-        
+
         // 使用Blob URL
         if (backgroundImageBlobId) {
             // 异步获取Blob URL
-            ImageBlobService.getImageBlobUrl(backgroundImageBlobId).then(url => {
+            ImageBlobService.getImageBlobUrl(backgroundImageBlobId).then((url) => {
                 if (url) {
                     backgroundImage = `url(${url})`
                 } else {
@@ -172,7 +172,7 @@
             // 保存为Blob对象
             const blobId = await ImageBlobService.storeImageBlob(file)
             const blobUrl = await ImageBlobService.getImageBlobUrl(blobId)
-            
+
             if (blobUrl) {
                 backgroundImage = `url(${blobUrl})`
                 backgroundImageBlobId = blobId

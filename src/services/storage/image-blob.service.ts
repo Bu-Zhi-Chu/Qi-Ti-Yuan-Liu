@@ -54,7 +54,7 @@ export class ImageBlobService {
   static async getImageBlobUrl(blobId: string): Promise<string | null> {
     try {
       const blobData = await DexieService.getRecord<ImageBlobData>(this.DB_NAME, this.TABLE_NAME, blobId)
-      
+
       if (!blobData) {
         return null
       }
@@ -92,7 +92,7 @@ export class ImageBlobService {
   static async getImageBlobMetadata(blobId: string): Promise<Omit<ImageBlobData, 'blob'> | null> {
     try {
       const blobData = await DexieService.getRecord<ImageBlobData>(this.DB_NAME, this.TABLE_NAME, blobId)
-      
+
       if (!blobData) {
         return null
       }
@@ -114,7 +114,7 @@ export class ImageBlobService {
       // 获取所有记录并手动过滤
       const allBlobs = await DexieService.queryRecords<ImageBlobData>(this.DB_NAME, this.TABLE_NAME)
       const cutoffTime = Date.now() - maxAge
-      
+
       const expiredBlobs = allBlobs.filter((blob: ImageBlobData) => blob.createdAt < cutoffTime)
 
       for (const blobData of expiredBlobs) {
@@ -146,14 +146,14 @@ export class ImageBlobService {
       const bstr = atob(arr[1])
       let n = bstr.length
       const u8arr = new Uint8Array(n)
-      
+
       while (n--) {
         u8arr[n] = bstr.charCodeAt(n)
       }
 
       const blob = new Blob([u8arr], { type: mime })
       const file = new File([blob], fileName, { type: mime })
-      
+
       return await this.storeImageBlob(file)
     } catch (error) {
       console.error('转换Data URL到Blob失败:', error)
