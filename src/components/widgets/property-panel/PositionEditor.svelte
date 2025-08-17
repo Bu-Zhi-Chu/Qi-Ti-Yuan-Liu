@@ -123,9 +123,10 @@
             return [calcMatch[1], 'px']
         }
 
-        // 处理百分比
+        // 处理百分比 - 四舍五入保留1位小数
         if (size.endsWith('%')) {
-            return [size.replace('%', ''), '%']
+            const value = parseFloat(size.replace('%', ''))
+            return [value ? Math.round(value * 10) / 10 + '' : '', '%']
         }
 
         // 处理像素
