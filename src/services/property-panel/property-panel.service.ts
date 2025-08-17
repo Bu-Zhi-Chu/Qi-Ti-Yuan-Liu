@@ -12,6 +12,7 @@ export interface PropPatch {
   attributes?: Record<string, string | undefined>;
   styles?: Record<string, string | undefined>;
   events?: Record<string, Function | undefined>;
+  imageBlobs?: Record<string, any>;
 }
 
 // -------------------- 查询接口 --------------------
@@ -20,13 +21,14 @@ export interface PropPatch {
  */
 export function getNodeProps(
   id: string,
-): Required<Pick<DomNode, 'attributes' | 'styles' | 'events'>> | null {
+): Required<Pick<DomNode, 'attributes' | 'styles' | 'events' | 'imageBlobs'>> | null {
   const node = findNodeById(domTree, id);
   if (!node) return null;
   return {
     attributes: { ...(node.attributes ?? {}) },
     styles: { ...(node.styles ?? {}) },
     events: { ...(node.events ?? {}) },
+    imageBlobs: { ...(node.imageBlobs ?? {}) },
   };
 }
 
@@ -70,6 +72,18 @@ export function updateNodeProps(id: string, patch: PropPatch): boolean {
       } else {
         if (!node.events) node.events = {};
         node.events[key] = val as Function;
+      }
+    }
+  }
+
+  // imageBlobs
+  if (patch.imageBlobs) {
+    for (const [key, val] of Object.entries(patch.imageBlobs)) {
+      if (val === undefined || val === null) {
+        if (node.imageBlobs) delete node.imageBlobs[key];
+      } else {
+        if (!node.imageBlobs) node.imageBlobs = {};
+        node.imageBlobs[key] = val;
       }
     }
   }

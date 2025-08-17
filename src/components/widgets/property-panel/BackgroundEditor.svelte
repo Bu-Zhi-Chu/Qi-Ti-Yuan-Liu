@@ -16,6 +16,7 @@
     import { getNodeProps, updateNodeProps } from '../../../services/property-panel/property-panel.service'
     import { domTree } from '../../../services/repository/dom-tree.store.svelte'
     import { getScaleRatio } from '../../../services/utils/get-scale-ratio.util'
+    import { ImageBlobService } from '../../../services/storage/image-blob.service'
 
     // 外部传入当前选中节点 id
     export let selectedId: string | null = null
@@ -27,6 +28,11 @@
     let backgroundPositionX: string = '50'
     let backgroundPositionY: string = '50'
     let backgroundRepeat: string = 'no-repeat'
+    
+    // Blob存储相关状态
+    let backgroundImageBlobId: string = ''
+    let backgroundImageFileName: string = ''
+    let backgroundImageFileType: string = ''
 
     // 单位设置 - 支持px和%切换
     let sizeUnitX: 'px' | '%' = '%'
@@ -52,7 +58,27 @@
     // 当选中节点变化时，同步背景样式
     $: if (selectedId) {
         const styleSnapshot = getNodeProps(selectedId)
-        backgroundImage = styleSnapshot?.styles?.backgroundImage || ''
+        
+        // 同步Blob引用信息
+        const imageBlobs = styleSnapshot?.imageBlobs || {}
+        const bgImageData = imageBlobs.backgroundImage || {}
+        backgroundImageBlobId = bgImageData.blobId || ''
+        backgroundImageFileName = bgImageData.fileName || ''
+        backgroundImageFileType = bgImageData.fileType || ''
+        
+        // 使用Blob URL
+        if (backgroundImageBlobId) {
+            // 异步获取Blob URL
+            ImageBlobService.getImageBlobUrl(backgroundImageBlobId).then(url => {
+                if (url) {
+                    backgroundImage = `url(${url})`
+                } else {
+                    backgroundImage = ''
+                }
+            })
+        } else {
+            backgroundImage = ''
+        }
 
         // 解析背景尺寸
         const size = styleSnapshot?.styles?.backgroundSize || '100% 100%'
@@ -74,6 +100,9 @@
     } else {
         // 重置所有属性
         backgroundImage = ''
+        backgroundImageBlobId = ''
+        backgroundImageFileName = ''
+        backgroundImageFileType = ''
         backgroundSizeX = '100'
         backgroundSizeY = '100'
         backgroundPositionX = '50'
@@ -139,27 +168,20 @@
         uploadProgress = 0
 
         try {
-            // 读取图片为Data URL
-            const reader = new FileReader()
-            reader.onload = async (e) => {
-                const dataUrl = e.target?.result as string
-
-                // 更新节点背景样式
-                const imageUrl = `url(${dataUrl})`
-                backgroundImage = imageUrl
+            // 保存为Blob对象
+            const blobId = await ImageBlobService.storeImageBlob(file)
+            const blobUrl = await ImageBlobService.getImageBlobUrl(blobId)
+            
+            if (blobUrl) {
+                backgroundImage = `url(${blobUrl})`
+                backgroundImageBlobId = blobId
+                backgroundImageFileName = file.name
+                backgroundImageFileType = file.type
                 updateBackgroundStyles()
-
-                isUploading = false
-                uploadProgress = 100
             }
 
-            reader.onprogress = (e) => {
-                if (e.lengthComputable) {
-                    uploadProgress = Math.round((e.loaded / e.total) * 100)
-                }
-            }
-
-            reader.readAsDataURL(file)
+            isUploading = false
+            uploadProgress = 100
         } catch (error) {
             console.error('图片上传失败:', error)
             alert('图片上传失败，请重试')
@@ -174,10 +196,8 @@
 
         const styles: Record<string, string> = {}
 
-        // 背景图片
-        if (backgroundImage) {
-            styles.backgroundImage = backgroundImage
-        }
+        // 背景图片 - 始终设置，包括空值以移除背景
+        styles.backgroundImage = backgroundImage || ''
 
         // 背景尺寸
         const sizeX = formatSize(backgroundSizeX, sizeUnitX)
@@ -192,14 +212,34 @@
         // 背景重复
         styles.backgroundRepeat = backgroundRepeat
 
-        updateNodeProps(selectedId, { styles })
+        // 构建imageBlobs数据
+        const imageBlobs: Record<string, any> = {}
+        if (backgroundImageBlobId) {
+            imageBlobs.backgroundImage = {
+                blobId: backgroundImageBlobId,
+                blobUrl: backgroundImage.replace(/^url\((.*)\)$/, '$1').replace(/"/g, ''),
+                fileName: backgroundImageFileName,
+                fileType: backgroundImageFileType
+            }
+        }
+
+        updateNodeProps(selectedId, { styles, imageBlobs })
     }
 
     // 清除背景图片
-    function clearBackgroundImage() {
+    async function clearBackgroundImage() {
         if (!selectedId) return
 
+        // 清除Blob存储
+        if (backgroundImageBlobId) {
+            await ImageBlobService.removeImageBlob(backgroundImageBlobId)
+        }
+
+        // 清除本地状态
         backgroundImage = ''
+        backgroundImageBlobId = ''
+        backgroundImageFileName = ''
+        backgroundImageFileType = ''
         updateBackgroundStyles()
     }
 
@@ -246,7 +286,7 @@
 
 <div class="background-editor">
     <input type="file" bind:this={fileInput} accept="image/*" onchange={handleImageUpload} style="display: none" />
-    
+
     {#if selectedId}
         <h3>背景属性</h3>
         <div class="background-list">
@@ -254,15 +294,11 @@
             <div class="background-item">
                 <label for="background-image-input">背景图片</label>
                 {#if !backgroundImage}
-                    <button id="background-image-input" class="unit-toggle" onclick={() => fileInput.click()}>
-                        上传图片
-                    </button>
+                    <button id="background-image-input" class="unit-toggle" onclick={() => fileInput.click()} style="width: 100%; justify-content: center;">上传图片</button>
                 {:else}
-                    <div style="display: flex; align-items: center; gap: calc(8px * var(--scale-ratio, 1))">
+                    <div style="display: flex; align-items: center; gap: calc(8px * var(--scale-ratio, 1)); width: 100%;">
                         <img src={backgroundImage.replace(/^url\((.*)\)$/, '$1').replace(/"/g, '')} alt="背景预览" style="width: calc(40px * var(--scale-ratio, 1)); height: calc(40px * var(--scale-ratio, 1)); border-radius: calc(4px * var(--scale-ratio, 1)); object-fit: cover;" />
-                        <button class="unit-toggle" onclick={clearBackgroundImage} title="移除图片" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">
-                            移除
-                        </button>
+                        <button class="unit-toggle" onclick={clearBackgroundImage} title="移除图片" style="background: rgba(239, 68, 68, 0.2); color: #f87171; flex: 1;">移除</button>
                     </div>
                 {/if}
                 <span class="unit-placeholder"></span>
