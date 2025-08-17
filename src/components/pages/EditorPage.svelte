@@ -20,6 +20,7 @@
     import DomCanvas from '../widgets/DomCanvas.svelte'
     import DomTreeList from '../widgets/DomTreeList.svelte'
     import PropertyPanel from '../widgets/property-panel/PropertyPanel.svelte'
+    import Icon from '../widgets/Icon.svelte'
 
     // 引入 DOM 树集中式状态管理
 
@@ -28,8 +29,8 @@
 
     // 属性面板标签控制
     const tabs = [
-        { key: 'attr', icon: '⚙️', title: '主要属性' },
-        { key: 'style', icon: '🎨', title: '定位属性' }
+        { key: 'attr', icon: 'Settings', title: '主要属性' },
+        { key: 'style', icon: 'Move', title: '定位属性' }
     ] as const
     let activeTab: 'attr' | 'style' = 'attr'
     function setTab(k: (typeof tabs)[number]['key']) {
@@ -100,7 +101,7 @@
                 <div class="prop-tabbar" style="width: 12%;height: 100%;display: flex;flex-direction: column;align-items: center;justify-content: flex-start;padding-top: calc(12px * var(--scale-ratio, 1));gap: calc(8px * var(--scale-ratio, 1));pointer-events: auto;">
                     {#each tabs as t}
                         <button class:active={activeTab === t.key} on:click={() => setTab(t.key)} title={t.title}>
-                            {t.icon}
+                            <Icon name={t.icon} size={16} style="width: calc(16px * var(--scale-ratio, 1)); height: calc(16px * var(--scale-ratio, 1))" />
                         </button>
                     {/each}
                 </div>

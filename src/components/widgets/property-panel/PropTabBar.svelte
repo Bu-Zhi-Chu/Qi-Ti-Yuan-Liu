@@ -19,6 +19,7 @@
 
 <script lang="ts">
     import { createEventDispatcher } from 'svelte'
+    import Icon from '../Icon.svelte'
 
     /**
      * 标签项类型
@@ -66,7 +67,7 @@
 <div class="prop-tabbar">
     {#each tabs as t}
         <button class:active={activeTab === t.key} onclick={() => setTab(t.key)} title={t.title} aria-label={t.title}>
-            {t.icon}
+            <Icon name={t.icon} size={16} />
         </button>
     {/each}
 </div>

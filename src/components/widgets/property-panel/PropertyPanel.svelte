@@ -13,6 +13,7 @@
     import PositionEditor from './PositionEditor.svelte'
     import EventEditor from './EventEditor.svelte'
     import { selectedId as getSelectedId } from '../../../services/repository/dom-tree.store.svelte'
+    import Icon from '../Icon.svelte'
 
     // Runes props - 使用 $props 代替 export let
     let { activeTab = 'attr', showToolbar = true } = $props<{ activeTab?: 'attr' | 'style' | 'event'; showToolbar?: boolean }>()
@@ -21,9 +22,9 @@
     const currentId = $derived.by(() => getSelectedId())
 
     const tabs = [
-        { key: 'attr', label: '属性', icon: '⚙️' },
-        { key: 'style', label: '定位', icon: '🎨' },
-        { key: 'event', label: '事件', icon: '📡' }
+        { key: 'attr', label: '属性', icon: 'Settings' },
+        { key: 'style', label: '定位', icon: 'Move' },
+        { key: 'event', label: '事件', icon: 'Code' }
     ] as const
 </script>
 
@@ -34,7 +35,7 @@
             <div class="tab-buttons">
                 {#each tabs as tab}
                     <button class="tab-button" class:active={activeTab === tab.key} onclick={() => (activeTab = tab.key)} title={tab.label}>
-                        <span class="tab-icon">{tab.icon}</span>
+                        <span class="tab-icon"><Icon name={tab.icon} size={14} style="width: calc(14px * var(--scale-ratio, 1)); height: calc(14px * var(--scale-ratio, 1))" /></span>
                         <span class="tab-label">{tab.label}</span>
                     </button>
                 {/each}
