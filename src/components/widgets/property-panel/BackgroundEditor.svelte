@@ -16,6 +16,7 @@
     import { onDestroy } from 'svelte'
     import { getNodeProps, updateNodeProps } from '../../../services/property-panel/property-panel.service'
     import { domTree } from '../../../services/repository/dom-tree.store.svelte'
+    import { getElementByNodeId } from '../../../services/utils/dom-geometry.util'
     import { getScaleRatio } from '../../../services/utils/get-scale-ratio.util'
 
     // 外部传入当前选中节点 id
@@ -136,10 +137,10 @@
         return [size.trim(), '%']
     }
 
-    // 格式化尺寸，直接返回数值和单位
+    // 格式化尺寸，px单位使用calc结合--scale-ratio实现自适应缩放
     function formatSize(value: string, unit: 'px' | '%'): string {
         if (!value) return '0'
-        return unit === 'px' ? `${value}px` : `${value}%`
+        return unit === 'px' ? `calc(${value}px * var(--scale-ratio, 1))` : `${value}%`
     }
 
     // 处理图片上传
@@ -232,24 +233,86 @@
         cleanupBlobUrls()
     })
 
-    // 单位切换函数
+    // 单位换算函数 - 背景尺寸
+    function convertBackgroundSize(val: number, from: 'px' | '%', to: 'px' | '%', axis: 'x' | 'y'): number {
+        if (from === to) return val
+        if (!selectedId) return val
+
+        const el = getElementByNodeId(selectedId)
+        if (!el) return val
+
+        const elementSize = axis === 'x' ? el.offsetWidth : el.offsetHeight
+        if (elementSize === 0) return val
+
+        const sr = getScaleRatio()
+        if (from === 'px') {
+            // 设计px → % (需乘全局缩放比)
+            return ((val * sr) / elementSize) * 100
+        } else {
+            // % → 设计px (需除全局缩放比)
+            return ((val / 100) * elementSize) / sr
+        }
+    }
+
+    // 单位换算函数 - 背景位置
+    function convertBackgroundPosition(val: number, from: 'px' | '%', to: 'px' | '%', axis: 'x' | 'y'): number {
+        if (from === to) return val
+        if (!selectedId) return val
+
+        const el = getElementByNodeId(selectedId)
+        if (!el) return val
+
+        const elementSize = axis === 'x' ? el.offsetWidth : el.offsetHeight
+        if (elementSize === 0) return val
+
+        const sr = getScaleRatio()
+        if (from === 'px') {
+            // 设计px → % (需乘全局缩放比)
+            return ((val * sr) / elementSize) * 100
+        } else {
+            // % → 设计px (需除全局缩放比)
+            return ((val / 100) * elementSize) / sr
+        }
+    }
+
+    // 单位切换函数 - 带数值换算
     function toggleSizeUnitX() {
-        sizeUnitX = sizeUnitX === '%' ? 'px' : '%'
+        if (!selectedId) return
+        const numericVal = parseFloat(backgroundSizeX) || 0
+        const nextUnit: 'px' | '%' = sizeUnitX === '%' ? 'px' : '%'
+        const converted = convertBackgroundSize(numericVal, sizeUnitX, nextUnit, 'x')
+        backgroundSizeX = String(nextUnit === '%' ? Math.round(converted * 10) / 10 : Math.round(converted * 100) / 100)
+        sizeUnitX = nextUnit
         updateBackgroundStyles()
     }
 
     function toggleSizeUnitY() {
-        sizeUnitY = sizeUnitY === '%' ? 'px' : '%'
+        if (!selectedId) return
+        const numericVal = parseFloat(backgroundSizeY) || 0
+        const nextUnit: 'px' | '%' = sizeUnitY === '%' ? 'px' : '%'
+        const converted = convertBackgroundSize(numericVal, sizeUnitY, nextUnit, 'y')
+        backgroundSizeY = String(nextUnit === '%' ? Math.round(converted * 10) / 10 : Math.round(converted * 100) / 100)
+        sizeUnitY = nextUnit
         updateBackgroundStyles()
     }
 
     function togglePositionUnitX() {
-        positionUnitX = positionUnitX === '%' ? 'px' : '%'
+        if (!selectedId) return
+        const numericVal = parseFloat(backgroundPositionX) || 0
+        const nextUnit: 'px' | '%' = positionUnitX === '%' ? 'px' : '%'
+        const converted = convertBackgroundPosition(numericVal, positionUnitX, nextUnit, 'x')
+        backgroundPositionX = String(nextUnit === '%' ? Math.round(converted * 10) / 10 : Math.round(converted * 100) / 100)
+        positionUnitX = nextUnit
         updateBackgroundStyles()
     }
 
     function togglePositionUnitY() {
-        positionUnitY = positionUnitY === '%' ? 'px' : '%'
+        if (!selectedId) return
+        const numericVal = parseFloat(backgroundPositionY) || 0
+        const nextUnit: 'px' | '%' = positionUnitY === '%' ? 'px' : '%'
+        const converted = convertBackgroundPosition(numericVal, positionUnitY, nextUnit, 'y')
+        backgroundPositionY = String(nextUnit === '%' ? Math.round(converted * 10) / 10 : Math.round(converted * 100) / 100)
+        positionUnitY = nextUnit
         updateBackgroundStyles()
     }
 
