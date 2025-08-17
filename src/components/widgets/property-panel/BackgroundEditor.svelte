@@ -118,25 +118,26 @@
     function parseSize(size: string): [string, 'px' | '%'] {
         if (!size) return ['100', '%']
 
-        // 支持解析 calc(100px * var(--scale-ratio, 1)) 形式
-        const calcMatch = size.match(/^calc\(\s*(\d+(?:\.\d+)?)\s*px\b.*\)$/i)
-        if (calcMatch) {
-            return [calcMatch[1], 'px']
-        }
-
         // 处理百分比 - 四舍五入保留1位小数
-        if (size.endsWith('%')) {
-            const value = parseFloat(size.replace('%', ''))
+        if (size.trim().endsWith('%')) {
+            const value = parseFloat(size.trim().replace('%', ''))
             return [value ? Math.round(value * 10) / 10 + '' : '100', '%']
         }
 
         // 处理像素
-        if (size.endsWith('px')) {
-            return [size.replace('px', ''), 'px']
+        if (size.trim().endsWith('px')) {
+            return [size.trim().replace('px', ''), 'px']
+        }
+
+        // 支持解析 calc(...) 形式 - 提取数字值
+        const calcMatch = size.match(/(\d+(?:\.\d+)?)\s*(px|%)/i)
+        if (calcMatch) {
+            const [, value, unit] = calcMatch
+            return [value, unit === 'px' ? 'px' : '%']
         }
 
         // 默认使用百分比
-        return [size, '%']
+        return [size.trim(), '%']
     }
 
     // 格式化尺寸，px单位使用calc结合--scale-ratio实现自适应
