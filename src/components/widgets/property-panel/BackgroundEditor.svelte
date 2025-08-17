@@ -243,7 +243,7 @@
         if (!urlMatch) return { width: 0, height: 0 }
 
         const imageUrl = urlMatch[1] || ''
-        
+
         return new Promise((resolve) => {
             const img = new Image()
             img.onload = () => {
@@ -324,7 +324,7 @@
         const imageSize = axis === 'x' ? displaySize.width : displaySize.height
 
         const sr = getScaleRatio()
-        
+
         if (from === 'px') {
             // 设计px → % (需乘全局缩放比)
             if (imageSize === 0) {

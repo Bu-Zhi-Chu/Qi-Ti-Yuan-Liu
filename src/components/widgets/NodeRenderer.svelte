@@ -72,21 +72,18 @@
             })
             .join(';')
 
-        // 使用更明显的边框宽度和 !important 强制应用
-        const borderWidth = 1
-        let borderStyles = ''
-        let boxShadowStyles = ''
+        // 使用多层box-shadow实现选中高亮，从内到外逐渐变淡
+        let outlineStyles = ''
 
-        // 只在编辑模式下且当前节点被选中时显示高亮边框
+        // 只在编辑模式下且当前节点被选中时显示高亮轮廓
         if (editing && isSelected) {
-            borderStyles = `border: calc(${borderWidth}px * var(--scale-ratio, 1)) solid #00ff00 !important`
-            boxShadowStyles = `box-shadow: inset 0 0 0 calc(2px * var(--scale-ratio, 1)) #00ff00, 0 0 calc(8px * var(--scale-ratio, 1)) rgba(0, 255, 0, 0.5) !important`
+            outlineStyles = `outline: none !important; box-shadow: 0 0 calc(2px * var(--scale-ratio, 1)) calc(2px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.8), 0 0 calc(4px * var(--scale-ratio, 1)) calc(4px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.5), 0 0 calc(6px * var(--scale-ratio, 1)) calc(6px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.3) !important`
         }
 
         // 根据 hidden 属性控制显示/隐藏
         const hiddenStyle = node.hidden ? 'display:none !important;' : ''
 
-        const defaultStyles = `transition: all 0.2s ease !important; ${borderStyles}; ${boxShadowStyles}; ${hiddenStyle}`
+        const defaultStyles = `transition: all 0.2s ease !important; ${outlineStyles}; ${hiddenStyle}`
         const result = styleStr ? `${styleStr}; ${defaultStyles}` : defaultStyles
 
         return result
