@@ -26,10 +26,23 @@ export default class DexieService {
      */
     static async createDatabase(dbName: string): Promise<void> {
         const db = new Dexie(dbName)
+        
+        // 版本1：原始schema
         db.version(1).stores({
             templates: '++id, name, desc, cover, tag, thumbnailUrl',
             projects: 'id, name, templateId, data, createdAt, updatedAt, canvasState',
             doms: 'id, projectId, parentId, type, attributes, style, textContent',
+        })
+        
+        // 版本2：修复doms表主键冲突
+        db.version(2).stores({
+            templates: '++id, name, desc, cover, tag, thumbnailUrl',
+            projects: 'id, name, templateId, data, createdAt, updatedAt, canvasState',
+            doms: '[projectId+id], projectId, parentId, type, attributes, style, textContent',
+        }).upgrade(async (trans) => {
+            // 升级处理：清除旧版本数据以避免冲突
+            console.log('数据库升级到版本2，清理doms表...')
+            await trans.table('doms').clear()
         })
 
 

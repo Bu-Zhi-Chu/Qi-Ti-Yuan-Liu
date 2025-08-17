@@ -174,7 +174,7 @@ async function saveDomNodesToDomsTable(projectId: string, domTree: DomNode): Pro
     // 先删除该项目的所有旧节点
     const db = new Dexie('qi-qiao-ban');
     await db.open();
-    await db.table('doms').where('projectId').equals(projectId).delete();
+    await db.table('doms').where({ projectId }).delete();
 
     // 递归保存所有节点到doms表
     const saveNode = async (node: DomNode, parentId: string | null) => {
