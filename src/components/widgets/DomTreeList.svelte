@@ -72,7 +72,7 @@
         const target = event.target as HTMLElement | null
         if (!target) return
         const action = target.getAttribute('data-action')
-        const id = target.getAttribute('data-id') || target.closest('[data-id]')?.getAttribute('data-id')
+        const id = target.getAttribute('id') || target.closest('[id]')?.getAttribute('id')
         if (!id) return
 
         switch (action) {
@@ -101,7 +101,7 @@
         const nodeContent = target.closest('.node-content')
         if (!nodeContent) return
 
-        const id = nodeContent.parentElement?.getAttribute('data-id')
+        const id = nodeContent.parentElement?.getAttribute('id')
         if (!id) return
 
         // 双击节点内容时展开/收起
@@ -111,7 +111,7 @@
     // 递归生成 HTML 字符串
     function renderNode(node: DomNode, level = 0, currentSelectedId: string | null): string {
         const padding = 16
-        const nodeKey = node.dataId ?? node.id
+        const nodeKey = node.id
         const isSelected = nodeKey === currentSelectedId
         const displayName = level === 0 ? '画布' : node.attributes?.['data-name'] || node.type || '元素'
         const hasChildren = node.children && node.children.length
@@ -121,15 +121,15 @@
         const childrenHtml = hasChildren && node.expanded ? node.children!.map((child: DomNode) => renderNode(child, level + 1, currentSelectedId)).join('') : ''
 
         return /*html*/ `
-          <div class="tree-node" style="padding-left: calc(16px * var(--scale-ratio, 1));" data-id="${nodeKey}" data-level="${level}">
+          <div class="tree-node" style="padding-left: calc(16px * var(--scale-ratio, 1));" id="${nodeKey}" data-level="${level}">
             <div class="node-content ${isSelected ? 'selected' : ''} ${node.hidden ? 'hidden' : ''} ${hasChildren && !node.expanded ? 'collapsed' : ''}">
               <div class="node-left">
-                <span class="icon drag-handle ${level === 0 ? 'disabled' : ''}" data-action="${level === 0 ? '' : 'drag-handle'}" data-id="${nodeKey}">⋮⋮</span>
-                <span class="node-id" data-id="${nodeKey}">${displayName}</span>
+                <span class="icon drag-handle ${level === 0 ? 'disabled' : ''}" data-action="${level === 0 ? '' : 'drag-handle'}" id="${nodeKey}">⋮⋮</span>
+                <span class="node-id" id="${nodeKey}">${displayName}</span>
               </div>
               <div class="node-actions">
-                ${level > 0 ? `<span class="icon action-btn hide-btn" data-action="toggle-hidden" data-id="${nodeKey}">${hideIcon}</span>` : ''}
-                ${level > 0 ? `<span class="icon action-btn delete-btn" data-action="delete-node" data-id="${nodeKey}">${deleteIcon}</span>` : ''}
+                ${level > 0 ? `<span class="icon action-btn hide-btn" data-action="toggle-hidden" id="${nodeKey}">${hideIcon}</span>` : ''}
+                ${level > 0 ? `<span class="icon action-btn delete-btn" data-action="delete-node" id="${nodeKey}">${deleteIcon}</span>` : ''}
               </div>
             </div>
             ${childrenHtml}
@@ -304,12 +304,12 @@
 
     /* 收起状态的阴影提示 */
     :global(.node-content.collapsed) {
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-        border-bottom: 2px solid rgba(100, 116, 139, 0.5);
+        box-shadow: 0 calc(2px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1)) rgba(0, 0, 0, 0.3);
+        border-bottom: calc(2px * var(--scale-ratio, 1)) solid rgba(100, 116, 139, 0.5);
     }
 
     :global(.node-content.collapsed:hover) {
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        box-shadow: 0 calc(4px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1)) rgba(0, 0, 0, 0.4);
         border-bottom-color: rgba(100, 116, 139, 0.8);
     }
 

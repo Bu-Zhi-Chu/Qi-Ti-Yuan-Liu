@@ -25,7 +25,7 @@
     const targetEl = $derived.by(() => {
         const id = selectedId()
         if (!id) return null
-        return document.querySelector(`[data-id="${id}"]`) as HTMLElement | null
+        return document.querySelector(`[id="${id}"]`) as HTMLElement | null
     })
 
     /**

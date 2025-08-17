@@ -4,11 +4,11 @@
  */
 
 export interface DomNode {
-  /** 唯一标识（随机或自增） */
+  /** 唯一标识符，用于节点选中、查找和同步 */
   id: string
   /** 节点类型（属性面板中的类型），可选 */
   type?: string
-  /** 更稳定的业务级标识（可选），优先用于查找 */
+  /** 已废弃：DOM元素的真实id属性，不再用于节点标识 */
   dataId?: string
   /** 组件类型，指定使用 DynamicComponent 中的哪种组件，默认为 'SimpleBox' */
   componentType?: 'RealTimeClock' | 'ResponsiveBox' | 'SimpleBox'

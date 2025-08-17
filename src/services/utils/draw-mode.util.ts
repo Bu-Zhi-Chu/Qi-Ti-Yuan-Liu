@@ -61,7 +61,6 @@ export function createDrawNode(rect: RelativeRect): DomNode {
     const id = (globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}`)
     return {
         id,
-        dataId: id,
         componentType: 'SimpleBox',
         styles: {
             position: 'absolute',
@@ -82,7 +81,7 @@ export function createDrawNode(rect: RelativeRect): DomNode {
  * 深度优先查找 node。
  */
 export function findNodeById(root: DomNode, targetId: string): DomNode | null {
-    if ((root.dataId ?? root.id) === targetId) return root
+    if (root.id === targetId) return root
     for (const child of root.children ?? []) {
         const found = findNodeById(child, targetId)
         if (found) return found

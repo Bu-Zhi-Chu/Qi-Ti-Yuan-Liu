@@ -210,7 +210,7 @@
     bind:this={canvasContainerRef}
     class="canvas-container"
     class:editing
-    data-id="画板"
+    id="画板"
     data-name="画板"
     style="--offset-x: {offsetX}px; --offset-y: {offsetY}px; --scale: {scale};"
     use:usePan={{ key: 'Space', onPan: handlePan, scaleAccessor: () => getScaleRatio(), offsetAccessor: () => ({ x: offsetX, y: offsetY }), editingAccessor: () => editing }}

@@ -23,13 +23,13 @@ export interface Position {
  * 根据 nodeId 获取对应元素；不存在时返回 null。
  */
 export function getElementByNodeId(nodeId: string): HTMLElement | null {
-    return document.querySelector<HTMLElement>(`[data-id="${nodeId}"]`)
+    return document.querySelector<HTMLElement>(`[id="${nodeId}"]`)
 }
 
 /**
  * 判断鼠标是否位于指定 nodeId 对应的元素内部。
  *
- * @param nodeId 元素唯一标识（绑定在 data-id）
+ * @param nodeId 元素唯一标识（绑定在 id 属性）
  * @param evt     鼠标事件对象
  * @returns       位于内部返回 true，否则 false
  */

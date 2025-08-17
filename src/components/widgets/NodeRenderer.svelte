@@ -27,8 +27,8 @@
 
     // 最新选中 ID
 
-    /** 当前节点业务标识 */
-    const nodeKey = node.dataId ?? node.id
+    /** 当前节点唯一标识 */
+    const nodeKey = node.id
 
     /** 点击选中 - 精确点击，不冒泡 */
     function handleClick(event: MouseEvent) {
@@ -95,8 +95,8 @@
     /** 透传除 styles 之外的 attributes（保持响应式） */
     const extraAttr = $derived.by(() => node.attributes ?? {})
 
-    /** 计算最终 id（默认等于 data-id，可被用户修改），保持响应式 */
-    const displayId = $derived.by(() => (extraAttr as Record<string, any>).id ?? node.id)
+    /** 计算展示 id（直接使用节点 id），保持响应式 */
+    const displayId = $derived.by(() => node.id)
 
     /** 移除 id，防止与显式 id 属性重复 */
     const restAttrs = $derived.by(() => {
@@ -115,13 +115,13 @@
 </script>
 
 {#if nodeKey === 'root'}
-    <div data-id={nodeKey} data-name={dataNameAttr} id={displayId} style={finalStyle} {...restAttrs} onclick={handleClick}>
+    <div id={nodeKey} data-name={dataNameAttr} style={finalStyle} {...restAttrs} onclick={handleClick}>
         {#each node.children ?? [] as child}
             <NodeRenderer node={child} {selectedId} {editing} {select} />
         {/each}
     </div>
 {:else}
-    <DynamicComponent type={componentType} data-id={nodeKey} data-name={dataNameAttr} id={displayId} style={finalStyle} {...componentProps} onclick={handleClick}>
+    <DynamicComponent type={componentType} id={nodeKey} data-name={dataNameAttr} style={finalStyle} {...componentProps} onclick={handleClick}>
         {#each node.children ?? [] as child}
             <NodeRenderer node={child} {selectedId} {editing} {select} />
         {/each}

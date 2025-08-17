@@ -86,7 +86,7 @@ export class TreeDragDropService {
 
     if (target.getAttribute('data-action') !== 'drag-handle') return
 
-    this.draggingId = target.getAttribute('data-id')
+    this.draggingId = target.getAttribute('id')
     if (!this.draggingId) return
 
     event.preventDefault()
@@ -101,7 +101,7 @@ export class TreeDragDropService {
     const el = document.elementFromPoint(event.clientX, event.clientY) as HTMLElement | null
     if (!el) return
 
-    const id = el.getAttribute('data-id') || el.closest('[data-id]')?.getAttribute('data-id')
+    const id = el.getAttribute('id') || el.closest('[id]')?.getAttribute('id')
     if (!id || id === 'root' || id === this.draggingId) return
 
     const nodeEl = el.closest('.tree-node') as HTMLElement | null

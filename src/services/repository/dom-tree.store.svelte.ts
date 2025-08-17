@@ -69,8 +69,8 @@ async function loadDomNodesFromDomsTable(projectId: string): Promise<DomNode | n
     // 创建所有节点
     for (const nodeData of nodes) {
       const node: DomNode = {
-        id: nodeData.nodeId, // 不变的节点UUID
-        dataId: nodeData.domId || nodeData.nodeId, // DOM的真实id
+        id: nodeData.nodeId, // 唯一标识符
+        dataId: nodeData.domId, // DOM元素的真实id属性（可选，仅用于HTML id属性）
         componentType: nodeData.type,
         styles: nodeData.style || {},
         attributes: nodeData.attributes || {},
@@ -274,7 +274,7 @@ export function setSelectedId(id: string | null): void {
  * @returns 找到的节点或null
  */
 export function findNodeById(node: DomNode, id: string): DomNode | null {
-  if ((node.id === id) || (node.dataId === id)) {
+  if (node.id === id) {
     return node;
   }
 
@@ -334,7 +334,7 @@ function isDescendant(root: DomNode, targetId: string): boolean {
 function findParentById(node: DomNode, targetId: string): DomNode | null {
   if (!node.children) return null;
   for (const child of node.children) {
-    if ((child.id === targetId) || (child.dataId === targetId)) return node;
+    if (child.id === targetId) return node;
     const found = findParentById(child, targetId);
     if (found) return found;
   }
@@ -352,7 +352,7 @@ export function insertNodeBefore(targetId: string, nodeId: string): boolean {
   if (isDescendant(movingNode, targetId)) return false;
   // 先从原位置移除
   removeNodeById(nodeId);
-  const index = parent.children.findIndex(c => (c.id === targetId) || (c.dataId === targetId));
+  const index = parent.children.findIndex(c => c.id === targetId);
   parent.children.splice(index, 0, movingNode);
   return true;
 }
@@ -368,7 +368,7 @@ export function insertNodeAfter(targetId: string, nodeId: string): boolean {
   if (isDescendant(movingNode, targetId)) return false;
   // 先从原位置移除
   removeNodeById(nodeId);
-  const index = parent.children.findIndex(c => (c.id === targetId) || (c.dataId === targetId));
+  const index = parent.children.findIndex(c => c.id === targetId);
   parent.children.splice(index + 1, 0, movingNode);
   return true;
 }
@@ -383,13 +383,13 @@ export function reorderChildren(parentId: string, orderedChildIds: string[] | Do
   const parent = findNodeById(domTreeData, parentId);
   if (!parent || !parent.children) return false;
   // 创建一个映射，快速根据 id 查找节点
-  const idToNode = new Map<string, DomNode>();
-  for (const child of parent.children) {
-    idToNode.set(child.dataId ?? child.id, child);
-  }
+    const idToNode = new Map<string, DomNode>();
+    for (const child of parent.children) {
+      idToNode.set(child.id, child);
+    }
   const newChildren: DomNode[] = [];
   for (const cidOrNode of orderedChildIds) {
-    const cid = typeof cidOrNode === 'string' ? cidOrNode : (cidOrNode.dataId ?? cidOrNode.id);
+    const cid = typeof cidOrNode === 'string' ? cidOrNode : cidOrNode.id;
     const node = idToNode.get(cid);
     if (node) {
       newChildren.push(node);
@@ -477,7 +477,7 @@ export function removeNodeById(nodeId: string): boolean {
     if (!node.children) return null;
 
     for (const child of node.children) {
-      if ((child.id === targetId) || (child.dataId === targetId)) {
+      if (child.id === targetId) {
         return node;
       }
 
@@ -492,7 +492,7 @@ export function removeNodeById(nodeId: string): boolean {
   if (parent && parent.children) {
     // 过滤掉要删除的节点并触发响应式更新
     parent.children = parent.children.filter(child =>
-      (child.id !== nodeId) && (child.dataId !== nodeId)
+      child.id !== nodeId
     );
     // 自动保存到doms表（不影响projects表）
     autoSaveToDomsTable();
