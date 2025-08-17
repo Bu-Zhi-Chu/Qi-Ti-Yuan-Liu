@@ -43,10 +43,81 @@ export function selectedId() {
 }
 
 /**
+ * 获取当前路由中的项目ID
+ */
+function getRouteProjectId(): string | null {
+  // 支持多种路由格式：hash路由和path路由
+  let match = window.location.hash.match(/\/editor\/([^\/]+)/);
+  if (!match) {
+    match = window.location.pathname.match(/\/editor\/([^\/]+)/);
+  }
+  if (!match) {
+    match = window.location.pathname.match(/\/search\/editor\/([^\/]+)/);
+  }
+  return match ? match[1] : null;
+}
+
+/**
+ * 验证当前项目ID是否与路由一致
+ */
+function validateProjectIdConsistency(): boolean {
+  const routeProjectId = getRouteProjectId();
+  if (!routeProjectId) {
+    console.warn('无法从路由获取项目ID');
+    return false;
+  }
+  
+  if (currentProjectId !== routeProjectId) {
+    console.warn('项目ID不匹配，当前:', currentProjectId, '路由:', routeProjectId);
+    return false;
+  }
+  
+  return true;
+}
+
+/**
  * 设置当前项目ID
  */
 export function setProjectId(projectId: string): void {
   currentProjectId = projectId;
+  console.log('设置项目ID:', projectId);
+}
+
+/**
+ * 监听路由变化，确保项目ID一致性
+ */
+let routeListenerActive = false;
+
+function handleRouteChange() {
+  const routeProjectId = getRouteProjectId();
+  if (routeProjectId && routeProjectId !== currentProjectId) {
+    console.log('检测到路由变化，更新项目ID:', routeProjectId);
+    setProjectId(routeProjectId);
+  }
+}
+
+export function startRouteListener(): void {
+  if (routeListenerActive) return;
+  
+  // 监听hash变化和popstate事件
+  window.addEventListener('hashchange', handleRouteChange);
+  window.addEventListener('popstate', handleRouteChange);
+  
+  routeListenerActive = true;
+  console.log('路由监听器已启动');
+}
+
+/**
+ * 停止路由监听
+ */
+export function stopRouteListener(): void {
+  if (!routeListenerActive) return;
+  
+  window.removeEventListener('hashchange', handleRouteChange);
+  window.removeEventListener('popstate', handleRouteChange);
+  
+  routeListenerActive = false;
+  console.log('路由监听器已停止');
 }
 
 /**
@@ -111,6 +182,8 @@ async function loadDomNodesFromDomsTable(projectId: string): Promise<DomNode | n
  * 从数据库加载domTree数据
  */
 export async function loadDomTreeFromDatabase(projectId: string): Promise<boolean> {
+  // 确保路由监听器已启动
+  startRouteListener();
   if (!projectId) {
     console.warn('项目ID为空，无法加载domTree数据');
     return false;
@@ -222,6 +295,12 @@ export async function saveDomTreeToProjectsData(): Promise<boolean> {
     return false;
   }
 
+  // 验证项目ID与路由一致性
+  if (!validateProjectIdConsistency()) {
+    console.warn('项目ID与路由不匹配，跳过手动保存');
+    return false;
+  }
+
   try {
     console.log('手动保存domTree数据到projects表:', currentProjectId);
 
@@ -252,9 +331,18 @@ function autoSaveToDomsTable(): void {
   }
 
   saveTimeout = setTimeout(() => {
-    if (currentProjectId) {
-      saveDomNodesToDomsTable(currentProjectId, domTreeData);
+    if (!currentProjectId) {
+      console.warn('项目ID为空，跳过自动保存');
+      return;
     }
+    
+    // 验证项目ID与路由一致性
+    if (!validateProjectIdConsistency()) {
+      console.warn('项目ID与路由不匹配，跳过自动保存');
+      return;
+    }
+    
+    saveDomNodesToDomsTable(currentProjectId, domTreeData);
   }, 500); // 500ms防抖
 }
 
