@@ -19,6 +19,7 @@
     import { getElementByNodeId } from '../../../services/utils/dom-geometry.util'
     import { getScaleRatio } from '../../../services/utils/get-scale-ratio.util'
     import { BlobStorageService } from '../../../services/storage/blob-storage.service'
+    import { ProjectThumbnailService } from '../../../services/project/project-thumbnail.service'
 
     // 外部传入当前选中节点 id
     export let selectedId: string | null = null
@@ -182,7 +183,7 @@
     }
 
     // 处理背景样式更新
-    function updateBackgroundStyles() {
+    async function updateBackgroundStyles() {
         if (!selectedId) return
 
         const styles: Record<string, string> = {}
@@ -212,10 +213,58 @@
         styles.backgroundRepeat = backgroundRepeat
 
         updateNodeProps(selectedId, { styles })
+
+        // 如果是根节点，同步背景图片到项目缩略图
+        if (selectedId === 'root') {
+            if (backgroundImage) {
+                // 有背景图片时同步到缩略图
+                await syncBackgroundToThumbnail()
+            } else {
+                // 没有背景图片时重置为默认缩略图
+                const projectId = getRouteProjectId()
+                if (projectId) {
+                    await ProjectThumbnailService.createDefaultThumbnail(projectId)
+                }
+            }
+        }
+    }
+
+    // 同步背景图片到项目缩略图
+    async function syncBackgroundToThumbnail() {
+        try {
+            // 获取当前项目ID
+            const projectId = getRouteProjectId()
+            if (!projectId) {
+                console.warn('无法获取项目ID，无法同步缩略图')
+                return
+            }
+
+            // 同步背景图片到项目缩略图
+            if (backgroundImage) {
+                await ProjectThumbnailService.syncBackgroundToThumbnail(projectId, backgroundImage)
+            } else {
+                // 没有背景图片时重置为默认缩略图
+                await ProjectThumbnailService.createDefaultThumbnail(projectId)
+            }
+        } catch (error) {
+            console.error('同步项目缩略图失败:', error)
+        }
+    }
+
+    // 从路由获取项目ID
+    function getRouteProjectId(): string | null {
+        let match = window.location.hash.match(/\/editor\/([^\/]+)/)
+        if (!match) {
+            match = window.location.pathname.match(/\/editor\/([^\/]+)/)
+        }
+        if (!match) {
+            match = window.location.pathname.match(/\/search\/editor\/([^\/]+)/)
+        }
+        return match ? match[1] : null
     }
 
     // 清除背景图片
-    function clearBackgroundImage() {
+    async function clearBackgroundImage() {
         if (!selectedId) return
 
         // 释放Blob URL内存
@@ -226,7 +275,7 @@
 
         // 清除本地状态
         backgroundImage = ''
-        updateBackgroundStyles()
+        await updateBackgroundStyles()
     }
 
     // 组件卸载时清理Blob URL

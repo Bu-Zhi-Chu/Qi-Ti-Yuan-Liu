@@ -35,11 +35,15 @@ let currentProjectId = $state<string>('');
 
 // 导出只读引用
 export const domTree = domTreeData;
-const _selectedId = $derived(() => selectedNodeId);
+
+// 导出函数以获取当前项目ID，避免直接导出派生状态
+export function projectId() {
+  return currentProjectId;
+}
 
 // 导出函数以获取当前选中节点 ID，避免直接导出派生状态
 export function selectedId() {
-  return _selectedId();
+  return selectedNodeId;
 }
 
 /**

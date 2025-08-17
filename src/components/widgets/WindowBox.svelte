@@ -38,10 +38,11 @@
         closeOnOverlay?: boolean
         onClose?: () => void
         overlayColor?: string // 遮罩颜色
+        showMaximize?: boolean // 是否显示最大化按钮，默认true
         children?: import('svelte').Snippet
     }
 
-    let { title = '窗口', width = 600, height = 400, closeOnOverlay = false, overlayColor = 'rgba(15,23,42,0.8)', onClose, children }: Props = $props()
+    let { title = '窗口', width = 600, height = 400, closeOnOverlay = false, overlayColor = 'rgba(15,23,42,0.8)', onClose, showMaximize = true, children }: Props = $props()
 
     /* ----------------------------- State ----------------------------- */
     // 最大化状态
@@ -126,13 +127,15 @@
                 <span style="padding-left:calc(12px * var(--scale-ratio, 1));font-size:calc(14px * var(--scale-ratio, 1));">{title}</span>
                 <!-- 右侧按钮 -->
                 <span style="display:flex;height:100%">
-                    <button onclick={toggleMaximize} style="all:unset;width:calc(32px * var(--scale-ratio, 1));height:100%;display:flex;align-items:center;justify-content:center;cursor:pointer;">
-                        {#if isMaximized}
-                            🗗
-                        {:else}
-                            🗖
-                        {/if}
-                    </button>
+                    {#if showMaximize}
+                        <button onclick={toggleMaximize} style="all:unset;width:calc(32px * var(--scale-ratio, 1));height:100%;display:flex;align-items:center;justify-content:center;cursor:pointer;">
+                            {#if isMaximized}
+                                🗗
+                            {:else}
+                                🗖
+                            {/if}
+                        </button>
+                    {/if}
                     <button onclick={close} style="all:unset;width:calc(32px * var(--scale-ratio, 1));height:100%;display:flex;align-items:center;justify-content:center;cursor:pointer;">✕</button>
                 </span>
             </SimpleBox>

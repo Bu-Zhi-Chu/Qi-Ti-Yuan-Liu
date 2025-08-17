@@ -21,7 +21,7 @@
         id: string
         name: string
         createTime: string
-        thumbnail?: string
+        thumbnail?: Blob
     }
 
     // 历史项目数据，由 IndexedDB 实时加载
@@ -37,7 +37,7 @@
             id: String(r.id),
             name: r.name,
             createTime: new Date(r.createdAt).toLocaleString(),
-            thumbnail: r.thumbnailUrl
+            thumbnail: r.thumbnail
         }))
     })
 
@@ -55,7 +55,7 @@
 
     async function deleteProject(projectId?: string | number) {
         if (projectId == null) return
-        
+
         // 先删除doms表中对应项目ID的所有记录
         const dbName = 'qi-qiao-ban'
         try {
@@ -66,7 +66,7 @@
         } catch (error) {
             console.error('删除项目DOM数据失败:', error)
         }
-        
+
         // 删除projects表中的项目记录
         const ok = await DexieService.deleteRecord(dbName, 'projects', projectId)
         if (ok) {
@@ -79,9 +79,11 @@
     async function confirmNewProject(name: string) {
         // 清理内存中的旧项目数据
         clearMemoryState()
-        
+
         const id = crypto.randomUUID()
         const now = Date.now()
+
+        // 创建项目记录
         await DexieService.addRecord('qi-qiao-ban', 'projects', {
             id,
             name,
@@ -91,7 +93,25 @@
             updatedAt: now,
             canvasState: { x: 0, y: 0, scale: 1 }
         })
-        projects = [...projects, { id, name, createTime: new Date(now).toLocaleString(), thumbnail: undefined }]
+
+        // 生成默认项目缩略图
+        try {
+            const { ProjectThumbnailService } = await import('../../services/project/project-thumbnail.service')
+            await ProjectThumbnailService.createDefaultThumbnail(id)
+        } catch (error) {
+            console.error('创建项目缩略图失败:', error)
+        }
+
+        // 更新项目列表
+        projects = [
+            ...projects,
+            {
+                id,
+                name,
+                createTime: new Date(now).toLocaleString()
+            }
+        ]
+
         window.location.hash = `#/editor/${id}`
         showWindow = false
     }
@@ -163,7 +183,7 @@
     </ResponsiveBox>
 </ResponsiveBox>
 {#if showWindow}
-    <WindowBox title="新建项目" width={800} height={600} onClose={() => (showWindow = false)}>
+    <WindowBox title="新建项目" width={800} height={600} onClose={() => (showWindow = false)} showMaximize={false}>
         <NewProjectDialog onConfirm={confirmNewProject} onCancel={() => (showWindow = false)} />
     </WindowBox>
 {/if}
