@@ -71,26 +71,39 @@
     function handleClick(event: MouseEvent) {
         const target = event.target as HTMLElement | null
         if (!target) return
-        const action = target.getAttribute('data-action')
-        const id = target.getAttribute('id') || target.closest('[id]')?.getAttribute('id')
-        if (!id) return
 
-        switch (action) {
-            case 'toggle-hidden':
-                toggleHidden(id)
-                break
-            case 'delete-node':
-                if (removeNodeById(id)) {
-                    // 删除成功后默认选中根节点
-                    setSelectedId('root')
-                }
-                break
-            case 'drag-handle':
-                // 拖拽手柄的点击事件由 pointerdown 处理
-                break
-            default:
-                // 点击节点文本或空白区域时选中节点
+        // 检查是否点击了操作按钮（SVG图标或按钮区域）
+        const actionButton = target.closest('[data-action]') as HTMLElement | null
+        if (actionButton) {
+            const action = actionButton.getAttribute('data-action')
+            const id = actionButton.getAttribute('id') || actionButton.closest('[id]')?.getAttribute('id')
+            if (!id) return
+
+            event.stopPropagation() // 阻止事件冒泡
+            switch (action) {
+                case 'toggle-hidden':
+                    toggleHidden(id)
+                    break
+                case 'delete-node':
+                    if (removeNodeById(id)) {
+                        // 删除成功后默认选中根节点
+                        setSelectedId('root')
+                    }
+                    break
+                case 'drag-handle':
+                    // 拖拽手柄的点击事件由 pointerdown 处理
+                    break
+            }
+            return // 已经处理了操作按钮，直接返回
+        }
+
+        // 只有点击节点内容区域时才选中节点
+        const nodeContent = target.closest('.node-content') as HTMLElement | null
+        if (nodeContent) {
+            const id = nodeContent.parentElement?.getAttribute('id') || nodeContent.closest('[id]')?.getAttribute('id')
+            if (id) {
                 setSelectedId(id)
+            }
         }
     }
 
