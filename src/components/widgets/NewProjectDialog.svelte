@@ -12,6 +12,7 @@
     import ResponsiveBox from '../core/ResponsiveBox.svelte'
     import GenericCard from './GenericCard.svelte'
     import DexieService from '../../services/database/dexie-service'
+    import { Toast } from './Toast.svelte'
 
     // Props定义
     interface Props {
@@ -60,7 +61,7 @@
     const confirm = () => {
         const name = projectName.trim()
         if (!name) {
-            alert('请输入项目名称')
+            Toast.warning('请输入项目名称')
             return
         }
         onConfirm?.(name)
@@ -145,6 +146,4 @@
         outline: calc(2px * var(--scale-ratio, 1)) solid rgba(99, 102, 241, 0.8);
         outline-offset: calc(2px * var(--scale-ratio, 1));
     }
-    
-
 </style>
