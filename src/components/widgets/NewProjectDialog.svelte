@@ -102,9 +102,8 @@
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(calc(180px * var(--scale-ratio, 1)), 1fr));
         gap: calc(16px * var(--scale-ratio, 1));
-        padding: calc(8px * var(--scale-ratio, 1)) 0;
+        padding: calc(32px * var(--scale-ratio, 1)) 0;
         overflow-y: auto;
-        max-height: 60%;
     }
     .btn-group {
         display: flex;
