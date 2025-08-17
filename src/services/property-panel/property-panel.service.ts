@@ -74,7 +74,7 @@ export function updateNodeProps(id: string, patch: PropPatch): boolean {
     }
   }
 
-    // 触发自动保存到数据库
+  // 触发自动保存到数据库
   import('../repository/dom-tree.store.svelte').then(({ updateNodeProperties, updateNodeStyles }) => {
     if (patch.attributes) {
       const validAttributes: Record<string, string> = {};

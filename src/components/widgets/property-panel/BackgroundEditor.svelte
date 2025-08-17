@@ -18,7 +18,6 @@
     import { domTree } from '../../../services/repository/dom-tree.store.svelte'
     import { getScaleRatio } from '../../../services/utils/get-scale-ratio.util'
 
-
     // 外部传入当前选中节点 id
     export let selectedId: string | null = null
 
@@ -29,8 +28,6 @@
     let backgroundPositionX: string = '50'
     let backgroundPositionY: string = '50'
     let backgroundRepeat: string = 'no-repeat'
-
-
 
     // 单位设置 - 支持px和%切换
     let sizeUnitX: 'px' | '%' = '%'
@@ -60,8 +57,6 @@
         // 直接从styles获取背景图片URL
         const bgImage = styleSnapshot?.styles?.backgroundImage || ''
         backgroundImage = bgImage
-
-
 
         // 解析背景尺寸
         const size = styleSnapshot?.styles?.backgroundSize || '100% 100%'
@@ -267,12 +262,9 @@
             <div class="background-item">
                 <label for="background-image-input">背景图片</label>
                 {#if !backgroundImage}
-                    <button id="background-image-input" class="unit-toggle" onclick={() => fileInput.click()} style="width: 100%; justify-content: center;">上传图片</button>
+                    <button id="background-image-input" class="input-style" onclick={() => fileInput.click()}>上传图片</button>
                 {:else}
-                    <div style="display: flex; align-items: center; gap: calc(8px * var(--scale-ratio, 1)); width: 100%;">
-                        <img src={backgroundImage.replace(/^url\((.*)\)$/, '$1').replace(/"/g, '')} alt="背景预览" style="width: calc(40px * var(--scale-ratio, 1)); height: calc(40px * var(--scale-ratio, 1)); border-radius: calc(4px * var(--scale-ratio, 1)); object-fit: cover;" />
-                        <button class="unit-toggle" onclick={clearBackgroundImage} title="移除图片" style="background: rgba(239, 68, 68, 0.2); color: #f87171; flex: 1;">移除</button>
-                    </div>
+                    <button class="input-style" onclick={clearBackgroundImage} title="移除图片" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">移除</button>
                 {/if}
                 <span class="unit-placeholder"></span>
             </div>
@@ -429,5 +421,28 @@
     input[type='number'] {
         -moz-appearance: textfield;
         appearance: textfield;
+    }
+
+    /* 按钮样式 - 与输入框保持一致 */
+    .input-style {
+        flex: 1;
+        padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
+        border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.2);
+        border-radius: calc(6px * var(--scale-ratio, 1));
+        font-size: calc(13px * var(--scale-ratio, 1));
+        background: rgba(255, 255, 255, 0.1);
+        color: #e2e8f0;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        text-align: center;
+    }
+    .input-style:hover {
+        background: rgba(255, 255, 255, 0.15);
+    }
+    .input-style:focus {
+        outline: none;
+        border-color: #cbd5e1;
+        background: rgba(255, 255, 255, 0.15);
+        box-shadow: 0 0 0 calc(3px * var(--scale-ratio, 1)) rgba(255, 255, 255, 0.1);
     }
 </style>
