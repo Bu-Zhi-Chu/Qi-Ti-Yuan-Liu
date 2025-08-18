@@ -12,6 +12,7 @@
     import AttrEditor from './AttrEditor.svelte'
     import PositionEditor from './PositionEditor.svelte'
     import BackgroundEditor from './BackgroundEditor.svelte'
+    import BorderEditor from './BorderEditor.svelte'
     import EventEditor from './EventEditor.svelte'
     import { selectedId as getSelectedId, findNodeById, domTree } from '../../../services/repository/dom-tree.store.svelte'
     import Icon from '../Icon.svelte'
@@ -22,9 +23,9 @@
         showToolbar = true,
         onTabChange
     } = $props<{
-        activeTab?: 'attr' | 'position' | 'background' | 'event'
+        activeTab?: 'attr' | 'position' | 'background' | 'border' | 'event'
         showToolbar?: boolean
-        onTabChange?: (tab: 'attr' | 'position' | 'background' | 'event') => void
+        onTabChange?: (tab: 'attr' | 'position' | 'background' | 'border' | 'event') => void
     }>()
 
     // 当前选中节点 id，响应式刷新
@@ -39,6 +40,7 @@
         { key: 'attr', label: '属性', icon: 'Settings' },
         { key: 'position', label: '定位', icon: 'Move' },
         { key: 'background', label: '背景', icon: 'Image' },
+        { key: 'border', label: '边框', icon: 'Square' },
         { key: 'event', label: '事件', icon: 'Code' }
     ] as const
 </script>
@@ -66,6 +68,8 @@
             <PositionEditor selectedId={currentId} />
         {:else if activeTab === 'background'}
             <BackgroundEditor selectedId={currentId} />
+        {:else if activeTab === 'border'}
+            <BorderEditor selectedId={currentId} />
         {:else}
             <EventEditor selectedId={currentId} />
         {/if}

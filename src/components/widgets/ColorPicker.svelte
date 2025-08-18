@@ -550,8 +550,6 @@
             rgba = node?.styles?.backgroundColor ?? null
         }
 
-
-
         if (rgba) {
             updateFromRgba(rgba)
         }
