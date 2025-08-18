@@ -201,6 +201,9 @@ export default class ColorPaletteService {
                     node.styles.opacity = a
                 })
 
+            // 更新缓存，保证颜色卡即时刷新
+            ColorPaletteService.componentColorCache.delete(projectId)
+
         } catch (error) {
             console.error('更新doms表颜色值失败:', error)
         }

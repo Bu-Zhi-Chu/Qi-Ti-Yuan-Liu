@@ -31,6 +31,7 @@
     import Icon from './Icon.svelte'
     import ResponsiveBox from '../core/ResponsiveBox.svelte'
     import ColorPaletteService from '../../services/color-palette.service'
+    import { domTree } from '../../services/repository/dom-tree.store.svelte'
 
     import { v4 as uuidv4 } from 'uuid'
 
@@ -435,14 +436,14 @@
         // 去抖动同步更新 doms 表，拖动停止后 300ms 执行一次
         if (projectId && componentId) {
             if (saveDebounce) clearTimeout(saveDebounce)
-            saveDebounce = setTimeout(() => {
-                ColorPaletteService.updateColorInDoms(projectId, componentId, rgba)
+            saveDebounce = setTimeout(async () => {
+                await ColorPaletteService.updateColorInDoms(projectId, componentId, rgba)
+                await loadColorPalette()
             }, 300)
         }
 
         onchange?.(rgba)
     }
-
 
     // 处理颜色输入变化
     function handleColorInput(event: Event) {
@@ -489,13 +490,25 @@
     }
 
     // 加载颜色卡
-    async function loadColorPalette() {
-        if (projectId) {
-            const colors = await ColorPaletteService.getComponentColors(projectId)
-            // 使用Set去重，保持顺序并限制数量
-            const uniqueColors = [...new Set(colors)].slice(0, 8)
-            colorPalette = uniqueColors
+    // 深度遍历 domTree，收集所有背景颜色
+    function getColorsFromDomTree(node: any, acc: string[] = []) {
+        const bg = node?.styles?.backgroundColor
+        if (bg && bg !== 'transparent' && bg !== 'rgba(0, 0, 0, 0)') {
+            acc.push(bg)
         }
+        if (Array.isArray(node?.children)) {
+            for (const child of node.children) {
+                getColorsFromDomTree(child, acc)
+            }
+        }
+        return acc
+    }
+
+    // 直接从内存 domTree 统计颜色卡
+    function loadColorPalette() {
+        const colors = getColorsFromDomTree(domTree)
+        const uniqueColors = [...new Set(colors)].slice(0, 8)
+        colorPalette = uniqueColors
     }
 
     // 初始化
