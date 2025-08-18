@@ -49,6 +49,8 @@
     let currentColor = $state('#000000')
     let currentOpacity = $state(1)
     let displayFormat = $state<'hex' | 'rgba'>('rgba') // 显示格式：hex或rgba
+    // 去抖保存计时器，避免拖动过程中频繁写数据库
+    let saveDebounce: ReturnType<typeof setTimeout> | null = null
     let pickerRef: HTMLDivElement = $state(null as any)
     let buttonRef: HTMLButtonElement = $state(null as any)
 
@@ -430,9 +432,12 @@
     function notifyChange() {
         const rgba = hexToRgba(currentColor, currentOpacity)
 
-        // 仅同步更新 doms 表中的颜色值，避免重复数据库交互
+        // 去抖动同步更新 doms 表，拖动停止后 300ms 执行一次
         if (projectId && componentId) {
-            ColorPaletteService.updateColorInDoms(projectId, componentId, rgba)
+            if (saveDebounce) clearTimeout(saveDebounce)
+            saveDebounce = setTimeout(() => {
+                ColorPaletteService.updateColorInDoms(projectId, componentId, rgba)
+            }, 300)
         }
 
         onchange?.(rgba)
@@ -512,6 +517,7 @@
             document.removeEventListener('keydown', handleKeyDown)
             document.removeEventListener('mousemove', handleMouseMove)
             document.removeEventListener('mouseup', handleMouseUp)
+            if (saveDebounce) clearTimeout(saveDebounce)
         }
     })
 
