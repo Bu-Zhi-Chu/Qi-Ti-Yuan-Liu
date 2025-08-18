@@ -99,8 +99,6 @@
             }
         }
 
-
-
         // 背景图片
         backgroundImage = styles.backgroundImage || ''
 
@@ -270,6 +268,11 @@
 
     // 添加渐变颜色
     function addGradientColor() {
+        // 若已有背景图片，先清空以避免 CSS 属性冲突，并删除数据库中的背景图片记录
+        if (backgroundImage) {
+            cleanupBlobUrls()
+            backgroundImage = ''
+        }
         if (gradientColors.length === 0) {
             // 获取当前有效的背景颜色，如果为空则从DOM获取
             let currentColor = backgroundColor
@@ -369,6 +372,10 @@
 
     // 处理图片上传
     async function handleImageUpload(event: Event) {
+        // 如果已存在渐变颜色，上传图片前应先移除渐变
+        if (gradientColors.length > 0) {
+            gradientColors = []
+        }
         const target = event.target as HTMLInputElement
         const file = target.files?.[0]
 
@@ -769,6 +776,9 @@
         }
     }
 
+    // 当 backgroundImage 以 url( 开头时才视为真实图片
+    $: isRealBackgroundImage = !!(backgroundImage && backgroundImage.trim().startsWith('url('))
+
     // 拖拽上传处理
     function handleDragOver(event: DragEvent) {
         event.preventDefault()
@@ -798,7 +808,7 @@
             <!-- 背景图片上传 -->
             <div class="background-item">
                 <label for="background-image-input">背景图片</label>
-                {#if !backgroundImage}
+                {#if !isRealBackgroundImage}
                     <button id="background-image-input" class="input-style" onclick={() => fileInput.click()} ondragover={handleDragOver} ondrop={handleDrop} title="点击上传或拖拽图片到此处">上传图片</button>
                 {:else}
                     <button class="input-style" onclick={clearBackgroundImage} title="移除图片" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">移除</button>
