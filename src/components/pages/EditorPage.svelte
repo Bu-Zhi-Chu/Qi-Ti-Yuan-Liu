@@ -30,8 +30,8 @@
     // 属性面板标签控制
     const tabs = [
         { key: 'attr', icon: 'Settings', title: '主要属性' },
-        { key: 'style', icon: 'Move', title: '定位属性' },
-        { key: 'background', icon: 'Image', title: '背景属性' }
+        { key: 'style', icon: 'Move', title: '定位样式' },
+        { key: 'background', icon: 'Image', title: '背景样式' }
     ] as const
     let activeTab: 'attr' | 'style' | 'background' = 'attr'
     function setTab(k: (typeof tabs)[number]['key']) {

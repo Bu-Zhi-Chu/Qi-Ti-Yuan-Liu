@@ -464,7 +464,7 @@
     <input type="file" bind:this={fileInput} accept="image/*" onchange={handleImageUpload} style="display: none" />
 
     {#if selectedId}
-        <h3>背景属性</h3>
+        <h3>背景样式</h3>
         <div class="background-list">
             <!-- 背景图片上传 -->
             <div class="background-item">
