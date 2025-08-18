@@ -20,12 +20,15 @@
     import { getScaleRatio } from '../../../services/utils/get-scale-ratio.util'
     import { BlobStorageService } from '../../../services/storage/blob-storage.service'
     import { ProjectThumbnailService } from '../../../services/project/project-thumbnail.service'
+    import ColorPicker from '../ColorPicker.svelte'
 
     // 外部传入当前选中节点 id
     export let selectedId: string | null = null
 
     // 背景样式状态
     let backgroundImage: string = ''
+    let backgroundColor: string = ''
+    let backgroundOpacity: number = 1
     let backgroundSizeX: string = '100'
     let backgroundSizeY: string = '100'
     let backgroundPositionX: string = '50'
@@ -62,6 +65,30 @@
 
         // 背景图片
         backgroundImage = styles.backgroundImage || ''
+
+        // 背景颜色 - 从background-color解析颜色和透明度
+        const bgColor = styles.backgroundColor || ''
+        if (bgColor) {
+            // 解析颜色和透明度
+            const match = bgColor.match(/rgba?\(([^)]+)\)/)
+            if (match) {
+                const parts = match[1].split(',').map((s) => s.trim())
+                if (parts.length >= 3) {
+                    const r = parseInt(parts[0])
+                    const g = parseInt(parts[1])
+                    const b = parseInt(parts[2])
+                    const a = parts.length > 3 ? parseFloat(parts[3]) : 1
+                    backgroundColor = rgbToHex(r, g, b)
+                    backgroundOpacity = a
+                }
+            } else {
+                backgroundColor = bgColor
+                backgroundOpacity = 1
+            }
+        } else {
+            backgroundColor = ''
+            backgroundOpacity = 1
+        }
 
         // 背景尺寸 - 优先使用新的存储格式，兼容旧格式
         if (styles.backgroundSizeX !== undefined) {
@@ -118,6 +145,19 @@
         sizeUnitY = '%'
         positionUnitX = '%'
         positionUnitY = '%'
+    }
+
+    // RGB转十六进制
+    function rgbToHex(r: number, g: number, b: number): string {
+        return (
+            '#' +
+            [r, g, b]
+                .map((x) => {
+                    const hex = Math.round(x).toString(16)
+                    return hex.length === 1 ? '0' + hex : hex
+                })
+                .join('')
+        )
     }
 
     // 解析尺寸值和单位
@@ -209,6 +249,16 @@
         styles.backgroundPositionUnitX = positionUnitX
         styles.backgroundPositionUnitY = positionUnitY
 
+        // 背景颜色
+        if (backgroundColor) {
+            const r = parseInt(backgroundColor.slice(1, 3), 16)
+            const g = parseInt(backgroundColor.slice(3, 5), 16)
+            const b = parseInt(backgroundColor.slice(5, 7), 16)
+            styles.backgroundColor = `rgba(${r}, ${g}, ${b}, ${backgroundOpacity})`
+        } else {
+            styles.backgroundColor = ''
+        }
+
         // 背景重复
         styles.backgroundRepeat = backgroundRepeat
 
@@ -282,6 +332,48 @@
     onDestroy(() => {
         cleanupBlobUrls()
     })
+
+    // 十六进制转RGB
+    function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+        return result
+            ? {
+                  r: parseInt(result[1], 16),
+                  g: parseInt(result[2], 16),
+                  b: parseInt(result[3], 16)
+              }
+            : null
+    }
+
+    // 解析RGBA格式
+    function parseRgba(rgba: string): { r: number; g: number; b: number; a: number } | null {
+        const match = rgba.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/i)
+        if (match) {
+            return {
+                r: parseInt(match[1]),
+                g: parseInt(match[2]),
+                b: parseInt(match[3]),
+                a: match[4] ? parseFloat(match[4]) : 1
+            }
+        }
+        return null
+    }
+
+    // 十六进制转RGBA格式
+    function hexToRgba(hex: string, opacity: number): string {
+        const rgb = hexToRgb(hex)
+        if (rgb) {
+            return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${opacity})`
+        }
+        return `rgba(0, 0, 0, ${opacity})`
+    }
+
+    // 处理背景颜色变化
+    function handleBackgroundColorChange(color: string, opacity: number) {
+        backgroundColor = color
+        backgroundOpacity = opacity
+        updateBackgroundStyles()
+    }
 
     // 获取背景图片的实际尺寸
     async function getBackgroundImageSize(): Promise<{ width: number; height: number }> {
@@ -487,6 +579,21 @@
                 </div>
             {/if}
 
+            <!-- 背景颜色 -->
+            <div class="background-item">
+                <label for="color-picker-background">背景颜色</label>
+                <ColorPicker
+                    value={hexToRgba(backgroundColor, backgroundOpacity)}
+                    onchange={(rgba: string) => {
+                        const parsed = parseRgba(rgba)
+                        if (parsed) {
+                            handleBackgroundColorChange(rgbToHex(parsed.r, parsed.g, parsed.b), parsed.a)
+                        }
+                    }}
+                />
+                <span class="unit-placeholder"></span>
+            </div>
+
             <!-- 背景尺寸 -->
             <div class="background-item">
                 <label for="background-size-x">背景宽度</label>
@@ -575,6 +682,10 @@
         color: #e2e8f0;
         transition: all 0.3s ease;
         appearance: none;
+    }
+
+    :global(.background-item .color-picker-container) {
+        flex: 1;
     }
 
     .unit-placeholder {

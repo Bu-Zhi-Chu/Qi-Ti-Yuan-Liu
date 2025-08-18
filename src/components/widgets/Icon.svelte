@@ -62,6 +62,7 @@
         Info: () => import('@lucide/svelte/icons/info'),
         Warning: () => import('@lucide/svelte/icons/alert-circle'),
         Success: () => import('@lucide/svelte/icons/check-circle'),
+        Pipette: () => import('@lucide/svelte/icons/pipette'),
         Folder: () => import('@lucide/svelte/icons/folder'),
         File: () => import('@lucide/svelte/icons/file'),
         Image: () => import('@lucide/svelte/icons/image'),
@@ -129,7 +130,7 @@
 </script>
 
 {#if IconComponent}
-    <IconComponent {size} {color} {strokeWidth} class={className} {style} />
+    <IconComponent {size} {color} {strokeWidth} class={className} style="width: calc({size}px * var(--scale-ratio, 1)); height: calc({size}px * var(--scale-ratio, 1)); {style}" />
 {:else}
-    <div style="width: {size}px; height: {size}px;" class="{className} bg-gray-200 rounded" aria-label="Loading icon..."></div>
+    <div style="width: calc({size}px * var(--scale-ratio, 1)); height: calc({size}px * var(--scale-ratio, 1));" class="{className} bg-gray-200 rounded" aria-label="Loading icon..."></div>
 {/if}
