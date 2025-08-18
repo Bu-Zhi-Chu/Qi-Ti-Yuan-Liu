@@ -426,22 +426,18 @@
         }
     }
 
-    // 通知父组件变化
+    // 通知父组件变化 handled below
     function notifyChange() {
         const rgba = hexToRgba(currentColor, currentOpacity)
 
-        // 保存颜色到颜色卡并重新加载色卡
+        // 仅同步更新 doms 表中的颜色值，避免重复数据库交互
         if (projectId && componentId) {
-            ColorPaletteService.saveColor(projectId, componentId, rgba).then(() => {
-                loadColorPalette()
-            })
-
-            // 同步更新doms表中的颜色值
             ColorPaletteService.updateColorInDoms(projectId, componentId, rgba)
         }
 
         onchange?.(rgba)
     }
+
 
     // 处理颜色输入变化
     function handleColorInput(event: Event) {
