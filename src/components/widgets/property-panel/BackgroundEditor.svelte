@@ -35,6 +35,10 @@
     let backgroundPositionY: string = '50'
     let backgroundRepeat: string = 'no-repeat'
 
+    // 渐变背景相关状态
+    let gradientColors: Array<{ color: string; opacity: number }> = []
+    let gradientDirection: string = 'to right'
+
     // 单位设置 - 支持px和%切换
     let sizeUnitX: 'px' | '%' = '%'
     let sizeUnitY: 'px' | '%' = '%'
@@ -49,6 +53,14 @@
         { value: 'repeat-y', label: '垂直平铺' },
         { value: 'round', label: '铺满' },
         { value: 'space', label: '等间距' }
+    ]
+
+    // 渐变方向选项
+    const gradientDirectionOptions = [
+        { value: 'to right', label: '横向' },
+        { value: 'to left', label: '横向反向' },
+        { value: 'to bottom', label: '竖向' },
+        { value: 'to top', label: '竖向反向' }
     ]
 
     // 图片文件引用
@@ -66,28 +78,70 @@
         // 背景图片
         backgroundImage = styles.backgroundImage || ''
 
-        // 背景颜色 - 从background-color解析颜色和透明度
-        const bgColor = styles.backgroundColor || ''
-        if (bgColor) {
-            // 解析颜色和透明度
-            const match = bgColor.match(/rgba?\(([^)]+)\)/)
-            if (match) {
-                const parts = match[1].split(',').map((s) => s.trim())
-                if (parts.length >= 3) {
-                    const r = parseInt(parts[0])
-                    const g = parseInt(parts[1])
-                    const b = parseInt(parts[2])
-                    const a = parts.length > 3 ? parseFloat(parts[3]) : 1
-                    backgroundColor = rgbToHex(r, g, b)
-                    backgroundOpacity = a
+        // 优先从存储的渐变配置中恢复
+        if (styles.gradientColors) {
+            try {
+                const storedColors = JSON.parse(styles.gradientColors)
+                if (Array.isArray(storedColors) && storedColors.length > 0) {
+                    gradientColors = storedColors
+                    gradientDirection = styles.gradientDirection || 'to right'
+                } else {
+                    gradientColors = []
                 }
-            } else {
-                backgroundColor = bgColor
-                backgroundOpacity = 1
+            } catch (e) {
+                console.warn('解析存储的渐变颜色失败:', e)
+                gradientColors = []
             }
         } else {
-            backgroundColor = ''
-            backgroundOpacity = 1
+            // 兼容旧格式：从CSS backgroundImage解析渐变
+            const bgImage = styles.backgroundImage || ''
+            if (bgImage && bgImage.startsWith('linear-gradient')) {
+                const gradientMatch = bgImage.match(/linear-gradient\(([^,]+),(.+)\)/)
+                if (gradientMatch) {
+                    gradientDirection = gradientMatch[1].trim()
+                    const colors = gradientMatch[2].split(',').map((c) => c.trim())
+                    gradientColors = colors.map((colorStr) => {
+                        const rgbaMatch = colorStr.match(/rgba?\(([^)]+)\)/)
+                        if (rgbaMatch) {
+                            const parts = rgbaMatch[1].split(',').map((s) => s.trim())
+                            const r = parseInt(parts[0])
+                            const g = parseInt(parts[1])
+                            const b = parseInt(parts[2])
+                            const a = parts.length > 3 ? parseFloat(parts[3]) : 1
+                            return { color: rgbToHex(r, g, b), opacity: a }
+                        } else {
+                            return { color: colorStr, opacity: 1 }
+                        }
+                    })
+                } else {
+                    gradientColors = []
+                }
+            } else {
+                gradientColors = []
+                // 背景颜色 - 从background-color解析颜色和透明度
+                const bgColor = styles.backgroundColor || ''
+                if (bgColor) {
+                    // 解析颜色和透明度
+                    const match = bgColor.match(/rgba?\(([^)]+)\)/)
+                    if (match) {
+                        const parts = match[1].split(',').map((s) => s.trim())
+                        if (parts.length >= 3) {
+                            const r = parseInt(parts[0])
+                            const g = parseInt(parts[1])
+                            const b = parseInt(parts[2])
+                            const a = parts.length > 3 ? parseFloat(parts[3]) : 1
+                            backgroundColor = rgbToHex(r, g, b)
+                            backgroundOpacity = a
+                        }
+                    } else {
+                        backgroundColor = bgColor
+                        backgroundOpacity = 1
+                    }
+                } else {
+                    backgroundColor = ''
+                    backgroundOpacity = 1
+                }
+            }
         }
 
         // 背景尺寸 - 优先使用新的存储格式，兼容旧格式
@@ -185,6 +239,56 @@
         return unit === 'px' ? `calc(${value}px * var(--scale-ratio, 1))` : `${value}%`
     }
 
+    // 添加渐变颜色
+    function addGradientColor() {
+        if (gradientColors.length === 0) {
+            // 只添加一个渐变颜色，与背景色形成渐变
+            gradientColors = [
+                { color: backgroundColor || '#ffffff', opacity: backgroundOpacity },
+                { color: '#ffffff', opacity: 1 }
+            ]
+            updateBackgroundStyles()
+        }
+    }
+
+    // 移除渐变颜色
+    function removeGradientColor() {
+        gradientColors = []
+        
+        // 从存储的样式中恢复原始背景色
+        if (selectedId) {
+            const nodeProps = getNodeProps(selectedId)
+            const styles = nodeProps?.styles || {}
+            
+            // 从gradientColors配置中恢复第一个颜色作为背景色
+            const storedGradientColors = styles.gradientColors ? JSON.parse(styles.gradientColors) : []
+            if (storedGradientColors.length > 0) {
+                // 使用渐变中的第一个颜色作为背景色
+                const firstColor = storedGradientColors[0]
+                backgroundColor = firstColor.color
+                backgroundOpacity = firstColor.opacity
+            } else {
+                // 如果没有存储的渐变颜色，恢复为空背景
+                backgroundColor = ''
+                backgroundOpacity = 1
+            }
+        }
+        
+        updateBackgroundStyles()
+    }
+
+    // 更新渐变颜色
+    function updateGradientColor(index: number, color: string, opacity: number) {
+        gradientColors = gradientColors.map((item, i) => (i === index ? { color, opacity } : item))
+        updateBackgroundStyles()
+    }
+
+    // 生成渐变CSS
+    function generateGradientCSS(): string {
+        const colorStops = gradientColors.map((item) => hexToRgba(item.color, item.opacity)).join(', ')
+        return `linear-gradient(${gradientDirection}, ${colorStops})`
+    }
+
     // 处理图片上传
     async function handleImageUpload(event: Event) {
         const target = event.target as HTMLInputElement
@@ -249,15 +353,24 @@
         styles.backgroundPositionUnitX = positionUnitX
         styles.backgroundPositionUnitY = positionUnitY
 
-        // 背景颜色
-        if (backgroundColor) {
+        // 背景颜色或渐变背景
+        if (gradientColors.length > 0) {
+            styles.backgroundImage = generateGradientCSS()
+            styles.backgroundColor = '' // 清除背景色，避免冲突
+        } else if (backgroundColor) {
             const r = parseInt(backgroundColor.slice(1, 3), 16)
             const g = parseInt(backgroundColor.slice(3, 5), 16)
             const b = parseInt(backgroundColor.slice(5, 7), 16)
             styles.backgroundColor = `rgba(${r}, ${g}, ${b}, ${backgroundOpacity})`
+            styles.backgroundImage = '' // 清除背景图片/渐变
         } else {
             styles.backgroundColor = ''
+            styles.backgroundImage = ''
         }
+
+        // 存储渐变相关配置
+        styles.gradientDirection = gradientDirection
+        styles.gradientColors = JSON.stringify(gradientColors)
 
         // 背景重复
         styles.backgroundRepeat = backgroundRepeat
@@ -610,23 +723,6 @@
                 </div>
             {/if}
 
-            <!-- 背景颜色 -->
-            <div class="background-item">
-                <label for="color-picker-background">背景颜色</label>
-                <ColorPicker
-                    value={hexToRgba(backgroundColor, backgroundOpacity)}
-                    projectId={projectId()}
-                    componentId={selectedId || 'default'}
-                    onchange={(rgba: string) => {
-                        const parsed = parseRgba(rgba)
-                        if (parsed) {
-                            handleBackgroundColorChange(rgbToHex(parsed.r, parsed.g, parsed.b), parsed.a)
-                        }
-                    }}
-                />
-                <span class="unit-placeholder"></span>
-            </div>
-
             <!-- 背景尺寸 -->
             <div class="background-item">
                 <label for="background-size-x">背景宽度</label>
@@ -671,6 +767,56 @@
                 </select>
                 <span class="unit-placeholder"></span>
             </div>
+
+            <!-- 背景颜色 -->
+            <div class="background-item">
+                <label for="color-picker-background">背景颜色</label>
+                <ColorPicker
+                    value={hexToRgba(backgroundColor, backgroundOpacity)}
+                    projectId={projectId()}
+                    componentId={selectedId || 'default'}
+                    onchange={(rgba: string) => {
+                        const parsed = parseRgba(rgba)
+                        if (parsed) {
+                            handleBackgroundColorChange(rgbToHex(parsed.r, parsed.g, parsed.b), parsed.a)
+                        }
+                    }}
+                />
+                <button class="unit-toggle" onclick={addGradientColor} title="添加渐变颜色" style="background: rgba(34, 197, 94, 0.2); color: #4ade80;" disabled={gradientColors.length >= 2}>+</button>
+            </div>
+
+            <!-- 渐变颜色选择器 -->
+            {#if gradientColors.length > 0}
+                <!-- 渐变方向 -->
+                <div class="background-item">
+                    <label for="gradient-direction">渐变方向</label>
+                    <select id="gradient-direction" bind:value={gradientDirection} onchange={updateBackgroundStyles}>
+                        {#each gradientDirectionOptions as option}
+                            <option value={option.value}>{option.label}</option>
+                        {/each}
+                    </select>
+                    <span class="unit-placeholder"></span>
+                </div>
+
+                <!-- 渐变颜色 -->
+                {#if gradientColors.length > 0}
+                    <div class="background-item">
+                        <label for="{selectedId || 'default'}-gradient-1">渐变颜色</label>
+                        <ColorPicker
+                            value={hexToRgba(gradientColors[1]?.color || '#ffffff', gradientColors[1]?.opacity || 1)}
+                            projectId={projectId()}
+                            componentId={`${selectedId || 'default'}-gradient-1`}
+                            onchange={(rgba: string) => {
+                                const parsed = parseRgba(rgba)
+                                if (parsed) {
+                                    updateGradientColor(1, rgbToHex(parsed.r, parsed.g, parsed.b), parsed.a)
+                                }
+                            }}
+                        />
+                        <button class="unit-toggle" onclick={removeGradientColor} title="移除渐变" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">−</button>
+                    </div>
+                {/if}
+            {/if}
         </div>
     {:else}
         <p class="placeholder">请选择一个节点来编辑背景</p>
