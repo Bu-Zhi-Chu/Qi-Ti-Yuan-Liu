@@ -64,7 +64,7 @@
         { value: 'to bottom', label: '竖向' },
         { value: 'to top', label: '竖向反向' },
         { value: 'circle', label: '扩散' },
-        { value: 'circle at center', label: '扩散反向' }
+        { value: 'circle farthest-corner', label: '扩散反向' }
     ]
 
     // 图片文件引用
@@ -311,10 +311,17 @@
         const isRadialGradient = gradientDirection.includes('circle')
 
         if (isRadialGradient) {
-            // 径向渐变：从中心向外扩散
-            return `radial-gradient(${gradientDirection}, ${color1} 0%, ${color2} ${ratio}%)`
+            // 径向渐变：根据方向决定渐变起点
+            const isReverse = gradientDirection.includes('farthest-corner') || gradientDirection.includes('closest-corner')
+            if (isReverse) {
+                // 反向：从边缘向中心扩散
+                return `radial-gradient(${gradientDirection}, ${color2} 0%, ${color1} ${ratio}%)`
+            } else {
+                // 正向：从中心向外扩散
+                return `radial-gradient(${gradientDirection}, ${color1} 0%, ${color2} ${ratio}%)`
+            }
         } else {
-            // 线性渐变：方向控制
+            // 线性渐变：方向控制   
             // 创建平滑过渡：第一个颜色从0%开始，第二个颜色从ratio%开始，中间有10%的模糊过渡
             const smoothTransition = Math.max(5, Math.min(20, 100 - ratio)) // 确保过渡区域合理
             const end1 = Math.max(0, ratio - smoothTransition / 2)
