@@ -36,8 +36,7 @@
     let backgroundPositionX: string = '50'
     let backgroundPositionY: string = '50'
     let backgroundRepeat: string = 'no-repeat'
-
-    // 渐变背景相关状态
+    let lastBackgroundImage: string = ''
     let gradientColors: Array<{ color: string; opacity: number }> = []
     let gradientDirection: string = 'to right'
     let gradientRatio: number = 50 // 渐变比例，0-100，控制两个颜色的占比
@@ -455,19 +454,25 @@
 
         updateNodeProps(selectedId, { styles })
 
-        // 如果是根节点，同步背景图片到项目缩略图
+        // 如果是根节点，仅当背景图片状态发生变化时才处理缩略图
         if (selectedId === 'root') {
-            if (backgroundImage) {
-                // 有背景图片时同步到缩略图
+            const prevIsRealImage = lastBackgroundImage && lastBackgroundImage.trim().startsWith('url(')
+            const currIsRealImage = backgroundImage && backgroundImage.trim().startsWith('url(')
+
+            if (currIsRealImage && !prevIsRealImage) {
+                // 新上传了图片，生成缩略图
                 await syncBackgroundToThumbnail()
-            } else {
-                // 没有背景图片时重置为默认缩略图
+            } else if (!currIsRealImage && prevIsRealImage) {
+                // 图片被清空，恢复默认缩略图
                 const projectId = getRouteProjectId()
                 if (projectId) {
                     await ProjectThumbnailService.createDefaultThumbnail(projectId)
                 }
             }
         }
+
+        // 更新上一次背景图片记录
+        lastBackgroundImage = backgroundImage
     }
 
     // 同步背景图片到项目缩略图
