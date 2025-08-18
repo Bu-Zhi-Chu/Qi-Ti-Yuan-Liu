@@ -22,7 +22,7 @@
  * - onchange: 颜色变化时的回调函数
  * - placeholder: 占位符文本
  * - disabled: 是否禁用
- * - projectId: 项目ID，用于保存颜色卡记录
+ * - projectId: 项目ID，用于保存颜色历史记录
  * - componentId: 组件ID，用于标识颜色组件，如果不提供将自动生成唯一UUID
  -->
 
@@ -39,7 +39,7 @@
         onchange?: (rgba: string) => void
         placeholder?: string
         disabled?: boolean
-        projectId?: string // 项目ID，用于保存颜色卡记录
+        projectId?: string // 项目ID，用于保存颜色历史记录
         componentId?: string // 组件ID，用于标识颜色组件（如果不提供将自动生成UUID）
     }
 

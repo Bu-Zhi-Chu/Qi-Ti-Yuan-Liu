@@ -100,7 +100,7 @@ export default class ColorPaletteService {
     }
 
     /**
-     * 获取指定项目的所有颜色卡（供 ColorPicker 使用）
+     * 获取指定项目的所有颜色历史（用于ColorPicker的颜色卡）
      * 查询时只用项目ID，查出多少个记录就是多少个色卡
      */
     static async getComponentColors(projectId: string, forceRefresh = false): Promise<string[]> {
@@ -108,7 +108,7 @@ export default class ColorPaletteService {
         if (!forceRefresh && ColorPaletteService.componentColorCache.has(projectId)) {
             return ColorPaletteService.componentColorCache.get(projectId)!
         }
-        console.log(`【数据库交互】获取项目组件颜色卡: 项目ID=${projectId}`)
+        console.log(`【数据库交互】获取项目组件颜色历史: 项目ID=${projectId}`)
         try {
             // 确保数据库已初始化
             const dbExists = await DexieService.databaseExists(DEFAULT_DB_NAME)
