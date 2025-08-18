@@ -139,4 +139,29 @@ export default class ColorPaletteService {
             console.error('清空颜色卡失败:', error)
         }
     }
+
+    /**
+     * 删除指定颜色值从颜色卡
+     */
+    static async deleteColor(projectId: string, color: string): Promise<void> {
+        try {
+            // 确保数据库已初始化
+            const dbExists = await DexieService.databaseExists(DEFAULT_DB_NAME)
+            if (!dbExists) {
+                await DexieService.createDatabase(DEFAULT_DB_NAME)
+            }
+
+            const db = await DexieService.getDatabase(DEFAULT_DB_NAME)
+            if (!db) return
+
+            // 删除匹配的颜色记录
+            await db.table('colorPalette')
+                .where('projectId')
+                .equals(projectId)
+                .and(item => item.color === color)
+                .delete()
+        } catch (error) {
+            console.error('删除颜色失败:', error)
+        }
+    }
 }

@@ -624,22 +624,39 @@
                     <label class="control-label" for="color-palette">颜色卡</label>
                     <div class="palette-colors">
                         {#each colorPalette as color}
-                            <button
-                                type="button"
-                                class="palette-color"
-                                style="background-color: {color}"
-                                onclick={() => {
-                                    const parsed = parseRgba(color)
-                                    if (parsed) {
-                                        currentColor = rgbToHex(parsed.r, parsed.g, parsed.b)
-                                        currentOpacity = parsed.a
-                                        updateHslFromColor()
-                                        notifyChange()
-                                    }
-                                }}
-                                title={color}
-                                aria-label={`选择颜色 ${color}`}
-                            ></button>
+                            <div class="palette-color-wrapper">
+                                <button
+                                    type="button"
+                                    class="palette-color"
+                                    style="background-color: {color}"
+                                    onclick={() => {
+                                        const parsed = parseRgba(color)
+                                        if (parsed) {
+                                            currentColor = rgbToHex(parsed.r, parsed.g, parsed.b)
+                                            currentOpacity = parsed.a
+                                            updateHslFromColor()
+                                            notifyChange()
+                                        }
+                                    }}
+                                    title={color}
+                                    aria-label={`选择颜色 ${color}`}
+                                ></button>
+                                <button
+                                    type="button"
+                                    class="delete-color-btn"
+                                    onclick={async (e) => {
+                                        e.stopPropagation()
+                                        if (projectId) {
+                                            await ColorPaletteService.deleteColor(projectId, color)
+                                            loadColorPalette()
+                                        }
+                                    }}
+                                    title={`删除颜色 ${color}`}
+                                    aria-label={`删除颜色 ${color}`}
+                                >
+                                    <Icon name="X" size={12} />
+                                </button>
+                            </div>
                         {/each}
                     </div>
                 </div>
@@ -901,9 +918,15 @@
         flex-wrap: wrap;
     }
 
-    .palette-color {
+    .palette-color-wrapper {
+        position: relative;
         width: calc(24px * var(--scale-ratio, 1));
         height: calc(24px * var(--scale-ratio, 1));
+    }
+
+    .palette-color {
+        width: 100%;
+        height: 100%;
         border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.2);
         border-radius: calc(4px * var(--scale-ratio, 1));
         cursor: pointer;
@@ -920,5 +943,33 @@
 
     .palette-color:active {
         transform: scale(0.9);
+    }
+
+    .delete-color-btn {
+        position: absolute;
+        top: calc(-6px * var(--scale-ratio, 1));
+        right: calc(-6px * var(--scale-ratio, 1));
+        width: calc(16px * var(--scale-ratio, 1));
+        height: calc(16px * var(--scale-ratio, 1));
+        background: #ef4444;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        opacity: 0;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10;
+    }
+
+    .palette-color-wrapper:hover .delete-color-btn {
+        opacity: 1;
+    }
+
+    .delete-color-btn:hover {
+        background: #dc2626;
+        transform: scale(1.2);
     }
 </style>
