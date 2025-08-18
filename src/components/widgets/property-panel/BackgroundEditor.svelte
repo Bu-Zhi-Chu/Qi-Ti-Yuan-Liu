@@ -57,12 +57,14 @@
         { value: 'space', label: '等间距' }
     ]
 
-    // 渐变方向选项
+    // 渐变方向选项 - 支持线性和径向渐变
     const gradientDirectionOptions = [
         { value: 'to right', label: '横向' },
         { value: 'to left', label: '横向反向' },
         { value: 'to bottom', label: '竖向' },
-        { value: 'to top', label: '竖向反向' }
+        { value: 'to top', label: '竖向反向' },
+        { value: 'circle', label: '扩散' },
+        { value: 'circle at center', label: '扩散反向' }
     ]
 
     // 图片文件引用
@@ -292,7 +294,12 @@
     function generateGradientCSS(): string {
         if (gradientColors.length < 2) {
             const colorStops = gradientColors.map((item) => hexToRgba(item.color, item.opacity)).join(', ')
-            return `linear-gradient(${gradientDirection}, ${colorStops})`
+            // 判断是径向渐变还是线性渐变
+            if (gradientDirection.includes('circle')) {
+                return `radial-gradient(${gradientDirection}, ${colorStops})`
+            } else {
+                return `linear-gradient(${gradientDirection}, ${colorStops})`
+            }
         }
 
         // 使用比例控制两个颜色的位置，创建平滑过渡
@@ -300,12 +307,21 @@
         const color1 = hexToRgba(gradientColors[0].color, gradientColors[0].opacity)
         const color2 = hexToRgba(gradientColors[1].color, gradientColors[1].opacity)
 
-        // 创建平滑过渡：第一个颜色从0%开始，第二个颜色从ratio%开始，中间有10%的模糊过渡
-        const smoothTransition = Math.max(5, Math.min(20, 100 - ratio)) // 确保过渡区域合理
-        const end1 = Math.max(0, ratio - smoothTransition / 2)
-        const start2 = Math.min(100, ratio + smoothTransition / 2)
+        // 判断是径向渐变还是线性渐变
+        const isRadialGradient = gradientDirection.includes('circle')
 
-        return `linear-gradient(${gradientDirection}, ${color1} 0%, ${color1} ${end1}%, ${color2} ${start2}%, ${color2} 100%)`
+        if (isRadialGradient) {
+            // 径向渐变：从中心向外扩散
+            return `radial-gradient(${gradientDirection}, ${color1} 0%, ${color2} ${ratio}%)`
+        } else {
+            // 线性渐变：方向控制
+            // 创建平滑过渡：第一个颜色从0%开始，第二个颜色从ratio%开始，中间有10%的模糊过渡
+            const smoothTransition = Math.max(5, Math.min(20, 100 - ratio)) // 确保过渡区域合理
+            const end1 = Math.max(0, ratio - smoothTransition / 2)
+            const start2 = Math.min(100, ratio + smoothTransition / 2)
+
+            return `linear-gradient(${gradientDirection}, ${color1} 0%, ${color1} ${end1}%, ${color2} ${start2}%, ${color2} 100%)`
+        }
     }
 
     // 处理图片上传

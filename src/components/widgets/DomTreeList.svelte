@@ -85,10 +85,9 @@
                     toggleHidden(id)
                     break
                 case 'delete-node':
-                    if (removeNodeById(id)) {
-                        // 删除成功后默认选中根节点
-                        setSelectedId('root')
-                    }
+                    removeNodeById(id).then(success => {
+                        // removeNodeById内部已经处理了选中根节点的逻辑
+                    })
                     break
                 case 'drag-handle':
                     // 拖拽手柄的点击事件由 pointerdown 处理
@@ -102,7 +101,7 @@
         if (nodeContent) {
             const id = nodeContent.parentElement?.getAttribute('id') || nodeContent.closest('[id]')?.getAttribute('id')
             if (id) {
-                setSelectedId(id)
+                setSelectedId(id).catch(console.error)
             }
         }
     }

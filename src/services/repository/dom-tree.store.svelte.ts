@@ -370,8 +370,19 @@ function autoSaveToDomsTable(): void {
 /**
  * 设置选中的节点ID
  */
-export function setSelectedId(id: string | null): void {
+export async function setSelectedId(id: string | null): Promise<void> {
   selectedNodeId = id;
+  
+  // 同时更新数据库中的selectedNodeId
+  if (currentProjectId) {
+    try {
+      await DexieService.updateRecord('qi-qiao-ban', 'projects', currentProjectId, {
+        selectedNodeId: id
+      });
+    } catch (error) {
+      console.error('更新数据库中的selectedNodeId失败:', error);
+    }
+  }
 }
 
 /**
@@ -451,14 +462,14 @@ function findParentById(node: DomNode, targetId: string): DomNode | null {
 /**
  * 将 nodeId 对应节点插入到 targetId 对应节点之前（同级）
  */
-export function insertNodeBefore(targetId: string, nodeId: string): boolean {
+export async function insertNodeBefore(targetId: string, nodeId: string): Promise<boolean> {
   if (targetId === 'root' || nodeId === 'root' || targetId === nodeId) return false;
   const parent = findParentById(domTreeData, targetId);
   const movingNode = findNodeById(domTreeData, nodeId);
   if (!parent || !parent.children || !movingNode) return false;
   if (isDescendant(movingNode, targetId)) return false;
   // 先从原位置移除
-  removeNodeById(nodeId);
+  await removeNodeById(nodeId);
   const index = parent.children.findIndex(c => c.id === targetId);
   parent.children.splice(index, 0, movingNode);
   return true;
@@ -467,14 +478,14 @@ export function insertNodeBefore(targetId: string, nodeId: string): boolean {
 /**
  * 将 nodeId 对应节点插入到 targetId 对应节点之后（同级）
  */
-export function insertNodeAfter(targetId: string, nodeId: string): boolean {
+export async function insertNodeAfter(targetId: string, nodeId: string): Promise<boolean> {
   if (targetId === 'root' || nodeId === 'root' || targetId === nodeId) return false;
   const parent = findParentById(domTreeData, targetId);
   const movingNode = findNodeById(domTreeData, nodeId);
   if (!parent || !parent.children || !movingNode) return false;
   if (isDescendant(movingNode, targetId)) return false;
   // 先从原位置移除
-  removeNodeById(nodeId);
+  await removeNodeById(nodeId);
   const index = parent.children.findIndex(c => c.id === targetId);
   parent.children.splice(index + 1, 0, movingNode);
   return true;
@@ -514,7 +525,7 @@ export function reorderChildren(parentId: string, orderedChildIds: string[] | Do
  * @param newParentId 新的父节点 ID
  * @returns 是否移动成功
  */
-export function moveNodeToParent(nodeId: string, newParentId: string): boolean {
+export async function moveNodeToParent(nodeId: string, newParentId: string): Promise<boolean> {
   return moveNode(nodeId, newParentId);
 }
 
@@ -557,11 +568,11 @@ export function toggleHidden(nodeId: string): boolean {
  * @param newParentId 新父节点ID
  * @returns 是否移动成功
  */
-export function moveNode(nodeId: string, newParentId: string): boolean {
+export async function moveNode(nodeId: string, newParentId: string): Promise<boolean> {
   if (nodeId === 'root' || nodeId === newParentId) return false;
   const node = findNodeById(domTreeData, nodeId);
   if (!node) return false;
-  const removed = removeNodeById(nodeId);
+  const removed = await removeNodeById(nodeId);
   if (!removed) return false;
   const added = addNodeToParent(newParentId, node);
   if (added) {
@@ -576,7 +587,7 @@ export function moveNode(nodeId: string, newParentId: string): boolean {
  * @param nodeId 要移除的节点ID
  * @returns 是否移除成功
  */
-export function removeNodeById(nodeId: string): boolean {
+export async function removeNodeById(nodeId: string): Promise<boolean> {
   if (nodeId === 'root') return false; // 禁止删除根节点
 
   // 递归查找节点的父节点
@@ -597,6 +608,11 @@ export function removeNodeById(nodeId: string): boolean {
 
   const parent = findParentNode(domTreeData, nodeId);
   if (parent && parent.children) {
+    // 如果删除的是当前选中的节点，则选中根节点
+    if (selectedNodeId === nodeId) {
+      await setSelectedId('root');
+    }
+
     // 过滤掉要删除的节点并触发响应式更新
     parent.children = parent.children.filter(child =>
       child.id !== nodeId

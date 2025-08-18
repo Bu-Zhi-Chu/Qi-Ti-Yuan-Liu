@@ -134,11 +134,11 @@
 
             // 恢复上次选中的节点ID
             if (project && project.selectedNodeId) {
-                setSelectedId(project.selectedNodeId)
+                await setSelectedId(project.selectedNodeId)
                 console.log('已恢复选中节点:', project.selectedNodeId)
             } else {
                 // 默认选中根节点
-                setSelectedId('root')
+                await setSelectedId('root')
             }
 
             if (project && project.canvasState) {
@@ -226,13 +226,13 @@
     /**
      * 处理 NodeRenderer 选中事件
      */
-    function handleSelect(id: string) {
+    async function handleSelect(id: string) {
         // 拖动画布过程中忽略节点选中
         if (isDragging) return
         // 绘画模式下不触发选中
         if (isDrawMode()) return
         // 更新全局选中 ID
-        setSelectedId(id)
+        await setSelectedId(id)
 
         // 保存选中状态到数据库
         if (projectId) {

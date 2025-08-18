@@ -123,18 +123,22 @@ export class TreeDragDropService {
   /**
    * 处理指针释放事件
    */
-  public handlePointerUp(): void {
+  public async handlePointerUp(): Promise<void> {
     if (this.draggingId && this.hoverTargetId && this.hoverZone) {
-      switch (this.hoverZone) {
-        case 'inside':
-          moveNode(this.draggingId, this.hoverTargetId)
-          break
-        case 'above':
-          insertNodeBefore(this.hoverTargetId, this.draggingId)
-          break
-        case 'below':
-          insertNodeAfter(this.hoverTargetId, this.draggingId)
-          break
+      try {
+        switch (this.hoverZone) {
+          case 'inside':
+            await moveNode(this.draggingId, this.hoverTargetId)
+            break
+          case 'above':
+            await insertNodeBefore(this.hoverTargetId, this.draggingId)
+            break
+          case 'below':
+            await insertNodeAfter(this.hoverTargetId, this.draggingId)
+            break
+        }
+      } catch (error) {
+        console.error('拖拽操作失败:', error)
       }
     }
 
