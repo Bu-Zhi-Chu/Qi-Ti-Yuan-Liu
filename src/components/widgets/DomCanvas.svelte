@@ -128,9 +128,18 @@
             // 立即加载domTree数据，确保数据是最新的
             await loadDomTreeFromDatabase(projectId)
 
-            // 然后加载canvas状态
+            // 恢复上次选中的节点
             const project = await DexieService.getRecord<any>('qi-qiao-ban', 'projects', projectId)
             console.log('加载到的项目数据:', project)
+
+            // 恢复上次选中的节点ID
+            if (project && project.selectedNodeId) {
+                setSelectedId(project.selectedNodeId)
+                console.log('已恢复选中节点:', project.selectedNodeId)
+            } else {
+                // 默认选中根节点
+                setSelectedId('root')
+            }
 
             if (project && project.canvasState) {
                 console.log('找到canvasState:', project.canvasState)
@@ -224,6 +233,13 @@
         if (isDrawMode()) return
         // 更新全局选中 ID
         setSelectedId(id)
+
+        // 保存选中状态到数据库
+        if (projectId) {
+            DexieService.updateRecord('qi-qiao-ban', 'projects', projectId, {
+                selectedNodeId: id
+            }).catch(console.error)
+        }
     }
 
     /*

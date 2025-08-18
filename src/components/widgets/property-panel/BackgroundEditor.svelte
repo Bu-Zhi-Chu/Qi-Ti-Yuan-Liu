@@ -21,6 +21,7 @@
     import { BlobStorageService } from '../../../services/storage/blob-storage.service'
     import { ProjectThumbnailService } from '../../../services/project/project-thumbnail.service'
     import ColorPicker from '../ColorPicker.svelte'
+    import ResponsiveSlider from '../ResponsiveSlider.svelte'
 
     // 外部传入当前选中节点 id
     export let selectedId: string | null = null
@@ -38,6 +39,7 @@
     // 渐变背景相关状态
     let gradientColors: Array<{ color: string; opacity: number }> = []
     let gradientDirection: string = 'to right'
+    let gradientRatio: number = 50 // 渐变比例，0-100，控制两个颜色的占比
 
     // 单位设置 - 支持px和%切换
     let sizeUnitX: 'px' | '%' = '%'
@@ -182,6 +184,9 @@
 
         // 背景重复
         backgroundRepeat = styles.backgroundRepeat || 'no-repeat'
+
+        // 渐变比例
+        gradientRatio = parseInt(styles.gradientRatio || '50')
     }
 
     // 监听 selectedId 变化，自动调用初始化函数
@@ -254,12 +259,12 @@
     // 移除渐变颜色
     function removeGradientColor() {
         gradientColors = []
-        
+
         // 从存储的样式中恢复原始背景色
         if (selectedId) {
             const nodeProps = getNodeProps(selectedId)
             const styles = nodeProps?.styles || {}
-            
+
             // 从gradientColors配置中恢复第一个颜色作为背景色
             const storedGradientColors = styles.gradientColors ? JSON.parse(styles.gradientColors) : []
             if (storedGradientColors.length > 0) {
@@ -273,7 +278,7 @@
                 backgroundOpacity = 1
             }
         }
-        
+
         updateBackgroundStyles()
     }
 
@@ -285,8 +290,22 @@
 
     // 生成渐变CSS
     function generateGradientCSS(): string {
-        const colorStops = gradientColors.map((item) => hexToRgba(item.color, item.opacity)).join(', ')
-        return `linear-gradient(${gradientDirection}, ${colorStops})`
+        if (gradientColors.length < 2) {
+            const colorStops = gradientColors.map((item) => hexToRgba(item.color, item.opacity)).join(', ')
+            return `linear-gradient(${gradientDirection}, ${colorStops})`
+        }
+
+        // 使用比例控制两个颜色的位置，创建平滑过渡
+        const ratio = Math.max(0, Math.min(100, gradientRatio)) // 确保比例在0-100之间
+        const color1 = hexToRgba(gradientColors[0].color, gradientColors[0].opacity)
+        const color2 = hexToRgba(gradientColors[1].color, gradientColors[1].opacity)
+
+        // 创建平滑过渡：第一个颜色从0%开始，第二个颜色从ratio%开始，中间有10%的模糊过渡
+        const smoothTransition = Math.max(5, Math.min(20, 100 - ratio)) // 确保过渡区域合理
+        const end1 = Math.max(0, ratio - smoothTransition / 2)
+        const start2 = Math.min(100, ratio + smoothTransition / 2)
+
+        return `linear-gradient(${gradientDirection}, ${color1} 0%, ${color1} ${end1}%, ${color2} ${start2}%, ${color2} 100%)`
     }
 
     // 处理图片上传
@@ -353,24 +372,29 @@
         styles.backgroundPositionUnitX = positionUnitX
         styles.backgroundPositionUnitY = positionUnitY
 
-        // 背景颜色或渐变背景
-        if (gradientColors.length > 0) {
-            styles.backgroundImage = generateGradientCSS()
-            styles.backgroundColor = '' // 清除背景色，避免冲突
-        } else if (backgroundColor) {
+        // 背景颜色 - 使用background-color属性
+        if (backgroundColor && gradientColors.length === 0) {
             const r = parseInt(backgroundColor.slice(1, 3), 16)
             const g = parseInt(backgroundColor.slice(3, 5), 16)
             const b = parseInt(backgroundColor.slice(5, 7), 16)
             styles.backgroundColor = `rgba(${r}, ${g}, ${b}, ${backgroundOpacity})`
-            styles.backgroundImage = '' // 清除背景图片/渐变
         } else {
-            styles.backgroundColor = ''
-            styles.backgroundImage = ''
+            styles.backgroundColor = '' // 清除背景色
+        }
+
+        // 背景图片或渐变背景 - 使用background-image属性
+        if (gradientColors.length > 0) {
+            styles.backgroundImage = generateGradientCSS()
+        } else if (backgroundImage) {
+            styles.backgroundImage = backgroundImage
+        } else {
+            styles.backgroundImage = '' // 清除背景图片
         }
 
         // 存储渐变相关配置
         styles.gradientDirection = gradientDirection
         styles.gradientColors = JSON.stringify(gradientColors)
+        styles.gradientRatio = String(gradientRatio)
 
         // 背景重复
         styles.backgroundRepeat = backgroundRepeat
@@ -814,6 +838,17 @@
                             }}
                         />
                         <button class="unit-toggle" onclick={removeGradientColor} title="移除渐变" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">−</button>
+                    </div>
+                {/if}
+
+                <!-- 渐变比例 -->
+                {#if gradientColors.length >= 2}
+                    <div class="background-item">
+                        <label for="gradient-ratio">渐变比例</label>
+                        <ResponsiveSlider bind:value={gradientRatio} min={0} max={100} step={1} oninput={updateBackgroundStyles} />
+                        <span style="min-width: calc(40px * var(--scale-ratio, 1)); text-align: center; font-size: calc(12px * var(--scale-ratio, 1)); color: #94a3b8;">
+                            {gradientRatio}%
+                        </span>
                     </div>
                 {/if}
             {/if}

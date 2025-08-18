@@ -23,19 +23,59 @@
     import Icon from '../widgets/Icon.svelte'
 
     // 引入 DOM 树集中式状态管理
+    import { domTree, selectedId } from '../../services/repository/dom-tree.store.svelte'
 
-    // 是否显示工作区，默认正常模式隐藏
-    let showWorkspace = false
+    // 是否显示工作区，默认显示工作区
+    let showWorkspace = $state(true)
 
     // 属性面板标签控制
     const tabs = [
         { key: 'attr', icon: 'Settings', title: '主要属性' },
-        { key: 'style', icon: 'Move', title: '定位样式' },
-        { key: 'background', icon: 'Image', title: '背景样式' }
+        { key: 'position', icon: 'Move', title: '定位样式' },
+        { key: 'background', icon: 'Image', title: '背景样式' },
+        { key: 'event', icon: 'Code', title: '事件处理' }
     ] as const
-    let activeTab: 'attr' | 'style' | 'background' = 'attr'
+
+    // 根据选中节点的 activePropertyTab 动态设置 activeTab
+    let activeTab: 'attr' | 'position' | 'background' | 'event' = $derived.by(() => {
+        const currentSelectedId = selectedId()
+
+        if (!currentSelectedId) return 'attr'
+
+        const findNode = (node: any): any => {
+            if (node.id === currentSelectedId) {
+                return node
+            }
+            if (node.children) {
+                for (const child of node.children) {
+                    const found = findNode(child)
+                    if (found) return found
+                }
+            }
+            return null
+        }
+
+        // 从根节点开始查找
+        const selectedNode = findNode(domTree)
+        if (selectedNode?.attributes?.activePropertyTab) {
+            // 处理旧数据兼容性问题（'style' -> 'position'）
+            const tabValue = selectedNode.attributes.activePropertyTab
+            if (tabValue === 'style') return 'position'
+            if (tabs.some((t) => t.key === tabValue)) {
+                return tabValue as 'attr' | 'position' | 'background' | 'event'
+            }
+        }
+        return 'attr'
+    })
+
     function setTab(k: (typeof tabs)[number]['key']) {
-        activeTab = k
+        // 将新的标签页保存到当前选中节点的属性中
+        const currentSelectedId = selectedId()
+        if (currentSelectedId) {
+            import('../../services/property-panel/property-panel.service').then(({ updateNodeProps }) => {
+                updateNodeProps(currentSelectedId, { attributes: { activePropertyTab: k } })
+            })
+        }
     }
 
     // 注册/注销快捷键
@@ -75,8 +115,8 @@
     <div class="workspace" style="position: absolute;width: 100%;height: 100%;z-index: 10;pointer-events: none;">
         <!-- 顶部导航区 -->
         <div style="display: flex;align-items: center;justify-content: flex-start;gap: 10px;padding: 0 10px;width: 100%;height: 4%;background: rgba(1, 255, 255, 0.3);pointer-events: auto;">
-            <button on:click={handleManualSave} style="padding: calc(4px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));background: none;border: none;color: white;cursor: pointer;font-size: calc(12px * var(--scale-ratio, 1));">保存</button>
-            <button on:click={() => (window.location.href = '/')} style="padding: calc(4px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));background: none;border: none;color: white;cursor: pointer;font-size: calc(12px * var(--scale-ratio, 1));">首页</button>
+            <button onclick={handleManualSave} style="padding: calc(4px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));background: none;border: none;color: white;cursor: pointer;font-size: calc(12px * var(--scale-ratio, 1));">保存</button>
+            <button onclick={() => (window.location.href = '/')} style="padding: calc(4px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));background: none;border: none;color: white;cursor: pointer;font-size: calc(12px * var(--scale-ratio, 1));">首页</button>
         </div>
 
         <div style="display: flex;justify-content: space-between;width: 100%;height: 94%;">
@@ -96,12 +136,12 @@
                 <!-- 属性面板 -->
                 <div style="width: 88%;height: 100%;pointer-events: auto;">
                     <!-- @ts-ignore: Work In Progress -->
-                    <PropertyPanel showToolbar={false} {activeTab} />
+                    <PropertyPanel showToolbar={false} {activeTab} onTabChange={setTab} />
                 </div>
                 <!-- 标签切换按钮栏 -->
                 <div class="prop-tabbar" style="width: 12%;height: 100%;display: flex;flex-direction: column;align-items: center;justify-content: flex-start;padding-top: calc(12px * var(--scale-ratio, 1));gap: calc(8px * var(--scale-ratio, 1));pointer-events: auto;">
                     {#each tabs as t}
-                        <button class:active={activeTab === t.key} on:click={() => setTab(t.key)} title={t.title}>
+                        <button class:active={activeTab === t.key} onclick={() => setTab(t.key)} title={t.title}>
                             <Icon name={t.icon} size={16} style="width: calc(16px * var(--scale-ratio, 1)); height: calc(16px * var(--scale-ratio, 1))" />
                         </button>
                     {/each}

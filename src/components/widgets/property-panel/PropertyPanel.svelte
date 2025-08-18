@@ -13,18 +13,31 @@
     import PositionEditor from './PositionEditor.svelte'
     import BackgroundEditor from './BackgroundEditor.svelte'
     import EventEditor from './EventEditor.svelte'
-    import { selectedId as getSelectedId } from '../../../services/repository/dom-tree.store.svelte'
+    import { selectedId as getSelectedId, findNodeById, domTree } from '../../../services/repository/dom-tree.store.svelte'
     import Icon from '../Icon.svelte'
 
     // Runes props - 使用 $props 代替 export let
-    let { activeTab = 'attr', showToolbar = true } = $props<{ activeTab?: 'attr' | 'style' | 'background' | 'event'; showToolbar?: boolean }>()
+    let {
+        activeTab = 'attr',
+        showToolbar = true,
+        onTabChange
+    } = $props<{
+        activeTab?: 'attr' | 'position' | 'background' | 'event'
+        showToolbar?: boolean
+        onTabChange?: (tab: 'attr' | 'position' | 'background' | 'event') => void
+    }>()
 
     // 当前选中节点 id，响应式刷新
     const currentId = $derived.by(() => getSelectedId())
 
+    // activeTab的保存逻辑现在由EditorPage处理，避免循环依赖
+
+    // 当选中节点改变时，EditorPage会通过$derived自动设置activeTab
+    // 这里不再需要恢复逻辑，避免循环更新
+
     const tabs = [
         { key: 'attr', label: '属性', icon: 'Settings' },
-        { key: 'style', label: '定位', icon: 'Move' },
+        { key: 'position', label: '定位', icon: 'Move' },
         { key: 'background', label: '背景', icon: 'Image' },
         { key: 'event', label: '事件', icon: 'Code' }
     ] as const
@@ -36,7 +49,7 @@
         <div class="toolbar">
             <div class="tab-buttons">
                 {#each tabs as tab}
-                    <button class="tab-button" class:active={activeTab === tab.key} onclick={() => (activeTab = tab.key)} title={tab.label}>
+                    <button class="tab-button" class:active={activeTab === tab.key} onclick={() => onTabChange?.(tab.key)} title={tab.label}>
                         <span class="tab-icon"><Icon name={tab.icon} size={14} style="width: calc(14px * var(--scale-ratio, 1)); height: calc(14px * var(--scale-ratio, 1))" /></span>
                         <span class="tab-label">{tab.label}</span>
                     </button>
@@ -49,7 +62,7 @@
     <div class="body">
         {#if activeTab === 'attr'}
             <AttrEditor selectedId={currentId} />
-        {:else if activeTab === 'style'}
+        {:else if activeTab === 'position'}
             <PositionEditor selectedId={currentId} />
         {:else if activeTab === 'background'}
             <BackgroundEditor selectedId={currentId} />
