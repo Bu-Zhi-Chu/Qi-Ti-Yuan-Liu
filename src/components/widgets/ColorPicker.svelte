@@ -203,6 +203,9 @@
         }
     }
 
+    // 响应式显示值，确保同步更新
+    let displayValue = $derived(formatDisplayValue())
+
     // 更新当前颜色
     function updateColorFromHsl() {
         const rgb = hslToRgb(hue, saturation, lightness)
@@ -432,6 +435,9 @@
             ColorPaletteService.saveColor(projectId, componentId, rgba).then(() => {
                 loadColorPalette()
             })
+
+            // 同步更新doms表中的颜色值
+            ColorPaletteService.updateColorInDoms(projectId, componentId, rgba)
         }
 
         onchange?.(rgba)
@@ -498,6 +504,9 @@
         document.addEventListener('mousemove', handleMouseMove)
         document.addEventListener('mouseup', handleMouseUp)
 
+        // 从doms表加载当前颜色值
+        loadCurrentColorFromDoms()
+
         if (projectId) {
             loadColorPalette()
         }
@@ -510,10 +519,28 @@
         }
     })
 
+    // 移除isDomsColorLoaded标志，value属性始终优先
+
+    // 从doms表加载当前颜色值（仅作为默认值，当value未提供时使用）
+    async function loadCurrentColorFromDoms() {
+        if (projectId && componentId && !value) {
+            try {
+                const colorFromDoms = await ColorPaletteService.getColorFromDoms(projectId, componentId)
+                if (colorFromDoms) {
+                    // 仅当没有外部value时使用doms表中的颜色作为默认值
+                    updateFromRgba(colorFromDoms)
+                }
+            } catch (error) {
+                console.error('加载颜色值失败:', error)
+            }
+        }
+    }
+
     // 当projectId或componentId变化时重新加载色卡
     $effect(() => {
         if (projectId && componentId) {
             loadColorPalette()
+            loadCurrentColorFromDoms()
         }
     })
 
@@ -526,7 +553,7 @@
         }
     })
 
-    // 响应外部value变化
+    // 响应外部value变化 - 始终优先使用value属性
     $effect(() => {
         if (typeof value === 'string') {
             if (value.startsWith('rgba')) {
@@ -553,7 +580,7 @@
 <ResponsiveBox class="color-picker-container" style="width: 100%; position: relative">
     <button bind:this={buttonRef} class="color-picker-button" class:disabled onclick={() => (isOpen = !isOpen)} type="button" {disabled}>
         <span class="color-text">
-            {formatDisplayValue()}
+            {displayValue}
         </span>
         <Icon name="ChevronDown" size={16} class="dropdown-icon" />
     </button>
@@ -615,7 +642,7 @@
             <div class="color-controls">
                 <div class="color-input-group">
                     <label for="color-input" class="control-label">颜色值</label>
-                    <input id="color-input" type="text" class="hex-input" value={formatDisplayValue()} oninput={handleColorInput} placeholder="rgba(0, 0, 0, 1)" onclick={toggleDisplayFormat} style="cursor: pointer;" title="点击切换显示格式" maxlength="25" />
+                    <input id="color-input" type="text" class="hex-input" bind:value={displayValue} oninput={handleColorInput} placeholder="rgba(0, 0, 0, 1)" onclick={toggleDisplayFormat} style="cursor: pointer;" title="点击切换显示格式" maxlength="25" />
                 </div>
             </div>
 

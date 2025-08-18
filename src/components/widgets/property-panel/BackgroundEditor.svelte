@@ -20,6 +20,7 @@
     import { getScaleRatio } from '../../../services/utils/get-scale-ratio.util'
     import { BlobStorageService } from '../../../services/storage/blob-storage.service'
     import { ProjectThumbnailService } from '../../../services/project/project-thumbnail.service'
+    import ColorPaletteService from '../../../services/color-palette.service'
     import ColorPicker from '../ColorPicker.svelte'
     import ResponsiveSlider from '../ResponsiveSlider.svelte'
 
@@ -73,11 +74,29 @@
     let uploadProgress = 0
 
     // 从样式对象初始化背景属性
-    function initBackgroundProps() {
+    async function initBackgroundProps() {
         if (!selectedId) return
 
         const nodeProps = getNodeProps(selectedId)
         const styles = nodeProps?.styles || {}
+
+        // 优先从doms表读取背景颜色
+        const projectIdValue = projectId()
+        if (projectIdValue && selectedId) {
+            try {
+                // 从doms表获取背景颜色
+                const colorFromDoms = await ColorPaletteService.getColorFromDoms(projectIdValue, selectedId)
+                if (colorFromDoms) {
+                    const parsed = parseRgba(colorFromDoms)
+                    if (parsed) {
+                        backgroundColor = rgbToHex(parsed.r, parsed.g, parsed.b)
+                        backgroundOpacity = parsed.a
+                    }
+                }
+            } catch (error) {
+                console.error('从doms表读取颜色失败:', error)
+            }
+        }
 
         // 背景图片
         backgroundImage = styles.backgroundImage || ''
@@ -122,29 +141,28 @@
                 }
             } else {
                 gradientColors = []
-                // 背景颜色 - 从background-color解析颜色和透明度
-                const bgColor = styles.backgroundColor || ''
-                if (bgColor) {
-                    // 解析颜色和透明度
-                    const match = bgColor.match(/rgba?\(([^)]+)\)/)
-                    if (match) {
-                        const parts = match[1].split(',').map((s) => s.trim())
-                        if (parts.length >= 3) {
-                            const r = parseInt(parts[0])
-                            const g = parseInt(parts[1])
-                            const b = parseInt(parts[2])
-                            const a = parts.length > 3 ? parseFloat(parts[3]) : 1
-                            backgroundColor = rgbToHex(r, g, b)
-                            backgroundOpacity = a
+                // 如果doms表中没有颜色，再从styles.backgroundColor读取，但不设置默认值
+                if (!backgroundColor) {
+                    const bgColor = styles.backgroundColor || ''
+                    if (bgColor) {
+                        // 解析颜色和透明度
+                        const match = bgColor.match(/rgba?\(([^)]+)\)/)
+                        if (match) {
+                            const parts = match[1].split(',').map((s) => s.trim())
+                            if (parts.length >= 3) {
+                                const r = parseInt(parts[0])
+                                const g = parseInt(parts[1])
+                                const b = parseInt(parts[2])
+                                const a = parts.length > 3 ? parseFloat(parts[3]) : 1
+                                backgroundColor = rgbToHex(r, g, b)
+                                backgroundOpacity = a
+                            }
+                        } else {
+                            backgroundColor = bgColor
+                            backgroundOpacity = 1
                         }
-                    } else {
-                        backgroundColor = bgColor
-                        backgroundOpacity = 1
                     }
-                } else {
-                    // 默认使用白色，避免空字符串导致的问题
-                    backgroundColor = '#ffffff'
-                    backgroundOpacity = 1
+                    // 不设置默认值，让ColorPicker从doms表加载颜色
                 }
             }
         }
@@ -294,7 +312,7 @@
             backgroundColor = firstGradientColor.color
             backgroundOpacity = firstGradientColor.opacity
         }
-        
+
         gradientColors = []
         updateBackgroundStyles()
     }
