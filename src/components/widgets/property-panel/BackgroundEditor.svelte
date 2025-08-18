@@ -142,7 +142,8 @@
                         backgroundOpacity = 1
                     }
                 } else {
-                    backgroundColor = ''
+                    // 默认使用白色，避免空字符串导致的问题
+                    backgroundColor = '#ffffff'
                     backgroundOpacity = 1
                 }
             }
@@ -249,9 +250,36 @@
     // 添加渐变颜色
     function addGradientColor() {
         if (gradientColors.length === 0) {
-            // 只添加一个渐变颜色，与背景色形成渐变
+            // 获取当前有效的背景颜色，如果为空则从DOM获取
+            let currentColor = backgroundColor;
+            if (!currentColor || currentColor === '') {
+                if (selectedId) {
+                    const el = getElementByNodeId(selectedId);
+                    if (el) {
+                        const computedStyle = window.getComputedStyle(el);
+                        const bgColor = computedStyle.backgroundColor;
+                        if (bgColor && bgColor !== 'rgba(0, 0, 0, 0)' && bgColor !== 'transparent') {
+                            // 解析RGB/RGBA格式
+                            const rgbaMatch = bgColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/i);
+                            if (rgbaMatch) {
+                                const r = parseInt(rgbaMatch[1]);
+                                const g = parseInt(rgbaMatch[2]);
+                                const b = parseInt(rgbaMatch[3]);
+                                currentColor = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // 如果还是无法获取有效颜色，使用默认白色
+            if (!currentColor || currentColor === '') {
+                currentColor = '#ffffff';
+            }
+            
+            // 添加两个渐变颜色，第一个使用当前背景色，第二个为白色
             gradientColors = [
-                { color: backgroundColor || '#ffffff', opacity: backgroundOpacity },
+                { color: currentColor, opacity: backgroundOpacity },
                 { color: '#ffffff', opacity: 1 }
             ]
             updateBackgroundStyles()
@@ -262,25 +290,8 @@
     function removeGradientColor() {
         gradientColors = []
 
-        // 从存储的样式中恢复原始背景色
-        if (selectedId) {
-            const nodeProps = getNodeProps(selectedId)
-            const styles = nodeProps?.styles || {}
-
-            // 从gradientColors配置中恢复第一个颜色作为背景色
-            const storedGradientColors = styles.gradientColors ? JSON.parse(styles.gradientColors) : []
-            if (storedGradientColors.length > 0) {
-                // 使用渐变中的第一个颜色作为背景色
-                const firstColor = storedGradientColors[0]
-                backgroundColor = firstColor.color
-                backgroundOpacity = firstColor.opacity
-            } else {
-                // 如果没有存储的渐变颜色，恢复为空背景
-                backgroundColor = ''
-                backgroundOpacity = 1
-            }
-        }
-
+        // 当移除渐变后，保持当前的backgroundColor和backgroundOpacity不变
+        // 这些值已经在用户设置渐变时被保存为纯色背景的值
         updateBackgroundStyles()
     }
 
@@ -321,7 +332,7 @@
                 return `radial-gradient(${gradientDirection}, ${color1} 0%, ${color2} ${ratio}%)`
             }
         } else {
-            // 线性渐变：方向控制   
+            // 线性渐变：方向控制
             // 创建平滑过渡：第一个颜色从0%开始，第二个颜色从ratio%开始，中间有10%的模糊过渡
             const smoothTransition = Math.max(5, Math.min(20, 100 - ratio)) // 确保过渡区域合理
             const end1 = Math.max(0, ratio - smoothTransition / 2)
@@ -402,7 +413,8 @@
             const b = parseInt(backgroundColor.slice(5, 7), 16)
             styles.backgroundColor = `rgba(${r}, ${g}, ${b}, ${backgroundOpacity})`
         } else {
-            styles.backgroundColor = '' // 清除背景色
+            // 当有渐变时，不设置纯色背景，但保持backgroundColor变量不变
+            styles.backgroundColor = ''
         }
 
         // 背景图片或渐变背景 - 使用background-image属性
@@ -563,6 +575,14 @@
     function handleBackgroundColorChange(color: string, opacity: number) {
         backgroundColor = color
         backgroundOpacity = opacity
+        
+        // 如果渐变已启用，同步更新渐变中的第一个颜色
+        if (gradientColors.length > 0) {
+            gradientColors = gradientColors.map((item, index) => 
+                index === 0 ? { color, opacity } : item
+            )
+        }
+        
         updateBackgroundStyles()
     }
 

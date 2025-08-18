@@ -47,7 +47,7 @@
 
 <style>
     :global(.responsive-slider) {
-        height: calc(32px * var(--scale-ratio, 1));
+        height: calc(34px * var(--scale-ratio, 1));
         display: flex;
         align-items: center;
     }
