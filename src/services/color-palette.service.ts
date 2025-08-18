@@ -26,6 +26,7 @@ export default class ColorPaletteService {
      * @param componentId 颜色组件ID
      * @param color 颜色值
      */
+    // 颜色写入逻辑不再单独持久化到 colorPalette 表，而是直接同步到 doms 表。
     static async saveColor(projectId: string, componentId: string, color: string): Promise<void> {
         console.log(`【数据库交互】保存颜色到颜色卡: 项目ID=${projectId}, 组件ID=${componentId}, 颜色=${color}`)
         try {
@@ -36,36 +37,9 @@ export default class ColorPaletteService {
                 await DexieService.createDatabase(DEFAULT_DB_NAME)
             }
 
-            const db = await DexieService.getDatabase(DEFAULT_DB_NAME)
-            if (!db) return
-
-            const colorItem: ColorPaletteItem = {
-                projectId,
-                componentId,
-                color,
-                updatedAt: new Date()
-            }
-
-            // 使用事务确保原子性操作
-            await db.transaction('rw', db.table('colorPalette'), async () => {
-                // 使用复合索引查找是否已存在记录
-                const existing = await db.table('colorPalette')
-                    .where('[projectId+componentId]')
-                    .equals([projectId, componentId])
-                    .first()
-
-                if (existing) {
-                    // 更新已存在的记录
-                    await db.table('colorPalette').update(existing.id!, {
-                        color: color,
-                        updatedAt: new Date()
-                    })
-                } else {
-                    // 添加新记录
-                    await db.table('colorPalette').add(colorItem)
-                }
-            })
-            // 更新缓存，下一次读取时重新查询
+            // 直接同步到 doms 表，保持与 updateColorInDoms 一致
+            await ColorPaletteService.updateColorInDoms(projectId, componentId, color)
+            // 删除缓存，下一次读取重新统计
             ColorPaletteService.componentColorCache.delete(projectId)
         } catch (error) {
             console.error('【数据库交互】保存颜色卡失败:', error)
@@ -73,42 +47,25 @@ export default class ColorPaletteService {
     }
 
     /**
-     * 获取指定项目的颜色卡（按更新时间倒序排列）
+     * 兼容旧逻辑获取颜色卡（已废弃，改用 getComponentColors）
+     * 为防止外部遗留调用，这里直接调用 getComponentColors 返回去重结果。
      */
     static async getColorPalette(projectId: string): Promise<ColorPaletteItem[]> {
-        console.log(`【数据库交互】获取项目颜色卡: 项目ID=${projectId}`)
-        try {
-            // 确保数据库已初始化
-            const dbExists = await DexieService.databaseExists(DEFAULT_DB_NAME)
-            if (!dbExists) {
-                console.log('【数据库交互】数据库不存在，开始创建数据库')
-                await DexieService.createDatabase(DEFAULT_DB_NAME)
-            }
-
-            const db = await DexieService.getDatabase(DEFAULT_DB_NAME)
-            if (!db) return []
-
-            return await db.table('colorPalette')
-                .where('projectId')
-                .equals(projectId)
-                .reverse()
-                .toArray()
-        } catch (error) {
-            console.error('【数据库交互】获取颜色卡失败:', error)
-            return []
-        }
+        const colors = await ColorPaletteService.getComponentColors(projectId)
+        return colors.map(c => ({ projectId, componentId: '', color: c, updatedAt: new Date() }))
     }
 
     /**
      * 获取指定项目的所有颜色历史（用于ColorPicker的颜色卡）
      * 查询时只用项目ID，查出多少个记录就是多少个色卡
      */
+    // 从 doms 表中统计项目的所有背景颜色并去重，替代原 colorPalette 表。
     static async getComponentColors(projectId: string, forceRefresh = false): Promise<string[]> {
         // 优先返回缓存结果，保持与写入频率一致
         if (!forceRefresh && ColorPaletteService.componentColorCache.has(projectId)) {
             return ColorPaletteService.componentColorCache.get(projectId)!
         }
-        console.log(`【数据库交互】获取项目组件颜色历史: 项目ID=${projectId}`)
+        console.log(`【数据库交互】获取项目全部色卡值: 项目ID=${projectId}`)
         try {
             // 确保数据库已初始化
             const dbExists = await DexieService.databaseExists(DEFAULT_DB_NAME)
@@ -120,14 +77,15 @@ export default class ColorPaletteService {
             const db = await DexieService.getDatabase(DEFAULT_DB_NAME)
             if (!db) return []
 
-            // 只按项目ID查询所有颜色记录
-            const items = await db.table('colorPalette')
+            const nodes = await db.table('doms')
                 .where('projectId')
                 .equals(projectId)
-                .reverse()
                 .toArray()
 
-            const colors = items.map(item => item.color)
+            // 提取背景色，过滤透明色与空值
+            const colors = nodes
+                .map((n: any) => n.styles?.backgroundColor as string)
+                .filter((c) => !!c && c !== 'rgba(0, 0, 0, 0)' && c !== 'transparent')
             ColorPaletteService.componentColorCache.set(projectId, colors)
             return colors
         } catch (error) {
@@ -249,31 +207,16 @@ export default class ColorPaletteService {
     }
 
     /**
-     * 清空指定项目的颜色卡
+     * 兼容旧逻辑清空颜色卡（已废弃，无需操作）
      */
-    static async clearColorPalette(projectId: string): Promise<void> {
-        try {
-            // 确保数据库已初始化
-            const dbExists = await DexieService.databaseExists(DEFAULT_DB_NAME)
-            if (!dbExists) {
-                await DexieService.createDatabase(DEFAULT_DB_NAME)
-            }
-
-            const db = await DexieService.getDatabase(DEFAULT_DB_NAME)
-            if (!db) return
-
-            await db.table('colorPalette')
-                .where('projectId')
-                .equals(projectId)
-                .delete()
-        } catch (error) {
-            console.error('清空颜色卡失败:', error)
-        }
+    static async clearColorPalette(_projectId: string): Promise<void> {
+        console.warn('ColorPaletteService.clearColorPalette 已废弃')
     }
 
     /**
      * 删除指定颜色值从颜色卡
      */
+    // 通过遍历 doms 表将匹配颜色的节点置为透明并删除缓存。
     static async deleteColor(projectId: string, color: string): Promise<void> {
         try {
             // 确保数据库已初始化
@@ -285,68 +228,31 @@ export default class ColorPaletteService {
             const db = await DexieService.getDatabase(DEFAULT_DB_NAME)
             if (!db) return
 
-            // 删除匹配的颜色记录
-            await db.table('colorPalette')
+            const matchingNodes = await db.table('doms')
                 .where('projectId')
                 .equals(projectId)
-                .and(item => item.color === color)
-                .delete()
+                .and((n: any) => n.styles?.backgroundColor === color)
+                .toArray()
+
+            for (const node of matchingNodes) {
+                await db.table('doms').update(node.id, {
+                    styles: {
+                        ...node.styles,
+                        backgroundColor: 'transparent',
+                        opacity: 1
+                    }
+                })
+            }
+            ColorPaletteService.componentColorCache.delete(projectId)
         } catch (error) {
             console.error('删除颜色失败:', error)
         }
     }
 
     /**
-     * 清理指定项目的重复颜色记录（保留最新的）
+     * 兼容旧逻辑的去重函数（已废弃，无需操作）
      */
-    static async cleanupDuplicateColors(projectId: string): Promise<void> {
-        try {
-            // 确保数据库已初始化
-            const dbExists = await DexieService.databaseExists(DEFAULT_DB_NAME)
-            if (!dbExists) {
-                await DexieService.createDatabase(DEFAULT_DB_NAME)
-            }
-
-            const db = await DexieService.getDatabase(DEFAULT_DB_NAME)
-            if (!db) return
-
-            await db.transaction('rw', db.table('colorPalette'), async () => {
-                // 获取所有记录
-                const allRecords = await db.table('colorPalette')
-                    .where('projectId')
-                    .equals(projectId)
-                    .toArray()
-
-                // 按componentId分组
-                const grouped = new Map<string, ColorPaletteItem[]>()
-                for (const record of allRecords) {
-                    const key = `${record.projectId}_${record.componentId}`
-                    if (!grouped.has(key)) {
-                        grouped.set(key, [])
-                    }
-                    grouped.get(key)!.push(record)
-                }
-
-                // 删除重复记录，保留最新的
-                for (const [key, records] of grouped) {
-                    if (records.length > 1) {
-                        // 按更新时间排序，最新的在前面
-                        records.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-
-                        // 保留最新的记录，删除其余的
-                        const toDelete = records.slice(1)
-                        for (const record of toDelete) {
-                            if (record.id) {
-                                await db.table('colorPalette').delete(record.id)
-                            }
-                        }
-
-                        console.log(`清理了 ${toDelete.length} 条重复记录，组件: ${records[0].componentId}`)
-                    }
-                }
-            })
-        } catch (error) {
-            console.error('清理重复颜色记录失败:', error)
-        }
+    static async cleanupDuplicateColors(_projectId: string): Promise<void> {
+        console.warn('ColorPaletteService.cleanupDuplicateColors 已废弃')
     }
 }
