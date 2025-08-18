@@ -372,7 +372,7 @@ function autoSaveToDomsTable(): void {
  */
 export async function setSelectedId(id: string | null): Promise<void> {
   selectedNodeId = id;
-  
+
   // 同时更新数据库中的selectedNodeId
   if (currentProjectId) {
     try {

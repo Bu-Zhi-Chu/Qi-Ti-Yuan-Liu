@@ -85,7 +85,7 @@
                     toggleHidden(id)
                     break
                 case 'delete-node':
-                    removeNodeById(id).then(success => {
+                    removeNodeById(id).then((success) => {
                         // removeNodeById内部已经处理了选中根节点的逻辑
                     })
                     break
