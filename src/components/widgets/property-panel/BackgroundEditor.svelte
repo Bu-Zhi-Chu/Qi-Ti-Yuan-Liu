@@ -251,32 +251,32 @@
     function addGradientColor() {
         if (gradientColors.length === 0) {
             // 获取当前有效的背景颜色，如果为空则从DOM获取
-            let currentColor = backgroundColor;
+            let currentColor = backgroundColor
             if (!currentColor || currentColor === '') {
                 if (selectedId) {
-                    const el = getElementByNodeId(selectedId);
+                    const el = getElementByNodeId(selectedId)
                     if (el) {
-                        const computedStyle = window.getComputedStyle(el);
-                        const bgColor = computedStyle.backgroundColor;
+                        const computedStyle = window.getComputedStyle(el)
+                        const bgColor = computedStyle.backgroundColor
                         if (bgColor && bgColor !== 'rgba(0, 0, 0, 0)' && bgColor !== 'transparent') {
                             // 解析RGB/RGBA格式
-                            const rgbaMatch = bgColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/i);
+                            const rgbaMatch = bgColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/i)
                             if (rgbaMatch) {
-                                const r = parseInt(rgbaMatch[1]);
-                                const g = parseInt(rgbaMatch[2]);
-                                const b = parseInt(rgbaMatch[3]);
-                                currentColor = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+                                const r = parseInt(rgbaMatch[1])
+                                const g = parseInt(rgbaMatch[2])
+                                const b = parseInt(rgbaMatch[3])
+                                currentColor = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
                             }
                         }
                     }
                 }
             }
-            
+
             // 如果还是无法获取有效颜色，使用默认白色
             if (!currentColor || currentColor === '') {
-                currentColor = '#ffffff';
+                currentColor = '#ffffff'
             }
-            
+
             // 添加两个渐变颜色，第一个使用当前背景色，第二个为白色
             gradientColors = [
                 { color: currentColor, opacity: backgroundOpacity },
@@ -288,10 +288,14 @@
 
     // 移除渐变颜色
     function removeGradientColor() {
+        // 在移除渐变前，保存渐变中的第一个颜色作为新的背景颜色
+        if (gradientColors.length > 0) {
+            const firstGradientColor = gradientColors[0]
+            backgroundColor = firstGradientColor.color
+            backgroundOpacity = firstGradientColor.opacity
+        }
+        
         gradientColors = []
-
-        // 当移除渐变后，保持当前的backgroundColor和backgroundOpacity不变
-        // 这些值已经在用户设置渐变时被保存为纯色背景的值
         updateBackgroundStyles()
     }
 
@@ -384,9 +388,6 @@
         if (!selectedId) return
 
         const styles: Record<string, string> = {}
-
-        // 背景图片 - 始终设置，包括空值以移除背景
-        styles.backgroundImage = backgroundImage || ''
 
         // 背景尺寸 - 直接存储数值和单位
         styles.backgroundSize = `${formatSize(backgroundSizeX, sizeUnitX)} ${formatSize(backgroundSizeY, sizeUnitY)}`
@@ -575,14 +576,12 @@
     function handleBackgroundColorChange(color: string, opacity: number) {
         backgroundColor = color
         backgroundOpacity = opacity
-        
+
         // 如果渐变已启用，同步更新渐变中的第一个颜色
         if (gradientColors.length > 0) {
-            gradientColors = gradientColors.map((item, index) => 
-                index === 0 ? { color, opacity } : item
-            )
+            gradientColors = gradientColors.map((item, index) => (index === 0 ? { color, opacity } : item))
         }
-        
+
         updateBackgroundStyles()
     }
 
