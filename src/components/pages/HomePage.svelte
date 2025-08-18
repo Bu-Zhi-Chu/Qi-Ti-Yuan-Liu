@@ -29,7 +29,7 @@
 
     onMount(async () => {
         const dbName = 'qi-qiao-ban'
-console.log('【数据库交互】检查项目列表页面数据库状态')
+        console.log('【数据库交互】检查项目列表页面数据库状态')
         // 确保数据库存在
         if (!(await DexieService.databaseExists(dbName))) {
             console.log('【数据库交互】数据库不存在，开始创建数据库')

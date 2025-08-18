@@ -41,7 +41,7 @@
     onMount(async () => {
         try {
             console.log('【数据库交互】加载模板列表')
-        const data = await DexieService.queryRecords<TemplateInfo>('qi-qiao-ban', 'templates')
+            const data = await DexieService.queryRecords<TemplateInfo>('qi-qiao-ban', 'templates')
             templates = data
         } finally {
             isLoading = false
