@@ -18,6 +18,8 @@ export interface ColorPaletteItem {
 }
 
 export default class ColorPaletteService {
+    // 缓存项目组件颜色卡，避免频繁重复查询
+    private static componentColorCache: Map<string, string[]> = new Map()
     /**
      * 保存颜色到颜色卡（每个组件只保存一个颜色记录）
      * @param projectId 项目ID
@@ -63,6 +65,8 @@ export default class ColorPaletteService {
                     await db.table('colorPalette').add(colorItem)
                 }
             })
+            // 更新缓存，下一次读取时重新查询
+            ColorPaletteService.componentColorCache.delete(projectId)
         } catch (error) {
             console.error('【数据库交互】保存颜色卡失败:', error)
         }
@@ -99,7 +103,11 @@ export default class ColorPaletteService {
      * 获取指定项目的所有颜色历史（用于ColorPicker的颜色卡）
      * 查询时只用项目ID，查出多少个记录就是多少个色卡
      */
-    static async getComponentColors(projectId: string): Promise<string[]> {
+    static async getComponentColors(projectId: string, forceRefresh = false): Promise<string[]> {
+        // 优先返回缓存结果，保持与写入频率一致
+        if (!forceRefresh && ColorPaletteService.componentColorCache.has(projectId)) {
+            return ColorPaletteService.componentColorCache.get(projectId)!
+        }
         console.log(`【数据库交互】获取项目组件颜色历史: 项目ID=${projectId}`)
         try {
             // 确保数据库已初始化
@@ -119,7 +127,9 @@ export default class ColorPaletteService {
                 .reverse()
                 .toArray()
 
-            return items.map(item => item.color)
+            const colors = items.map(item => item.color)
+            ColorPaletteService.componentColorCache.set(projectId, colors)
+            return colors
         } catch (error) {
             console.error('【数据库交互】获取项目颜色卡失败:', error)
             return []

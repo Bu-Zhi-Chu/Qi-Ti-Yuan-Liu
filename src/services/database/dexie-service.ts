@@ -10,16 +10,29 @@ import Dexie from 'dexie'
 
 export default class DexieService {
     /**
+     * 缓存数据库存在状态，避免频繁调用 indexedDB.databases()
+     * key 为数据库名，value 为是否存在
+     */
+    private static dbExistenceCache: Map<string, boolean> = new Map()
+    /**
      * 判断数据库是否存在
      */
     static async databaseExists(dbName: string): Promise<boolean> {
+        // 优先使用缓存，避免频繁调用 indexedDB.databases()
+        if (DexieService.dbExistenceCache.has(dbName)) {
+            return DexieService.dbExistenceCache.get(dbName) as boolean
+        }
+
         console.log(`【数据库交互】检查数据库是否存在: ${dbName}`)
         try {
             const dbs = await indexedDB.databases()
-            const exists = dbs.some((db) => db.name === dbName)
+            const exists = dbs.some(db => db.name === dbName)
+            // 写入缓存
+            DexieService.dbExistenceCache.set(dbName, exists)
             console.log(`【数据库交互】数据库${dbName}存在状态: ${exists}`)
             return exists
-        } catch {
+        } catch (error) {
+            console.error(`【数据库交互】检查数据库是否存在失败: ${dbName}`, error)
             return false
         }
     }
@@ -40,6 +53,8 @@ export default class DexieService {
         })
 
         await db.open()
+        // 打开成功后写入缓存，避免后续重复检查
+        DexieService.dbExistenceCache.set(dbName, true)
         console.log('【数据库交互】数据库创建成功')
 
         // 插入默认模板

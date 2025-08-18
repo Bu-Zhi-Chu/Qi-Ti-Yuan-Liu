@@ -16,6 +16,8 @@ import DexieService from '../database/dexie-service'
 import { BlobStorageService } from '../storage/blob-storage.service'
 
 export class ProjectThumbnailService {
+  // 已创建默认缩略图的项目缓存，避免频繁重复写入
+  private static defaultThumbnailCreated: Set<string> = new Set()
   /**
    * 将背景图片同步为项目缩略图
    * @param projectId 项目ID
@@ -69,6 +71,8 @@ export class ProjectThumbnailService {
 
       if (updateSuccess) {
         console.log('项目缩略图已更新为Blob:', projectId)
+        // 背景图同步后，移除默认缩略图标记，允许后续再次创建默认缩略图
+        ProjectThumbnailService.defaultThumbnailCreated.delete(projectId)
       } else {
         console.warn('更新项目缩略图失败:', projectId)
       }
@@ -144,7 +148,18 @@ export class ProjectThumbnailService {
       return
     }
 
+    // 如果已为该项目创建过默认缩略图，则直接返回，避免重复写入
+    if (ProjectThumbnailService.defaultThumbnailCreated.has(projectId)) {
+      return
+    }
+
     try {
+      // 若项目已存在缩略图（例如之前同步过背景图），无需再生成默认缩略图
+      const existing = await DexieService.getRecord<any>('qi-qiao-ban', 'projects', projectId)
+      if (existing?.thumbnail) {
+        return
+      }
+
       const color = backgroundColor || '#ffffff'
       const svgContent = `
         <svg width="300" height="200" xmlns="http://www.w3.org/2000/svg">
@@ -175,6 +190,7 @@ export class ProjectThumbnailService {
 
       if (updateSuccess) {
         console.log('默认项目缩略图已创建为Blob:', projectId)
+        ProjectThumbnailService.defaultThumbnailCreated.add(projectId)
       } else {
         console.warn('创建默认项目缩略图失败:', projectId)
       }
