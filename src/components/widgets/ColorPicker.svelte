@@ -13,6 +13,8 @@
  * <ColorPicker
  *   value="rgba(255, 0, 0, 1)"
  *   onchange={(rgba) => handleChange(rgba)}
+ *   projectId="my-project"
+ *   componentId="color-1"  // 可选，如果不提供将自动生成UUID
  * />
  *
  * 属性说明：
@@ -20,21 +22,28 @@
  * - onchange: 颜色变化时的回调函数
  * - placeholder: 占位符文本
  * - disabled: 是否禁用
+ * - projectId: 项目ID，用于保存颜色历史记录
+ * - componentId: 组件ID，用于标识颜色组件，如果不提供将自动生成唯一UUID
  -->
 
 <script lang="ts">
     import { onMount, onDestroy } from 'svelte'
     import Icon from './Icon.svelte'
     import ResponsiveBox from '../core/ResponsiveBox.svelte'
+    import ColorPaletteService from '../../services/color-palette.service'
+
+    import { v4 as uuidv4 } from 'uuid'
 
     interface Props {
         value?: string // 现在接受rgba或hex格式
         onchange?: (rgba: string) => void
         placeholder?: string
         disabled?: boolean
+        projectId?: string // 项目ID，用于保存颜色历史记录
+        componentId?: string // 组件ID，用于标识颜色组件（如果不提供将自动生成UUID）
     }
 
-    const { value = 'rgba(0, 0, 0, 1)', onchange, placeholder = '选择颜色...', disabled = false } = $props()
+    const { value = 'rgba(0, 0, 0, 1)', onchange, placeholder = '选择颜色...', disabled = false, projectId = 'default', componentId = uuidv4() } = $props()
 
     let isOpen = $state(false)
     let currentColor = $state('#000000')
@@ -55,6 +64,7 @@
     let hue = $state(0) // 色相 0-360
     let saturation = $state(100) // 饱和度 0-100
     let lightness = $state(50) // 亮度 0-100
+    let colorPalette = $state<string[]>([])
 
     // 鼠标状态
     let isSelectingHue = $state(false)
@@ -262,19 +272,19 @@
         // 绘制饱和度-亮度选择器
         // 水平方向：饱和度从0到100
         // 垂直方向：亮度从0到100（从上到下）
-        
+
         // 创建水平饱和度渐变
         for (let x = 0; x < width; x++) {
             const sat = (x / width) * 100
             const satGradient = ctx.createLinearGradient(x, 0, x, height)
-            
+
             // 顶部：白色 + 当前色相
             satGradient.addColorStop(0, `hsl(${hue}, ${sat}%, 100%)`)
             // 中间：纯色
             satGradient.addColorStop(0.5, `hsl(${hue}, ${sat}%, 50%)`)
             // 底部：黑色
             satGradient.addColorStop(1, `hsl(${hue}, ${sat}%, 0%)`)
-            
+
             ctx.fillStyle = satGradient
             ctx.fillRect(x, 0, 1, height)
         }
@@ -416,6 +426,14 @@
     // 通知父组件变化
     function notifyChange() {
         const rgba = hexToRgba(currentColor, currentOpacity)
+
+        // 保存颜色到颜色卡并重新加载色卡
+        if (projectId && componentId) {
+            ColorPaletteService.saveColor(projectId, componentId, rgba).then(() => {
+                loadColorPalette()
+            })
+        }
+
         onchange?.(rgba)
     }
 
@@ -463,21 +481,24 @@
         }
     }
 
+    // 加载颜色卡
+    async function loadColorPalette() {
+        if (projectId) {
+            const colors = await ColorPaletteService.getComponentColors(projectId)
+            colorPalette = colors.slice(0, 8) // 只保留最近的8个颜色
+        }
+    }
+
     // 初始化
     onMount(() => {
-        if (typeof value === 'string') {
-            if (value.startsWith('rgba')) {
-                updateFromRgba(value)
-            } else if (value.startsWith('#')) {
-                currentColor = value
-                currentOpacity = 1
-                updateHslFromColor()
-            }
-        }
         document.addEventListener('click', handleClickOutside)
         document.addEventListener('keydown', handleKeyDown)
         document.addEventListener('mousemove', handleMouseMove)
         document.addEventListener('mouseup', handleMouseUp)
+
+        if (projectId) {
+            loadColorPalette()
+        }
 
         return () => {
             document.removeEventListener('click', handleClickOutside)
@@ -487,12 +508,32 @@
         }
     })
 
+    // 当projectId或componentId变化时重新加载色卡
+    $effect(() => {
+        if (projectId && componentId) {
+            loadColorPalette()
+        }
+    })
+
     // 绘制画布
     $effect(() => {
         if (isOpen) {
             drawHueCanvas()
             drawSatCanvas()
             drawAlphaCanvas()
+        }
+    })
+
+    // 响应外部value变化
+    $effect(() => {
+        if (typeof value === 'string') {
+            if (value.startsWith('rgba')) {
+                updateFromRgba(value)
+            } else if (value.startsWith('#')) {
+                currentColor = value
+                currentOpacity = 1
+                updateHslFromColor()
+            }
         }
     })
 
@@ -534,19 +575,7 @@
             <div class="picker-content">
                 <!-- 左侧色相选择器 -->
                 <div class="hue-selector">
-                    <div
-                        bind:this={hueRect}
-                        class="hue-rect"
-                        onmousedown={handleHueMouseDown}
-                        style="position: relative; cursor: crosshair;"
-                        role="slider"
-                        tabindex="0"
-                        aria-label="色相选择器"
-                        aria-valuemin="0"
-                        aria-valuemax="360"
-                        aria-valuenow={hue}
-                        aria-orientation="vertical"
-                    >
+                    <div bind:this={hueRect} class="hue-rect" onmousedown={handleHueMouseDown} style="position: relative; cursor: crosshair;" role="slider" tabindex="0" aria-label="色相选择器" aria-valuemin="0" aria-valuemax="360" aria-valuenow={hue} aria-orientation="vertical">
                         <canvas bind:this={hueCanvas} width="20" height="150"></canvas>
                         <div class="hue-selector-handle" style="top: {(hue / 360) * 100}%;"></div>
                     </div>
@@ -554,19 +583,7 @@
 
                 <!-- 中间饱和度选择器 -->
                 <div class="sat-selector">
-                    <div
-                        bind:this={satRect}
-                        class="sat-rect"
-                        onmousedown={handleSatMouseDown}
-                        style="position: relative; cursor: crosshair;"
-                        role="slider"
-                        tabindex="0"
-                        aria-label="饱和度选择器"
-                        aria-valuemin="0"
-                        aria-valuemax="100"
-                        aria-valuenow={saturation}
-                        aria-orientation="horizontal"
-                    >
+                    <div bind:this={satRect} class="sat-rect" onmousedown={handleSatMouseDown} style="position: relative; cursor: crosshair;" role="slider" tabindex="0" aria-label="饱和度选择器" aria-valuemin="0" aria-valuemax="100" aria-valuenow={saturation} aria-orientation="horizontal">
                         <canvas bind:this={satCanvas} width="180" height="150"></canvas>
                         <div class="sat-selector-handle" style="left: {(saturation / 100) * 100}%; top: {((100 - lightness) / 100) * 100}%;"></div>
                     </div>
@@ -600,22 +617,31 @@
                 </div>
             </div>
 
-            <div class="preset-colors">
-                {#each ['#000000', '#ffffff', '#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ff8800', '#8800ff'] as presetColor}
-                    <button
-                        class="preset-color"
-                        style="background-color: {presetColor}"
-                        onclick={() => {
-                            currentColor = presetColor
-                            updateHslFromColor()
-                            notifyChange()
-                        }}
-                        type="button"
-                        title={presetColor}
-                        aria-label={`选择颜色 ${presetColor}`}
-                    ></button>
-                {/each}
-            </div>
+            {#if colorPalette.length > 0}
+                <div class="color-palette">
+                    <label class="control-label" for="color-palette">颜色卡</label>
+                    <div class="palette-colors">
+                        {#each colorPalette as color}
+                            <button
+                                type="button"
+                                class="palette-color"
+                                style="background-color: {color}"
+                                onclick={() => {
+                                    const parsed = parseRgba(color)
+                                    if (parsed) {
+                                        currentColor = rgbToHex(parsed.r, parsed.g, parsed.b)
+                                        currentOpacity = parsed.a
+                                        updateHslFromColor()
+                                        notifyChange()
+                                    }
+                                }}
+                                title={color}
+                                aria-label={`选择颜色 ${color}`}
+                            ></button>
+                        {/each}
+                    </div>
+                </div>
+            {/if}
         </div>
     {/if}
 </ResponsiveBox>
@@ -645,8 +671,6 @@
         cursor: not-allowed;
     }
 
-
-
     .color-text {
         flex: 1;
         text-align: left;
@@ -655,8 +679,6 @@
         overflow: hidden;
         text-overflow: ellipsis;
     }
-
-
 
     .color-picker-panel {
         position: absolute;
@@ -867,23 +889,34 @@
         background: rgba(255, 255, 255, 0.15);
     }
 
-    .preset-colors {
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
+    .color-palette {
+        margin-top: calc(16px * var(--scale-ratio, 1));
+    }
+
+    .palette-colors {
+        display: flex;
         gap: calc(4px * var(--scale-ratio, 1));
+        flex-wrap: wrap;
     }
 
-    .preset-color {
-        width: 100%;
-        aspect-ratio: 1;
+    .palette-color {
+        width: calc(24px * var(--scale-ratio, 1));
+        height: calc(24px * var(--scale-ratio, 1));
         border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.2);
-        border-radius: calc(3px * var(--scale-ratio, 1));
+        border-radius: calc(4px * var(--scale-ratio, 1));
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition:
+            transform 0.2s ease,
+            border-color 0.2s ease;
+        position: relative;
     }
 
-    .preset-color:hover {
-        border-color: rgba(255, 255, 255, 0.4);
+    .palette-color:hover {
         transform: scale(1.1);
+        border-color: rgba(255, 255, 255, 0.4);
+    }
+
+    .palette-color:active {
+        transform: scale(0.9);
     }
 </style>

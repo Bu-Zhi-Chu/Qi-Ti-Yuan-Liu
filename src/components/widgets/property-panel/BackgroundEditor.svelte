@@ -15,7 +15,7 @@
 <script lang="ts">
     import { onDestroy } from 'svelte'
     import { getNodeProps, updateNodeProps } from '../../../services/property-panel/property-panel.service'
-    import { domTree } from '../../../services/repository/dom-tree.store.svelte'
+    import { domTree, projectId } from '../../../services/repository/dom-tree.store.svelte'
     import { getElementByNodeId } from '../../../services/utils/dom-geometry.util'
     import { getScaleRatio } from '../../../services/utils/get-scale-ratio.util'
     import { BlobStorageService } from '../../../services/storage/blob-storage.service'
@@ -368,6 +368,37 @@
         return `rgba(0, 0, 0, ${opacity})`
     }
 
+    // 从DOM元素获取当前背景颜色值
+    function getCurrentBackgroundColor(): string {
+        if (!selectedId) {
+            return hexToRgba(backgroundColor, backgroundOpacity)
+        }
+
+        const el = getElementByNodeId(selectedId)
+        if (!el) {
+            return hexToRgba(backgroundColor, backgroundOpacity)
+        }
+
+        // 获取DOM元素的当前backgroundColor样式
+        const computedStyle = window.getComputedStyle(el)
+        const bgColor = computedStyle.backgroundColor
+
+        if (bgColor && bgColor !== 'rgba(0, 0, 0, 0)' && bgColor !== 'transparent') {
+            // 解析RGB/RGBA格式
+            const rgbaMatch = bgColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/i)
+            if (rgbaMatch) {
+                const r = parseInt(rgbaMatch[1])
+                const g = parseInt(rgbaMatch[2])
+                const b = parseInt(rgbaMatch[3])
+                const a = rgbaMatch[4] ? parseFloat(rgbaMatch[4]) : 1
+                return `rgba(${r}, ${g}, ${b}, ${a})`
+            }
+        }
+
+        // 如果没有有效的DOM颜色，使用状态变量
+        return hexToRgba(backgroundColor, backgroundOpacity)
+    }
+
     // 处理背景颜色变化
     function handleBackgroundColorChange(color: string, opacity: number) {
         backgroundColor = color
@@ -584,6 +615,8 @@
                 <label for="color-picker-background">背景颜色</label>
                 <ColorPicker
                     value={hexToRgba(backgroundColor, backgroundOpacity)}
+                    projectId={projectId()}
+                    componentId={selectedId || 'default'}
                     onchange={(rgba: string) => {
                         const parsed = parseRgba(rgba)
                         if (parsed) {

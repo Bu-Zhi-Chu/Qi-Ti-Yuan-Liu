@@ -27,12 +27,14 @@ export default class DexieService {
     static async createDatabase(dbName: string): Promise<void> {
         const db = new Dexie(dbName)
 
-        // 版本1：修复doms表主键冲突，直接使用复合主键
+        // 版本1：包含所有表结构，包括颜色卡表
         db.version(1).stores({
             templates: '++id, name, desc, cover, tag, thumbnailUrl',
             projects: 'id, name, templateId, data, createdAt, updatedAt, canvasState',
             doms: '[projectId+id], projectId, parentId, type, attributes, style, textContent',
+            colorPalette: '++id, [projectId+componentId], projectId, componentId, color, updatedAt',
         })
+
 
 
         await db.open()
@@ -127,6 +129,70 @@ export default class DexieService {
         } catch (error) {
             console.error(`更新记录失败: ${tableName}.${key}`, error)
             return false
+        }
+    }
+
+    /**
+     * 保存或更新颜色卡
+     */
+    static async saveColorPalette(dbName: string, colorItem: any): Promise<any> {
+        try {
+            const db = new Dexie(dbName)
+            await db.open()
+
+            // 查找是否已存在相同projectId和componentId的记录
+            const existing = await db.table('colorPalette')
+                .where('[projectId+componentId]')
+                .equals([colorItem.projectId, colorItem.componentId])
+                .first()
+
+            if (existing) {
+                // 更新已存在的记录
+                return await db.table('colorPalette').update(existing.id, {
+                    color: colorItem.color,
+                    updatedAt: new Date()
+                })
+            } else {
+                // 添加新记录
+                return await db.table('colorPalette').add(colorItem)
+            }
+        } catch (error) {
+            console.error('保存颜色卡失败:', error)
+            throw error
+        }
+    }
+
+    /**
+     * 获取指定项目的颜色卡
+     */
+    static async queryColorPalette(dbName: string, projectId: string): Promise<any[]> {
+        try {
+            const db = new Dexie(dbName)
+            await db.open()
+            return await db.table('colorPalette')
+                .where('projectId')
+                .equals(projectId)
+                .reverse()
+                .toArray()
+        } catch (error) {
+            console.error('获取颜色卡失败:', error)
+            return []
+        }
+    }
+
+    /**
+     * 清空指定项目的颜色卡
+     */
+    static async clearColorPalette(dbName: string, projectId: string): Promise<void> {
+        try {
+            const db = new Dexie(dbName)
+            await db.open()
+            await db.table('colorPalette')
+                .where('projectId')
+                .equals(projectId)
+                .delete()
+        } catch (error) {
+            console.error('清空颜色卡失败:', error)
         }
     }
 
