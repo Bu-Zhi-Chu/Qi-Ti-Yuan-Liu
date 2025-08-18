@@ -485,7 +485,9 @@
     async function loadColorPalette() {
         if (projectId) {
             const colors = await ColorPaletteService.getComponentColors(projectId)
-            colorPalette = colors.slice(0, 8) // 只保留最近的8个颜色
+            // 使用Set去重，保持顺序并限制数量
+            const uniqueColors = [...new Set(colors)].slice(0, 8)
+            colorPalette = uniqueColors
         }
     }
 
