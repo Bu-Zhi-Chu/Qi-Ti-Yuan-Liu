@@ -79,23 +79,27 @@
         const nodeProps = getNodeProps(selectedId)
         const styles = nodeProps?.styles || {}
 
-        // 优先从doms表读取背景颜色
-        const projectIdValue = projectId()
-        if (projectIdValue && selectedId) {
-            try {
-                // 从doms表获取背景颜色
-                const colorFromDoms = await ColorPaletteService.getColorFromDoms(projectIdValue, selectedId)
-                if (colorFromDoms) {
-                    const parsed = parseRgba(colorFromDoms)
-                    if (parsed) {
-                        backgroundColor = rgbToHex(parsed.r, parsed.g, parsed.b)
-                        backgroundOpacity = parsed.a
-                    }
+        // 先从 styles.backgroundColor 读取背景颜色（与其他属性一致）
+        const bgColorStyle = styles.backgroundColor || ''
+        if (bgColorStyle) {
+            const match = bgColorStyle.match(/rgba?\(([^)]+)\)/)
+            if (match) {
+                const parts = match[1].split(',').map((s) => s.trim())
+                if (parts.length >= 3) {
+                    const r = parseInt(parts[0])
+                    const g = parseInt(parts[1])
+                    const b = parseInt(parts[2])
+                    const a = parts.length > 3 ? parseFloat(parts[3]) : 1
+                    backgroundColor = rgbToHex(r, g, b)
+                    backgroundOpacity = a
                 }
-            } catch (error) {
-                console.error('从doms表读取颜色失败:', error)
+            } else if (/^#([0-9A-Fa-f]{6})$/.test(bgColorStyle)) {
+                backgroundColor = bgColorStyle
+                backgroundOpacity = 1
             }
         }
+
+
 
         // 背景图片
         backgroundImage = styles.backgroundImage || ''

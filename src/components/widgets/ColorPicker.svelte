@@ -550,14 +550,7 @@
             rgba = node?.styles?.backgroundColor ?? null
         }
 
-        // 回退到 doms 表
-        if (!rgba && projectId && componentId) {
-            try {
-                rgba = await ColorPaletteService.getColorFromDoms(projectId, componentId)
-            } catch (error) {
-                console.error('从 doms 表加载颜色值失败:', error)
-            }
-        }
+
 
         if (rgba) {
             updateFromRgba(rgba)
