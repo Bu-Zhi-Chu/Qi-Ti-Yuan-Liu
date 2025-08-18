@@ -25,10 +25,12 @@ export default class ColorPaletteService {
      * @param color 颜色值
      */
     static async saveColor(projectId: string, componentId: string, color: string): Promise<void> {
+        console.log(`【数据库交互】保存颜色到颜色卡: 项目ID=${projectId}, 组件ID=${componentId}, 颜色=${color}`)
         try {
             // 确保数据库已初始化
             const dbExists = await DexieService.databaseExists(DEFAULT_DB_NAME)
             if (!dbExists) {
+                console.log('【数据库交互】数据库不存在，开始创建数据库')
                 await DexieService.createDatabase(DEFAULT_DB_NAME)
             }
 
@@ -62,7 +64,7 @@ export default class ColorPaletteService {
                 }
             })
         } catch (error) {
-            console.error('保存颜色卡失败:', error)
+            console.error('【数据库交互】保存颜色卡失败:', error)
         }
     }
 
@@ -70,10 +72,12 @@ export default class ColorPaletteService {
      * 获取指定项目的颜色卡（按更新时间倒序排列）
      */
     static async getColorPalette(projectId: string): Promise<ColorPaletteItem[]> {
+        console.log(`【数据库交互】获取项目颜色卡: 项目ID=${projectId}`)
         try {
             // 确保数据库已初始化
             const dbExists = await DexieService.databaseExists(DEFAULT_DB_NAME)
             if (!dbExists) {
+                console.log('【数据库交互】数据库不存在，开始创建数据库')
                 await DexieService.createDatabase(DEFAULT_DB_NAME)
             }
 
@@ -86,7 +90,7 @@ export default class ColorPaletteService {
                 .reverse()
                 .toArray()
         } catch (error) {
-            console.error('获取颜色卡失败:', error)
+            console.error('【数据库交互】获取颜色卡失败:', error)
             return []
         }
     }
@@ -96,10 +100,12 @@ export default class ColorPaletteService {
      * 查询时只用项目ID，查出多少个记录就是多少个色卡
      */
     static async getComponentColors(projectId: string): Promise<string[]> {
+        console.log(`【数据库交互】获取项目组件颜色历史: 项目ID=${projectId}`)
         try {
             // 确保数据库已初始化
             const dbExists = await DexieService.databaseExists(DEFAULT_DB_NAME)
             if (!dbExists) {
+                console.log('【数据库交互】数据库不存在，开始创建数据库')
                 await DexieService.createDatabase(DEFAULT_DB_NAME)
             }
 
@@ -115,7 +121,7 @@ export default class ColorPaletteService {
 
             return items.map(item => item.color)
         } catch (error) {
-            console.error('获取项目颜色卡失败:', error)
+            console.error('【数据库交互】获取项目颜色卡失败:', error)
             return []
         }
     }
@@ -127,10 +133,12 @@ export default class ColorPaletteService {
      * @returns 颜色值（RGBA格式）
      */
     static async getColorFromDoms(projectId: string, componentId: string): Promise<string | null> {
+        console.log(`【数据库交互】从doms表获取节点颜色: 项目ID=${projectId}, 组件ID=${componentId}`)
         try {
             // 确保数据库已初始化
             const dbExists = await DexieService.databaseExists(DEFAULT_DB_NAME)
             if (!dbExists) {
+                console.log('【数据库交互】数据库不存在，开始创建数据库')
                 await DexieService.createDatabase(DEFAULT_DB_NAME)
             }
 
@@ -177,7 +185,7 @@ export default class ColorPaletteService {
 
             return null
         } catch (error) {
-            console.error('从doms表获取颜色值失败:', error)
+            console.error('【数据库交互】从doms表获取颜色值失败:', error)
             return null
         }
     }
@@ -189,10 +197,12 @@ export default class ColorPaletteService {
      * @param color 颜色值（RGBA格式）
      */
     static async updateColorInDoms(projectId: string, componentId: string, color: string): Promise<void> {
+        console.log(`【数据库交互】更新doms表节点颜色: 项目ID=${projectId}, 组件ID=${componentId}, 颜色=${color}`)
         try {
             // 确保数据库已初始化
             const dbExists = await DexieService.databaseExists(DEFAULT_DB_NAME)
             if (!dbExists) {
+                console.log('【数据库交互】数据库不存在，开始创建数据库')
                 await DexieService.createDatabase(DEFAULT_DB_NAME)
             }
 

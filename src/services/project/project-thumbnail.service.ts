@@ -59,6 +59,7 @@ export class ProjectThumbnailService {
       }
 
       // 更新项目缩略图（存储为Blob）
+      console.log(`【数据库交互】保存项目缩略图: 项目ID=${projectId}, 缩略图大小=${blobData?.size || 0}字节`)
       const updateSuccess = await DexieService.updateRecord(
         'qi-qiao-ban',
         'projects',
@@ -115,6 +116,7 @@ export class ProjectThumbnailService {
   static async autoGenerateThumbnail(projectId: string): Promise<void> {
     try {
       // 获取项目数据
+      console.log(`【数据库交互】获取项目缩略图: 项目ID=${projectId}`)
       const project = await DexieService.getRecord<any>('qi-qiao-ban', 'projects', projectId)
       if (!project || !project.data) {
         console.warn('项目数据为空，无法生成缩略图')

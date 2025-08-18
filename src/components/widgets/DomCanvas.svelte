@@ -129,6 +129,7 @@
             await loadDomTreeFromDatabase(projectId)
 
             // 恢复上次选中的节点
+            console.log(`【数据库交互】加载项目数据: 项目ID=${projectId}`)
             const project = await DexieService.getRecord<any>('qi-qiao-ban', 'projects', projectId)
             console.log('加载到的项目数据:', project)
 
@@ -180,6 +181,7 @@
         try {
             const canvasState = { x: offsetX, y: offsetY, scale: scale }
             console.log('准备保存canvas状态:', canvasState, '到项目:', projectId)
+            console.log(`【数据库交互】保存画布状态: 项目ID=${projectId}, 状态=${JSON.stringify(canvasState)}`)
             const success = await DexieService.updateRecord('qi-qiao-ban', 'projects', projectId, {
                 canvasState,
                 updatedAt: Date.now()
@@ -187,6 +189,7 @@
             if (success) {
                 console.log('已保存canvas状态:', canvasState)
                 // 验证保存是否成功
+                console.log(`【数据库交互】验证画布状态保存: 项目ID=${projectId}`)
                 const verify = await DexieService.getRecord<any>('qi-qiao-ban', 'projects', projectId)
                 console.log('验证保存结果:', verify?.canvasState)
             } else {
@@ -236,6 +239,7 @@
 
         // 保存选中状态到数据库
         if (projectId) {
+            console.log(`【数据库交互】保存选中节点: 项目ID=${projectId}, 节点ID=${id}`)
             DexieService.updateRecord('qi-qiao-ban', 'projects', projectId, {
                 selectedNodeId: id
             }).catch(console.error)
