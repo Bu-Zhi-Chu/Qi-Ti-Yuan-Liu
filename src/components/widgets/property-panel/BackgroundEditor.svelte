@@ -470,7 +470,7 @@
             <div class="background-item">
                 <label for="background-image-input">背景图片</label>
                 {#if !backgroundImage}
-                    <button id="background-image-input" class="input-style" onclick={() => fileInput.click()}>上传图片</button>
+                    <button id="background-image-input" class="input-style" onclick={() => fileInput.click()} ondragover={handleDragOver} ondrop={handleDrop} title="点击上传或拖拽图片到此处">上传图片</button>
                 {:else}
                     <button class="input-style" onclick={clearBackgroundImage} title="移除图片" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">移除</button>
                 {/if}
@@ -652,5 +652,14 @@
         border-color: #cbd5e1;
         background: rgba(255, 255, 255, 0.15);
         box-shadow: 0 0 0 calc(3px * var(--scale-ratio, 1)) rgba(255, 255, 255, 0.1);
+    }
+    /* 拖拽上传视觉反馈 */
+    .input-style:hover {
+        border-color: rgba(99, 102, 241, 0.5);
+    }
+    .input-style:active,
+    .input-style:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 calc(3px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.2);
     }
 </style>
