@@ -31,7 +31,7 @@
     import Icon from './Icon.svelte'
     import ResponsiveBox from '../core/ResponsiveBox.svelte'
     import ColorPaletteService from '../../services/color-palette.service'
-    import { domTree } from '../../services/repository/dom-tree.store.svelte'
+    import { domTree, findNodeById } from '../../services/repository/dom-tree.store.svelte'
 
     import { v4 as uuidv4 } from 'uuid'
 
@@ -44,12 +44,12 @@
         componentId?: string // 组件ID，用于标识颜色组件（如果不提供将自动生成UUID）
     }
 
-    const { value = 'rgba(0, 0, 0, 1)', onchange, placeholder = '选择颜色...', disabled = false, projectId = 'default', componentId = uuidv4() } = $props()
+    const { value, onchange, placeholder = '选择颜色...', disabled = false, projectId = 'default', componentId = uuidv4() } = $props()
 
     let isOpen = $state(false)
     let currentColor = $state('#000000')
     let currentOpacity = $state(1)
-    let displayFormat = $state<'hex' | 'rgba'>('rgba') // 显示格式：hex或rgba
+    let displayFormat = $state<'hex' | 'rgba'>('rgba') // 显示格式：hex或rgbargba(0, 0, 0, 1)
     // 去抖保存计时器，避免拖动过程中频繁写数据库
     let saveDebounce: ReturnType<typeof setTimeout> | null = null
     let pickerRef: HTMLDivElement = $state(null as any)
@@ -519,7 +519,7 @@
         document.addEventListener('mouseup', handleMouseUp)
 
         // 从doms表加载当前颜色值
-        loadCurrentColorFromDoms()
+        loadCurrentColor()
 
         if (projectId) {
             loadColorPalette()
@@ -537,17 +537,30 @@
     // 移除isDomsColorLoaded标志，value属性始终优先
 
     // 从doms表加载当前颜色值（仅作为默认值，当value未提供时使用）
-    async function loadCurrentColorFromDoms() {
-        if (projectId && componentId && !value) {
+
+    // 从内存 domTree 或回退 doms 表加载当前颜色值（仅在未提供 value 时使用）
+    async function loadCurrentColor() {
+        if (value && value.trim() !== '') return
+
+        let rgba: string | null = null
+
+        // 优先从内存 domTree 获取
+        if (componentId) {
+            const node = findNodeById(domTree, componentId)
+            rgba = node?.styles?.backgroundColor ?? null
+        }
+
+        // 回退到 doms 表
+        if (!rgba && projectId && componentId) {
             try {
-                const colorFromDoms = await ColorPaletteService.getColorFromDoms(projectId, componentId)
-                if (colorFromDoms) {
-                    // 仅当没有外部value时使用doms表中的颜色作为默认值
-                    updateFromRgba(colorFromDoms)
-                }
+                rgba = await ColorPaletteService.getColorFromDoms(projectId, componentId)
             } catch (error) {
-                console.error('加载颜色值失败:', error)
+                console.error('从 doms 表加载颜色值失败:', error)
             }
+        }
+
+        if (rgba) {
+            updateFromRgba(rgba)
         }
     }
 
@@ -555,7 +568,7 @@
     $effect(() => {
         if (projectId && componentId) {
             loadColorPalette()
-            loadCurrentColorFromDoms()
+            loadCurrentColor()
         }
     })
 
