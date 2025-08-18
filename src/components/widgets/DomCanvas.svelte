@@ -188,10 +188,6 @@
             })
             if (success) {
                 console.log('已保存canvas状态:', canvasState)
-                // 验证保存是否成功
-                console.log(`【数据库交互】验证画布状态保存: 项目ID=${projectId}`)
-                const verify = await DexieService.getRecord<any>('qi-qiao-ban', 'projects', projectId)
-                console.log('验证保存结果:', verify?.canvasState)
             } else {
                 console.warn('保存canvas状态失败，可能项目不存在')
             }
@@ -201,14 +197,33 @@
     }
 
     // 当画布状态变化时自动保存
+    let isInitialLoad = $state(true)
+    let lastSavedState = $state<string>('')
+    
     $effect(() => {
         // 依赖画布状态，状态变化时触发保存
         const currentState = { x: offsetX, y: offsetY, scale: scale }
-        if (projectId) {
+        const stateStr = JSON.stringify(currentState)
+        
+        if (projectId && !isInitialLoad && stateStr !== lastSavedState) {
             // 防抖保存，避免频繁更新
             const timeout = setTimeout(() => {
                 saveCanvasState()
+                lastSavedState = stateStr
             }, 300)
+            return () => clearTimeout(timeout)
+        }
+    })
+
+    // 在项目加载完成后重置isInitialLoad标志
+    $effect(() => {
+        if (isLoading === false && projectId) {
+            // 延迟重置，确保所有初始状态都已应用
+            const timeout = setTimeout(() => {
+                isInitialLoad = false
+                // 初始化最后保存的状态，避免首次保存
+                lastSavedState = JSON.stringify({ x: offsetX, y: offsetY, scale: scale })
+            }, 100)
             return () => clearTimeout(timeout)
         }
     })
