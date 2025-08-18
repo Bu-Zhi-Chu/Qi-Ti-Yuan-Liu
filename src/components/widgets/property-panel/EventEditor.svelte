@@ -24,7 +24,7 @@
 <style>
     .event-editor {
         padding: calc(20px * var(--scale-ratio, 1));
-        background: #0f172a;
+        /* 背景继承父级渐变 */
         color: #e2e8f0;
     }
 

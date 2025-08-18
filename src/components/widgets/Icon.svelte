@@ -28,6 +28,7 @@
         EyeOff: () => import('@lucide/svelte/icons/eye-off'),
         Copy: () => import('@lucide/svelte/icons/copy'),
         Move: () => import('@lucide/svelte/icons/move'),
+        LocateFixed: () => import('@lucide/svelte/icons/locate-fixed'),
         Rotate: () => import('@lucide/svelte/icons/rotate-cw'),
         ZoomIn: () => import('@lucide/svelte/icons/zoom-in'),
         ZoomOut: () => import('@lucide/svelte/icons/zoom-out'),
@@ -91,6 +92,7 @@
         Flag: () => import('@lucide/svelte/icons/flag'),
         Tag: () => import('@lucide/svelte/icons/tag'),
         Bookmark: () => import('@lucide/svelte/icons/bookmark'),
+        BookA: () => import('@lucide/svelte/icons/book-a'),
         Print: () => import('@lucide/svelte/icons/printer'),
         Export: () => import('@lucide/svelte/icons/download'),
         Import: () => import('@lucide/svelte/icons/upload'),
@@ -99,11 +101,25 @@
         ArrowUp: () => import('@lucide/svelte/icons/arrow-up'),
         ArrowDown: () => import('@lucide/svelte/icons/arrow-down'),
         ArrowLeft: () => import('@lucide/svelte/icons/arrow-left'),
-        ArrowRight: () => import('@lucide/svelte/icons/arrow-right')
+        ArrowRight: () => import('@lucide/svelte/icons/arrow-right'),
+        Sliders: () => import('@lucide/svelte/icons/sliders'),
+        PictureInPicture: () => import('@lucide/svelte/icons/picture-in-picture'),
+        SquareDashed: () => import('@lucide/svelte/icons/square-dashed'),
+        MousePointerClick: () => import('@lucide/svelte/icons/mouse-pointer-click'),
+        GalleryHorizontal: () => import('@lucide/svelte/icons/gallery-horizontal'),
+        Workflow: () => import('@lucide/svelte/icons/workflow')
+    }
+
+    /** 将 PascalCase / camelCase 转为 kebab-case，便于按文件名加载 */
+    function kebabCase(str: string) {
+        return str
+            .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+            .replace(/[\s_]+/g, '-')
+            .toLowerCase()
     }
 
     interface Props {
-        name: keyof typeof iconMap
+        name: string
         size?: number
         color?: string
         strokeWidth?: number
@@ -118,7 +134,13 @@
     $effect(() => {
         async function loadIcon() {
             try {
-                const module = await iconMap[name]()
+                let module: any
+                if (name in iconMap) {
+                    module = await iconMap[name as keyof typeof iconMap]()
+                } else {
+                    const kebab = kebabCase(name)
+                    module = await import(`@lucide/svelte/icons/${kebab}`)
+                }
                 IconComponent = module.default
             } catch (error) {
                 console.error(`Failed to load icon: ${name}`, error)
