@@ -100,7 +100,7 @@
             createdAt: now,
             updatedAt: now,
             canvasState: { x: 0, y: 0, scale: 1 },
-            mode: 'normal' // 默认模式为正常模式，不是编辑模式
+            mode: 'editing' // 默认模式为编辑模式，用户进入编辑器时显示工作区
         })
 
         // 生成默认项目缩略图

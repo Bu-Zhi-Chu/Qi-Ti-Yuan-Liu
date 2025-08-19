@@ -83,9 +83,14 @@
 
     // 注册/注销快捷键
     let unregister: () => void
-    onMount(() => {
+    onMount(async () => {
+        // 初始化项目模式
+        await initializeProjectMode()
+
         unregister = registerShortcut('Ctrl+E', () => {
             showWorkspace = !showWorkspace
+            // 切换工作区时更新项目模式
+            updateProjectMode()
         })
     })
 
@@ -93,8 +98,32 @@
         unregister && unregister()
     })
 
+    // 初始化项目模式
+    async function initializeProjectMode() {
+        const projectId = window.location.hash.split('/').pop()
+        if (!projectId) return
+
+        try {
+            const project = await DexieService.getRecord<any>('qi-qiao-ban', 'projects', projectId)
+            if (project && project.mode) {
+                // 根据数据库中的模式设置工作区显示状态
+                showWorkspace = project.mode === 'editing'
+                console.log(`项目模式已初始化为: ${project.mode}`)
+            } else {
+                // 如果没有模式字段，默认为编辑模式
+                showWorkspace = true
+                await updateProjectMode() // 保存默认模式
+            }
+        } catch (error) {
+            console.error('初始化项目模式失败:', error)
+            // 出错时默认为编辑模式
+            showWorkspace = true
+        }
+    }
+
     // 手动保存功能
     import { saveDomTreeToProjectsData } from '../../services/repository/dom-tree.store.svelte'
+    import DexieService from '../../services/database/dexie-service'
 
     async function handleManualSave() {
         const success = await saveDomTreeToProjectsData()
@@ -102,6 +131,23 @@
             console.log('项目数据已手动保存')
         } else {
             console.error('保存失败')
+        }
+    }
+
+    // 更新项目模式
+    async function updateProjectMode() {
+        // 从URL获取项目ID
+        const projectId = window.location.hash.split('/').pop()
+        if (!projectId) return
+
+        const newMode = showWorkspace ? 'editing' : 'normal'
+        try {
+            const success = await DexieService.updateRecord('qi-qiao-ban', 'projects', projectId, { mode: newMode })
+            if (success) {
+                console.log(`项目模式已更新为: ${newMode}`)
+            }
+        } catch (error) {
+            console.error('更新项目模式失败:', error)
         }
     }
 </script>
