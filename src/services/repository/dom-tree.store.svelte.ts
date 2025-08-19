@@ -217,6 +217,10 @@ export async function loadDomTreeFromDatabase(projectId: string): Promise<boolea
     if (domTreeFromDoms) {
       Object.assign(domTreeData, domTreeFromDoms);
       console.log('【数据库交互】已从doms表加载DOM树数据');
+      // 重新设置选中节点以触发属性面板刷新
+      await setSelectedId(null);
+      // 下一事件循环强制选中 root，避免被后续覆盖
+      setTimeout(() => setSelectedId('root'), 0);
       return true;
     }
 
@@ -243,6 +247,9 @@ export async function loadDomTreeFromDatabase(projectId: string): Promise<boolea
         // 同时迁移到doms表
         await saveDomNodesToDomsTable(projectId, domTreeData);
 
+        // 重新设置选中节点以触发属性面板刷新
+        await setSelectedId(null);
+        setTimeout(() => setSelectedId('root'), 0);
         return true;
       } catch (error) {
         console.error('解析domTree数据失败:', error);
