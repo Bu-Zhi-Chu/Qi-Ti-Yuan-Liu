@@ -32,13 +32,15 @@
     const tabs = [
         { key: 'attr', icon: 'Sliders', title: '主要属性' },
         { key: 'position', icon: 'Move', title: '定位样式' },
+        { key: 'layout', icon: 'Layout', title: '布局样式' },
         { key: 'background', icon: 'Image', title: '背景样式' },
+        { key: 'text', icon: 'Type', title: '文字样式' },
         { key: 'border', icon: 'SquareDashed', title: '边框样式' },
         { key: 'event', icon: 'Workflow', title: '事件处理' }
     ] as const
 
     // 根据选中节点的 activePropertyTab 动态设置 activeTab
-    let activeTab: 'attr' | 'position' | 'background' | 'border' | 'event' = $derived.by(() => {
+    let activeTab: 'attr' | 'position' | 'layout' | 'background' | 'text' | 'border' | 'event' = $derived.by(() => {
         const currentSelectedId = selectedId()
 
         if (!currentSelectedId) return 'attr'

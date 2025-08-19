@@ -17,8 +17,11 @@
     import { selectedId as getSelectedId } from '../../../services/repository/dom-tree.store.svelte'
 
     // Runes props - 使用 $props 代替 export let
-    let { activeTab = 'attr' } = $props<{
+    // 新增 showToolbar，用于控制是否显示顶部工具栏，默认为 true
+    let { activeTab = 'attr', showToolbar = true, onTabChange } = $props<{
         activeTab?: 'attr' | 'position' | 'background' | 'border' | 'text' | 'layout' | 'event'
+        showToolbar?: boolean
+        onTabChange?: (tab: 'attr' | 'position' | 'background' | 'border' | 'text' | 'layout' | 'event') => void
     }>()
 
     // 当前选中节点 id，响应式刷新

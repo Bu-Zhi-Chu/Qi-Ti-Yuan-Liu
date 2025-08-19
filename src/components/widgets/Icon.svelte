@@ -14,6 +14,7 @@
 
 <script lang="ts">
     // 动态导入所有图标，支持tree-shaking
+    // 静态图标映射（常用图标优先，以便 tree-shaking）
     const iconMap = {
         Home: () => import('@lucide/svelte/icons/home'),
         Plus: () => import('@lucide/svelte/icons/plus'),
@@ -106,10 +107,16 @@
         SquareDashed: () => import('@lucide/svelte/icons/square-dashed'),
         MousePointerClick: () => import('@lucide/svelte/icons/mouse-pointer-click'),
         GalleryHorizontal: () => import('@lucide/svelte/icons/gallery-horizontal'),
+        Layout: () => import('@lucide/svelte/icons/layout'),
+        Type: () => import('@lucide/svelte/icons/type'),
         Workflow: () => import('@lucide/svelte/icons/workflow')
     }
 
     /** 将 PascalCase / camelCase 转为 kebab-case，便于按文件名加载 */
+    // 由于 Vite 的 import.meta.glob 仅支持以 "./" 或 "/" 开头的路径，
+    // node_modules 内的包路径无法使用 glob 方式收集。这里直接依赖运行时动态导入，
+    // 并在路径前加上 /* @vite-ignore */ 注释，避免构建警告。
+
     function kebabCase(str: string) {
         return str
             .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
@@ -138,7 +145,13 @@
                     module = await iconMap[name as keyof typeof iconMap]()
                 } else {
                     const kebab = kebabCase(name)
-                    module = await import(/* @vite-ignore */ `@lucide/svelte/icons/${kebab}`)
+                    try {
+                        // 优先尝试带 .js 后缀的路径（符合包 exports 定义）
+                        module = await import(/* @vite-ignore */ `@lucide/svelte/icons/${kebab}.js`)
+                    } catch (_) {
+                        // 若失败再尝试无后缀路径，兼容老版本包结构
+                        module = await import(/* @vite-ignore */ `@lucide/svelte/icons/${kebab}`)
+                    }
                 }
                 IconComponent = module.default
             } catch (error) {
