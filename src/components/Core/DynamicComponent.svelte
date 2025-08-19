@@ -6,14 +6,22 @@
 -->
 <script lang="ts">
     import type { Component, Snippet } from 'svelte'
-    import blocksConfig from '../blocks/blocks.config.json'
+    import { onMount } from 'svelte'
 
-    // 根据 JSON 配置直接生成组件映射（动态 import）
-    // 使用 /* @vite-ignore */ 提示 Vite 允许基于变量路径的动态加载
-    const componentMap: Record<string, () => Promise<{ default: Component }>> = {}
-    for (const item of blocksConfig) {
-        componentMap[item.type] = () => import(/* @vite-ignore */ item.path)
-    }
+    let blocksConfig: any = null
+    let componentMap: Record<string, () => Promise<{ default: Component }>> = {}
+
+    onMount(async () => {
+        // 使用动态导入避免静态导入冲突
+        const config = await import('../blocks/blocks.config.json', { assert: { type: 'json' } })
+        blocksConfig = config.default
+
+        // 根据 JSON 配置直接生成组件映射（动态 import）
+        // 使用 /* @vite-ignore */ 提示 Vite 允许基于变量路径的动态加载
+        for (const item of blocksConfig) {
+            componentMap[item.type] = () => import(/* @vite-ignore */ item.path)
+        }
+    })
 
     // 组件属性定义
     interface Props {

@@ -58,7 +58,27 @@ export default defineConfig({
     },
     build: {
         rollupOptions: {
-            // 移除study目录的构建排除，让Vite正常处理
+            output: {
+                manualChunks: (id) => {
+                    if (id.includes('node_modules')) {
+                        if (id.includes('svelte')) return 'vendor-svelte';
+                        if (id.includes('lucide')) return 'vendor-lucide';
+                        return 'vendor';
+                    }
+                    if (id.includes('src/services/')) {
+                        if (id.includes('dom-tree') || id.includes('property-panel') || id.includes('project-thumbnail')) {
+                            return 'core-services';
+                        }
+                    }
+                }
+            }
+        },
+        chunkSizeWarningLimit: 1000 // 将警告阈值提高到1MB
+    },
+    // 确保JSON导入的一致性
+    resolve: {
+        alias: {
+            '@': '/src'
         }
     }
 })

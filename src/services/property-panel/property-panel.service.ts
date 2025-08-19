@@ -5,7 +5,7 @@
  */
 
 import type { DomNode } from '../../types/dom-node.types';
-import { domTree, findNodeById } from '../repository/dom-tree.store.svelte';
+import { domTree, findNodeById, updateNodeProperties, updateNodeStyles } from '../repository/dom-tree.store.svelte';
 
 // -------------------- 类型定义 --------------------
 export interface PropPatch {
@@ -75,27 +75,24 @@ export function updateNodeProps(id: string, patch: PropPatch): boolean {
   }
 
   // 触发自动保存到数据库
-  import('../repository/dom-tree.store.svelte').then(({ updateNodeProperties, updateNodeStyles }) => {
-    if (patch.attributes) {
-      const validAttributes: Record<string, string> = {};
-      Object.entries(patch.attributes).forEach(([key, val]) => {
-        if (val !== undefined) {
-          validAttributes[key] = val;
-        }
-      });
-      updateNodeProperties(id, validAttributes);
-    }
-    if (patch.styles) {
-      const validStyles: Record<string, string> = {};
-      Object.entries(patch.styles).forEach(([key, val]) => {
-        if (val !== undefined) {
-          validStyles[key] = val;
-        }
-      });
-      updateNodeStyles(id, validStyles);
-    }
-
-  });
+  if (patch.attributes) {
+    const validAttributes: Record<string, string> = {};
+    Object.entries(patch.attributes).forEach(([key, val]) => {
+      if (val !== undefined) {
+        validAttributes[key] = val;
+      }
+    });
+    updateNodeProperties(id, validAttributes);
+  }
+  if (patch.styles) {
+    const validStyles: Record<string, string> = {};
+    Object.entries(patch.styles).forEach(([key, val]) => {
+      if (val !== undefined) {
+        validStyles[key] = val;
+      }
+    });
+    updateNodeStyles(id, validStyles);
+  }
 
   return true;
 }

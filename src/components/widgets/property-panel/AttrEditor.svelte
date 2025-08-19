@@ -5,7 +5,7 @@
 <script lang="ts">
     import { getNodeProps, updateNodeProps } from '../../../services/property-panel/property-panel.service'
     import { findNodeById, domTree, updateNodeProperties } from '../../../services/repository/dom-tree.store.svelte'
-    import blocksConfig from '../../blocks/blocks.config.json' assert { type: 'json' }
+    import { onMount } from 'svelte'
     import { getElementByNodeId } from '../../../services/utils/dom-geometry.util'
     import { getScaleRatio } from '../../../services/utils/get-scale-ratio.util'
 
@@ -14,7 +14,12 @@
         nameZh: string
         path: string
     }
-    const componentOptions: BlockItem[] = blocksConfig as BlockItem[]
+    let componentOptions: BlockItem[] = []
+
+    onMount(async () => {
+        const config = await import('../../blocks/blocks.config.json', { assert: { type: 'json' } })
+        componentOptions = config.default as BlockItem[]
+    })
 
     // 当前选中节点 id（来自外部）
     export let selectedId: string | null = null
