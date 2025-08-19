@@ -114,7 +114,7 @@
 
     async function loadProjectMode(projectId: string) {
         try {
-            const project = await DexieService.getRecord('qi-qiao-ban', 'projects', projectId) as { mode?: 'edit' | 'normal' }
+            const project = (await DexieService.getRecord('qi-qiao-ban', 'projects', projectId)) as { mode?: 'edit' | 'normal' }
             if (project && project.mode) {
                 projectMode = project.mode
                 showWorkspace = project.mode === 'edit'
@@ -144,8 +144,6 @@
             console.error('保存失败')
         }
     }
-
-
 </script>
 
 <!-- 背景 -->
@@ -162,7 +160,6 @@
         <div style="display: flex;align-items: center;justify-content: flex-start;gap: 10px;padding: 0 10px;width: 100%;height: 4%;background: rgba(1, 255, 255, 0.3);pointer-events: auto;">
             <button onclick={handleManualSave} style="padding: calc(4px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));background: none;border: none;color: white;cursor: pointer;font-size: calc(12px * var(--scale-ratio, 1));">保存</button>
             <button onclick={() => (window.location.href = '/')} style="padding: calc(4px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));background: none;border: none;color: white;cursor: pointer;font-size: calc(12px * var(--scale-ratio, 1));">首页</button>
-
         </div>
 
         <div style="display: flex;justify-content: space-between;width: 100%;height: 94%;">

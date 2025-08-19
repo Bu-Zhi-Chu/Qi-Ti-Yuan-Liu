@@ -418,7 +418,6 @@
         font-size: calc(13px * var(--scale-ratio, 1));
         font-weight: 500;
         color: #94a3b8;
-        text-align: right;
     }
 
     input,
@@ -442,7 +441,7 @@
         box-shadow: 0 0 0 calc(3px * var(--scale-ratio, 1)) rgba(255, 255, 255, 0.1);
     }
     select option {
-        background: #1e293b;
+        background: rgba(255, 255, 255, 0.1);
         color: #e2e8f0;
     }
 

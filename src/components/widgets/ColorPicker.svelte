@@ -750,7 +750,7 @@
         top: 100%;
         left: 0;
         margin-top: calc(4px * var(--scale-ratio, 1));
-        background: #1e293b;
+        background: rgba(255, 255, 255, 0.1);
         border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.2);
         border-radius: calc(8px * var(--scale-ratio, 1));
         padding: calc(16px * var(--scale-ratio, 1));
