@@ -4,34 +4,34 @@
   提供布局相关属性的可视化编辑界面
 -->
 <script lang="ts">
-    import { getNodeProps, updateNodeProps } from '../../../services/property-panel/property-panel.service';
-    import { onMount } from 'svelte';
+    import { getNodeProps, updateNodeProps } from '../../../services/property-panel/property-panel.service'
+    import { onMount } from 'svelte'
 
     interface Props {
-        selectedId: string | null;
+        selectedId: string | null
     }
 
-    let { selectedId }: Props = $props();
+    let { selectedId }: Props = $props()
 
     // display属性状态
-    let currentDisplay = $state('block');
+    let currentDisplay = $state('block')
 
     // flex属性状态
-    let currentFlexDirection = $state('row');
-    let currentJustifyContent = $state('flex-start');
-    let currentAlignItems = $state('stretch');
-    let currentAlignContent = $state('stretch');
-    let currentFlexWrap = $state('nowrap');
-    let currentGap = $state('');
-    let currentRowGap = $state('');
-    let currentColumnGap = $state('');
+    let currentFlexDirection = $state('row')
+    let currentJustifyContent = $state('flex-start')
+    let currentAlignItems = $state('stretch')
+    let currentAlignContent = $state('stretch')
+    let currentFlexWrap = $state('nowrap')
+    let currentGap = $state('')
+    let currentRowGap = $state('')
+    let currentColumnGap = $state('')
 
     // grid属性状态
-    let currentGridTemplateColumns = $state('');
-    let currentGridTemplateRows = $state('');
-    let currentGridGap = $state('');
-    let currentGridColumnGap = $state('');
-    let currentGridRowGap = $state('');
+    let currentGridTemplateColumns = $state('')
+    let currentGridTemplateRows = $state('')
+    let currentGridGap = $state('')
+    let currentGridColumnGap = $state('')
+    let currentGridRowGap = $state('')
 
     // 可用的display值
     const displayOptions = [
@@ -40,62 +40,62 @@
         { value: 'inline-block', label: '行内块级 (inline-block)' },
         { value: 'flex', label: '弹性 (flex)' },
         { value: 'grid', label: '网格 (grid)' }
-    ];
+    ]
 
     // 初始化display值
     $effect(() => {
         if (selectedId) {
-            const props = getNodeProps(selectedId);
+            const props = getNodeProps(selectedId)
             if (props) {
-                currentDisplay = props.styles?.display || 'block';
-                
+                currentDisplay = props.styles?.display || 'block'
+
                 // 初始化flex属性
-                currentFlexDirection = props.styles?.flexDirection || 'row';
-                currentJustifyContent = props.styles?.justifyContent || 'flex-start';
-                currentAlignItems = props.styles?.alignItems || 'stretch';
-                currentFlexWrap = props.styles?.flexWrap || 'nowrap';
-                
+                currentFlexDirection = props.styles?.flexDirection || 'row'
+                currentJustifyContent = props.styles?.justifyContent || 'flex-start'
+                currentAlignItems = props.styles?.alignItems || 'stretch'
+                currentFlexWrap = props.styles?.flexWrap || 'nowrap'
+
                 // 初始化grid属性
-                currentGridTemplateColumns = props.styles?.gridTemplateColumns || '';
-                currentGridTemplateRows = props.styles?.gridTemplateRows || '';
-                currentGridGap = props.styles?.gap || props.styles?.gridGap || '';
-                currentGridColumnGap = props.styles?.columnGap || props.styles?.gridColumnGap || '';
-                currentGridRowGap = props.styles?.rowGap || props.styles?.gridRowGap || '';
+                currentGridTemplateColumns = props.styles?.gridTemplateColumns || ''
+                currentGridTemplateRows = props.styles?.gridTemplateRows || ''
+                currentGridGap = props.styles?.gap || props.styles?.gridGap || ''
+                currentGridColumnGap = props.styles?.columnGap || props.styles?.gridColumnGap || ''
+                currentGridRowGap = props.styles?.rowGap || props.styles?.gridRowGap || ''
             }
         }
-    });
+    })
 
     // 处理display属性变更
     function handleDisplayChange(newValue: string) {
-        if (!selectedId) return;
-        
+        if (!selectedId) return
+
         updateNodeProps(selectedId, {
             styles: {
                 display: newValue
             }
-        });
+        })
     }
 
     // 处理flex属性变更
     function handleFlexPropChange(prop: string, value: string) {
-        if (!selectedId) return;
-        
+        if (!selectedId) return
+
         updateNodeProps(selectedId, {
             styles: {
                 [prop]: value
             }
-        });
+        })
     }
 
     // 处理grid属性变更
     function handleGridPropChange(prop: string, value: string) {
-        if (!selectedId) return;
-        
+        if (!selectedId) return
+
         updateNodeProps(selectedId, {
             styles: {
                 [prop]: value
             }
-        });
+        })
     }
 </script>
 
@@ -107,11 +107,7 @@
             <div class="layout-item">
                 <label for="node-display">显示类型</label>
                 <div class="select-wrapper">
-                    <select 
-                        id="node-display" 
-                        bind:value={currentDisplay} 
-                        onchange={(e) => handleDisplayChange(e.currentTarget.value)}
-                    >
+                    <select id="node-display" bind:value={currentDisplay} onchange={(e) => handleDisplayChange(e.currentTarget.value)}>
                         {#each displayOptions as option}
                             <option value={option.value}>{option.label}</option>
                         {/each}
@@ -125,11 +121,7 @@
                 <div class="layout-item">
                     <label for="node-flex-direction">排列方向</label>
                     <div class="select-wrapper">
-                        <select 
-                            id="node-flex-direction" 
-                            bind:value={currentFlexDirection} 
-                            onchange={(e) => handleFlexPropChange('flexDirection', e.currentTarget.value)}
-                        >
+                        <select id="node-flex-direction" bind:value={currentFlexDirection} onchange={(e) => handleFlexPropChange('flexDirection', e.currentTarget.value)}>
                             <option value="row">水平 (row)</option>
                             <option value="column">垂直 (column)</option>
                             <option value="row-reverse">水平反向 (row-reverse)</option>
@@ -142,11 +134,7 @@
                 <div class="layout-item">
                     <label for="node-justify-content">主轴对齐</label>
                     <div class="select-wrapper">
-                        <select 
-                            id="node-justify-content" 
-                            bind:value={currentJustifyContent} 
-                            onchange={(e) => handleFlexPropChange('justifyContent', e.currentTarget.value)}
-                        >
+                        <select id="node-justify-content" bind:value={currentJustifyContent} onchange={(e) => handleFlexPropChange('justifyContent', e.currentTarget.value)}>
                             <option value="flex-start">起始对齐</option>
                             <option value="flex-end">末尾对齐</option>
                             <option value="center">居中对齐</option>
@@ -161,11 +149,7 @@
                 <div class="layout-item">
                     <label for="node-align-items">副轴对齐</label>
                     <div class="select-wrapper">
-                        <select 
-                            id="node-align-items" 
-                            bind:value={currentAlignItems} 
-                            onchange={(e) => handleFlexPropChange('alignItems', e.currentTarget.value)}
-                        >
+                        <select id="node-align-items" bind:value={currentAlignItems} onchange={(e) => handleFlexPropChange('alignItems', e.currentTarget.value)}>
                             <option value="stretch">拉伸对齐</option>
                             <option value="flex-start">起始对齐</option>
                             <option value="flex-end">末尾对齐</option>
@@ -179,11 +163,7 @@
                 <div class="layout-item">
                     <label for="node-flex-wrap">换行设置</label>
                     <div class="select-wrapper">
-                        <select 
-                            id="node-flex-wrap" 
-                            bind:value={currentFlexWrap} 
-                            onchange={(e) => handleFlexPropChange('flexWrap', e.currentTarget.value)}
-                        >
+                        <select id="node-flex-wrap" bind:value={currentFlexWrap} onchange={(e) => handleFlexPropChange('flexWrap', e.currentTarget.value)}>
                             <option value="nowrap">不换行</option>
                             <option value="wrap">换行</option>
                             <option value="wrap-reverse">反向换行</option>
@@ -195,11 +175,7 @@
                 <div class="layout-item">
                     <label for="node-align-content">多轴对齐</label>
                     <div class="select-wrapper">
-                        <select 
-                            id="node-align-content" 
-                            bind:value={currentAlignContent} 
-                            onchange={(e) => handleFlexPropChange('alignContent', e.currentTarget.value)}
-                        >
+                        <select id="node-align-content" bind:value={currentAlignContent} onchange={(e) => handleFlexPropChange('alignContent', e.currentTarget.value)}>
                             <option value="stretch">拉伸对齐</option>
                             <option value="flex-start">起始对齐</option>
                             <option value="flex-end">末尾对齐</option>
@@ -214,54 +190,90 @@
 
                 <div class="layout-item">
                     <label for="node-flex-gap">间距设置</label>
-                    <input 
-                        id="node-flex-gap" 
-                        type="number" 
-                        step="1" 
-                        bind:value={currentGap} 
+                    <input
+                        id="node-flex-gap"
+                        type="number"
+                        step="1"
+                        bind:value={currentGap}
                         oninput={(e) => handleFlexPropChange('gap', e.currentTarget.value + 'px')}
-                        onwheel={(e) => { e.preventDefault(); const val = parseInt(currentGap) || 0; currentGap = (val + (e.deltaY < 0 ? 1 : -1)) + ''; }}
-                        onkeydown={(e) => {
-                            if (e.key === 'ArrowUp') { e.preventDefault(); const val = parseInt(currentGap) || 0; currentGap = (val + 1) + ''; }
-                            if (e.key === 'ArrowDown') { e.preventDefault(); const val = parseInt(currentGap) || 0; currentGap = (val - 1) + ''; }
+                        onwheel={(e) => {
+                            e.preventDefault()
+                            const val = parseInt(currentGap) || 0
+                            currentGap = val + (e.deltaY < 0 ? 1 : -1) + ''
                         }}
-                        placeholder="间距..." 
+                        onkeydown={(e) => {
+                            if (e.key === 'ArrowUp') {
+                                e.preventDefault()
+                                const val = parseInt(currentGap) || 0
+                                currentGap = val + 1 + ''
+                            }
+                            if (e.key === 'ArrowDown') {
+                                e.preventDefault()
+                                const val = parseInt(currentGap) || 0
+                                currentGap = val - 1 + ''
+                            }
+                        }}
+                        placeholder="间距..."
                     />
                     <span class="unit-label">px</span>
                 </div>
 
                 <div class="layout-item">
                     <label for="node-flex-row-gap">行间距值</label>
-                    <input 
-                        id="node-flex-row-gap" 
-                        type="number" 
-                        step="1" 
-                        bind:value={currentRowGap} 
+                    <input
+                        id="node-flex-row-gap"
+                        type="number"
+                        step="1"
+                        bind:value={currentRowGap}
                         oninput={(e) => handleFlexPropChange('rowGap', e.currentTarget.value + 'px')}
-                        onwheel={(e) => { e.preventDefault(); const val = parseInt(currentRowGap) || 0; currentRowGap = (val + (e.deltaY < 0 ? 1 : -1)) + ''; }}
-                        onkeydown={(e) => {
-                            if (e.key === 'ArrowUp') { e.preventDefault(); const val = parseInt(currentRowGap) || 0; currentRowGap = (val + 1) + ''; }
-                            if (e.key === 'ArrowDown') { e.preventDefault(); const val = parseInt(currentRowGap) || 0; currentRowGap = (val - 1) + ''; }
+                        onwheel={(e) => {
+                            e.preventDefault()
+                            const val = parseInt(currentRowGap) || 0
+                            currentRowGap = val + (e.deltaY < 0 ? 1 : -1) + ''
                         }}
-                        placeholder="行间距..." 
+                        onkeydown={(e) => {
+                            if (e.key === 'ArrowUp') {
+                                e.preventDefault()
+                                const val = parseInt(currentRowGap) || 0
+                                currentRowGap = val + 1 + ''
+                            }
+                            if (e.key === 'ArrowDown') {
+                                e.preventDefault()
+                                const val = parseInt(currentRowGap) || 0
+                                currentRowGap = val - 1 + ''
+                            }
+                        }}
+                        placeholder="行间距..."
                     />
                     <span class="unit-label">px</span>
                 </div>
 
                 <div class="layout-item">
                     <label for="node-flex-column-gap">列间距值</label>
-                    <input 
-                        id="node-flex-column-gap" 
-                        type="number" 
-                        step="1" 
-                        bind:value={currentColumnGap} 
+                    <input
+                        id="node-flex-column-gap"
+                        type="number"
+                        step="1"
+                        bind:value={currentColumnGap}
                         oninput={(e) => handleFlexPropChange('columnGap', e.currentTarget.value + 'px')}
-                        onwheel={(e) => { e.preventDefault(); const val = parseInt(currentColumnGap) || 0; currentColumnGap = (val + (e.deltaY < 0 ? 1 : -1)) + ''; }}
-                        onkeydown={(e) => {
-                            if (e.key === 'ArrowUp') { e.preventDefault(); const val = parseInt(currentColumnGap) || 0; currentColumnGap = (val + 1) + ''; }
-                            if (e.key === 'ArrowDown') { e.preventDefault(); const val = parseInt(currentColumnGap) || 0; currentColumnGap = (val - 1) + ''; }
+                        onwheel={(e) => {
+                            e.preventDefault()
+                            const val = parseInt(currentColumnGap) || 0
+                            currentColumnGap = val + (e.deltaY < 0 ? 1 : -1) + ''
                         }}
-                        placeholder="列间距..." 
+                        onkeydown={(e) => {
+                            if (e.key === 'ArrowUp') {
+                                e.preventDefault()
+                                const val = parseInt(currentColumnGap) || 0
+                                currentColumnGap = val + 1 + ''
+                            }
+                            if (e.key === 'ArrowDown') {
+                                e.preventDefault()
+                                const val = parseInt(currentColumnGap) || 0
+                                currentColumnGap = val - 1 + ''
+                            }
+                        }}
+                        placeholder="列间距..."
                     />
                     <span class="unit-label">px</span>
                 </div>
@@ -271,78 +283,102 @@
             {#if currentDisplay === 'grid'}
                 <div class="layout-item">
                     <label for="node-grid-columns">列模板项</label>
-                    <input 
-                        id="node-grid-columns" 
-                        type="text" 
-                        bind:value={currentGridTemplateColumns} 
-                        oninput={(e) => handleGridPropChange('gridTemplateColumns', e.currentTarget.value)}
-                        placeholder="例: 1fr 2fr 1fr"
-                    />
+                    <input id="node-grid-columns" type="text" bind:value={currentGridTemplateColumns} oninput={(e) => handleGridPropChange('gridTemplateColumns', e.currentTarget.value)} placeholder="例: 1fr 2fr 1fr" />
                     <span class="unit-placeholder"></span>
                 </div>
 
                 <div class="layout-item">
                     <label for="node-grid-rows">行模板项</label>
-                    <input 
-                        id="node-grid-rows" 
-                        type="text" 
-                        bind:value={currentGridTemplateRows} 
-                        oninput={(e) => handleGridPropChange('gridTemplateRows', e.currentTarget.value)}
-                        placeholder="例: auto 100px auto"
-                    />
+                    <input id="node-grid-rows" type="text" bind:value={currentGridTemplateRows} oninput={(e) => handleGridPropChange('gridTemplateRows', e.currentTarget.value)} placeholder="例: auto 100px auto" />
                     <span class="unit-placeholder"></span>
                 </div>
 
                 <div class="layout-item">
                     <label for="node-grid-gap">间距设置</label>
-                    <input 
-                        id="node-grid-gap" 
-                        type="number" 
-                        step="1" 
-                        bind:value={currentGridGap} 
+                    <input
+                        id="node-grid-gap"
+                        type="number"
+                        step="1"
+                        bind:value={currentGridGap}
                         oninput={(e) => handleGridPropChange('gap', e.currentTarget.value + 'px')}
-                        onwheel={(e) => { e.preventDefault(); const val = parseInt(currentGridGap) || 0; currentGridGap = (val + (e.deltaY < 0 ? 1 : -1)) + ''; }}
-                        onkeydown={(e) => {
-                            if (e.key === 'ArrowUp') { e.preventDefault(); const val = parseInt(currentGridGap) || 0; currentGridGap = (val + 1) + ''; }
-                            if (e.key === 'ArrowDown') { e.preventDefault(); const val = parseInt(currentGridGap) || 0; currentGridGap = (val - 1) + ''; }
+                        onwheel={(e) => {
+                            e.preventDefault()
+                            const val = parseInt(currentGridGap) || 0
+                            currentGridGap = val + (e.deltaY < 0 ? 1 : -1) + ''
                         }}
-                        placeholder="间距..." 
+                        onkeydown={(e) => {
+                            if (e.key === 'ArrowUp') {
+                                e.preventDefault()
+                                const val = parseInt(currentGridGap) || 0
+                                currentGridGap = val + 1 + ''
+                            }
+                            if (e.key === 'ArrowDown') {
+                                e.preventDefault()
+                                const val = parseInt(currentGridGap) || 0
+                                currentGridGap = val - 1 + ''
+                            }
+                        }}
+                        placeholder="间距..."
                     />
                     <span class="unit-label">px</span>
                 </div>
 
                 <div class="layout-item">
                     <label for="node-grid-column-gap">列间距值</label>
-                    <input 
-                        id="node-grid-column-gap" 
-                        type="number" 
-                        step="1" 
-                        bind:value={currentGridColumnGap} 
+                    <input
+                        id="node-grid-column-gap"
+                        type="number"
+                        step="1"
+                        bind:value={currentGridColumnGap}
                         oninput={(e) => handleGridPropChange('columnGap', e.currentTarget.value + 'px')}
-                        onwheel={(e) => { e.preventDefault(); const val = parseInt(currentGridColumnGap) || 0; currentGridColumnGap = (val + (e.deltaY < 0 ? 1 : -1)) + ''; }}
-                        onkeydown={(e) => {
-                            if (e.key === 'ArrowUp') { e.preventDefault(); const val = parseInt(currentGridColumnGap) || 0; currentGridColumnGap = (val + 1) + ''; }
-                            if (e.key === 'ArrowDown') { e.preventDefault(); const val = parseInt(currentGridColumnGap) || 0; currentGridColumnGap = (val - 1) + ''; }
+                        onwheel={(e) => {
+                            e.preventDefault()
+                            const val = parseInt(currentGridColumnGap) || 0
+                            currentGridColumnGap = val + (e.deltaY < 0 ? 1 : -1) + ''
                         }}
-                        placeholder="列间距..." 
+                        onkeydown={(e) => {
+                            if (e.key === 'ArrowUp') {
+                                e.preventDefault()
+                                const val = parseInt(currentGridColumnGap) || 0
+                                currentGridColumnGap = val + 1 + ''
+                            }
+                            if (e.key === 'ArrowDown') {
+                                e.preventDefault()
+                                const val = parseInt(currentGridColumnGap) || 0
+                                currentGridColumnGap = val - 1 + ''
+                            }
+                        }}
+                        placeholder="列间距..."
                     />
                     <span class="unit-label">px</span>
                 </div>
 
                 <div class="layout-item">
                     <label for="node-grid-row-gap">行间距值</label>
-                    <input 
-                        id="node-grid-row-gap" 
-                        type="number" 
-                        step="1" 
-                        bind:value={currentGridRowGap} 
+                    <input
+                        id="node-grid-row-gap"
+                        type="number"
+                        step="1"
+                        bind:value={currentGridRowGap}
                         oninput={(e) => handleGridPropChange('rowGap', e.currentTarget.value + 'px')}
-                        onwheel={(e) => { e.preventDefault(); const val = parseInt(currentGridRowGap) || 0; currentGridRowGap = (val + (e.deltaY < 0 ? 1 : -1)) + ''; }}
-                        onkeydown={(e) => {
-                            if (e.key === 'ArrowUp') { e.preventDefault(); const val = parseInt(currentGridRowGap) || 0; currentGridRowGap = (val + 1) + ''; }
-                            if (e.key === 'ArrowDown') { e.preventDefault(); const val = parseInt(currentGridRowGap) || 0; currentGridRowGap = (val - 1) + ''; }
+                        onwheel={(e) => {
+                            e.preventDefault()
+                            const val = parseInt(currentGridRowGap) || 0
+                            currentGridRowGap = val + (e.deltaY < 0 ? 1 : -1) + ''
                         }}
-                        placeholder="行间距..." 
+                        onkeydown={(e) => {
+                            if (e.key === 'ArrowUp') {
+                                e.preventDefault()
+                                const val = parseInt(currentGridRowGap) || 0
+                                currentGridRowGap = val + 1 + ''
+                            }
+                            if (e.key === 'ArrowDown') {
+                                e.preventDefault()
+                                const val = parseInt(currentGridRowGap) || 0
+                                currentGridRowGap = val - 1 + ''
+                            }
+                        }}
+                        placeholder="行间距..."
                     />
                     <span class="unit-label">px</span>
                 </div>
@@ -384,7 +420,7 @@
         color: #94a3b8;
         text-align: right;
     }
-    
+
     input,
     select {
         flex: 1;
