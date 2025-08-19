@@ -108,7 +108,9 @@
         SquareDashed: () => import('@lucide/svelte/icons/square-dashed'),
         MousePointerClick: () => import('@lucide/svelte/icons/mouse-pointer-click'),
         GalleryHorizontal: () => import('@lucide/svelte/icons/gallery-horizontal'),
-        Workflow: () => import('@lucide/svelte/icons/workflow')
+        Workflow: () => import('@lucide/svelte/icons/workflow'),
+        Type: () => import('@lucide/svelte/icons/type'),
+        Layout: () => import('@lucide/svelte/icons/layout')
     }
 
     // 扩展图标映射，支持kebab-case命名
@@ -200,7 +202,9 @@
         'square-dashed': () => import('@lucide/svelte/icons/square-dashed'),
         'mouse-pointer-click': () => import('@lucide/svelte/icons/mouse-pointer-click'),
         'gallery-horizontal': () => import('@lucide/svelte/icons/gallery-horizontal'),
-        'workflow': () => import('@lucide/svelte/icons/workflow')
+        'workflow': () => import('@lucide/svelte/icons/workflow'),
+        'type': () => import('@lucide/svelte/icons/type'),
+        'layout': () => import('@lucide/svelte/icons/layout')
     }
 
     /** 将 PascalCase / camelCase 转为 kebab-case，便于按文件名加载 */

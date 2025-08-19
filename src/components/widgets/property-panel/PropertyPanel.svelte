@@ -75,9 +75,9 @@
         {:else if activeTab === 'border'}
             <BorderEditor selectedId={currentId} />
         {:else if activeTab === 'text'}
-            <TextEditor selectedId={currentId} />
+            <TextEditor />
         {:else if activeTab === 'layout'}
-            <LayoutEditor selectedId={currentId} />
+            <LayoutEditor />
         {:else}
             <EventEditor selectedId={currentId} />
         {/if}
