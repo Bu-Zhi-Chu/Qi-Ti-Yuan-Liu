@@ -138,7 +138,7 @@
                     module = await iconMap[name as keyof typeof iconMap]()
                 } else {
                     const kebab = kebabCase(name)
-                    module = await import(`@lucide/svelte/icons/${kebab}`)
+                    module = await import(/* @vite-ignore */ `@lucide/svelte/icons/${kebab}`)
                 }
                 IconComponent = module.default
             } catch (error) {
