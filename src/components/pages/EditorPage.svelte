@@ -24,9 +24,12 @@
 
     // 引入 DOM 树集中式状态管理
     import { domTree, selectedId } from '../../services/repository/dom-tree.store.svelte'
+    import DexieService from '../../services/database/dexie-service'
 
-    // 是否显示工作区，默认显示工作区
-    let showWorkspace = $state(true)
+    // 是否显示工作区，根据项目模式决定
+    let showWorkspace = $state(false)
+    let projectMode = $state('normal')
+    let projectId = $state('')
 
     // 属性面板标签控制
     const tabs = [
@@ -84,10 +87,47 @@
     // 注册/注销快捷键
     let unregister: () => void
     onMount(() => {
-        unregister = registerShortcut('Ctrl+E', () => {
+        // 从URL获取项目ID
+        const hash = window.location.hash
+        const match = hash.match(/\/editor\/(.+)/)
+        if (match) {
+            projectId = match[1]
+            loadProjectMode(projectId)
+        }
+
+        unregister = registerShortcut('Ctrl+E', async () => {
+            const newMode = showWorkspace ? 'normal' : 'edit'
             showWorkspace = !showWorkspace
+            
+            // 更新数据库中的mode字段
+            if (projectId) {
+                try {
+                    await DexieService.updateRecord('qi-qiao-ban', 'projects', projectId, { mode: newMode })
+                    projectMode = newMode
+                    console.log(`项目模式已更新为: ${newMode}`)
+                } catch (error) {
+                    console.error('更新项目模式失败:', error)
+                }
+            }
         })
     })
+
+    async function loadProjectMode(projectId: string) {
+        try {
+            const project = await DexieService.getRecord('qi-qiao-ban', 'projects', projectId) as { mode?: 'edit' | 'normal' }
+            if (project && project.mode) {
+                projectMode = project.mode
+                showWorkspace = project.mode === 'edit'
+            } else {
+                projectMode = 'normal'
+                showWorkspace = false
+            }
+        } catch (error) {
+            console.error('加载项目模式失败:', error)
+            projectMode = 'normal'
+            showWorkspace = false
+        }
+    }
 
     onDestroy(() => {
         unregister && unregister()
@@ -104,6 +144,8 @@
             console.error('保存失败')
         }
     }
+
+
 </script>
 
 <!-- 背景 -->
@@ -120,6 +162,7 @@
         <div style="display: flex;align-items: center;justify-content: flex-start;gap: 10px;padding: 0 10px;width: 100%;height: 4%;background: rgba(1, 255, 255, 0.3);pointer-events: auto;">
             <button onclick={handleManualSave} style="padding: calc(4px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));background: none;border: none;color: white;cursor: pointer;font-size: calc(12px * var(--scale-ratio, 1));">保存</button>
             <button onclick={() => (window.location.href = '/')} style="padding: calc(4px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));background: none;border: none;color: white;cursor: pointer;font-size: calc(12px * var(--scale-ratio, 1));">首页</button>
+
         </div>
 
         <div style="display: flex;justify-content: space-between;width: 100%;height: 94%;">

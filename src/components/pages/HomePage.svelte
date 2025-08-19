@@ -99,7 +99,8 @@
             data: {},
             createdAt: now,
             updatedAt: now,
-            canvasState: { x: 0, y: 0, scale: 1 }
+            canvasState: { x: 0, y: 0, scale: 1 },
+            mode: 'normal' // 默认模式为正常模式，不是编辑模式
         })
 
         // 生成默认项目缩略图

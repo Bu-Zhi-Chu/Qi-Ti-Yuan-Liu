@@ -30,6 +30,7 @@ interface Project {
   updatedAt: Date
   version: string
   isArchived: boolean
+  mode: 'edit' | 'normal'  // 项目模式：编辑模式或正常模式
 }
 ```
 

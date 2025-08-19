@@ -47,7 +47,7 @@ export default class DexieService {
         // 版本1：包含所有表结构，包括颜色卡表
         db.version(1).stores({
             templates: '++id, name, desc, cover, tag, thumbnailUrl',
-            projects: 'id, name, templateId, data, createdAt, updatedAt, canvasState',
+            projects: 'id, name, templateId, data, createdAt, updatedAt, canvasState, mode',
             doms: '[projectId+id], projectId, parentId, type, attributes, style, textContent'
         })
 
