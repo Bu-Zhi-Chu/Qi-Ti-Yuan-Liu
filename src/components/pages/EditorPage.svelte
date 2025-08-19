@@ -182,7 +182,7 @@
                 <!-- 属性面板 -->
                 <div style="width: 88%;height: 100%;pointer-events: auto;">
                     <!-- @ts-ignore: Work In Progress -->
-                    <PropertyPanel showToolbar={false} {activeTab} onTabChange={setTab} />
+                    <PropertyPanel {activeTab} />
                 </div>
                 <!-- 标签切换按钮栏 -->
                 <div class="prop-tabbar" style="width: 12%;height: 100%;display: flex;flex-direction: column;align-items: center;justify-content: flex-start;padding-top: calc(12px * var(--scale-ratio, 1));gap: calc(8px * var(--scale-ratio, 1));pointer-events: auto;">
