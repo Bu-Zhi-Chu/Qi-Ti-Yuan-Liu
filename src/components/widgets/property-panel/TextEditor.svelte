@@ -270,7 +270,7 @@
 
         <div class="property-group">
             <div class="property-item">
-                <label for="font-family">字体族</label>
+                <label for="font-family">文本字体</label>
                 <div class="select-wrapper">
                     <select id="font-family" bind:value={fontFamily} onchange={handlePropertyChange}>
                         {#each fontFamilyOptions as option}
@@ -331,7 +331,7 @@
             </div>
 
             <div class="property-item">
-                <label for="font-color">文字颜色</label>
+                <label for="font-color">文本颜色</label>
                 <div class="color-input-group">
                     <ColorPicker
                         value={hexToRgba(fontColor, fontOpacity)}
@@ -349,7 +349,7 @@
             </div>
 
             <div class="property-item">
-                <label for="line-height">行高</label>
+                <label for="line-height">文本行高</label>
                 <div class="input-group">
                     <input
                         id="line-height"
@@ -381,14 +381,14 @@
                                 handlePropertyChange()
                             }
                         }}
-                        placeholder="行高..."
+                        placeholder="文本行高..."
                     />
                     <button class="unit-toggle" disabled>px</button>
                 </div>
             </div>
 
             <div class="property-item">
-                <label for="text-align">文字对齐</label>
+                <label for="text-align">文本对齐</label>
                 <div class="select-wrapper">
                     <select id="text-align" bind:value={textAlign} onchange={handlePropertyChange}>
                         {#each textAlignOptions as option}
@@ -399,7 +399,7 @@
             </div>
 
             <div class="property-item">
-                <label for="text-decoration">文字装饰</label>
+                <label for="text-decoration">文本装饰</label>
                 <div class="select-wrapper">
                     <select id="text-decoration" bind:value={textDecoration} onchange={handlePropertyChange}>
                         {#each textDecorationOptions as option}

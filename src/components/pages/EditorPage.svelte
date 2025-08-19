@@ -38,7 +38,7 @@
         { key: 'position', icon: 'Move', title: '定位样式' },
         { key: 'background', icon: 'Image', title: '背景样式' },
         { key: 'border', icon: 'SquareDashed', title: '边框样式' },
-        { key: 'text', icon: 'Type', title: '文字样式' },
+        { key: 'text', icon: 'Type', title: '文本样式' },
         { key: 'event', icon: 'Workflow', title: '事件处理' }
     ] as const
 
