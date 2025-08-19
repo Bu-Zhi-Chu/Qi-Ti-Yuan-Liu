@@ -293,14 +293,14 @@
         if (calcMatch) {
             return [calcMatch[1], 'px']
         }
-        
+
         // 处理旧的倍数格式（如1.5）转换为px
         const numericValue = parseFloat(size)
         if (!isNaN(numericValue) && numericValue > 0 && numericValue <= 5) {
             // 将倍数转换为px（基于16px字体大小）
             return [Math.round(numericValue * 16 * 10) / 10 + '', 'px']
         }
-        
+
         return [size.replace('px', ''), 'px']
     }
 
