@@ -50,35 +50,7 @@
     // overflow 相关变量
     let currentOverflow: 'hidden' | 'auto' | 'scroll' | 'visible' = 'hidden'
 
-    // 当选中节点变化时，同步宽高
-    $: if (selectedId) {
-        const nodeProps = getNodeProps(selectedId)
-        const node = findNodeById(domTree, selectedId)
-        currentId = nodeProps?.attributes?.id || ''
-        currentName = nodeProps?.attributes?.name || ''
-        currentType = node?.componentType || ''
-        currentRemark = nodeProps?.attributes?.['data-remark'] || ''
-        ;[currentWidthValue, currentWidthUnit] = parseSize(nodeProps?.styles?.width)
-        ;[currentHeightValue, currentHeightUnit] = parseSize(nodeProps?.styles?.height)
-        if (currentWidthUnit === '%') currentWidthValue = String(Math.round(parseFloat(currentWidthValue) * 10) / 10)
-        if (currentHeightUnit === '%') currentHeightValue = String(Math.round(parseFloat(currentHeightValue) * 10) / 10)
-        // 同步鼠标穿透属性
-        currentPointerEvents = (nodeProps?.styles?.pointerEvents as 'auto' | 'none') || 'auto'
-        // 同步 overflow 属性
-        currentOverflow = (nodeProps?.styles?.overflow as 'hidden' | 'auto' | 'scroll' | 'visible') || 'hidden'
-    } else {
-        currentId = ''
-        currentName = ''
-        currentType = ''
-        currentRemark = ''
-        currentWidthValue = ''
-        currentWidthUnit = '%'
-        currentHeightValue = ''
-        currentHeightUnit = '%'
-        currentPointerEvents = 'auto'
-        currentOverflow = 'hidden'
-        currentBoxSizing = 'border-box'
-    }
+
 
     // 当选中节点变化时，同步所有属性
     $: if (selectedId) {
@@ -89,14 +61,8 @@
         // 同步基本属性 - 只使用id
         currentId = selectedId
 
-        // 同步名称
-        const snapshotName = propsSnapshot?.attributes?.['data-name']
-        if (snapshotName !== undefined) {
-            currentName = snapshotName
-        } else {
-            const el = document.querySelector<HTMLElement>(`[data-id="${selectedId}"]`)
-            currentName = el?.getAttribute('data-name') ?? ''
-        }
+        // 同步名称 - 直接从节点属性中读取data-name
+        currentName = node?.attributes?.['data-name'] ?? ''
 
         // 同步类型，如果为空则使用第一个组件类型作为默认值
         currentType = node?.componentType || componentOptions[0]?.type || ''
