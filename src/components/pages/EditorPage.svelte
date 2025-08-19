@@ -34,11 +34,11 @@
     // 属性面板标签控制
     const tabs = [
         { key: 'attr', icon: 'BookA', title: '主要属性' },
+        { key: 'layout', icon: 'Layout', title: '布局样式' },
         { key: 'position', icon: 'Move', title: '定位样式' },
         { key: 'background', icon: 'Image', title: '背景样式' },
         { key: 'border', icon: 'SquareDashed', title: '边框样式' },
         { key: 'text', icon: 'Type', title: '文字样式' },
-        { key: 'layout', icon: 'Layout', title: '布局样式' },
         { key: 'event', icon: 'Workflow', title: '事件处理' }
     ] as const
 
