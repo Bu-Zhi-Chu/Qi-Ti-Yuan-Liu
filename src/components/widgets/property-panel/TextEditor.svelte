@@ -153,6 +153,12 @@
                 newGradientColors = storedColors
                 newGradientDirection = styles.textGradientDirection || 'to right'
                 newGradientRatio = parseFloat(styles.textGradientRatio || '50')
+
+                // 将首个渐变颜色同步为字体颜色，确保界面颜色选择器显示一致
+                if (storedColors.length > 0) {
+                    newFontColor = storedColors[0].color || '#000000'
+                    newFontOpacity = storedColors[0].opacity ?? 1
+                }
             } catch (e) {
                 console.warn('解析存储的渐变颜色失败:', e)
                 newGradientColors = []
@@ -357,14 +363,18 @@
     function addGradientColor() {
         if (gradientColors.length >= 2) return
 
+        // 保存当前的字体颜色和透明度
+        const currentColor = fontColor
+        const currentOpacity = fontOpacity
+
         if (gradientColors.length === 0) {
-            // 使用当前字体颜色作为第一个渐变颜色，白色作为第二个颜色
+            // 首次点击：保留当前字体颜色为首色并追加白色作为第二色
             gradientColors = [
-                { color: fontColor, opacity: fontOpacity },
+                { color: currentColor, opacity: currentOpacity },
                 { color: '#ffffff', opacity: 1 }
             ]
         } else if (gradientColors.length === 1) {
-            // 如果只有一个颜色，添加白色作为第二个颜色
+            // 已存在首色：追加第二段颜色
             gradientColors = [...gradientColors, { color: '#ffffff', opacity: 1 }]
         }
         updateTextStyles()
@@ -374,14 +384,10 @@
     function removeGradientColor(index: number) {
         gradientColors = gradientColors.filter((_, i) => i !== index)
 
-        // 如果移除后只剩一个颜色，也清空渐变（渐变需要至少两个颜色）
-        if (gradientColors.length <= 1) {
-            if (gradientColors.length === 1) {
-                // 保存最后一个颜色作为字体颜色
-                fontColor = gradientColors[0].color
-                fontOpacity = gradientColors[0].opacity
-            }
-            gradientColors = []
+        // 如果移除后不足两色，视为单色，不再使用渐变
+        if (gradientColors.length === 1) {
+            fontColor = gradientColors[0].color
+            fontOpacity = gradientColors[0].opacity
             gradientDirection = 'to right'
             gradientRatio = 50
         }
@@ -413,7 +419,7 @@
         styles.fontWeight = fontWeight
 
         // 字体颜色或渐变
-        if (gradientColors.length > 0) {
+        if (gradientColors.length > 1) {
             styles.color = generateGradientCSS()
             styles.textGradientColors = JSON.stringify(gradientColors)
             styles.textGradientDirection = gradientDirection
@@ -525,7 +531,7 @@
             <div class="text-item">
                 <label for="font-color">文本颜色</label>
                 <ColorPicker
-                    value={hexToRgba(fontColor, fontOpacity)}
+                    value={hexToRgba(gradientColors[0]?.color ?? fontColor, gradientColors[0]?.opacity ?? fontOpacity)}
                     onchange={(rgba: string) => {
                         const parsed = parseRgba(rgba)
                         if (parsed) {
@@ -547,7 +553,7 @@
             </div>
 
             <!-- 渐变颜色选择器 -->
-            {#if gradientColors.length > 0}
+            {#if gradientColors.length > 1}
                 <!-- 渐变方向 -->
                 <div class="text-item">
                     <label for="gradient-direction">渐变方向</label>
@@ -559,8 +565,8 @@
                     <span class="unit-placeholder"></span>
                 </div>
 
-                <!-- 渐变颜色 -->
-                {#if gradientColors.length > 0}
+                <!-- 渐变颜色 (第二个颜色) -->
+                {#if gradientColors.length > 1}
                     <div class="text-item">
                         <label for="{selectedId || 'default'}-gradient-1">渐变颜色</label>
                         <ColorPicker
@@ -574,7 +580,7 @@
                                 }
                             }}
                         />
-                        <button class="unit-toggle" onclick={() => removeGradientColor(0)} title="移除渐变" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">−</button>
+                        <button class="unit-toggle" onclick={() => removeGradientColor(1)} title="移除渐变" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">−</button>
                     </div>
                 {/if}
 
