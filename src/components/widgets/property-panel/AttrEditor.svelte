@@ -3,8 +3,7 @@
      提供节点属性的可视化编辑界面
 -->
 <script lang="ts">
-    import { getNodeProps, updateNodeProps } from '../../../services/property-panel/property-panel.service'
-    import { findNodeById, domTree, updateNodeProperties } from '../../../services/repository/dom-tree.store.svelte'
+    import { getNodeProps, updateNodeProps, getFullNode } from '../../../services/property-panel/property-panel.service'
     import { onMount } from 'svelte'
     import { getElementByNodeId } from '../../../services/utils/dom-geometry.util'
     import { getScaleRatio } from '../../../services/utils/get-scale-ratio.util'
@@ -56,7 +55,7 @@
     $: if (selectedId) {
         // 获取节点属性和节点对象
         propsSnapshot = getNodeProps(selectedId)
-        const node = findNodeById(domTree, selectedId)
+        const node = getFullNode(selectedId)
 
         // 同步基本属性 - 只使用id
         currentId = selectedId

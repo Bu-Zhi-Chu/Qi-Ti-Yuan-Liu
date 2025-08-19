@@ -14,10 +14,10 @@
 -->
 <script lang="ts">
     import { onDestroy } from 'svelte'
-    import { getNodeProps, updateNodeProps } from '../../../services/property-panel/property-panel.service'
-    import { domTree, projectId } from '../../../services/repository/dom-tree.store.svelte'
+    import { getNodeProps, updateNodeProps, getFullNode } from '../../../services/property-panel/property-panel.service'
     import { getElementByNodeId } from '../../../services/utils/dom-geometry.util'
     import { getScaleRatio } from '../../../services/utils/get-scale-ratio.util'
+    import { projectId } from '../../../services/repository/dom-tree.store.svelte'
     import { BlobStorageService } from '../../../services/storage/blob-storage.service'
     import { ProjectThumbnailService } from '../../../services/project/project-thumbnail.service'
     import ColorPaletteService from '../../../services/color-palette.service'

@@ -30,6 +30,13 @@ export function getNodeProps(
   };
 }
 
+/**
+ * 获取完整节点对象
+ */
+export function getFullNode(id: string): DomNode | null {
+  return findNodeById(domTree, id);
+}
+
 // -------------------- 更新接口 --------------------
 /**
  * 更新节点属性，patch 中 undefined 表示删除该字段

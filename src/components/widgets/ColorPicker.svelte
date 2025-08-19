@@ -719,7 +719,7 @@
         padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
         border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.2);
         border-radius: calc(6px * var(--scale-ratio, 1));
-        background: rgba(255, 255, 255, 0.1);
+        background: rgba(45, 55, 72, 0.9);
         color: #e2e8f0;
         font-size: calc(13px * var(--scale-ratio, 1));
         cursor: pointer;
@@ -727,7 +727,7 @@
     }
 
     .color-picker-button:hover:not(.disabled) {
-        background: rgba(255, 255, 255, 0.15);
+        background: rgba(45, 55, 72, 0.95);
         border-color: rgba(255, 255, 255, 0.3);
     }
 
@@ -750,8 +750,8 @@
         top: 100%;
         left: 0;
         margin-top: calc(4px * var(--scale-ratio, 1));
-        background: rgba(255, 255, 255, 0.1);
-        border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.2);
+        background: #0f172a;
+        border: calc(1px * var(--scale-ratio, 1)) solid #334155;
         border-radius: calc(8px * var(--scale-ratio, 1));
         padding: calc(16px * var(--scale-ratio, 1));
         box-shadow: 0 calc(10px * var(--scale-ratio, 1)) calc(25px * var(--scale-ratio, 1)) rgba(0, 0, 0, 0.5);
@@ -798,7 +798,7 @@
     .close-btn:hover,
     .picker-btn:hover {
         color: #e2e8f0;
-        background-color: rgba(255, 255, 255, 0.1);
+        background-color: rgba(45, 55, 72, 0.9);
     }
 
     .picker-content {
@@ -940,9 +940,9 @@
     .hex-input {
         width: 100%;
         padding: calc(6px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));
-        border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.2);
+        border: calc(1px * var(--scale-ratio, 1)) solid #334155;
         border-radius: calc(4px * var(--scale-ratio, 1));
-        background: rgba(255, 255, 255, 0.1);
+        background: #334155;
         color: #e2e8f0;
         font-size: calc(12px * var(--scale-ratio, 1));
         font-family: 'Courier New', monospace;
@@ -951,7 +951,7 @@
     .hex-input:focus {
         outline: none;
         border-color: #6366f1;
-        background: rgba(255, 255, 255, 0.15);
+        background: #475569;
     }
 
     .color-palette {
