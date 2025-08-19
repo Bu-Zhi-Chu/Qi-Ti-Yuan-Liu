@@ -18,7 +18,11 @@
 
     // Runes props - 使用 $props 代替 export let
     // 新增 showToolbar，用于控制是否显示顶部工具栏，默认为 true
-    let { activeTab = 'attr', showToolbar = true, onTabChange } = $props<{
+    let {
+        activeTab = 'attr',
+        showToolbar = true,
+        onTabChange
+    } = $props<{
         activeTab?: 'attr' | 'position' | 'background' | 'border' | 'text' | 'layout' | 'event'
         showToolbar?: boolean
         onTabChange?: (tab: 'attr' | 'position' | 'background' | 'border' | 'text' | 'layout' | 'event') => void
