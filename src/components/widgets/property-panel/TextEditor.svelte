@@ -48,11 +48,6 @@
     let letterSpacing = $state('0')
     let wordSpacing = $state('0')
 
-    // 渐变颜色状态
-    let gradientColors: Array<{ color: string; opacity: number }> = $state([])
-    let gradientDirection: string = $state('to right')
-    let gradientRatio: number = $state(50)
-
     // 字体族选项
     const fontFamilyOptions = [
         { value: 'Arial, sans-serif', label: 'Arial' },
@@ -88,15 +83,7 @@
         { value: 'justify', label: '两端对齐' }
     ]
 
-    // 渐变方向选项
-    const gradientDirectionOptions = [
-        { value: 'to right', label: '横向' },
-        { value: 'to left', label: '横向反向' },
-        { value: 'to bottom', label: '竖向' },
-        { value: 'to top', label: '竖向反向' },
-        { value: 'circle', label: '扩散' },
-        { value: 'circle farthest-corner', label: '扩散反向' }
-    ]
+
 
     // 文字装饰选项
     const textDecorationOptions = [
@@ -129,9 +116,7 @@
         let newFontWeight = styles.fontWeight || '400'
         let newFontColor = '#000000'
         let newFontOpacity = 1
-        let newGradientColors: Array<{ color: string; opacity: number }> = []
-        let newGradientDirection = 'to right'
-        let newGradientRatio = 50
+
         let newLineHeight = '24'
         let newTextAlign = styles.textAlign || 'left'
         let newTextDecoration = styles.textDecoration || 'none'
@@ -146,44 +131,22 @@
         // 字体颜色
         const colorStyle = styles.color || '#000000'
 
-        // 优先从存储的渐变配置中恢复
-        if (styles.textGradientColors) {
-            try {
-                const storedColors = JSON.parse(styles.textGradientColors)
-                newGradientColors = storedColors
-                newGradientDirection = styles.textGradientDirection || 'to right'
-                newGradientRatio = parseFloat(styles.textGradientRatio || '50')
-
-                // 将首个渐变颜色同步为字体颜色，确保界面颜色选择器显示一致
-                if (storedColors.length > 0) {
-                    newFontColor = storedColors[0].color || '#000000'
-                    newFontOpacity = storedColors[0].opacity ?? 1
+        // 解析普通颜色
+        if (colorStyle) {
+            const match = colorStyle.match(/rgba?\(([^)]+)\)/)
+            if (match) {
+                const parts = match[1].split(',').map((s) => s.trim())
+                if (parts.length >= 3) {
+                    const r = parseInt(parts[0])
+                    const g = parseInt(parts[1])
+                    const b = parseInt(parts[2])
+                    const a = parts.length > 3 ? parseFloat(parts[3]) : 1
+                    newFontColor = rgbToHex(r, g, b)
+                    newFontOpacity = a
                 }
-            } catch (e) {
-                console.warn('解析存储的渐变颜色失败:', e)
-                newGradientColors = []
-            }
-        } else {
-            // 兼容旧格式：从CSS color解析渐变
-            newGradientColors = []
-
-            // 如果没有渐变，解析普通颜色
-            if (colorStyle && newGradientColors.length === 0) {
-                const match = colorStyle.match(/rgba?\(([^)]+)\)/)
-                if (match) {
-                    const parts = match[1].split(',').map((s) => s.trim())
-                    if (parts.length >= 3) {
-                        const r = parseInt(parts[0])
-                        const g = parseInt(parts[1])
-                        const b = parseInt(parts[2])
-                        const a = parts.length > 3 ? parseFloat(parts[3]) : 1
-                        newFontColor = rgbToHex(r, g, b)
-                        newFontOpacity = a
-                    }
-                } else if (/^#([0-9A-Fa-f]{6})$/.test(colorStyle)) {
-                    newFontColor = colorStyle
-                    newFontOpacity = 1
-                }
+            } else if (/^#([0-9A-Fa-f]{6})$/.test(colorStyle)) {
+                newFontColor = colorStyle
+                newFontOpacity = 1
             }
         }
 
@@ -208,9 +171,6 @@
         fontWeight = newFontWeight
         fontColor = newFontColor
         fontOpacity = newFontOpacity
-        gradientColors = newGradientColors
-        gradientDirection = newGradientDirection
-        gradientRatio = newGradientRatio
         lineHeight = newLineHeight
         textAlign = newTextAlign
         textDecoration = newTextDecoration
@@ -237,9 +197,6 @@
             fontStyle = 'normal'
             letterSpacing = '0'
             wordSpacing = '0'
-            gradientColors = []
-            gradientDirection = 'to right'
-            gradientRatio = 50
         }
     })
 
@@ -315,93 +272,7 @@
         return `calc(${val}px * var(--scale-ratio, 1))`
     }
 
-    // 生成渐变CSS
-    function generateGradientCSS(): string {
-        if (gradientColors.length === 0) {
-            return ''
-        }
 
-        if (gradientColors.length === 1) {
-            const colorStops = hexToRgba(gradientColors[0].color, gradientColors[0].opacity)
-            // 判断是径向渐变还是线性渐变
-            if (gradientDirection.includes('circle')) {
-                return `radial-gradient(${gradientDirection}, ${colorStops})`
-            } else {
-                return `linear-gradient(${gradientDirection}, ${colorStops})`
-            }
-        }
-
-        const ratio = Math.max(0, Math.min(100, gradientRatio)) // 确保比例在0-100之间
-        const color1 = hexToRgba(gradientColors[0].color, gradientColors[0].opacity)
-        const color2 = hexToRgba(gradientColors[1].color, gradientColors[1].opacity)
-
-        // 判断是径向渐变还是线性渐变
-        const isRadialGradient = gradientDirection.includes('circle')
-
-        if (isRadialGradient) {
-            // 径向渐变：根据方向决定渐变起点
-            const isReverse = gradientDirection.includes('farthest-corner') || gradientDirection.includes('closest-corner')
-            if (isReverse) {
-                // 反向：从边缘向中心扩散
-                return `radial-gradient(${gradientDirection}, ${color2} 0%, ${color1} ${ratio}%)`
-            } else {
-                // 正向：从中心向外扩散
-                return `radial-gradient(${gradientDirection}, ${color1} 0%, ${color2} ${ratio}%)`
-            }
-        } else {
-            // 线性渐变：方向控制
-            // 创建平滑过渡：第一个颜色从0%开始，第二个颜色从ratio%开始，中间有10%的模糊过渡
-            const smoothTransition = Math.max(5, Math.min(20, 100 - ratio)) // 确保过渡区域合理
-            const end1 = Math.max(0, ratio - smoothTransition / 2)
-            const start2 = Math.min(100, ratio + smoothTransition / 2)
-
-            return `linear-gradient(${gradientDirection}, ${color1} 0%, ${color1} ${end1}%, ${color2} ${start2}%, ${color2} 100%)`
-        }
-    }
-
-    // 添加渐变颜色
-    function addGradientColor() {
-        if (gradientColors.length >= 2) return
-
-        // 保存当前的字体颜色和透明度
-        const currentColor = fontColor
-        const currentOpacity = fontOpacity
-
-        if (gradientColors.length === 0) {
-            // 首次点击：保留当前字体颜色为首色并追加白色作为第二色
-            gradientColors = [
-                { color: currentColor, opacity: currentOpacity },
-                { color: '#ffffff', opacity: 1 }
-            ]
-        } else if (gradientColors.length === 1) {
-            // 已存在首色：追加第二段颜色
-            gradientColors = [...gradientColors, { color: '#ffffff', opacity: 1 }]
-        }
-        updateTextStyles()
-    }
-
-    // 移除渐变颜色（移除单个颜色）
-    function removeGradientColor(index: number) {
-        gradientColors = gradientColors.filter((_, i) => i !== index)
-
-        // 如果移除后不足两色，视为单色，不再使用渐变
-        if (gradientColors.length === 1) {
-            fontColor = gradientColors[0].color
-            fontOpacity = gradientColors[0].opacity
-            gradientDirection = 'to right'
-            gradientRatio = 50
-        }
-
-        updateTextStyles()
-    }
-
-    // 更新渐变颜色（文本编辑器中只支持两个固定位置）
-    function updateGradientColor(index: number, color: string, opacity: number) {
-        if (index === 0 || index === 1) {
-            gradientColors = gradientColors.map((item, i) => (i === index ? { color, opacity } : item))
-            updateTextStyles()
-        }
-    }
 
     // 统一更新文字样式
     function updateTextStyles() {
@@ -418,21 +289,11 @@
         // 字体粗细
         styles.fontWeight = fontWeight
 
-        // 字体颜色或渐变
-        if (gradientColors.length > 1) {
-            styles.color = generateGradientCSS()
-            styles.textGradientColors = JSON.stringify(gradientColors)
-            styles.textGradientDirection = gradientDirection
-            styles.textGradientRatio = String(gradientRatio)
-        } else {
-            const r = parseInt(fontColor.slice(1, 3), 16)
-            const g = parseInt(fontColor.slice(3, 5), 16)
-            const b = parseInt(fontColor.slice(5, 7), 16)
-            styles.color = `rgba(${r}, ${g}, ${b}, ${fontOpacity})`
-            styles.textGradientColors = ''
-            styles.textGradientDirection = ''
-            styles.textGradientRatio = ''
-        }
+        // 字体颜色
+        const r = parseInt(fontColor.slice(1, 3), 16)
+        const g = parseInt(fontColor.slice(3, 5), 16)
+        const b = parseInt(fontColor.slice(5, 7), 16)
+        styles.color = `rgba(${r}, ${g}, ${b}, ${fontOpacity})`
 
         // 行高
         styles.lineHeight = formatSize(lineHeight, 'px')
@@ -531,70 +392,20 @@
             <div class="text-item">
                 <label for="font-color">文本颜色</label>
                 <ColorPicker
-                    value={hexToRgba(gradientColors[0]?.color ?? fontColor, gradientColors[0]?.opacity ?? fontOpacity)}
+                    value={hexToRgba(fontColor, fontOpacity)}
                     onchange={(rgba: string) => {
                         const parsed = parseRgba(rgba)
                         if (parsed) {
                             fontColor = rgbToHex(parsed.r, parsed.g, parsed.b)
                             fontOpacity = parsed.a
-
-                            // 如果渐变已启用，同步更新渐变中的第一个颜色
-                            if (gradientColors.length > 0) {
-                                gradientColors = gradientColors.map((item, index) => (index === 0 ? { color: fontColor, opacity: fontOpacity } : item))
-                            }
-
                             updateTextStyles()
                         }
                     }}
                     projectId={projectId()}
                     componentId={selectedId || 'default'}
                 />
-                <button class="unit-toggle" onclick={addGradientColor} title="添加渐变颜色" style="background: rgba(34, 197, 94, 0.2); color: #4ade80;" disabled={gradientColors.length >= 2}>+</button>
+                <span class="unit-placeholder"></span>
             </div>
-
-            <!-- 渐变颜色选择器 -->
-            {#if gradientColors.length > 1}
-                <!-- 渐变方向 -->
-                <div class="text-item">
-                    <label for="gradient-direction">渐变方向</label>
-                    <select id="gradient-direction" bind:value={gradientDirection} onchange={updateTextStyles}>
-                        {#each gradientDirectionOptions as option}
-                            <option value={option.value}>{option.label}</option>
-                        {/each}
-                    </select>
-                    <span class="unit-placeholder"></span>
-                </div>
-
-                <!-- 渐变颜色 (第二个颜色) -->
-                {#if gradientColors.length > 1}
-                    <div class="text-item">
-                        <label for="{selectedId || 'default'}-gradient-1">渐变颜色</label>
-                        <ColorPicker
-                            value={hexToRgba(gradientColors[1]?.color || '#ffffff', gradientColors[1]?.opacity || 1)}
-                            projectId={projectId()}
-                            componentId={`${selectedId || 'default'}-gradient-1`}
-                            onchange={(rgba: string) => {
-                                const parsed = parseRgba(rgba)
-                                if (parsed) {
-                                    updateGradientColor(1, rgbToHex(parsed.r, parsed.g, parsed.b), parsed.a)
-                                }
-                            }}
-                        />
-                        <button class="unit-toggle" onclick={() => removeGradientColor(1)} title="移除渐变" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">−</button>
-                    </div>
-                {/if}
-
-                <!-- 渐变比例 -->
-                {#if gradientColors.length >= 2}
-                    <div class="text-item">
-                        <label for="gradient-ratio">渐变比例</label>
-                        <ResponsiveSlider bind:value={gradientRatio} min={0} max={100} step={1} oninput={updateTextStyles} />
-                        <span style="min-width: calc(40px * var(--scale-ratio, 1)); text-align: center; font-size: calc(12px * var(--scale-ratio, 1)); color: #94a3b8;">
-                            {gradientRatio}%
-                        </span>
-                    </div>
-                {/if}
-            {/if}
 
             <div class="text-item">
                 <label for="line-height">文本行高</label>
