@@ -24,26 +24,21 @@
 
     // 引入 DOM 树集中式状态管理
     import { domTree, selectedId } from '../../services/repository/dom-tree.store.svelte'
-    import DexieService from '../../services/database/dexie-service'
 
-    // 是否显示工作区，根据项目模式决定
-    let showWorkspace = $state(false)
-    let projectMode = $state('normal')
-    let projectId = $state('')
+    // 是否显示工作区，默认显示工作区
+    let showWorkspace = $state(true)
 
     // 属性面板标签控制
     const tabs = [
-        { key: 'attr', icon: 'BookA', title: '主要属性' },
-        { key: 'layout', icon: 'Layout', title: '布局样式' },
+        { key: 'attr', icon: 'Sliders', title: '主要属性' },
         { key: 'position', icon: 'Move', title: '定位样式' },
         { key: 'background', icon: 'Image', title: '背景样式' },
         { key: 'border', icon: 'SquareDashed', title: '边框样式' },
-        { key: 'text', icon: 'Type', title: '文本样式' },
         { key: 'event', icon: 'Workflow', title: '事件处理' }
     ] as const
 
     // 根据选中节点的 activePropertyTab 动态设置 activeTab
-    let activeTab: 'attr' | 'position' | 'background' | 'border' | 'text' | 'layout' | 'event' = $derived.by(() => {
+    let activeTab: 'attr' | 'position' | 'background' | 'border' | 'event' = $derived.by(() => {
         const currentSelectedId = selectedId()
 
         if (!currentSelectedId) return 'attr'
@@ -68,7 +63,7 @@
             const tabValue = selectedNode.attributes.activePropertyTab
             if (tabValue === 'style') return 'position'
             if (tabs.some((t) => t.key === tabValue)) {
-                return tabValue as 'attr' | 'position' | 'background' | 'border' | 'text' | 'layout' | 'event'
+                return tabValue as 'attr' | 'position' | 'background' | 'border' | 'event'
             }
         }
         return 'attr'
@@ -87,47 +82,10 @@
     // 注册/注销快捷键
     let unregister: () => void
     onMount(() => {
-        // 从URL获取项目ID
-        const hash = window.location.hash
-        const match = hash.match(/\/editor\/(.+)/)
-        if (match) {
-            projectId = match[1]
-            loadProjectMode(projectId)
-        }
-
-        unregister = registerShortcut('Ctrl+E', async () => {
-            const newMode = showWorkspace ? 'normal' : 'edit'
+        unregister = registerShortcut('Ctrl+E', () => {
             showWorkspace = !showWorkspace
-
-            // 更新数据库中的mode字段
-            if (projectId) {
-                try {
-                    await DexieService.updateRecord('qi-qiao-ban', 'projects', projectId, { mode: newMode })
-                    projectMode = newMode
-                    console.log(`项目模式已更新为: ${newMode}`)
-                } catch (error) {
-                    console.error('更新项目模式失败:', error)
-                }
-            }
         })
     })
-
-    async function loadProjectMode(projectId: string) {
-        try {
-            const project = (await DexieService.getRecord('qi-qiao-ban', 'projects', projectId)) as { mode?: 'edit' | 'normal' }
-            if (project && project.mode) {
-                projectMode = project.mode
-                showWorkspace = project.mode === 'edit'
-            } else {
-                projectMode = 'normal'
-                showWorkspace = false
-            }
-        } catch (error) {
-            console.error('加载项目模式失败:', error)
-            projectMode = 'normal'
-            showWorkspace = false
-        }
-    }
 
     onDestroy(() => {
         unregister && unregister()
@@ -179,7 +137,7 @@
                 <!-- 属性面板 -->
                 <div style="width: 88%;height: 100%;pointer-events: auto;">
                     <!-- @ts-ignore: Work In Progress -->
-                    <PropertyPanel {activeTab} />
+                    <PropertyPanel showToolbar={false} {activeTab} onTabChange={setTab} />
                 </div>
                 <!-- 标签切换按钮栏 -->
                 <div class="prop-tabbar" style="width: 12%;height: 100%;display: flex;flex-direction: column;align-items: center;justify-content: flex-start;padding-top: calc(12px * var(--scale-ratio, 1));gap: calc(8px * var(--scale-ratio, 1));pointer-events: auto;">

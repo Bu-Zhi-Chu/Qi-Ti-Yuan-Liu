@@ -14,7 +14,6 @@
 
 <script lang="ts">
     // 动态导入所有图标，支持tree-shaking
-    // 注意：所有图标路径都使用静态字符串，避免Vite动态导入警告
     const iconMap = {
         Home: () => import('@lucide/svelte/icons/home'),
         Plus: () => import('@lucide/svelte/icons/plus'),
@@ -93,7 +92,6 @@
         Flag: () => import('@lucide/svelte/icons/flag'),
         Tag: () => import('@lucide/svelte/icons/tag'),
         Bookmark: () => import('@lucide/svelte/icons/bookmark'),
-        BookA: () => import('@lucide/svelte/icons/book-a'),
         Print: () => import('@lucide/svelte/icons/printer'),
         Export: () => import('@lucide/svelte/icons/download'),
         Import: () => import('@lucide/svelte/icons/upload'),
@@ -108,103 +106,7 @@
         SquareDashed: () => import('@lucide/svelte/icons/square-dashed'),
         MousePointerClick: () => import('@lucide/svelte/icons/mouse-pointer-click'),
         GalleryHorizontal: () => import('@lucide/svelte/icons/gallery-horizontal'),
-        Workflow: () => import('@lucide/svelte/icons/workflow'),
-        Type: () => import('@lucide/svelte/icons/type'),
-        Layout: () => import('@lucide/svelte/icons/layout')
-    }
-
-    // 扩展图标映射，支持kebab-case命名
-    const kebabIconMap: Record<string, () => Promise<any>> = {
-        'home': () => import('@lucide/svelte/icons/home'),
-        'plus': () => import('@lucide/svelte/icons/plus'),
-        'settings': () => import('@lucide/svelte/icons/settings'),
-        'trash-2': () => import('@lucide/svelte/icons/trash-2'),
-        'edit-3': () => import('@lucide/svelte/icons/edit-3'),
-        'save': () => import('@lucide/svelte/icons/save'),
-        'download': () => import('@lucide/svelte/icons/download'),
-        'upload': () => import('@lucide/svelte/icons/upload'),
-        'search': () => import('@lucide/svelte/icons/search'),
-        'eye': () => import('@lucide/svelte/icons/eye'),
-        'eye-off': () => import('@lucide/svelte/icons/eye-off'),
-        'copy': () => import('@lucide/svelte/icons/copy'),
-        'move': () => import('@lucide/svelte/icons/move'),
-        'locate-fixed': () => import('@lucide/svelte/icons/locate-fixed'),
-        'rotate-cw': () => import('@lucide/svelte/icons/rotate-cw'),
-        'zoom-in': () => import('@lucide/svelte/icons/zoom-in'),
-        'zoom-out': () => import('@lucide/svelte/icons/zoom-out'),
-        'undo': () => import('@lucide/svelte/icons/undo'),
-        'redo': () => import('@lucide/svelte/icons/redo'),
-        'palette': () => import('@lucide/svelte/icons/palette'),
-        'layers': () => import('@lucide/svelte/icons/layers'),
-        'grid': () => import('@lucide/svelte/icons/grid'),
-        'box': () => import('@lucide/svelte/icons/box'),
-        'circle': () => import('@lucide/svelte/icons/circle'),
-        'square': () => import('@lucide/svelte/icons/square'),
-        'triangle': () => import('@lucide/svelte/icons/triangle'),
-        'star': () => import('@lucide/svelte/icons/star'),
-        'heart': () => import('@lucide/svelte/icons/heart'),
-        'share-2': () => import('@lucide/svelte/icons/share-2'),
-        'link': () => import('@lucide/svelte/icons/link'),
-        'external-link': () => import('@lucide/svelte/icons/external-link'),
-        'menu': () => import('@lucide/svelte/icons/menu'),
-        'x': () => import('@lucide/svelte/icons/x'),
-        'chevron-left': () => import('@lucide/svelte/icons/chevron-left'),
-        'chevron-right': () => import('@lucide/svelte/icons/chevron-right'),
-        'chevron-up': () => import('@lucide/svelte/icons/chevron-up'),
-        'chevron-down': () => import('@lucide/svelte/icons/chevron-down'),
-        'play': () => import('@lucide/svelte/icons/play'),
-        'pause': () => import('@lucide/svelte/icons/pause'),
-        'refresh-cw': () => import('@lucide/svelte/icons/refresh-cw'),
-        'loader-2': () => import('@lucide/svelte/icons/loader-2'),
-        'check': () => import('@lucide/svelte/icons/check'),
-        'alert-triangle': () => import('@lucide/svelte/icons/alert-triangle'),
-        'info': () => import('@lucide/svelte/icons/info'),
-        'alert-circle': () => import('@lucide/svelte/icons/alert-circle'),
-        'check-circle': () => import('@lucide/svelte/icons/check-circle'),
-        'pipette': () => import('@lucide/svelte/icons/pipette'),
-        'folder': () => import('@lucide/svelte/icons/folder'),
-        'file': () => import('@lucide/svelte/icons/file'),
-        'image': () => import('@lucide/svelte/icons/image'),
-        'video': () => import('@lucide/svelte/icons/video'),
-        'music': () => import('@lucide/svelte/icons/music'),
-        'code': () => import('@lucide/svelte/icons/code'),
-        'terminal': () => import('@lucide/svelte/icons/terminal'),
-        'database': () => import('@lucide/svelte/icons/database'),
-        'cloud': () => import('@lucide/svelte/icons/cloud'),
-        'wifi': () => import('@lucide/svelte/icons/wifi'),
-        'bluetooth': () => import('@lucide/svelte/icons/bluetooth'),
-        'battery': () => import('@lucide/svelte/icons/battery'),
-        'clock': () => import('@lucide/svelte/icons/clock'),
-        'calendar': () => import('@lucide/svelte/icons/calendar'),
-        'mail': () => import('@lucide/svelte/icons/mail'),
-        'phone': () => import('@lucide/svelte/icons/phone'),
-        'map-pin': () => import('@lucide/svelte/icons/map-pin'),
-        'user': () => import('@lucide/svelte/icons/user'),
-        'users': () => import('@lucide/svelte/icons/users'),
-        'lock': () => import('@lucide/svelte/icons/lock'),
-        'unlock': () => import('@lucide/svelte/icons/unlock'),
-        'key': () => import('@lucide/svelte/icons/key'),
-        'shield': () => import('@lucide/svelte/icons/shield'),
-        'award': () => import('@lucide/svelte/icons/award'),
-        'trophy': () => import('@lucide/svelte/icons/trophy'),
-        'flag': () => import('@lucide/svelte/icons/flag'),
-        'tag': () => import('@lucide/svelte/icons/tag'),
-        'bookmark': () => import('@lucide/svelte/icons/bookmark'),
-        'book-a': () => import('@lucide/svelte/icons/book-a'),
-        'printer': () => import('@lucide/svelte/icons/printer'),
-        'arrow-up-down': () => import('@lucide/svelte/icons/arrow-up-down'),
-        'arrow-up': () => import('@lucide/svelte/icons/arrow-up'),
-        'arrow-down': () => import('@lucide/svelte/icons/arrow-down'),
-        'arrow-left': () => import('@lucide/svelte/icons/arrow-left'),
-        'arrow-right': () => import('@lucide/svelte/icons/arrow-right'),
-        'sliders': () => import('@lucide/svelte/icons/sliders'),
-        'picture-in-picture': () => import('@lucide/svelte/icons/picture-in-picture'),
-        'square-dashed': () => import('@lucide/svelte/icons/square-dashed'),
-        'mouse-pointer-click': () => import('@lucide/svelte/icons/mouse-pointer-click'),
-        'gallery-horizontal': () => import('@lucide/svelte/icons/gallery-horizontal'),
-        'workflow': () => import('@lucide/svelte/icons/workflow'),
-        'type': () => import('@lucide/svelte/icons/type'),
-        'layout': () => import('@lucide/svelte/icons/layout')
+        Workflow: () => import('@lucide/svelte/icons/workflow')
     }
 
     /** 将 PascalCase / camelCase 转为 kebab-case，便于按文件名加载 */
@@ -236,15 +138,7 @@
                     module = await iconMap[name as keyof typeof iconMap]()
                 } else {
                     const kebab = kebabCase(name)
-                    // 使用预定义的kebab图标映射，避免动态导入警告
-                    if (kebab in kebabIconMap) {
-                        module = await kebabIconMap[kebab]()
-                    } else {
-                        // 如果图标不存在，使用占位符
-                        console.warn(`Icon not found: ${name} (kebab: ${kebab})`)
-                        IconComponent = null
-                        return
-                    }
+                    module = await import(`@lucide/svelte/icons/${kebab}`)
                 }
                 IconComponent = module.default
             } catch (error) {
