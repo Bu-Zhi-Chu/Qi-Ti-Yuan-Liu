@@ -77,7 +77,7 @@
         {:else if activeTab === 'text'}
             <TextEditor />
         {:else if activeTab === 'layout'}
-            <LayoutEditor />
+            <LayoutEditor selectedId={currentId} />
         {:else}
             <EventEditor selectedId={currentId} />
         {/if}
