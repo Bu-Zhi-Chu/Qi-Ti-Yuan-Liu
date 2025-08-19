@@ -716,6 +716,7 @@
         display: flex;
         align-items: center;
         width: 100%;
+        min-width: 0;
         padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
         border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.2);
         border-radius: calc(6px * var(--scale-ratio, 1));
@@ -743,6 +744,8 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        max-width: calc(120px * var(--scale-ratio, 1));
+        min-width: 0;
     }
 
     .color-picker-panel {

@@ -670,6 +670,22 @@ export function updateNodeStyles(nodeId: string, styles: Record<string, string>)
 }
 
 /**
+ * 重置所有节点的 activePropertyTab 属性
+ */
+export function resetActivePropertyTab(): void {
+  function resetNodeTab(node: DomNode): void {
+    if (node.attributes) {
+      delete node.attributes.activePropertyTab;
+    }
+    if (node.children) {
+      node.children.forEach(resetNodeTab);
+    }
+  }
+  resetNodeTab(domTreeData);
+  console.log('所有节点的 activePropertyTab 已重置');
+}
+
+/**
  * 清理内存状态的函数
  */
 export function clearMemoryState(): void {
@@ -689,5 +705,6 @@ export function clearMemoryState(): void {
   });
   selectedNodeId = 'root';
   currentProjectId = '';
+  resetActivePropertyTab(); // 新增：重置 activePropertyTab
   console.log('内存状态已清理');
 }
