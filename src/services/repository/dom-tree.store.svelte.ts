@@ -700,6 +700,9 @@ export function clearMemoryState(): void {
       overflow: 'hidden',
       pointerEvents: 'auto'
     },
+    attributes: {},
+    events: {},
+    textContent: '',
     expanded: true,
     children: []
   });
