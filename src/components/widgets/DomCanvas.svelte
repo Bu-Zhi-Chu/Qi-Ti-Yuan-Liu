@@ -315,8 +315,8 @@
 
     <!-- 加载状态 -->
     {#if isLoading}
-        <div style="position: absolute;top: 50%;left: 50%;transform: translate(-50%, -50%);color: white;font-size: 16px;text-align: center;z-index: 100;">
-            <div style="width: 40px;height: 40px;border: 3px solid rgba(255,255,255,0.3);border-top: 3px solid white;border-radius: 50%;animation: spin 1s linear infinite;margin: 0 auto 10px;"></div>
+        <div style="position: absolute;top: 50%;left: 50%;transform: translate(-50%, -50%);color: white;font-size: calc(16px * var(--scale-ratio, 1));text-align: center;z-index: 100;">
+            <div style="width: calc(40px * var(--scale-ratio, 1));height: calc(40px * var(--scale-ratio, 1));border: calc(3px * var(--scale-ratio, 1)) solid rgba(255,255,255,0.3);border-top: calc(3px * var(--scale-ratio, 1)) solid white;border-radius: 50%;animation: spin 1s linear infinite;margin: 0 auto calc(10px * var(--scale-ratio, 1));"></div>
             加载中...
         </div>
         <style>

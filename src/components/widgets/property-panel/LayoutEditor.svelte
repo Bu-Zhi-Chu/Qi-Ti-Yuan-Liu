@@ -215,7 +215,7 @@
                         }}
                         placeholder="间距..."
                     />
-                    <span class="unit-label">px</span>
+                    <button class="unit-toggle" disabled>px</button>
                 </div>
 
                 <div class="layout-item">
@@ -245,7 +245,7 @@
                         }}
                         placeholder="行间距..."
                     />
-                    <span class="unit-label">px</span>
+                    <button class="unit-toggle" disabled>px</button>
                 </div>
 
                 <div class="layout-item">
@@ -275,7 +275,7 @@
                         }}
                         placeholder="列间距..."
                     />
-                    <span class="unit-label">px</span>
+                    <button class="unit-toggle" disabled>px</button>
                 </div>
             {/if}
 
@@ -320,7 +320,7 @@
                         }}
                         placeholder="间距..."
                     />
-                    <span class="unit-label">px</span>
+                    <button class="unit-toggle" disabled>px</button>
                 </div>
 
                 <div class="layout-item">
@@ -350,7 +350,7 @@
                         }}
                         placeholder="列间距..."
                     />
-                    <span class="unit-label">px</span>
+                    <button class="unit-toggle" disabled>px</button>
                 </div>
 
                 <div class="layout-item">
@@ -380,7 +380,7 @@
                         }}
                         placeholder="行间距..."
                     />
-                    <span class="unit-label">px</span>
+                    <button class="unit-toggle" disabled>px</button>
                 </div>
             {/if}
         </div>
@@ -450,11 +450,25 @@
         width: calc(40px * var(--scale-ratio, 1));
     }
 
-    .unit-label {
-        font-size: calc(12px * var(--scale-ratio, 1));
-        color: #94a3b8;
-        min-width: calc(24px * var(--scale-ratio, 1));
-        text-align: left;
+    .unit-toggle {
+        width: calc(40px * var(--scale-ratio, 1));
+        padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
+        border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.2);
+        border-radius: calc(6px * var(--scale-ratio, 1));
+        font-size: calc(13px * var(--scale-ratio, 1));
+        background: rgba(255, 255, 255, 0.1);
+        color: #e2e8f0;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    .unit-toggle:hover {
+        background: rgba(255, 255, 255, 0.15);
+    }
+    .unit-toggle:disabled {
+        cursor: not-allowed;
+        color: #64748b;
+        opacity: 0.7;
     }
 
     /* 隐藏原生 number 输入框的上下箭头 */
