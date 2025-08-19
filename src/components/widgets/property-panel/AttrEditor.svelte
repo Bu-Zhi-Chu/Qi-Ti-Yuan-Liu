@@ -49,8 +49,6 @@
     // overflow 相关变量
     let currentOverflow: 'hidden' | 'auto' | 'scroll' | 'visible' = 'hidden'
 
-
-
     // 当选中节点变化时，同步所有属性
     $: if (selectedId) {
         // 获取节点属性和节点对象
