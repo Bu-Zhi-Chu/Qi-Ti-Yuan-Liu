@@ -41,7 +41,7 @@
     let fontWeight = $state('400')
     let fontColor = $state('#000000')
     let fontOpacity = $state(1)
-    let lineHeight = $state('1.5')
+    let lineHeight = $state('24')
     let textAlign = $state('left')
     let textDecoration = $state('none')
     let fontStyle = $state('normal')
@@ -132,7 +132,7 @@
         let newGradientColors: Array<{ color: string; opacity: number }> = []
         let newGradientDirection = 'to right'
         let newGradientRatio = 50
-        let newLineHeight = '1.5'
+        let newLineHeight = '24'
         let newTextAlign = styles.textAlign || 'left'
         let newTextDecoration = styles.textDecoration || 'none'
         let newFontStyle = styles.fontStyle || 'normal'
@@ -293,6 +293,14 @@
         if (calcMatch) {
             return [calcMatch[1], 'px']
         }
+        
+        // 处理旧的倍数格式（如1.5）转换为px
+        const numericValue = parseFloat(size)
+        if (!isNaN(numericValue) && numericValue > 0 && numericValue <= 5) {
+            // 将倍数转换为px（基于16px字体大小）
+            return [Math.round(numericValue * 16 * 10) / 10 + '', 'px']
+        }
+        
         return [size.replace('px', ''), 'px']
     }
 
@@ -587,34 +595,34 @@
                 <input
                     id="line-height"
                     type="number"
-                    min="0.5"
-                    max="5"
-                    step="0.1"
+                    min="8"
+                    max="80"
+                    step="1"
                     bind:value={lineHeight}
                     oninput={(e) => {
                         updateTextStyles()
                     }}
                     onwheel={(e) => {
                         e.preventDefault()
-                        const val = parseFloat(lineHeight) || 1.5
-                        lineHeight = (val + (e.deltaY < 0 ? 0.1 : -0.1)).toFixed(1)
+                        const val = parseInt(lineHeight) || 24
+                        lineHeight = (val + (e.deltaY < 0 ? 1 : -1)).toString()
                         updateTextStyles()
                     }}
                     onkeydown={(e) => {
                         if (e.key === 'ArrowUp') {
                             e.preventDefault()
-                            const val = parseFloat(lineHeight) || 1.5
-                            lineHeight = (val + 0.1).toFixed(1)
+                            const val = parseInt(lineHeight) || 24
+                            lineHeight = (val + 1).toString()
                             updateTextStyles()
                         }
                         if (e.key === 'ArrowDown') {
                             e.preventDefault()
-                            const val = parseFloat(lineHeight) || 1.5
-                            lineHeight = (val - 0.1).toFixed(1)
+                            const val = parseInt(lineHeight) || 24
+                            lineHeight = (val - 1).toString()
                             updateTextStyles()
                         }
                     }}
-                    placeholder="文本行高..."
+                    placeholder="行高(px)..."
                 />
                 <button class="unit-toggle" disabled>px</button>
             </div>
