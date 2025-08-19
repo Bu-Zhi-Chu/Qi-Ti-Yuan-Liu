@@ -1,7 +1,7 @@
 <!--
   PropertyPanel.svelte
   右侧属性面板完整组件
-  
+
   使用说明：
   - activeTab: 当前激活的标签页，由外部控制
   - 所有标签切换功能由外部实现
@@ -17,9 +17,7 @@
     import { selectedId as getSelectedId } from '../../../services/repository/dom-tree.store.svelte'
 
     // Runes props - 使用 $props 代替 export let
-    let {
-        activeTab = 'attr'
-    } = $props<{
+    let { activeTab = 'attr' } = $props<{
         activeTab?: 'attr' | 'position' | 'background' | 'border' | 'text' | 'layout' | 'event'
     }>()
 

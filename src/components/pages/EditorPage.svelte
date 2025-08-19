@@ -98,7 +98,7 @@
         unregister = registerShortcut('Ctrl+E', async () => {
             const newMode = showWorkspace ? 'normal' : 'edit'
             showWorkspace = !showWorkspace
-            
+
             // 更新数据库中的mode字段
             if (projectId) {
                 try {
