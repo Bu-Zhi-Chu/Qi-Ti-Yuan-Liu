@@ -37,47 +37,23 @@
 
     // 当选中节点改变时，EditorPage会通过$derived自动设置activeTab
     // 这里不再需要恢复逻辑，避免循环更新
-
-    const tabs = [
-        { key: 'attr', label: '属性', icon: 'Settings' },
-        { key: 'position', label: '定位', icon: 'Move' },
-        { key: 'background', label: '背景', icon: 'Image' },
-        { key: 'border', label: '边框', icon: 'Square' },
-        { key: 'text', label: '文字', icon: 'Type' },
-        { key: 'layout', label: '布局', icon: 'Layout' },
-        { key: 'event', label: '事件', icon: 'Code' }
-    ] as const
 </script>
 
 <div class="panel">
-    <!-- 顶部工具栏 - 由外部控制显示 -->
-    {#if showToolbar}
-        <div class="toolbar">
-            <div class="tab-buttons">
-                {#each tabs as tab}
-                    <button class="tab-button" class:active={activeTab === tab.key} onclick={() => onTabChange?.(tab.key)} title={tab.label}>
-                        <span class="tab-icon"><Icon name={tab.icon} size={14} style="width: calc(14px * var(--scale-ratio, 1)); height: calc(14px * var(--scale-ratio, 1))" /></span>
-                        <span class="tab-label">{tab.label}</span>
-                    </button>
-                {/each}
-            </div>
-        </div>
-    {/if}
-
     <!-- 内容区域 -->
     <div class="body">
         {#if activeTab === 'attr'}
             <AttrEditor selectedId={currentId} />
         {:else if activeTab === 'position'}
             <PositionEditor selectedId={currentId} />
+        {:else if activeTab === 'layout'}
+            <LayoutEditor selectedId={currentId} />
         {:else if activeTab === 'background'}
             <BackgroundEditor selectedId={currentId} />
         {:else if activeTab === 'border'}
             <BorderEditor selectedId={currentId} />
         {:else if activeTab === 'text'}
             <TextEditor />
-        {:else if activeTab === 'layout'}
-            <LayoutEditor selectedId={currentId} />
         {:else}
             <EventEditor selectedId={currentId} />
         {/if}
@@ -93,58 +69,6 @@
         flex-direction: column;
         background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
         box-shadow: -2px 0 8px rgba(0, 0, 0, 0.3);
-    }
-
-    .toolbar {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: calc(12px * var(--scale-ratio, 1)) calc(16px * var(--scale-ratio, 1));
-        border-bottom: 1px solid rgba(99, 102, 241, 0.1);
-        background: linear-gradient(135deg, #6366f1 0%, #7c3aed 100%);
-        box-shadow: 0 2px 4px rgba(99, 102, 241, 0.1);
-    }
-
-    .tab-buttons {
-        display: flex;
-        gap: calc(4px * var(--scale-ratio, 1));
-    }
-
-    .tab-button {
-        display: flex;
-        align-items: center;
-        gap: calc(4px * var(--scale-ratio, 1));
-        padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
-        border: none;
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: calc(8px * var(--scale-ratio, 1));
-        cursor: pointer;
-        font-size: calc(12px * var(--scale-ratio, 1));
-        color: rgba(255, 255, 255, 0.8);
-        transition: all 0.3s ease;
-        backdrop-filter: blur(10px);
-    }
-
-    .tab-button:hover {
-        background: rgba(255, 255, 255, 0.2);
-        color: white;
-        transform: translateY(-1px);
-    }
-
-    .tab-button.active {
-        background: rgba(255, 255, 255, 0.25);
-        color: white;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        transform: translateY(-1px);
-    }
-
-    .tab-icon {
-        font-size: calc(14px * var(--scale-ratio, 1));
-    }
-
-    .tab-label {
-        font-size: calc(12px * var(--scale-ratio, 1));
-        font-weight: 500;
     }
 
     .body {
