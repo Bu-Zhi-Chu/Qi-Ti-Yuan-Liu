@@ -34,11 +34,13 @@
         { key: 'position', icon: 'Move', title: '定位样式' },
         { key: 'background', icon: 'Image', title: '背景样式' },
         { key: 'border', icon: 'SquareDashed', title: '边框样式' },
+        { key: 'text', icon: 'Type', title: '文字样式' },
+        { key: 'layout', icon: 'Layout', title: '布局样式' },
         { key: 'event', icon: 'Workflow', title: '事件处理' }
     ] as const
 
     // 根据选中节点的 activePropertyTab 动态设置 activeTab
-    let activeTab: 'attr' | 'position' | 'background' | 'border' | 'event' = $derived.by(() => {
+    let activeTab: 'attr' | 'position' | 'background' | 'border' | 'text' | 'layout' | 'event' = $derived.by(() => {
         const currentSelectedId = selectedId()
 
         if (!currentSelectedId) return 'attr'
@@ -63,7 +65,7 @@
             const tabValue = selectedNode.attributes.activePropertyTab
             if (tabValue === 'style') return 'position'
             if (tabs.some((t) => t.key === tabValue)) {
-                return tabValue as 'attr' | 'position' | 'background' | 'border' | 'event'
+                return tabValue as 'attr' | 'position' | 'background' | 'border' | 'text' | 'layout' | 'event'
             }
         }
         return 'attr'
