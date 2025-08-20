@@ -19,7 +19,6 @@
     import { getElementByNodeId } from '../../../services/utils/dom-geometry.util'
     import { getScaleRatio } from '../../../services/utils/get-scale-ratio.util'
     import { projectId } from '../../../services/repository/dom-tree.store.svelte'
-    import { BlobStorageService } from '../../../services/storage/blob-storage.service'
     import { ProjectThumbnailService } from '../../../services/project/project-thumbnail.service'
     import ColorPaletteService from '../../../services/color-palette.service'
     import ColorPicker from '../ColorPicker.svelte'
@@ -422,13 +421,14 @@
         styles.backgroundPositionUnitY = positionUnitY
 
         // 背景颜色 - 使用background-color属性
-        if (backgroundColor && gradientColors.length === 0) {
+        // 背景颜色和背景图片/渐变可以同时存在，不互相冲突
+        if (backgroundColor) {
             const r = parseInt(backgroundColor.slice(1, 3), 16)
             const g = parseInt(backgroundColor.slice(3, 5), 16)
             const b = parseInt(backgroundColor.slice(5, 7), 16)
             styles.backgroundColor = `rgba(${r}, ${g}, ${b}, ${backgroundOpacity})`
         } else {
-            // 当有渐变时，不设置纯色背景，但保持backgroundColor变量不变
+            // 只有当用户明确清空背景颜色时才清空
             styles.backgroundColor = ''
         }
 

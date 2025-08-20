@@ -13,15 +13,15 @@
  */
 
 import DexieService from '../database/dexie-service'
-import { BlobStorageService } from '../storage/blob-storage.service'
 
 export class ProjectThumbnailService {
   // 已创建默认缩略图的项目缓存，避免频繁重复写入
   private static defaultThumbnailCreated: Set<string> = new Set()
+  
   /**
    * 将背景图片同步为项目缩略图
    * @param projectId 项目ID
-   * @param backgroundImage 背景图片URL（可以是base64或blob URL）
+   * @param backgroundImage 背景图片URL（仅支持blob URL）
    */
   static async syncBackgroundToThumbnail(projectId: string, backgroundImage: string): Promise<void> {
     if (!projectId || !backgroundImage) {
@@ -32,29 +32,23 @@ export class ProjectThumbnailService {
     try {
       let blobData: Blob
 
-      // 处理不同类型的图片URL
-      if (backgroundImage.startsWith('data:image')) {
-        // 将base64转换为Blob
-        blobData = this.base64ToBlob(backgroundImage)
+      // 仅处理blob URL格式的图片
+      if (backgroundImage.startsWith('blob:')) {
+        // 直接处理blob URL
+        const response = await fetch(backgroundImage)
+        blobData = await response.blob()
       } else if (backgroundImage.startsWith('url(')) {
-        // 从CSS url()中提取URL
+        // 从CSS url()中提取blob URL
         const urlMatch = backgroundImage.match(/url\(['"]?([^'"]+)['"]?\)/)
         const imageUrl = urlMatch?.[1] || ''
 
-        if (imageUrl.startsWith('data:image')) {
-          blobData = this.base64ToBlob(imageUrl)
-        } else if (imageUrl.startsWith('blob:')) {
-          // 将blob URL转换为Blob
+        if (imageUrl.startsWith('blob:')) {
           const response = await fetch(imageUrl)
           blobData = await response.blob()
         } else {
           console.warn('不支持的图片URL格式:', imageUrl)
           return
         }
-      } else if (backgroundImage.startsWith('blob:')) {
-        // 直接处理blob URL
-        const response = await fetch(backgroundImage)
-        blobData = await response.blob()
       } else {
         console.warn('不支持的背景图片格式:', backgroundImage)
         return
@@ -79,25 +73,6 @@ export class ProjectThumbnailService {
     } catch (error) {
       console.error('同步项目缩略图失败:', error)
     }
-  }
-
-  /**
-   * 将base64字符串转换为Blob对象
-   * @param base64 base64字符串
-   * @returns Blob对象
-   */
-  private static base64ToBlob(base64: string): Blob {
-    const arr = base64.split(',')
-    const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/png'
-    const bstr = atob(arr[1])
-    let n = bstr.length
-    const u8arr = new Uint8Array(n)
-
-    while (n--) {
-      u8arr[n] = bstr.charCodeAt(n)
-    }
-
-    return new Blob([u8arr], { type: mime })
   }
 
   /**
