@@ -21,7 +21,7 @@
         id: string
         name: string
         createTime: string
-        thumbnail?: Blob
+        thumbnail?: string | Blob
     }
 
     // 历史项目数据，由 IndexedDB 实时加载

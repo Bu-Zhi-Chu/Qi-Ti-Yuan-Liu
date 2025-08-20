@@ -409,17 +409,28 @@
         uploadProgress = 0
 
         try {
-            // 使用Blob URL存储图片，避免使用base64
-            const blobUrl = URL.createObjectURL(file)
-            backgroundImage = `url(${blobUrl})`
-            updateBackgroundStyles()
-            isUploading = false
-            uploadProgress = 100
-
-            // 重置文件输入，允许再次上传同一张图片
-            if (fileInput) {
-                fileInput.value = ''
+            // 将图片读取为Base64 DataURL 以便持久化存储
+            const reader = new FileReader()
+            reader.onload = async () => {
+                const result = reader.result as string
+                if (result) {
+                    backgroundImage = `url(${result})`
+                    // 读取完成后立即更新节点样式与缩略图
+                    await updateBackgroundStyles()
+                }
+                isUploading = false
+                uploadProgress = 100
+                if (fileInput) fileInput.value = ''
             }
+            reader.onerror = (e) => {
+                console.error('图片读取失败:', e)
+                alert('图片上传失败，请重试')
+                isUploading = false
+                uploadProgress = 0
+                if (fileInput) fileInput.value = ''
+            }
+            // 开始读取文件，onload 回调中将完成样式更新与状态重置
+            reader.readAsDataURL(file)
         } catch (error) {
             console.error('图片上传失败:', error)
             alert('图片上传失败，请重试')

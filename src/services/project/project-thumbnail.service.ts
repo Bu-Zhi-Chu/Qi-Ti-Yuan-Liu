@@ -30,23 +30,16 @@ export class ProjectThumbnailService {
     }
 
     try {
-      let blobData: Blob
+      // 提取 DataURL（Base64 字符串）
+      let dataUrl = ''
 
-      // 仅处理blob URL格式的图片
-      if (backgroundImage.startsWith('blob:')) {
-        // 直接处理blob URL
-        const response = await fetch(backgroundImage)
-        blobData = await response.blob()
+      if (backgroundImage.startsWith('data:')) {
+        dataUrl = backgroundImage
       } else if (backgroundImage.startsWith('url(')) {
-        // 从CSS url()中提取blob URL
         const urlMatch = backgroundImage.match(/url\(['"]?([^'"]+)['"]?\)/)
-        const imageUrl = urlMatch?.[1] || ''
-
-        if (imageUrl.startsWith('blob:')) {
-          const response = await fetch(imageUrl)
-          blobData = await response.blob()
-        } else {
-          console.warn('不支持的图片URL格式:', imageUrl)
+        dataUrl = urlMatch?.[1] || ''
+        if (!dataUrl.startsWith('data:')) {
+          console.warn('不支持的图片URL格式:', dataUrl)
           return
         }
       } else {
@@ -54,13 +47,13 @@ export class ProjectThumbnailService {
         return
       }
 
-      // 更新项目缩略图（存储为Blob）
-      console.log(`【数据库交互】保存项目缩略图: 项目ID=${projectId}, 缩略图大小=${blobData?.size || 0}字节`)
+      // 更新项目缩略图（存储为Base64字符串）
+      console.log(`【数据库交互】保存项目缩略图: 项目ID=${projectId}, DataURL长度=${dataUrl.length}字符`)
       const updateSuccess = await DexieService.updateRecord(
         'qi-qiao-ban',
         'projects',
         projectId,
-        { thumbnail: blobData }
+        { thumbnail: dataUrl }
       )
 
       if (updateSuccess) {
@@ -152,15 +145,16 @@ export class ProjectThumbnailService {
         </svg>
       `.trim()
 
-      // 将SVG转换为Blob
-      const blobData = new Blob([svgContent], { type: 'image/svg+xml' })
+      // 转成Base64 DataURL 便于持久化
+      const encoded = btoa(unescape(encodeURIComponent(svgContent)))
+      const dataUrl = `data:image/svg+xml;base64,${encoded}`
 
-      // 更新项目缩略图（存储为Blob）
+      // 更新项目缩略图（存储为DataURL）
       const updateSuccess = await DexieService.updateRecord(
         'qi-qiao-ban',
         'projects',
         projectId,
-        { thumbnail: blobData }
+        { thumbnail: dataUrl }
       )
 
       if (updateSuccess) {

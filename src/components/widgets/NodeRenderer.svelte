@@ -21,7 +21,21 @@
     import DynamicComponent from '../core/DynamicComponent.svelte'
     // 递归自引入，替代 <svelte:self>（Svelte5 已弃用）
     import NodeRenderer from './NodeRenderer.svelte'
+    import { onDestroy } from 'svelte'
+    
+    // Blob → URL 缓存，避免重复生成
+    const blobUrlMap = new WeakMap<Blob, string>()
+    // 记录所有已创建的临时 URL，便于销毁时统一释放
+    const blobUrlSet = new Set<string>()
 
+    // 组件卸载时释放所有创建的 Object URL
+    onDestroy(() => {
+        for (const url of blobUrlSet) {
+            URL.revokeObjectURL(url)
+        }
+        blobUrlSet.clear()
+    })
+    
     // Runes props - 保留 selectedId 响应式
     const { node, selectedId, editing = false, select } = $props()
 
@@ -68,7 +82,18 @@
         const styleStr = styleEntries
             .map(([k, v]) => {
                 const kebab = k.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
-                return `${kebab}:${v}`
+                let value: any = v
+                // 若值为 Blob，则转换为临时 URL
+                if (value instanceof Blob) {
+                    let url = blobUrlMap.get(value)
+                    if (!url) {
+                        url = URL.createObjectURL(value)
+                        blobUrlMap.set(value, url)
+                        blobUrlSet.add(url)
+                    }
+                    value = `url(${url})`
+                }
+                return `${kebab}:${value}`
             })
             .join(';')
 
