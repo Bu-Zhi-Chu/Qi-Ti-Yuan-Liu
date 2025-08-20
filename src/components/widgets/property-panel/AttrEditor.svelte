@@ -133,15 +133,16 @@
     }
 
     // 工具函数：解析如 "100px"、"50%" 等字符串，拆分为数值与单位
-    function parseSize(size: string | undefined): [string, '%' | 'px'] {
+    function parseSize(size: string | Blob | undefined): [string, '%' | 'px'] {
         if (!size) return ['', '%']
+        const sizeStr = typeof size === 'string' ? size : ''
         // 支持解析 calc(100px * var(--scale-ratio, 1)) 形式
-        const calcMatch = size.match(/^calc\(\s*(\d+(?:\.\d+)?)\s*px\b.*\)$/i)
+        const calcMatch = sizeStr.match(/^calc\(\s*(\d+(?:\.\d+)?)\s*px\b.*\)$/i)
         if (calcMatch) {
             return [calcMatch[1], 'px']
         }
-        const match = size.match(/^(\d+(?:\.\d+)?)\s*(px|%)?$/i)
-        return match ? [match[1], (match[2] as any) || '%'] : [size, '%']
+        const match = sizeStr.match(/^(\d+(?:\.\d+)?)\s*(px|%)?$/i)
+        return match ? [match[1], (match[2] as any) || '%'] : [sizeStr, '%']
     }
 
     // 统一格式化尺寸，px 单位使用 calc 结合 --scale-ratio 实现自适应

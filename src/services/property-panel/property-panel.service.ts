@@ -64,7 +64,8 @@ export function updateNodeProps(id: string, patch: PropPatch): boolean {
         if (node.styles) delete node.styles[key];
       } else {
         if (!node.styles) node.styles = {};
-        node.styles[key] = val as string;
+        // 支持Blob和string类型
+        node.styles[key] = val as string | Blob;
       }
     }
   }

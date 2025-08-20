@@ -290,7 +290,20 @@ async function saveDomNodesToDomsTable(projectId: string, domTree: DomNode): Pro
     const saveNode = async (node: DomNode, parentId: string | null) => {
       // 确保数据是可序列化的
       const safeAttributes = node.attributes ? JSON.parse(JSON.stringify(node.attributes)) : {};
-      const safeStyles = node.styles ? JSON.parse(JSON.stringify(node.styles)) : {};
+
+      // 处理样式数据，保留Blob类型
+      const safeStyles: Record<string, string | Blob> = {};
+      if (node.styles) {
+        for (const [key, value] of Object.entries(node.styles)) {
+          if (value instanceof Blob) {
+            // 保留Blob对象
+            safeStyles[key] = value;
+          } else {
+            // 其他类型正常序列化
+            safeStyles[key] = JSON.parse(JSON.stringify(value));
+          }
+        }
+      }
 
       await DexieService.addRecord('qi-qiao-ban', 'doms', {
         projectId,
@@ -669,7 +682,7 @@ export function updateNodeProperties(nodeId: string, updates: Partial<DomNode>):
  * @param styles 样式对象
  * @returns 是否更新成功
  */
-export function updateNodeStyles(nodeId: string, styles: Record<string, string>): boolean {
+export function updateNodeStyles(nodeId: string, styles: Record<string, string | Blob>): boolean {
   const node = findNodeById(domTreeData, nodeId);
   if (node) {
     // 确保styles对象存在

@@ -157,27 +157,32 @@
 
         const styles = nodeProps.styles || {}
 
+        // 安全获取字符串值
+        const getStringValue = (value: string | Blob | undefined): string => {
+            return typeof value === 'string' ? value : ''
+        }
+
         // 使用局部变量避免触发响应式更新
-        let newFontFamily = styles.fontFamily || 'Arial, sans-serif'
+        let newFontFamily = getStringValue(styles.fontFamily) || 'Arial, sans-serif'
         let newFontSize = '16'
-        let newFontWeight = styles.fontWeight || '400'
+        let newFontWeight = getStringValue(styles.fontWeight) || '400'
         let newFontColor = '#000000'
         let newFontOpacity = 1
 
         let newLineHeight = '24'
-        let newTextAlign = styles.textAlign || 'left'
-        let newTextDecoration = styles.textDecoration || 'none'
-        let newFontStyle = styles.fontStyle || 'normal'
+        let newTextAlign = getStringValue(styles.textAlign) || 'left'
+        let newTextDecoration = getStringValue(styles.textDecoration) || 'none'
+        let newFontStyle = getStringValue(styles.fontStyle) || 'normal'
         let newLetterSpacing = '0'
         let newWordSpacing = '0'
         let newTextWrapStyle = 'normal-normal'
 
         // 字体大小
-        const [parsedFontSize] = parseSize(styles.fontSize || '16px')
+        const [parsedFontSize] = parseSize(getStringValue(styles.fontSize) || '16px')
         newFontSize = parsedFontSize
 
         // 字体颜色
-        const colorStyle = styles.color || '#000000'
+        const colorStyle = getStringValue(styles.color) || '#000000'
 
         // 解析普通颜色
         if (colorStyle) {
@@ -199,20 +204,20 @@
         }
 
         // 行高
-        const [parsedLineHeight] = parseSize(styles.lineHeight || '1.5')
+        const [parsedLineHeight] = parseSize(getStringValue(styles.lineHeight) || '1.5')
         newLineHeight = parsedLineHeight
 
         // 字母间距
-        const [parsedLetterSpacing] = parseSize(styles.letterSpacing || '0px')
+        const [parsedLetterSpacing] = parseSize(getStringValue(styles.letterSpacing) || '0px')
         newLetterSpacing = parsedLetterSpacing
 
         // 单词间距
-        const [parsedWordSpacing] = parseSize(styles.wordSpacing || '0px')
+        const [parsedWordSpacing] = parseSize(getStringValue(styles.wordSpacing) || '0px')
         newWordSpacing = parsedWordSpacing
 
         // 文字换行 - 根据whiteSpace和wordBreak匹配合适的组合
-        const whiteSpaceValue = styles.whiteSpace || 'normal'
-        const wordBreakValue = styles.wordBreak || 'normal'
+        const whiteSpaceValue = getStringValue(styles.whiteSpace) || 'normal'
+        const wordBreakValue = getStringValue(styles.wordBreak) || 'normal'
 
         // 查找匹配的组合
         const matchedOption = textWrapOptions.find((option) => option.whiteSpace === whiteSpaceValue && option.wordBreak === wordBreakValue)
@@ -334,7 +339,7 @@
     function updateTextStyles() {
         if (!selectedId) return
 
-        const styles: Record<string, string> = {}
+        const styles: Record<string, string | Blob> = {}
 
         // 字体族
         styles.fontFamily = fontFamily
@@ -374,8 +379,16 @@
         styles.whiteSpace = wrapStyle ? wrapStyle.whiteSpace : 'normal'
         styles.wordBreak = wrapStyle ? wrapStyle.wordBreak : 'normal'
 
-        // 更新样式
-        updateNodeProps(selectedId, { styles })
+        // 更新样式 - 将Blob类型过滤掉，只保留string类型
+        const filteredStyles: Record<string, string | undefined> = {}
+        Object.entries(styles).forEach(([key, value]) => {
+            if (typeof value === 'string') {
+                filteredStyles[key] = value
+            } else if (value === undefined) {
+                filteredStyles[key] = undefined
+            }
+        })
+        updateNodeProps(selectedId, { styles: filteredStyles })
 
         // 单独更新文本内容
         updateNodeProperties(selectedId, { textContent })

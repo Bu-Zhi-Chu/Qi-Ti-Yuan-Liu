@@ -71,34 +71,39 @@
             isRoot = selectedId === 'root'
             const props = getNodeProps(selectedId)
 
+            // 安全获取字符串值的工具函数
+            const getStringValue = (value: string | Blob | undefined): string => {
+                return typeof value === 'string' ? value : ''
+            }
+
             // 读取统一边框属性
-            borderWidth = parsePxValue(props?.styles?.borderWidth) || ''
-            borderColor = props?.styles?.borderColor || '#000000'
-            borderStyle = props?.styles?.borderStyle || 'solid'
-            ;[borderRadius, borderRadiusUnit] = parseBorderRadius(props?.styles?.borderRadius)
+            borderWidth = parsePxValue(getStringValue(props?.styles?.borderWidth)) || ''
+            borderColor = getStringValue(props?.styles?.borderColor) || '#000000'
+            borderStyle = getStringValue(props?.styles?.borderStyle) || 'solid'
+            ;[borderRadius, borderRadiusUnit] = parseBorderRadius(getStringValue(props?.styles?.borderRadius))
 
             // 读取四边独立属性
-            borderTopWidth = parsePxValue(props?.styles?.borderTopWidth) || ''
-            borderTopColor = props?.styles?.borderTopColor || '#000000'
-            borderTopStyle = props?.styles?.borderTopStyle || 'solid'
-            borderRightWidth = parsePxValue(props?.styles?.borderRightWidth) || ''
-            borderRightColor = props?.styles?.borderRightColor || '#000000'
-            borderRightStyle = props?.styles?.borderRightStyle || 'solid'
-            borderBottomWidth = parsePxValue(props?.styles?.borderBottomWidth) || ''
-            borderBottomColor = props?.styles?.borderBottomColor || '#000000'
-            borderBottomStyle = props?.styles?.borderBottomStyle || 'solid'
-            borderLeftWidth = parsePxValue(props?.styles?.borderLeftWidth) || ''
-            borderLeftColor = props?.styles?.borderLeftColor || '#000000'
-            borderLeftStyle = props?.styles?.borderLeftStyle || 'solid'
+            borderTopWidth = parsePxValue(getStringValue(props?.styles?.borderTopWidth)) || ''
+            borderTopColor = getStringValue(props?.styles?.borderTopColor) || '#000000'
+            borderTopStyle = getStringValue(props?.styles?.borderTopStyle) || 'solid'
+            borderRightWidth = parsePxValue(getStringValue(props?.styles?.borderRightWidth)) || ''
+            borderRightColor = getStringValue(props?.styles?.borderRightColor) || '#000000'
+            borderRightStyle = getStringValue(props?.styles?.borderRightStyle) || 'solid'
+            borderBottomWidth = parsePxValue(getStringValue(props?.styles?.borderBottomWidth)) || ''
+            borderBottomColor = getStringValue(props?.styles?.borderBottomColor) || '#000000'
+            borderBottomStyle = getStringValue(props?.styles?.borderBottomStyle) || 'solid'
+            borderLeftWidth = parsePxValue(getStringValue(props?.styles?.borderLeftWidth)) || ''
+            borderLeftColor = getStringValue(props?.styles?.borderLeftColor) || '#000000'
+            borderLeftStyle = getStringValue(props?.styles?.borderLeftStyle) || 'solid'
 
             // 读取四个独立圆角属性
-            ;[borderTopLeftRadius, borderTopLeftRadiusUnit] = parseBorderRadius(props?.styles?.borderTopLeftRadius)
-            ;[borderTopRightRadius, borderTopRightRadiusUnit] = parseBorderRadius(props?.styles?.borderTopRightRadius)
-            ;[borderBottomLeftRadius, borderBottomLeftRadiusUnit] = parseBorderRadius(props?.styles?.borderBottomLeftRadius)
-            ;[borderBottomRightRadius, borderBottomRightRadiusUnit] = parseBorderRadius(props?.styles?.borderBottomRightRadius)
+            ;[borderTopLeftRadius, borderTopLeftRadiusUnit] = parseBorderRadius(getStringValue(props?.styles?.borderTopLeftRadius))
+            ;[borderTopRightRadius, borderTopRightRadiusUnit] = parseBorderRadius(getStringValue(props?.styles?.borderTopRightRadius))
+            ;[borderBottomLeftRadius, borderBottomLeftRadiusUnit] = parseBorderRadius(getStringValue(props?.styles?.borderBottomLeftRadius))
+            ;[borderBottomRightRadius, borderBottomRightRadiusUnit] = parseBorderRadius(getStringValue(props?.styles?.borderBottomRightRadius))
 
             // 判断是否使用统一控制
-            unifiedControl = !(props?.styles?.borderTopWidth || props?.styles?.borderRightWidth || props?.styles?.borderBottomWidth || props?.styles?.borderLeftWidth)
+            unifiedControl = !(getStringValue(props?.styles?.borderTopWidth) || getStringValue(props?.styles?.borderRightWidth) || getStringValue(props?.styles?.borderBottomWidth) || getStringValue(props?.styles?.borderLeftWidth))
         } else {
             // 清空所有属性
             resetAllProperties()

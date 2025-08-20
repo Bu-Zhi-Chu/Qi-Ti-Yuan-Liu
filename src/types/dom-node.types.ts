@@ -17,8 +17,8 @@ export interface DomNode {
   children?: DomNode[]
   /** DOM 属性 */
   attributes?: Record<string, string>
-  /** 行内样式 */
-  styles?: Record<string, string>
+  /** 行内样式 - 支持字符串和 Blob 类型 */
+  styles?: Record<string, string | Blob>
 
   /** 节点文本内容 */
   textContent?: string

@@ -88,7 +88,8 @@
         ;[currentMarginLeft, currentMarginLeftUnit] = parseSize(styleSnapshot?.styles?.marginLeft)
 
         // 解析z-index
-        currentZIndex = styleSnapshot?.styles?.zIndex || ''
+        const zIndexValue = styleSnapshot?.styles?.zIndex
+        currentZIndex = typeof zIndexValue === 'string' ? zIndexValue : ''
     } else {
         // 重置所有属性
         currentPosition = 'static'
@@ -114,28 +115,31 @@
     }
 
     // 解析尺寸值和单位
-    function parseSize(size: string | undefined): [string, 'px' | '%'] {
+    function parseSize(size: string | Blob | undefined): [string, 'px' | '%'] {
         if (!size) return ['', defaultUnit]
 
+        const sizeStr = typeof size === 'string' ? size : ''
+        if (!sizeStr) return ['', defaultUnit]
+
         // 支持解析 calc(100px * var(--scale-ratio, 1)) 形式
-        const calcMatch = size?.match(/^calc\(\s*(\d+(?:\.\d+)?)\s*px\b.*\)$/i)
+        const calcMatch = sizeStr.match(/^calc\(\s*(\d+(?:\.\d+)?)\s*px\b.*\)$/i)
         if (calcMatch) {
             return [calcMatch[1], 'px']
         }
 
         // 处理百分比 - 四舍五入保留1位小数
-        if (size.endsWith('%')) {
-            const value = parseFloat(size.replace('%', ''))
+        if (sizeStr.endsWith('%')) {
+            const value = parseFloat(sizeStr.replace('%', ''))
             return [value ? Math.round(value * 10) / 10 + '' : '', '%']
         }
 
         // 处理像素
-        if (size.endsWith('px')) {
-            return [size.replace('px', ''), 'px']
+        if (sizeStr.endsWith('px')) {
+            return [sizeStr.replace('px', ''), 'px']
         }
 
         // 默认使用全局设置的默认单位
-        return [size, defaultUnit]
+        return [sizeStr, defaultUnit]
     }
 
     // 格式化尺寸，px 单位使用 calc 结合 --scale-ratio 实现自适应

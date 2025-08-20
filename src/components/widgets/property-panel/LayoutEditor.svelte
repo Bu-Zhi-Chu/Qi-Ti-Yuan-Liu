@@ -43,24 +43,29 @@
     ]
 
     // 初始化display值
+    // 安全获取字符串值的工具函数
+    const getStringValue = (value: string | Blob | undefined): string => {
+        return typeof value === 'string' ? value : ''
+    }
+
     $effect(() => {
         if (selectedId) {
             const props = getNodeProps(selectedId)
             if (props) {
-                currentDisplay = props.styles?.display || 'block'
+                currentDisplay = typeof props.styles?.display === 'string' ? props.styles.display : 'block'
 
                 // 初始化flex属性
-                currentFlexDirection = props.styles?.flexDirection || 'row'
-                currentJustifyContent = props.styles?.justifyContent || 'flex-start'
-                currentAlignItems = props.styles?.alignItems || 'stretch'
-                currentFlexWrap = props.styles?.flexWrap || 'nowrap'
+                currentFlexDirection = getStringValue(props.styles?.flexDirection) || 'row'
+                currentJustifyContent = getStringValue(props.styles?.justifyContent) || 'flex-start'
+                currentAlignItems = getStringValue(props.styles?.alignItems) || 'stretch'
+                currentFlexWrap = getStringValue(props.styles?.flexWrap) || 'nowrap'
 
                 // 初始化grid属性
-                currentGridTemplateColumns = props.styles?.gridTemplateColumns || ''
-                currentGridTemplateRows = props.styles?.gridTemplateRows || ''
-                currentGridGap = props.styles?.gap || props.styles?.gridGap || ''
-                currentGridColumnGap = props.styles?.columnGap || props.styles?.gridColumnGap || ''
-                currentGridRowGap = props.styles?.rowGap || props.styles?.gridRowGap || ''
+                currentGridTemplateColumns = getStringValue(props.styles?.gridTemplateColumns)
+                currentGridTemplateRows = getStringValue(props.styles?.gridTemplateRows)
+                currentGridGap = getStringValue(props.styles?.gap || props.styles?.gridGap)
+                currentGridColumnGap = getStringValue(props.styles?.columnGap || props.styles?.gridColumnGap)
+                currentGridRowGap = getStringValue(props.styles?.rowGap || props.styles?.gridRowGap)
             }
         }
     })

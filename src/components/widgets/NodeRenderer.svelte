@@ -22,7 +22,7 @@
     // 递归自引入，替代 <svelte:self>（Svelte5 已弃用）
     import NodeRenderer from './NodeRenderer.svelte'
     import { onDestroy } from 'svelte'
-    
+
     // Blob → URL 缓存，避免重复生成
     const blobUrlMap = new WeakMap<Blob, string>()
     // 记录所有已创建的临时 URL，便于销毁时统一释放
@@ -35,7 +35,7 @@
         }
         blobUrlSet.clear()
     })
-    
+
     // Runes props - 保留 selectedId 响应式
     const { node, selectedId, editing = false, select } = $props()
 
@@ -83,8 +83,31 @@
             .map(([k, v]) => {
                 const kebab = k.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
                 let value: any = v
-                // 若值为 Blob，则转换为临时 URL
-                if (value instanceof Blob) {
+
+                // 处理背景图片 - 直接处理 Blob 对象、渐变字符串或 URL 字符串
+                if (k === 'backgroundImage') {
+                    if (v instanceof Blob) {
+                        let url = blobUrlMap.get(v)
+                        if (!url) {
+                            url = URL.createObjectURL(v)
+                            blobUrlMap.set(v, url)
+                            blobUrlSet.add(url)
+                        }
+                        value = `url(${url})`
+                    } else if (typeof v === 'string' && v) {
+                        // 处理渐变字符串（linear-gradient, radial-gradient等）和URL
+                        if (v.startsWith('url(') || v.startsWith('linear-gradient(') || v.startsWith('radial-gradient(') || v.startsWith('conic-gradient(')) {
+                            value = v
+                        } else {
+                            // 处理普通图片路径
+                            value = `url(${v})`
+                        }
+                    } else if (v) {
+                        // 其他情况直接使用原值
+                        value = v
+                    }
+                } else if (value instanceof Blob) {
+                    // 处理其他 Blob 类型样式
                     let url = blobUrlMap.get(value)
                     if (!url) {
                         url = URL.createObjectURL(value)
@@ -93,6 +116,7 @@
                     }
                     value = `url(${url})`
                 }
+
                 return `${kebab}:${value}`
             })
             .join(';')

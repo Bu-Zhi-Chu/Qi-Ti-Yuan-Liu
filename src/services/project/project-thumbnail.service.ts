@@ -21,39 +21,54 @@ export class ProjectThumbnailService {
   /**
    * 将背景图片同步为项目缩略图
    * @param projectId 项目ID
-   * @param backgroundImage 背景图片URL（仅支持blob URL）
+   * @param backgroundImage 背景图片（可以是 Blob 或 URL 字符串）
    */
-  static async syncBackgroundToThumbnail(projectId: string, backgroundImage: string): Promise<void> {
+  static async syncBackgroundToThumbnail(projectId: string, backgroundImage: string | Blob): Promise<void> {
     if (!projectId || !backgroundImage) {
       console.warn('项目ID或背景图片为空，无法同步缩略图')
       return
     }
 
     try {
-      // 提取 DataURL（Base64 字符串）
-      let dataUrl = ''
+      let thumbnailBlob: Blob
 
-      if (backgroundImage.startsWith('data:')) {
-        dataUrl = backgroundImage
-      } else if (backgroundImage.startsWith('url(')) {
-        const urlMatch = backgroundImage.match(/url\(['"]?([^'"]+)['"]?\)/)
-        dataUrl = urlMatch?.[1] || ''
-        if (!dataUrl.startsWith('data:')) {
-          console.warn('不支持的图片URL格式:', dataUrl)
+      // 处理不同类型的背景图片
+      if (backgroundImage instanceof Blob) {
+        // 如果已经是 Blob，直接使用
+        thumbnailBlob = backgroundImage
+      } else if (typeof backgroundImage === 'string') {
+        if (backgroundImage.startsWith('data:')) {
+          // DataURL 转换为 Blob
+          thumbnailBlob = await this.dataURLToBlob(backgroundImage)
+        } else if (backgroundImage.startsWith('url(')) {
+          const urlMatch = backgroundImage.match(/url\(['"]?([^'"]+)['"]?\)/)
+          const url = urlMatch?.[1] || ''
+          if (url.startsWith('data:')) {
+            thumbnailBlob = await this.dataURLToBlob(url)
+          } else if (url.startsWith('blob:')) {
+            // blob URL 转换为 Blob
+            const response = await fetch(url)
+            thumbnailBlob = await response.blob()
+          } else {
+            console.warn('不支持的图片URL格式:', url)
+            return
+          }
+        } else {
+          console.warn('不支持的背景图片格式:', backgroundImage)
           return
         }
       } else {
-        console.warn('不支持的背景图片格式:', backgroundImage)
+        console.warn('不支持的背景图片类型:', typeof backgroundImage)
         return
       }
 
-      // 更新项目缩略图（存储为Base64字符串）
-      console.log(`【数据库交互】保存项目缩略图: 项目ID=${projectId}, DataURL长度=${dataUrl.length}字符`)
+      // 更新项目缩略图（存储为 Blob）
+      console.log(`【数据库交互】保存项目缩略图: 项目ID=${projectId}, Blob大小=${thumbnailBlob.size}字节`)
       const updateSuccess = await DexieService.updateRecord(
         'qi-qiao-ban',
         'projects',
         projectId,
-        { thumbnail: dataUrl }
+        { thumbnail: thumbnailBlob }
       )
 
       if (updateSuccess) {
@@ -106,6 +121,23 @@ export class ProjectThumbnailService {
   }
 
   /**
+   * 将 DataURL 转换为 Blob
+   * @param dataURL DataURL 字符串
+   * @returns Blob 对象
+   */
+  private static async dataURLToBlob(dataURL: string): Promise<Blob> {
+    const arr = dataURL.split(',')
+    const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/png'
+    const bstr = atob(arr[1])
+    let n = bstr.length
+    const u8arr = new Uint8Array(n)
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n)
+    }
+    return new Blob([u8arr], { type: mime })
+  }
+
+  /**
    * 创建默认项目缩略图
    * @param projectId 项目ID
    * @param backgroundColor 背景颜色（可选）
@@ -145,16 +177,15 @@ export class ProjectThumbnailService {
         </svg>
       `.trim()
 
-      // 转成Base64 DataURL 便于持久化
-      const encoded = btoa(unescape(encodeURIComponent(svgContent)))
-      const dataUrl = `data:image/svg+xml;base64,${encoded}`
+      // 将SVG转换为Blob
+      const svgBlob = new Blob([svgContent], { type: 'image/svg+xml' })
 
-      // 更新项目缩略图（存储为DataURL）
+      // 更新项目缩略图（存储为Blob）
       const updateSuccess = await DexieService.updateRecord(
         'qi-qiao-ban',
         'projects',
         projectId,
-        { thumbnail: dataUrl }
+        { thumbnail: svgBlob }
       )
 
       if (updateSuccess) {

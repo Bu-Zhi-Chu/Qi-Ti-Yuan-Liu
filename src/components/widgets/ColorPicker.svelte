@@ -36,7 +36,7 @@
     import { v4 as uuidv4 } from 'uuid'
 
     interface Props {
-        value?: string // 现在接受rgba或hex格式
+        value?: string | Blob // 现在接受rgba、hex格式或Blob
         onchange?: (rgba: string) => void
         placeholder?: string
         disabled?: boolean
@@ -540,14 +540,18 @@
 
     // 从内存 domTree 或回退 doms 表加载当前颜色值（仅在未提供 value 时使用）
     async function loadCurrentColor() {
-        if (value && value.trim() !== '') return
+        if (value) {
+            const valueStr = typeof value === 'string' ? value : ''
+            if (valueStr.trim() !== '') return
+        }
 
         let rgba: string | null = null
 
         // 优先从内存 domTree 获取
         if (componentId) {
             const node = findNodeById(domTree, componentId)
-            rgba = node?.styles?.backgroundColor ?? null
+            const bgColor = node?.styles?.backgroundColor
+            rgba = typeof bgColor === 'string' ? bgColor : null
         }
 
         if (rgba) {
@@ -575,10 +579,11 @@
     // 响应外部value变化 - 始终优先使用value属性
     $effect(() => {
         if (typeof value === 'string') {
-            if (value.startsWith('rgba')) {
-                updateFromRgba(value)
-            } else if (value.startsWith('#')) {
-                currentColor = value
+            const valueStr = value
+            if (valueStr.startsWith('rgba')) {
+                updateFromRgba(valueStr)
+            } else if (valueStr.startsWith('#')) {
+                currentColor = valueStr
                 currentOpacity = 1
                 updateHslFromColor()
             }

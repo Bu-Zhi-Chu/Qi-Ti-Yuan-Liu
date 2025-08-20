@@ -24,11 +24,18 @@
     import ColorPicker from '../ColorPicker.svelte'
     import ResponsiveSlider from '../ResponsiveSlider.svelte'
 
+    // 工具函数：安全获取字符串值
+    function getStringValue(value: string | Blob | undefined): string {
+        return typeof value === 'string' ? value : ''
+    }
+
+
+
     // 外部传入当前选中节点 id
     export let selectedId: string | null = null
 
     // 背景样式状态
-    let backgroundImage: string = ''
+    let backgroundImage: string | Blob = ''
     let backgroundColor: string = ''
     let backgroundOpacity: number = 1
     let backgroundSizeX: string = '100'
@@ -80,12 +87,14 @@
         const nodeProps = getNodeProps(selectedId)
         const styles = nodeProps?.styles || {}
 
+
+
         // 先从 styles.backgroundColor 读取背景颜色（与其他属性一致）
-        const bgColorStyle = styles.backgroundColor || ''
+        const bgColorStyle = getStringValue(styles.backgroundColor)
         if (bgColorStyle) {
             const match = bgColorStyle.match(/rgba?\(([^)]+)\)/)
             if (match) {
-                const parts = match[1].split(',').map((s) => s.trim())
+                const parts = match[1].split(',').map((s: string) => s.trim())
                 if (parts.length >= 3) {
                     const r = parseInt(parts[0])
                     const g = parseInt(parts[1])
@@ -100,13 +109,13 @@
             }
         }
 
-        // 背景图片
+        // 背景图片 - 直接使用 backgroundImage 字段
         backgroundImage = styles.backgroundImage || ''
 
         // 从CSS backgroundImage解析渐变（不存储gradientColors到数据库）
-        const bgImage = styles.backgroundImage || ''
-        if (bgImage && (bgImage.startsWith('linear-gradient') || bgImage.startsWith('radial-gradient'))) {
-            const gradientMatch = bgImage.match(/(linear|radial)-gradient\(([^,]+),(.+)\)/)
+        const bgImageStr = typeof styles.backgroundImage === 'string' ? styles.backgroundImage : ''
+        if (bgImageStr && (bgImageStr.startsWith('linear-gradient') || bgImageStr.startsWith('radial-gradient'))) {
+            const gradientMatch = bgImageStr.match(/(linear|radial)-gradient\(([^,]+),(.+)\)/)
             if (gradientMatch) {
                 gradientDirection = gradientMatch[2].trim()
                 const colorStopsText = gradientMatch[3]
@@ -116,45 +125,52 @@
                 const matches = Array.from(colorStopsText.matchAll(colorStopRegex))
 
                 // 重新组织颜色停止点，找出0%和100%位置的颜色
-                const colorStops = matches.map((match) => {
-                    const colorStr = match[1].trim()
-                    const position = match[2] || ''
+                const colorStops = matches.map((match: RegExpMatchArray) => {
+                    const fullMatch = match[0]
+                    const colorPart = fullMatch.trim()
 
-                    // 解析颜色值
-                    let color = colorStr
-                    let opacity = 1
+                    // 分离颜色和位置
+                    const colorPositionMatch = colorPart.match(/^(.+?)\s*(\d+%)?$/)
+                    if (!colorPositionMatch) return { color: '#ffffff', opacity: 1, position: -1 }
 
-                    if (colorStr.startsWith('rgb')) {
-                        const rgbaMatch = colorStr.match(/rgba?\(([^)]+)\)/)
-                        if (rgbaMatch) {
-                            const parts = rgbaMatch[1].split(',').map((s) => s.trim())
-                            const r = parseInt(parts[0])
-                            const g = parseInt(parts[1])
-                            const b = parseInt(parts[2])
-                            opacity = parts.length > 3 ? parseFloat(parts[3]) : 1
-                            color = rgbToHex(r, g, b)
-                        }
-                    } else if (colorStr.startsWith('#')) {
-                        color = colorStr
-                        opacity = 1
-                    } else {
-                        // 处理颜色名称
-                        color = colorStr
-                        opacity = 1
-                    }
+                    const colorStr = colorPositionMatch[1].trim()
+                    const position = colorPositionMatch[2] || ''
 
-                    // 解析位置百分比
-                    let positionPercent = -1
-                    if (position) {
-                        if (position.includes('%')) {
-                            positionPercent = parseFloat(position.replace('%', ''))
-                        } else {
-                            positionPercent = parseFloat(position)
-                        }
-                    }
+                            // 解析颜色值
+                            let color = colorStr
+                            let opacity = 1
 
-                    return { color, opacity, position: positionPercent }
-                })
+                            if (colorStr.startsWith('rgb')) {
+                                const rgbaMatch = colorStr.match(/rgba?\(([^)]+)\)/)
+                                if (rgbaMatch) {
+                                    const parts = rgbaMatch[1].split(',').map((s: string) => s.trim())
+                                    const r = parseInt(parts[0])
+                                    const g = parseInt(parts[1])
+                                    const b = parseInt(parts[2])
+                                    opacity = parts.length > 3 ? parseFloat(parts[3]) : 1
+                                    color = rgbToHex(r, g, b)
+                                }
+                            } else if (colorStr.startsWith('#')) {
+                                color = colorStr
+                                opacity = 1
+                            } else {
+                                // 处理颜色名称
+                                color = colorStr
+                                opacity = 1
+                            }
+
+                            // 解析位置百分比
+                            let positionPercent = -1
+                            if (position) {
+                                if (position.includes('%')) {
+                                    positionPercent = parseFloat(position.replace('%', ''))
+                                } else {
+                                    positionPercent = parseFloat(position)
+                                }
+                            }
+
+                            return { color, opacity, position: positionPercent }
+                        })
 
                 // 找出0%和100%位置的颜色
                 const color0 = colorStops.find((stop) => stop.position === 0) || colorStops[0]
@@ -163,7 +179,7 @@
                 gradientColors = [color0, color100].filter(Boolean).slice(0, 2)
 
                 // 直接使用数据库保存的渐变比例
-                gradientRatio = parseInt(styles.gradientRatio || '50')
+                gradientRatio = parseInt(getStringValue(styles.gradientRatio) || '50')
             } else {
                 gradientColors = []
             }
@@ -171,12 +187,12 @@
             gradientColors = []
             // 如果doms表中没有颜色，再从styles.backgroundColor读取，但不设置默认值
             if (!backgroundColor) {
-                const bgColor = styles.backgroundColor || ''
+                const bgColor = getStringValue(styles.backgroundColor)
                 if (bgColor) {
                     // 解析颜色和透明度
                     const match = bgColor.match(/rgba?\(([^)]+)\)/)
                     if (match) {
-                        const parts = match[1].split(',').map((s) => s.trim())
+                        const parts = match[1].split(',').map((s: string) => s.trim())
                         if (parts.length >= 3) {
                             const r = parseInt(parts[0])
                             const g = parseInt(parts[1])
@@ -194,15 +210,17 @@
             }
         }
 
+
+
         // 背景尺寸 - 优先使用新的存储格式，兼容旧格式
         if (styles.backgroundSizeX !== undefined) {
-            backgroundSizeX = styles.backgroundSizeX || '100'
-            backgroundSizeY = styles.backgroundSizeY || '100'
-            sizeUnitX = (styles.backgroundSizeUnitX || '%') as 'px' | '%'
-            sizeUnitY = (styles.backgroundSizeUnitY || '%') as 'px' | '%'
+            backgroundSizeX = getStringValue(styles.backgroundSizeX) || '100'
+            backgroundSizeY = getStringValue(styles.backgroundSizeY) || '100'
+            sizeUnitX = (getStringValue(styles.backgroundSizeUnitX) || '%') as 'px' | '%'
+            sizeUnitY = (getStringValue(styles.backgroundSizeUnitY) || '%') as 'px' | '%'
         } else {
             // 兼容旧格式：从CSS表达式解析
-            const backgroundSize = styles.backgroundSize || '100% 100%'
+            const backgroundSize = getStringValue(styles.backgroundSize) || '100% 100%'
             const [sizeX, sizeY] = backgroundSize.split(' ')
             const [parsedSizeX, parsedUnitX] = parseSize(sizeX || '100%')
             const [parsedSizeY, parsedUnitY] = parseSize(sizeY || '100%')
@@ -214,13 +232,13 @@
 
         // 背景位置 - 优先使用新的存储格式，兼容旧格式
         if (styles.backgroundPositionX !== undefined) {
-            backgroundPositionX = styles.backgroundPositionX || '50'
-            backgroundPositionY = styles.backgroundPositionY || '50'
-            positionUnitX = (styles.backgroundPositionUnitX || '%') as 'px' | '%'
-            positionUnitY = (styles.backgroundPositionUnitY || '%') as 'px' | '%'
+            backgroundPositionX = getStringValue(styles.backgroundPositionX) || '50'
+            backgroundPositionY = getStringValue(styles.backgroundPositionY) || '50'
+            positionUnitX = (getStringValue(styles.backgroundPositionUnitX) || '%') as 'px' | '%'
+            positionUnitY = (getStringValue(styles.backgroundPositionUnitY) || '%') as 'px' | '%'
         } else {
             // 兼容旧格式：从CSS表达式解析
-            const backgroundPosition = styles.backgroundPosition || '50% 50%'
+            const backgroundPosition = getStringValue(styles.backgroundPosition) || '50% 50%'
             const [posX, posY] = backgroundPosition.split(' ')
             const [parsedPosX, parsedUnitX] = parseSize(posX || '50%')
             const [parsedPosY, parsedUnitY] = parseSize(posY || '50%')
@@ -231,10 +249,10 @@
         }
 
         // 背景重复
-        backgroundRepeat = styles.backgroundRepeat || 'no-repeat'
+        backgroundRepeat = getStringValue(styles.backgroundRepeat) || 'no-repeat'
 
         // 背景裁剪为文字形状
-        backgroundClipToText = styles.backgroundClip === 'text' || styles.webkitBackgroundClip === 'text'
+        backgroundClipToText = getStringValue(styles.backgroundClip) === 'text' || getStringValue(styles.webkitBackgroundClip) === 'text'
 
         // 渐变比例已经在前面处理过了
     }
@@ -409,28 +427,12 @@
         uploadProgress = 0
 
         try {
-            // 将图片读取为Base64 DataURL 以便持久化存储
-            const reader = new FileReader()
-            reader.onload = async () => {
-                const result = reader.result as string
-                if (result) {
-                    backgroundImage = `url(${result})`
-                    // 读取完成后立即更新节点样式与缩略图
-                    await updateBackgroundStyles()
-                }
-                isUploading = false
-                uploadProgress = 100
-                if (fileInput) fileInput.value = ''
-            }
-            reader.onerror = (e) => {
-                console.error('图片读取失败:', e)
-                alert('图片上传失败，请重试')
-                isUploading = false
-                uploadProgress = 0
-                if (fileInput) fileInput.value = ''
-            }
-            // 开始读取文件，onload 回调中将完成样式更新与状态重置
-            reader.readAsDataURL(file)
+            // 直接存储 Blob 对象以实现跨会话持久化
+            backgroundImage = file
+            await updateBackgroundStyles()
+            isUploading = false
+            uploadProgress = 100
+            if (fileInput) fileInput.value = ''
         } catch (error) {
             console.error('图片上传失败:', error)
             alert('图片上传失败，请重试')
@@ -447,7 +449,7 @@
     async function updateBackgroundStyles() {
         if (!selectedId) return
 
-        const styles: Record<string, string> = {}
+        const styles: Record<string, any> = {}
 
         // 背景尺寸 - 直接存储数值和单位
         styles.backgroundSize = `${formatSize(backgroundSizeX, sizeUnitX)} ${formatSize(backgroundSizeY, sizeUnitY)}`
@@ -485,6 +487,7 @@
             // 保存计算出的渐变比例
             styles.gradientRatio = gradientRatio.toString()
         } else if (backgroundImage) {
+            // 直接将 Blob 或字符串存储到 backgroundImage 字段
             styles.backgroundImage = backgroundImage
             styles.gradientRatio = '' // 清除渐变比例
         } else {
@@ -510,8 +513,8 @@
 
         // 如果是根节点，仅当背景图片状态发生变化时才处理缩略图
         if (selectedId === 'root') {
-            const prevIsRealImage = lastBackgroundImage && lastBackgroundImage.trim().startsWith('url(')
-            const currIsRealImage = backgroundImage && backgroundImage.trim().startsWith('url(')
+            const prevIsRealImage = lastBackgroundImage && typeof lastBackgroundImage === 'string' && lastBackgroundImage.trim().startsWith('url(')
+        const currIsRealImage = backgroundImage && typeof backgroundImage === 'string' && backgroundImage.trim().startsWith('url(')
 
             if (currIsRealImage && !prevIsRealImage) {
                 // 新上传了图片，生成缩略图
@@ -526,7 +529,7 @@
         }
 
         // 更新上一次背景图片记录
-        lastBackgroundImage = backgroundImage
+        lastBackgroundImage = typeof backgroundImage === 'string' ? backgroundImage : ''
     }
 
     // 同步背景图片到项目缩略图
@@ -568,9 +571,11 @@
         if (!selectedId) return
 
         // 释放Blob URL内存
-        const match = backgroundImage.match(/url\(([^)]+)\)/)
-        if (match && match[1] && match[1].startsWith('blob:')) {
-            URL.revokeObjectURL(match[1])
+        if (typeof backgroundImage === 'string') {
+            const match = backgroundImage.match(/url\(([^)]+)\)/)
+            if (match && match[1] && match[1].startsWith('blob:')) {
+                URL.revokeObjectURL(match[1])
+            }
         }
 
         // 清除本地状态
@@ -664,7 +669,7 @@
 
     // 获取背景图片的实际尺寸
     async function getBackgroundImageSize(): Promise<{ width: number; height: number }> {
-        if (!backgroundImage || !backgroundImage.startsWith('url(')) {
+        if (!backgroundImage || typeof backgroundImage !== 'string' || !backgroundImage.startsWith('url(')) {
             return { width: 0, height: 0 }
         }
 
@@ -812,15 +817,15 @@
 
     // 清理Blob URL
     function cleanupBlobUrls() {
-        if (!backgroundImage) return
+        if (!backgroundImage || typeof backgroundImage !== 'string') return
         const match = backgroundImage.match(/url\(([^)]+)\)/)
         if (match && match[1] && match[1].startsWith('blob:')) {
             URL.revokeObjectURL(match[1])
         }
     }
 
-    // 当 backgroundImage 以 url( 开头时才视为真实图片
-    $: isRealBackgroundImage = !!(backgroundImage && backgroundImage.trim().startsWith('url('))
+    // 当有背景图片时（包括Blob对象和URL字符串）
+    $: hasBackgroundImage = !!(backgroundImage && (backgroundImage instanceof Blob || (typeof backgroundImage === 'string' && backgroundImage.trim() && !backgroundImage.includes('gradient'))))
 
     // 拖拽上传处理
     function handleDragOver(event: DragEvent) {
@@ -851,7 +856,7 @@
             <!-- 背景图片上传 -->
             <div class="background-item">
                 <label for="background-image-input">背景图片</label>
-                {#if !isRealBackgroundImage}
+                {#if !hasBackgroundImage}
                     <button id="background-image-input" class="input-style" onclick={() => fileInput.click()} ondragover={handleDragOver} ondrop={handleDrop} title="点击上传或拖拽图片到此处">上传图片</button>
                 {:else}
                     <button class="input-style" onclick={clearBackgroundImage} title="移除图片" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">移除</button>

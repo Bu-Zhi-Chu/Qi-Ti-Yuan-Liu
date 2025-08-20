@@ -127,9 +127,15 @@ export default class DexieService {
     }
 
     static async addRecord<T>(dbName: string, tableName: string, data: T): Promise<any> {
-        console.log(`【数据库交互】添加记录: 数据库=${dbName}, 表=${tableName}, 数据=${JSON.stringify(data)}`)
+        console.log(`【数据库交互】添加记录: 数据库=${dbName}, 表=${tableName}`)
         try {
             const db = new Dexie(dbName)
+            // 配置Dexie以支持Blob存储
+            db.version(1).stores({
+                templates: '++id, name, desc, cover, tag, thumbnailUrl',
+                projects: 'id, name, templateId, data, createdAt, updatedAt, canvasState, mode',
+                doms: '[projectId+id], projectId, parentId, type, attributes, style, textContent'
+            })
             await db.open()
             const id = await db.table(tableName).add(data as any)
             console.log(`【数据库交互】添加记录成功: 新记录ID=${id}`)
@@ -149,9 +155,15 @@ export default class DexieService {
      * @returns 更新是否成功
      */
     static async updateRecord<T>(dbName: string, tableName: string, key: any, data: Partial<T>): Promise<boolean> {
-        console.log(`【数据库交互】更新记录: 数据库=${dbName}, 表=${tableName}, ID=${key}, 数据=${JSON.stringify(data)}`)
+        console.log(`【数据库交互】更新记录: 数据库=${dbName}, 表=${tableName}, ID=${key}`)
         try {
             const db = new Dexie(dbName)
+            // 配置Dexie以支持Blob存储
+            db.version(1).stores({
+                templates: '++id, name, desc, cover, tag, thumbnailUrl',
+                projects: 'id, name, templateId, data, createdAt, updatedAt, canvasState, mode',
+                doms: '[projectId+id], projectId, parentId, type, attributes, style, textContent'
+            })
             await db.open()
             await db.table(tableName).update(key, data as any)
             console.log('【数据库交互】更新记录成功')
