@@ -922,7 +922,7 @@
 
             <!-- 背景裁剪为文字形状开关 -->
             <div class="background-item">
-                <label for="background-clip-toggle">文字渐变</label>
+                <label for="background-clip-toggle">背景裁剪</label>
                 <label class="switch">
                     <input 
                         id="background-clip-toggle"
