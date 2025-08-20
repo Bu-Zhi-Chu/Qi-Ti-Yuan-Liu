@@ -268,42 +268,22 @@
 
     // 添加渐变颜色
     function addGradientColor() {
-        // 若已有背景图片，先清空以避免 CSS 属性冲突，并删除数据库中的背景图片记录
+        // 清空背景图片
         if (backgroundImage) {
             cleanupBlobUrls()
             backgroundImage = ''
         }
+        
+        // 清空背景颜色（数据库中也会清空）
+        const tempColor = backgroundColor || '#ffffff'
+        const tempOpacity = backgroundOpacity
+        backgroundColor = ''
+        backgroundOpacity = 1
+        
         if (gradientColors.length === 0) {
-            // 获取当前有效的背景颜色，如果为空则从DOM获取
-            let currentColor = backgroundColor
-            if (!currentColor || currentColor === '') {
-                if (selectedId) {
-                    const el = getElementByNodeId(selectedId)
-                    if (el) {
-                        const computedStyle = window.getComputedStyle(el)
-                        const bgColor = computedStyle.backgroundColor
-                        if (bgColor && bgColor !== 'rgba(0, 0, 0, 0)' && bgColor !== 'transparent') {
-                            // 解析RGB/RGBA格式
-                            const rgbaMatch = bgColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/i)
-                            if (rgbaMatch) {
-                                const r = parseInt(rgbaMatch[1])
-                                const g = parseInt(rgbaMatch[2])
-                                const b = parseInt(rgbaMatch[3])
-                                currentColor = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
-                            }
-                        }
-                    }
-                }
-            }
-
-            // 如果还是无法获取有效颜色，使用默认白色
-            if (!currentColor || currentColor === '') {
-                currentColor = '#ffffff'
-            }
-
-            // 添加两个渐变颜色，第一个使用当前背景色，第二个为白色
+            // 使用当前背景色作为第一个渐变颜色，白色作为第二个
             gradientColors = [
-                { color: currentColor, opacity: backgroundOpacity },
+                { color: tempColor || '#ffffff', opacity: tempOpacity },
                 { color: '#ffffff', opacity: 1 }
             ]
             updateBackgroundStyles()
@@ -319,7 +299,12 @@
             backgroundOpacity = firstGradientColor.opacity
         }
 
+        // 清空渐变颜色和背景图片
         gradientColors = []
+        if (backgroundImage) {
+            cleanupBlobUrls()
+            backgroundImage = ''
+        }
         updateBackgroundStyles()
     }
 
@@ -456,9 +441,16 @@
         }
 
         // 存储渐变相关配置
-        styles.gradientDirection = gradientDirection
-        styles.gradientColors = JSON.stringify(gradientColors)
-        styles.gradientRatio = String(gradientRatio)
+        if (gradientColors.length > 0) {
+            styles.gradientDirection = gradientDirection
+            styles.gradientColors = JSON.stringify(gradientColors)
+            styles.gradientRatio = String(gradientRatio)
+        } else {
+            // 清除渐变相关配置
+            delete styles.gradientDirection
+            delete styles.gradientColors
+            delete styles.gradientRatio
+        }
 
         // 背景重复
         styles.backgroundRepeat = backgroundRepeat
