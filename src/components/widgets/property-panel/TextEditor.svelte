@@ -574,6 +574,12 @@
         align-items: center;
         gap: calc(10px * var(--scale-ratio, 1));
     }
+
+    /* 确保ColorPicker组件宽度一致 */
+    .text-item :global(.color-picker-container) {
+        flex: 1;
+        min-width: 0;
+    }
     label {
         min-width: calc(70px * var(--scale-ratio, 1));
         font-size: calc(13px * var(--scale-ratio, 1));
