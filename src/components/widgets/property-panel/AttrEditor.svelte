@@ -262,14 +262,16 @@
                 {#if isRoot}
                     <input id="node-type-text" type="text" value="画布" disabled class="disabled-input" />
                 {:else}
-                    <select id="node-type" bind:value={currentType} onchange={(e) => handleTypeChange(e.currentTarget.value)}>
-                        {#if !currentType}
-                            <option value="">请选择组件类型...</option>
-                        {/if}
-                        {#each componentOptions as item}
-                            <option value={item.type}>{item.nameZh}</option>
-                        {/each}
-                    </select>
+                    <div class="select-wrapper">
+                        <select id="node-type" bind:value={currentType} onchange={(e) => handleTypeChange(e.currentTarget.value)}>
+                            {#if !currentType}
+                                <option value="">请选择组件类型...</option>
+                            {/if}
+                            {#each componentOptions as item}
+                                <option value={item.type}>{item.nameZh}</option>
+                            {/each}
+                        </select>
+                    </div>
                 {/if}
                 <span class="unit-placeholder"></span>
             </div>
@@ -295,32 +297,38 @@
             <!-- box-sizing 下拉框 -->
             <div class="attr-item">
                 <label for="node-box-sizing">盒子类型</label>
-                <select id="node-box-sizing" bind:value={currentBoxSizing} onchange={(e) => handleBoxSizingChange(e.currentTarget.value)}>
-                    <option value="border-box">边框盒模型 (border-box)</option>
-                    <option value="content-box">内容盒模型 (content-box)</option>
-                </select>
+                <div class="select-wrapper">
+                    <select id="node-box-sizing" bind:value={currentBoxSizing} onchange={(e) => handleBoxSizingChange(e.currentTarget.value)}>
+                        <option value="border-box">边框盒模型 (border-box)</option>
+                        <option value="content-box">内容盒模型 (content-box)</option>
+                    </select>
+                </div>
                 <span class="unit-placeholder"></span>
             </div>
 
             <!-- overflow 下拉框 -->
             <div class="attr-item">
                 <label for="node-overflow">溢出处理</label>
-                <select id="node-overflow" bind:value={currentOverflow} onchange={(e) => handleOverflowChange(e.currentTarget.value)}>
-                    <option value="hidden">隐藏 (hidden)</option>
-                    <option value="auto">自动 (auto)</option>
-                    <option value="scroll">滚动 (scroll)</option>
-                    <option value="visible">显示 (visible)</option>
-                </select>
+                <div class="select-wrapper">
+                    <select id="node-overflow" bind:value={currentOverflow} onchange={(e) => handleOverflowChange(e.currentTarget.value)}>
+                        <option value="hidden">隐藏 (hidden)</option>
+                        <option value="auto">自动 (auto)</option>
+                        <option value="scroll">滚动 (scroll)</option>
+                        <option value="visible">显示 (visible)</option>
+                    </select>
+                </div>
                 <span class="unit-placeholder"></span>
             </div>
 
             <!-- 鼠标穿透下拉框 -->
             <div class="attr-item">
                 <label for="node-pointer-events">鼠标穿透</label>
-                <select id="node-pointer-events" bind:value={currentPointerEvents} onchange={(e) => handlePointerEventsChange(e.currentTarget.value)}>
-                    <option value="auto">阻挡 (auto)</option>
-                    <option value="none">穿透 (none)</option>
-                </select>
+                <div class="select-wrapper">
+                    <select id="node-pointer-events" bind:value={currentPointerEvents} onchange={(e) => handlePointerEventsChange(e.currentTarget.value)}>
+                        <option value="auto">阻挡 (auto)</option>
+                        <option value="none">穿透 (none)</option>
+                    </select>
+                </div>
                 <span class="unit-placeholder"></span>
             </div>
 
@@ -440,6 +448,30 @@
     select option:checked {
         background-color: rgba(99, 102, 241, 0.2);
         color: #e2e8f0;
+    }
+
+    .select-wrapper {
+        position: relative;
+        flex: 1;
+    }
+
+    .select-wrapper::after {
+        content: '';
+        position: absolute;
+        right: calc(12px * var(--scale-ratio, 1));
+        top: 50%;
+        transform: translateY(-50%);
+        width: 0;
+        height: 0;
+        border-left: calc(4px * var(--scale-ratio, 1)) solid transparent;
+        border-right: calc(4px * var(--scale-ratio, 1)) solid transparent;
+        border-top: calc(4px * var(--scale-ratio, 1)) solid #94a3b8;
+        pointer-events: none;
+    }
+
+    .select-wrapper select {
+        width: 100%;
+        padding-right: calc(30px * var(--scale-ratio, 1));
     }
     input::placeholder,
     textarea::placeholder {

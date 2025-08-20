@@ -440,13 +440,15 @@
                 {#if isRoot}
                     <input id="node-position-text" type="text" value="静态 (static) - 画布固定" disabled class="disabled-input" />
                 {:else}
-                    <select id="node-position" bind:value={currentPosition} onchange={(e) => handlePositionChange(e.currentTarget.value)}>
-                        <option value="static">静态 (static)</option>
-                        <option value="relative">相对 (relative)</option>
-                        <option value="absolute">绝对 (absolute)</option>
-                        <option value="fixed">固定 (fixed)</option>
-                        <option value="sticky">粘性 (sticky)</option>
-                    </select>
+                    <div class="select-wrapper">
+                        <select id="node-position" bind:value={currentPosition} onchange={(e) => handlePositionChange(e.currentTarget.value)}>
+                            <option value="static">静态 (static)</option>
+                            <option value="relative">相对 (relative)</option>
+                            <option value="absolute">绝对 (absolute)</option>
+                            <option value="fixed">固定 (fixed)</option>
+                            <option value="sticky">粘性 (sticky)</option>
+                        </select>
+                    </div>
                 {/if}
                 <span class="unit-placeholder"></span>
             </div>
@@ -650,5 +652,29 @@
     input[type='number'] {
         -moz-appearance: textfield;
         appearance: textfield;
+    }
+
+    .select-wrapper {
+        position: relative;
+        flex: 1;
+    }
+
+    .select-wrapper::after {
+        content: '';
+        position: absolute;
+        right: calc(12px * var(--scale-ratio, 1));
+        top: 50%;
+        transform: translateY(-50%);
+        width: 0;
+        height: 0;
+        border-left: calc(4px * var(--scale-ratio, 1)) solid transparent;
+        border-right: calc(4px * var(--scale-ratio, 1)) solid transparent;
+        border-top: calc(4px * var(--scale-ratio, 1)) solid #94a3b8;
+        pointer-events: none;
+    }
+
+    .select-wrapper select {
+        width: 100%;
+        padding-right: calc(30px * var(--scale-ratio, 1));
     }
 </style>
