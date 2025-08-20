@@ -441,8 +441,16 @@
         box-shadow: 0 0 0 calc(3px * var(--scale-ratio, 1)) rgba(255, 255, 255, 0.1);
     }
     select option {
-        background: rgba(255, 255, 255, 0.1);
+        background: #1e293b;
         color: #e2e8f0;
+        padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
+        border: none;
+    }
+    
+    select option:hover,
+    select option:focus,
+    select option:checked {
+        background: #334155;
     }
 
     .unit-placeholder {
