@@ -44,9 +44,9 @@ export default class DexieService {
         console.log(`【数据库交互】开始创建数据库: ${dbName}`)
         const db = new Dexie(dbName)
 
-        // 版本1：包含所有表结构，包括颜色卡表
+        // 版本2：添加templates表的domStructure字段
         db.version(1).stores({
-            templates: '++id, name, desc, cover, tag, thumbnailUrl',
+            templates: '++id, name, desc, cover, tag, thumbnailUrl, domStructure',
             projects: 'id, name, templateId, data, createdAt, updatedAt, canvasState, mode',
             doms: '[projectId+id], projectId, parentId, type, attributes, style, textContent'
         })
@@ -75,7 +75,8 @@ export default class DexieService {
                     desc: '从零开始创建',
                     cover: blankBlob,
                     tag: '默认',
-                    thumbnailUrl: blankBlob
+                    thumbnailUrl: blankBlob,
+                    domStructure: []
                 }
             ])
         }
@@ -131,8 +132,8 @@ export default class DexieService {
         try {
             const db = new Dexie(dbName)
             // 配置Dexie以支持Blob存储
-            db.version(1).stores({
-                templates: '++id, name, desc, cover, tag, thumbnailUrl',
+            db.version(2).stores({
+                templates: '++id, name, desc, cover, tag, thumbnailUrl, domStructure',
                 projects: 'id, name, templateId, data, createdAt, updatedAt, canvasState, mode',
                 doms: '[projectId+id], projectId, parentId, type, attributes, style, textContent'
             })
@@ -159,8 +160,8 @@ export default class DexieService {
         try {
             const db = new Dexie(dbName)
             // 配置Dexie以支持Blob存储
-            db.version(1).stores({
-                templates: '++id, name, desc, cover, tag, thumbnailUrl',
+            db.version(2).stores({
+                templates: '++id, name, desc, cover, tag, thumbnailUrl, domStructure',
                 projects: 'id, name, templateId, data, createdAt, updatedAt, canvasState, mode',
                 doms: '[projectId+id], projectId, parentId, type, attributes, style, textContent'
             })
