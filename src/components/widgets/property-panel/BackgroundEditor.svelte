@@ -2,7 +2,7 @@
   BackgroundEditor.svelte
   背景样式编辑器组件
   功能：
-  - 图片上传并存储为Blob URL
+  - 图片上传并存储为Blob URL（避免使用base64）
   - 背景尺寸设置（横轴/纵轴，默认100%）
   - 背景位置设置（横轴/纵轴，默认50%）
   - 平铺方式选择（默认不重复）
@@ -11,6 +11,7 @@
   - 支持拖拽上传图片
   - 图片以Blob URL形式存储在doms表的style字段中
   - 背景样式直接应用于DOM元素
+  - 组件卸载时自动清理Blob URL避免内存泄漏
 -->
 <script lang="ts">
     import { onDestroy } from 'svelte'
@@ -382,9 +383,9 @@
         uploadProgress = 0
 
         try {
-            // 使用base64持久化存储图片
-            const base64Data = await BlobStorageService.fileToBase64(file)
-            backgroundImage = `url(${base64Data})`
+            // 使用Blob URL存储图片，避免使用base64
+            const blobUrl = URL.createObjectURL(file)
+            backgroundImage = `url(${blobUrl})`
             updateBackgroundStyles()
             isUploading = false
             uploadProgress = 100
