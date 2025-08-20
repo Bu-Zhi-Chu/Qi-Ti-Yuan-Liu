@@ -513,18 +513,21 @@
 
         // 如果是根节点，仅当背景图片状态发生变化时才处理缩略图
         if (selectedId === 'root') {
-            const prevIsRealImage = lastBackgroundImage && typeof lastBackgroundImage === 'string' && lastBackgroundImage.trim().startsWith('url(')
-        const currIsRealImage = backgroundImage && typeof backgroundImage === 'string' && backgroundImage.trim().startsWith('url(')
+            const prevHasImage = !!lastBackgroundImage
+            const currHasImage = !!backgroundImage
 
-            if (currIsRealImage && !prevIsRealImage) {
+            if (currHasImage && !prevHasImage) {
                 // 新上传了图片，生成缩略图
                 await syncBackgroundToThumbnail()
-            } else if (!currIsRealImage && prevIsRealImage) {
+            } else if (!currHasImage && prevHasImage) {
                 // 图片被清空，恢复默认缩略图
                 const projectId = getRouteProjectId()
                 if (projectId) {
                     await ProjectThumbnailService.createDefaultThumbnail(projectId)
                 }
+            } else if (currHasImage && prevHasImage) {
+                // 图片变更，重新生成缩略图
+                await syncBackgroundToThumbnail()
             }
         }
 
