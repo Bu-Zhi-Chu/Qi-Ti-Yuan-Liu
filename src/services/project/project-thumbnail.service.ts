@@ -17,7 +17,7 @@ import DexieService from '../database/dexie-service'
 export class ProjectThumbnailService {
   // 已创建默认缩略图的项目缓存，避免频繁重复写入
   private static defaultThumbnailCreated: Set<string> = new Set()
-  
+
   /**
    * 将背景图片同步为项目缩略图
    * @param projectId 项目ID

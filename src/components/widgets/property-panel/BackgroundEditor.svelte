@@ -102,69 +102,94 @@
         // 背景图片
         backgroundImage = styles.backgroundImage || ''
 
-        // 优先从存储的渐变配置中恢复
-        if (styles.gradientColors) {
-            try {
-                const storedColors = JSON.parse(styles.gradientColors)
-                if (Array.isArray(storedColors) && storedColors.length > 0) {
-                    gradientColors = storedColors
-                    gradientDirection = styles.gradientDirection || 'to right'
-                } else {
-                    gradientColors = []
-                }
-            } catch (e) {
-                console.warn('解析存储的渐变颜色失败:', e)
-                gradientColors = []
-            }
-        } else {
-            // 兼容旧格式：从CSS backgroundImage解析渐变
-            const bgImage = styles.backgroundImage || ''
-            if (bgImage && bgImage.startsWith('linear-gradient')) {
-                const gradientMatch = bgImage.match(/linear-gradient\(([^,]+),(.+)\)/)
-                if (gradientMatch) {
-                    gradientDirection = gradientMatch[1].trim()
-                    const colors = gradientMatch[2].split(',').map((c) => c.trim())
-                    gradientColors = colors.map((colorStr) => {
+        // 从CSS backgroundImage解析渐变（不存储gradientColors到数据库）
+        const bgImage = styles.backgroundImage || ''
+        if (bgImage && (bgImage.startsWith('linear-gradient') || bgImage.startsWith('radial-gradient'))) {
+            const gradientMatch = bgImage.match(/(linear|radial)-gradient\(([^,]+),(.+)\)/)
+            if (gradientMatch) {
+                gradientDirection = gradientMatch[2].trim()
+                const colorStopsText = gradientMatch[3]
+
+                // 使用更精确的正则表达式匹配颜色停止点
+                const colorStopRegex = /(rgba?\([^)]+\)|#[0-9a-fA-F]{3,8}|\w+)\s*(\d*%)?/g
+                const matches = Array.from(colorStopsText.matchAll(colorStopRegex))
+
+                // 重新组织颜色停止点，找出0%和100%位置的颜色
+                const colorStops = matches.map((match) => {
+                    const colorStr = match[1].trim()
+                    const position = match[2] || ''
+
+                    // 解析颜色值
+                    let color = colorStr
+                    let opacity = 1
+
+                    if (colorStr.startsWith('rgb')) {
                         const rgbaMatch = colorStr.match(/rgba?\(([^)]+)\)/)
                         if (rgbaMatch) {
                             const parts = rgbaMatch[1].split(',').map((s) => s.trim())
                             const r = parseInt(parts[0])
                             const g = parseInt(parts[1])
                             const b = parseInt(parts[2])
-                            const a = parts.length > 3 ? parseFloat(parts[3]) : 1
-                            return { color: rgbToHex(r, g, b), opacity: a }
-                        } else {
-                            return { color: colorStr, opacity: 1 }
+                            opacity = parts.length > 3 ? parseFloat(parts[3]) : 1
+                            color = rgbToHex(r, g, b)
                         }
-                    })
-                } else {
-                    gradientColors = []
-                }
-            } else {
-                gradientColors = []
-                // 如果doms表中没有颜色，再从styles.backgroundColor读取，但不设置默认值
-                if (!backgroundColor) {
-                    const bgColor = styles.backgroundColor || ''
-                    if (bgColor) {
-                        // 解析颜色和透明度
-                        const match = bgColor.match(/rgba?\(([^)]+)\)/)
-                        if (match) {
-                            const parts = match[1].split(',').map((s) => s.trim())
-                            if (parts.length >= 3) {
-                                const r = parseInt(parts[0])
-                                const g = parseInt(parts[1])
-                                const b = parseInt(parts[2])
-                                const a = parts.length > 3 ? parseFloat(parts[3]) : 1
-                                backgroundColor = rgbToHex(r, g, b)
-                                backgroundOpacity = a
-                            }
+                    } else if (colorStr.startsWith('#')) {
+                        color = colorStr
+                        opacity = 1
+                    } else {
+                        // 处理颜色名称
+                        color = colorStr
+                        opacity = 1
+                    }
+
+                    // 解析位置百分比
+                    let positionPercent = -1
+                    if (position) {
+                        if (position.includes('%')) {
+                            positionPercent = parseFloat(position.replace('%', ''))
                         } else {
-                            backgroundColor = bgColor
-                            backgroundOpacity = 1
+                            positionPercent = parseFloat(position)
                         }
                     }
-                    // 不设置默认值，让ColorPicker从doms表加载颜色
+
+                    return { color, opacity, position: positionPercent }
+                })
+
+                // 找出0%和100%位置的颜色
+                const color0 = colorStops.find(stop => stop.position === 0) || colorStops[0]
+                const color100 = colorStops.find(stop => stop.position === 100) || colorStops[colorStops.length - 1]
+
+                gradientColors = [color0, color100].filter(Boolean).slice(0, 2)
+
+                // 直接使用数据库保存的渐变比例
+                gradientRatio = parseInt(styles.gradientRatio || '50')
+            } else {
+                gradientColors = []
+            }
+        } else {
+            gradientColors = []
+            // 如果doms表中没有颜色，再从styles.backgroundColor读取，但不设置默认值
+            if (!backgroundColor) {
+                const bgColor = styles.backgroundColor || ''
+                if (bgColor) {
+                    // 解析颜色和透明度
+                    const match = bgColor.match(/rgba?\(([^)]+)\)/)
+                    if (match) {
+                        const parts = match[1].split(',').map((s) => s.trim())
+                        if (parts.length >= 3) {
+                            const r = parseInt(parts[0])
+                            const g = parseInt(parts[1])
+                            const b = parseInt(parts[2])
+                            const a = parts.length > 3 ? parseFloat(parts[3]) : 1
+                            backgroundColor = rgbToHex(r, g, b)
+                            backgroundOpacity = a
+                        }
+                    } else {
+                        backgroundColor = bgColor
+                        backgroundOpacity = 1
+                    }
                 }
+                // 不设置默认值，让ColorPicker从doms表加载颜色
             }
         }
 
@@ -207,8 +232,7 @@
         // 背景重复
         backgroundRepeat = styles.backgroundRepeat || 'no-repeat'
 
-        // 渐变比例
-        gradientRatio = parseInt(styles.gradientRatio || '50')
+        // 渐变比例已经在前面处理过了
     }
 
     // 监听 selectedId 变化，自动调用初始化函数
@@ -274,11 +298,9 @@
             backgroundImage = ''
         }
 
-        // 清空背景颜色（数据库中也会清空）
+        // 保留背景颜色，不清空
         const tempColor = backgroundColor || '#ffffff'
         const tempOpacity = backgroundOpacity
-        backgroundColor = ''
-        backgroundOpacity = 1
 
         if (gradientColors.length === 0) {
             // 使用当前背景色作为第一个渐变颜色，白色作为第二个
@@ -435,22 +457,14 @@
         // 背景图片或渐变背景 - 使用background-image属性
         if (gradientColors.length > 0) {
             styles.backgroundImage = generateGradientCSS()
+            // 保存计算出的渐变比例
+            styles.gradientRatio = gradientRatio.toString()
         } else if (backgroundImage) {
             styles.backgroundImage = backgroundImage
+            styles.gradientRatio = '' // 清除渐变比例
         } else {
             styles.backgroundImage = '' // 清除背景图片
-        }
-
-        // 存储渐变相关配置
-        if (gradientColors.length > 0) {
-            styles.gradientDirection = gradientDirection
-            styles.gradientColors = JSON.stringify(gradientColors)
-            styles.gradientRatio = String(gradientRatio)
-        } else {
-            // 清除渐变相关配置
-            delete styles.gradientDirection
-            delete styles.gradientColors
-            delete styles.gradientRatio
+            styles.gradientRatio = '' // 清除渐变比例
         }
 
         // 背景重复
