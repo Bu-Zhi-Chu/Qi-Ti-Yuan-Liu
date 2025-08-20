@@ -19,31 +19,31 @@
     let unifiedControl = $state(true)
 
     // 统一边框属性
-    let borderWidth = $state('')
+    let borderWidth = $state('0')
     let borderColor = $state('#000000')
     let borderStyle = $state('solid')
-    let borderRadius = $state('')
+    let borderRadius = $state('0')
     let borderRadiusUnit = $state<'px' | '%'>('px')
 
     // 四边独立属性
-    let borderTopWidth = $state('')
+    let borderTopWidth = $state('0')
     let borderTopColor = $state('#000000')
     let borderTopStyle = $state('solid')
-    let borderRightWidth = $state('')
+    let borderRightWidth = $state('0')
     let borderRightColor = $state('#000000')
     let borderRightStyle = $state('solid')
-    let borderBottomWidth = $state('')
+    let borderBottomWidth = $state('0')
     let borderBottomColor = $state('#000000')
     let borderBottomStyle = $state('solid')
-    let borderLeftWidth = $state('')
+    let borderLeftWidth = $state('0')
     let borderLeftColor = $state('#000000')
     let borderLeftStyle = $state('solid')
 
     // 四个独立圆角属性
-    let borderTopLeftRadius = $state('')
-    let borderTopRightRadius = $state('')
-    let borderBottomLeftRadius = $state('')
-    let borderBottomRightRadius = $state('')
+    let borderTopLeftRadius = $state('0')
+    let borderTopRightRadius = $state('0')
+    let borderBottomLeftRadius = $state('0')
+    let borderBottomRightRadius = $state('0')
     let borderTopLeftRadiusUnit = $state<'px' | '%'>('px')
     let borderTopRightRadiusUnit = $state<'px' | '%'>('px')
     let borderBottomLeftRadiusUnit = $state<'px' | '%'>('px')
@@ -107,7 +107,7 @@
 
     // 解析 px 值
     function parsePxValue(value: string | undefined): string {
-        if (!value) return ''
+        if (!value) return '0'
         const match = value.match(/calc\((\d+)px.*\)/)
         return match ? match[1] : value.replace('px', '')
     }
@@ -120,7 +120,7 @@
 
     // 解析边框圆角值和单位
     function parseBorderRadius(value: string | undefined): [string, 'px' | '%'] {
-        if (!value) return ['', 'px']
+        if (!value) return ['0', 'px']
 
         // 处理百分比
         if (value.endsWith('%')) {
@@ -153,27 +153,27 @@
     // 重置所有属性
     function resetAllProperties() {
         unifiedControl = true
-        borderWidth = ''
+        borderWidth = '0'
         borderColor = '#000000'
         borderStyle = 'solid'
-        borderRadius = ''
+        borderRadius = '0'
         borderRadiusUnit = 'px'
-        borderTopWidth = ''
+        borderTopWidth = '0'
         borderTopColor = '#000000'
         borderTopStyle = 'solid'
-        borderRightWidth = ''
+        borderRightWidth = '0'
         borderRightColor = '#000000'
         borderRightStyle = 'solid'
-        borderBottomWidth = ''
+        borderBottomWidth = '0'
         borderBottomColor = '#000000'
         borderBottomStyle = 'solid'
-        borderLeftWidth = ''
+        borderLeftWidth = '0'
         borderLeftColor = '#000000'
         borderLeftStyle = 'solid'
-        borderTopLeftRadius = ''
-        borderTopRightRadius = ''
-        borderBottomLeftRadius = ''
-        borderBottomRightRadius = ''
+        borderTopLeftRadius = '0'
+        borderTopRightRadius = '0'
+        borderBottomLeftRadius = '0'
+        borderBottomRightRadius = '0'
         borderTopLeftRadiusUnit = 'px'
         borderTopRightRadiusUnit = 'px'
         borderBottomLeftRadiusUnit = 'px'
