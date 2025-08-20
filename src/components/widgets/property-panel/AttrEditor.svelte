@@ -408,9 +408,9 @@
         opacity: 0.5;
     }
 
-    /* 根节点（画布）禁用输入框的特殊样式 */
+    /* 禁用状态统一使用 #64748b 颜色 */
     .disabled-input {
-        color: #64748b !important; /* 使用更灰色的文本颜色 */
+        color: #64748b !important; /* 统一禁用状态文本颜色 */
     }
 
     .unit-placeholder {

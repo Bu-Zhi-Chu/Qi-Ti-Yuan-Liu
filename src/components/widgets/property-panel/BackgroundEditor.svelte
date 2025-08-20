@@ -1039,6 +1039,12 @@
         cursor: pointer;
         transition: all 0.3s ease;
     }
+    .unit-toggle:disabled {
+        background: rgba(255, 255, 255, 0.05);
+        color: #64748b;
+        cursor: not-allowed;
+        opacity: 0.5;
+    }
     .unit-toggle:hover {
         background: rgba(255, 255, 255, 0.15);
     }

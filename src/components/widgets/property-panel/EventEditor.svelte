@@ -42,4 +42,14 @@
         margin-top: calc(40px * var(--scale-ratio, 1));
         font-size: calc(14px * var(--scale-ratio, 1));
     }
+
+    .event-editor:has(.placeholder) {
+        /* 禁用状态统一使用 #64748b */
+        color: #64748b;
+    }
+    
+    /* 占位符文本统一使用 #64748b */
+    .placeholder {
+        color: #64748b;
+    }
 </style>

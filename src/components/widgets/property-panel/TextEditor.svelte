@@ -702,6 +702,7 @@
     }
     .unit-toggle:disabled {
         cursor: not-allowed;
+        color: #64748b;
         opacity: 0.5;
     }
 
