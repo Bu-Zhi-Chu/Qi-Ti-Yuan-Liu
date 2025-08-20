@@ -395,11 +395,13 @@
 
             <div class="text-item">
                 <label for="font-family">文本字体</label>
-                <select id="font-family" bind:value={fontFamily} onchange={updateTextStyles}>
-                    {#each fontFamilyOptions as option}
-                        <option value={option.value}>{option.label}</option>
-                    {/each}
-                </select>
+                <div class="select-wrapper">
+                    <select id="font-family" bind:value={fontFamily} onchange={updateTextStyles}>
+                        {#each fontFamilyOptions as family}
+                            <option value={family.value}>{family.label}</option>
+                        {/each}
+                    </select>
+                </div>
                 <span class="unit-placeholder"></span>
             </div>
 
@@ -441,12 +443,14 @@
             </div>
 
             <div class="text-item">
-                <label for="font-weight">字体粗细</label>
-                <select id="font-weight" bind:value={fontWeight} onchange={updateTextStyles}>
-                    {#each fontWeightOptions as option}
-                        <option value={option.value}>{option.label}</option>
-                    {/each}
-                </select>
+                <label for="font-weight">文本宽度</label>
+                <div class="select-wrapper">
+                    <select id="font-weight" bind:value={fontWeight} onchange={updateTextStyles}>
+                        {#each fontWeightOptions as weight}
+                            <option value={weight.value}>{weight.label}</option>
+                        {/each}
+                    </select>
+                </div>
                 <span class="unit-placeholder"></span>
             </div>
 
@@ -506,32 +510,38 @@
             </div>
 
             <div class="text-item">
-                <label for="text-align">文本对齐</label>
-                <select id="text-align" bind:value={textAlign} onchange={updateTextStyles}>
-                    {#each textAlignOptions as option}
-                        <option value={option.value}>{option.label}</option>
-                    {/each}
-                </select>
+                <label for="text-align">对齐方式</label>
+                <div class="select-wrapper">
+                    <select id="text-align" bind:value={textAlign} onchange={updateTextStyles}>
+                        {#each textAlignOptions as option}
+                            <option value={option.value}>{option.label}</option>
+                        {/each}
+                    </select>
+                </div>
                 <span class="unit-placeholder"></span>
             </div>
 
             <div class="text-item">
-                <label for="text-decoration">文本装饰</label>
-                <select id="text-decoration" bind:value={textDecoration} onchange={updateTextStyles}>
-                    {#each textDecorationOptions as option}
-                        <option value={option.value}>{option.label}</option>
-                    {/each}
-                </select>
+                <label for="text-decoration">文字装饰</label>
+                <div class="select-wrapper">
+                    <select id="text-decoration" bind:value={textDecoration} onchange={updateTextStyles}>
+                        {#each textDecorationOptions as option}
+                            <option value={option.value}>{option.label}</option>
+                        {/each}
+                    </select>
+                </div>
                 <span class="unit-placeholder"></span>
             </div>
 
             <div class="text-item">
                 <label for="font-style">字体样式</label>
-                <select id="font-style" bind:value={fontStyle} onchange={updateTextStyles}>
-                    {#each fontStyleOptions as option}
-                        <option value={option.value}>{option.label}</option>
-                    {/each}
-                </select>
+                <div class="select-wrapper">
+                    <select id="font-style" bind:value={fontStyle} onchange={updateTextStyles}>
+                        {#each fontStyleOptions as option}
+                            <option value={option.value}>{option.label}</option>
+                        {/each}
+                    </select>
+                </div>
                 <span class="unit-placeholder"></span>
             </div>
 
@@ -612,11 +622,13 @@
             <!-- 文本换行 -->
             <div class="text-item">
                 <label for="text-wrap">文本换行</label>
-                <select id="text-wrap" bind:value={textWrapStyle} onchange={updateTextStyles}>
-                    {#each textWrapOptions as option}
-                        <option value={option.value}>{option.label}</option>
-                    {/each}
-                </select>
+                <div class="select-wrapper">
+                    <select id="text-wrap" bind:value={textWrapStyle} onchange={updateTextStyles}>
+                        {#each textWrapOptions as option}
+                            <option value={option.value}>{option.label}</option>
+                        {/each}
+                    </select>
+                </div>
                 <span class="unit-placeholder"></span>
             </div>
         </div>
@@ -721,6 +733,29 @@
     }
     textarea {
         min-height: calc(80px * var(--scale-ratio, 1));
+    }
+
+    /* 下拉框包装器和下拉图标 */
+    .select-wrapper {
+        position: relative;
+        flex: 1;
+    }
+    .select-wrapper::after {
+        content: '';
+        position: absolute;
+        right: calc(12px * var(--scale-ratio, 1));
+        top: 50%;
+        transform: translateY(-50%);
+        width: 0;
+        height: 0;
+        border-left: calc(4px * var(--scale-ratio, 1)) solid transparent;
+        border-right: calc(4px * var(--scale-ratio, 1)) solid transparent;
+        border-top: calc(6px * var(--scale-ratio, 1)) solid #94a3b8;
+        pointer-events: none;
+    }
+    .select-wrapper select {
+        width: 100%;
+        padding-right: calc(30px * var(--scale-ratio, 1));
     }
 
     /* 隐藏原生 number 输入框的上下箭头 */
