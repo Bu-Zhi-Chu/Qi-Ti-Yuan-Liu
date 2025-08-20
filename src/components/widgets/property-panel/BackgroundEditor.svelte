@@ -273,13 +273,13 @@
             cleanupBlobUrls()
             backgroundImage = ''
         }
-        
+
         // 清空背景颜色（数据库中也会清空）
         const tempColor = backgroundColor || '#ffffff'
         const tempOpacity = backgroundOpacity
         backgroundColor = ''
         backgroundOpacity = 1
-        
+
         if (gradientColors.length === 0) {
             // 使用当前背景色作为第一个渐变颜色，白色作为第二个
             gradientColors = [
