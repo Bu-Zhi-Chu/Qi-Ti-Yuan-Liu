@@ -384,6 +384,11 @@
         transition: all 0.3s ease;
         appearance: none;
     }
+    input:disabled,
+    select:disabled,
+    textarea:disabled {
+        color: #64748b;
+    }
 
     /* 单位切换按钮样式 */
     .unit-toggle {
@@ -406,6 +411,7 @@
     input:disabled {
         cursor: not-allowed;
         opacity: 0.5;
+        color: #64748b;
     }
 
     /* 禁用状态统一使用 #64748b 颜色 */
