@@ -14,11 +14,13 @@
   - 字体样式（斜体、正常）
   - 字母间距
   - 单词间距
+  - 文本换行（预设常用组合）
 
   使用说明：
   - 支持实时预览文字样式变化
   - 所有属性直接应用于DOM元素
   - 支持px和em单位切换
+  - 文本换行提供常用预设组合，简化white-space和word-break的复杂配置
 -->
 <script lang="ts">
     import { getNodeProps, updateNodeProps, getFullNode } from '../../../services/property-panel/property-panel.service'
@@ -47,6 +49,7 @@
     let fontStyle = $state('normal')
     let letterSpacing = $state('0')
     let wordSpacing = $state('0')
+    let textWrapStyle = $state('normal-normal')
 
     // 字体族选项
     const fontFamilyOptions = [
@@ -98,6 +101,52 @@
         { value: 'oblique', label: '倾斜' }
     ]
 
+    // 文本换行组合选项
+    const textWrapOptions = [
+        { 
+            value: 'normal-normal', 
+            label: '正常换行', 
+            whiteSpace: 'normal', 
+            wordBreak: 'normal' 
+        },
+        { 
+            value: 'nowrap-normal', 
+            label: '不换行', 
+            whiteSpace: 'nowrap', 
+            wordBreak: 'normal' 
+        },
+        { 
+            value: 'pre-normal', 
+            label: '保留格式', 
+            whiteSpace: 'pre', 
+            wordBreak: 'normal' 
+        },
+        { 
+            value: 'pre-wrap-normal', 
+            label: '保留格式换行', 
+            whiteSpace: 'pre-wrap', 
+            wordBreak: 'normal' 
+        },
+        { 
+            value: 'pre-line-normal', 
+            label: '合并空格换行', 
+            whiteSpace: 'pre-line', 
+            wordBreak: 'normal' 
+        },
+        { 
+            value: 'normal-break-all', 
+            label: '强制断词', 
+            whiteSpace: 'normal', 
+            wordBreak: 'break-all' 
+        },
+        { 
+            value: 'pre-wrap-break-word', 
+            label: '保留格式断词', 
+            whiteSpace: 'pre-wrap', 
+            wordBreak: 'break-word' 
+        }
+    ]
+
     // 初始化文字属性
     function initTextProps() {
         if (!selectedId) return
@@ -121,6 +170,7 @@
         let newFontStyle = styles.fontStyle || 'normal'
         let newLetterSpacing = '0'
         let newWordSpacing = '0'
+        let newTextWrapStyle = 'normal-normal'
 
         // 字体大小
         const [parsedFontSize] = parseSize(styles.fontSize || '16px')
@@ -160,6 +210,16 @@
         const [parsedWordSpacing] = parseSize(styles.wordSpacing || '0px')
         newWordSpacing = parsedWordSpacing
 
+        // 文字换行 - 根据whiteSpace和wordBreak匹配合适的组合
+        const whiteSpaceValue = styles.whiteSpace || 'normal'
+        const wordBreakValue = styles.wordBreak || 'normal'
+        
+        // 查找匹配的组合
+        const matchedOption = textWrapOptions.find(option => 
+            option.whiteSpace === whiteSpaceValue && option.wordBreak === wordBreakValue
+        )
+        newTextWrapStyle = matchedOption ? matchedOption.value : 'normal-normal'
+
         // 文本内容
         textContent = fullNode.textContent || ''
 
@@ -175,6 +235,7 @@
         fontStyle = newFontStyle
         letterSpacing = newLetterSpacing
         wordSpacing = newWordSpacing
+        textWrapStyle = newTextWrapStyle
     }
 
     // 监听selectedId变化，自动调用初始化函数
@@ -195,6 +256,7 @@
             fontStyle = 'normal'
             letterSpacing = '0'
             wordSpacing = '0'
+            textWrapStyle = 'normal-normal'
         }
     })
 
@@ -308,6 +370,11 @@
 
         // 单词间距
         styles.wordSpacing = formatSize(wordSpacing, 'px')
+
+        // 文字换行
+        const wrapStyle = textWrapOptions.find(opt => opt.value === textWrapStyle)
+        styles.whiteSpace = wrapStyle ? wrapStyle.whiteSpace : 'normal'
+        styles.wordBreak = wrapStyle ? wrapStyle.wordBreak : 'normal'
 
         // 更新样式
         updateNodeProps(selectedId, { styles })
@@ -542,6 +609,17 @@
                     placeholder="单词间距..."
                 />
                 <button class="unit-toggle" disabled>px</button>
+            </div>
+
+            <!-- 文本换行 -->
+            <div class="text-item">
+                <label for="text-wrap">文本换行</label>
+                <select id="text-wrap" bind:value={textWrapStyle} onchange={updateTextStyles}>
+                    {#each textWrapOptions as option}
+                        <option value={option.value}>{option.label}</option>
+                    {/each}
+                </select>
+                <span class="unit-placeholder"></span>
             </div>
         </div>
     {:else}
