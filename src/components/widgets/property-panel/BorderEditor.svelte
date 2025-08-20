@@ -23,6 +23,7 @@
     let borderColor = $state('#000000')
     let borderStyle = $state('solid')
     let borderRadius = $state('')
+    let borderRadiusUnit = $state<'px' | '%'>('px')
 
     // 四边独立属性
     let borderTopWidth = $state('')
@@ -37,6 +38,16 @@
     let borderLeftWidth = $state('')
     let borderLeftColor = $state('#000000')
     let borderLeftStyle = $state('solid')
+
+    // 四个独立圆角属性
+    let borderTopLeftRadius = $state('')
+    let borderTopRightRadius = $state('')
+    let borderBottomLeftRadius = $state('')
+    let borderBottomRightRadius = $state('')
+    let borderTopLeftRadiusUnit = $state<'px' | '%'>('px')
+    let borderTopRightRadiusUnit = $state<'px' | '%'>('px')
+    let borderBottomLeftRadiusUnit = $state<'px' | '%'>('px')
+    let borderBottomRightRadiusUnit = $state<'px' | '%'>('px')
 
     // 根节点判断
     let isRoot = $state(false)
@@ -64,7 +75,7 @@
             borderWidth = parsePxValue(props?.styles?.borderWidth) || ''
             borderColor = props?.styles?.borderColor || '#000000'
             borderStyle = props?.styles?.borderStyle || 'solid'
-            borderRadius = parsePxValue(props?.styles?.borderRadius) || ''
+            ;[borderRadius, borderRadiusUnit] = parseBorderRadius(props?.styles?.borderRadius)
 
             // 读取四边独立属性
             borderTopWidth = parsePxValue(props?.styles?.borderTopWidth) || ''
@@ -79,6 +90,12 @@
             borderLeftWidth = parsePxValue(props?.styles?.borderLeftWidth) || ''
             borderLeftColor = props?.styles?.borderLeftColor || '#000000'
             borderLeftStyle = props?.styles?.borderLeftStyle || 'solid'
+
+            // 读取四个独立圆角属性
+            ;[borderTopLeftRadius, borderTopLeftRadiusUnit] = parseBorderRadius(props?.styles?.borderTopLeftRadius)
+            ;[borderTopRightRadius, borderTopRightRadiusUnit] = parseBorderRadius(props?.styles?.borderTopRightRadius)
+            ;[borderBottomLeftRadius, borderBottomLeftRadiusUnit] = parseBorderRadius(props?.styles?.borderBottomLeftRadius)
+            ;[borderBottomRightRadius, borderBottomRightRadiusUnit] = parseBorderRadius(props?.styles?.borderBottomRightRadius)
 
             // 判断是否使用统一控制
             unifiedControl = !(props?.styles?.borderTopWidth || props?.styles?.borderRightWidth || props?.styles?.borderBottomWidth || props?.styles?.borderLeftWidth)
@@ -101,6 +118,38 @@
         return `calc(${value}px * var(--scale-ratio, 1))`
     }
 
+    // 解析边框圆角值和单位
+    function parseBorderRadius(value: string | undefined): [string, 'px' | '%'] {
+        if (!value) return ['', 'px']
+
+        // 处理百分比
+        if (value.endsWith('%')) {
+            return [value.replace('%', ''), '%']
+        }
+
+        // 处理calc表达式中的px
+        const match = value.match(/calc\((\d+(?:\.\d+)?)px.*\)/)
+        if (match) {
+            return [match[1], 'px']
+        }
+
+        // 处理普通px
+        if (value.endsWith('px')) {
+            return [value.replace('px', ''), 'px']
+        }
+
+        return [value, 'px']
+    }
+
+    // 格式化边框圆角值
+    function formatBorderRadius(value: string, unit: 'px' | '%'): string {
+        if (!value) return ''
+        if (unit === '%') {
+            return `${value}%`
+        }
+        return `calc(${value}px * var(--scale-ratio, 1))`
+    }
+
     // 重置所有属性
     function resetAllProperties() {
         unifiedControl = true
@@ -108,6 +157,7 @@
         borderColor = '#000000'
         borderStyle = 'solid'
         borderRadius = ''
+        borderRadiusUnit = 'px'
         borderTopWidth = ''
         borderTopColor = '#000000'
         borderTopStyle = 'solid'
@@ -120,6 +170,14 @@
         borderLeftWidth = ''
         borderLeftColor = '#000000'
         borderLeftStyle = 'solid'
+        borderTopLeftRadius = ''
+        borderTopRightRadius = ''
+        borderBottomLeftRadius = ''
+        borderBottomRightRadius = ''
+        borderTopLeftRadiusUnit = 'px'
+        borderTopRightRadiusUnit = 'px'
+        borderBottomLeftRadiusUnit = 'px'
+        borderBottomRightRadiusUnit = 'px'
     }
 
     // 更新统一边框样式
@@ -138,7 +196,7 @@
             styles.borderStyle = borderStyle
         }
         if (borderRadius) {
-            styles.borderRadius = formatPxValue(borderRadius)
+            styles.borderRadius = formatBorderRadius(borderRadius, borderRadiusUnit)
         }
 
         // 清除四边独立样式
@@ -164,9 +222,80 @@
 
         const styles: Record<string, string> = {}
         const key = `border${side}${prop}`
-        styles[key] = prop === 'Width' || prop === 'Radius' ? formatPxValue(value) : value
+
+        if (prop === 'Radius') {
+            styles[key] = formatBorderRadius(value, getRadiusUnitForSide(side))
+        } else if (prop === 'Width') {
+            styles[key] = formatPxValue(value)
+        } else {
+            styles[key] = value
+        }
+
+        // 清除统一边框样式，确保互斥
+        styles.borderWidth = ''
+        styles.borderColor = ''
+        styles.borderStyle = ''
+        styles.borderRadius = ''
 
         updateNodeProps(selectedId, { styles })
+    }
+
+    // 获取对应边的圆角单位
+    function getRadiusUnitForSide(side: string): 'px' | '%' {
+        switch (side) {
+            case 'TopLeft':
+                return borderTopLeftRadiusUnit
+            case 'TopRight':
+                return borderTopRightRadiusUnit
+            case 'BottomLeft':
+                return borderBottomLeftRadiusUnit
+            case 'BottomRight':
+                return borderBottomRightRadiusUnit
+            default:
+                return 'px'
+        }
+    }
+
+    // 切换独立圆角单位
+    function toggleIndividualRadiusUnit(side: string) {
+        if (!selectedId || isRoot) return
+
+        let unitRef: 'px' | '%'
+        let valueRef: string
+        let sideKey: string
+
+        switch (side) {
+            case 'TopLeft':
+                borderTopLeftRadiusUnit = borderTopLeftRadiusUnit === 'px' ? '%' : 'px'
+                unitRef = borderTopLeftRadiusUnit
+                valueRef = borderTopLeftRadius
+                sideKey = 'TopLeft'
+                break
+            case 'TopRight':
+                borderTopRightRadiusUnit = borderTopRightRadiusUnit === 'px' ? '%' : 'px'
+                unitRef = borderTopRightRadiusUnit
+                valueRef = borderTopRightRadius
+                sideKey = 'TopRight'
+                break
+            case 'BottomLeft':
+                borderBottomLeftRadiusUnit = borderBottomLeftRadiusUnit === 'px' ? '%' : 'px'
+                unitRef = borderBottomLeftRadiusUnit
+                valueRef = borderBottomLeftRadius
+                sideKey = 'BottomLeft'
+                break
+            case 'BottomRight':
+                borderBottomRightRadiusUnit = borderBottomRightRadiusUnit === 'px' ? '%' : 'px'
+                unitRef = borderBottomRightRadiusUnit
+                valueRef = borderBottomRightRadius
+                sideKey = 'BottomRight'
+                break
+            default:
+                return
+        }
+
+        if (valueRef) {
+            updateIndividualBorder(sideKey, 'Radius', valueRef)
+        }
     }
 
     // 处理数字输入的键盘事件
@@ -180,6 +309,18 @@
             e.preventDefault()
             const val = parseInt(currentValue) || 0
             callback(String(Math.max(0, val - 1)))
+        }
+    }
+
+    // 切换边框圆角单位
+    function toggleBorderRadiusUnit() {
+        if (!selectedId || isRoot) return
+
+        borderRadiusUnit = borderRadiusUnit === 'px' ? '%' : 'px'
+
+        // 如果当前有值，则更新样式
+        if (borderRadius) {
+            updateUnifiedBorder()
         }
     }
 </script>
@@ -278,7 +419,9 @@
                             disabled={isRoot}
                             class:disabled-input={isRoot}
                         />
-                        <button class="unit-toggle" disabled>px</button>
+                        <button class="unit-toggle" onclick={toggleBorderRadiusUnit} disabled={isRoot} class:disabled-input={isRoot}>
+                            {borderRadiusUnit}
+                        </button>
                     </div>
                 </div>
             </div>
@@ -459,6 +602,111 @@
                     </div>
                 </div>
             </div>
+
+            <!-- 四个独立圆角设置 -->
+            <div class="border-section">
+                <div class="attr-list">
+                    <div class="attr-item">
+                        <label for="border-top-left-radius">上左圆角</label>
+                        <input
+                            id="border-top-left-radius"
+                            type="number"
+                            min="0"
+                            bind:value={borderTopLeftRadius}
+                            oninput={(e) => updateIndividualBorder('TopLeft', 'Radius', e.currentTarget.value)}
+                            onkeydown={(e) => {
+                                e.stopPropagation()
+                                handleNumberKeydown(e, borderTopLeftRadius, (v) => {
+                                    borderTopLeftRadius = v
+                                    updateIndividualBorder('TopLeft', 'Radius', v)
+                                })
+                            }}
+                            onwheel={(e) => e.stopPropagation()}
+                            placeholder="圆角值..."
+                            disabled={isRoot}
+                            class:disabled-input={isRoot}
+                        />
+                        <button class="unit-toggle" onclick={() => toggleIndividualRadiusUnit('TopLeft')} disabled={isRoot}>
+                            {borderTopLeftRadiusUnit}
+                        </button>
+                    </div>
+
+                    <div class="attr-item">
+                        <label for="border-top-right-radius">上右圆角</label>
+                        <input
+                            id="border-top-right-radius"
+                            type="number"
+                            min="0"
+                            bind:value={borderTopRightRadius}
+                            oninput={(e) => updateIndividualBorder('TopRight', 'Radius', e.currentTarget.value)}
+                            onkeydown={(e) => {
+                                e.stopPropagation()
+                                handleNumberKeydown(e, borderTopRightRadius, (v) => {
+                                    borderTopRightRadius = v
+                                    updateIndividualBorder('TopRight', 'Radius', v)
+                                })
+                            }}
+                            onwheel={(e) => e.stopPropagation()}
+                            placeholder="圆角值..."
+                            disabled={isRoot}
+                            class:disabled-input={isRoot}
+                        />
+                        <button class="unit-toggle" onclick={() => toggleIndividualRadiusUnit('TopRight')} disabled={isRoot}>
+                            {borderTopRightRadiusUnit}
+                        </button>
+                    </div>
+
+                    <div class="attr-item">
+                        <label for="border-bottom-left-radius">下左圆角</label>
+                        <input
+                            id="border-bottom-left-radius"
+                            type="number"
+                            min="0"
+                            bind:value={borderBottomLeftRadius}
+                            oninput={(e) => updateIndividualBorder('BottomLeft', 'Radius', e.currentTarget.value)}
+                            onkeydown={(e) => {
+                                e.stopPropagation()
+                                handleNumberKeydown(e, borderBottomLeftRadius, (v) => {
+                                    borderBottomLeftRadius = v
+                                    updateIndividualBorder('BottomLeft', 'Radius', v)
+                                })
+                            }}
+                            onwheel={(e) => e.stopPropagation()}
+                            placeholder="圆角值..."
+                            disabled={isRoot}
+                            class:disabled-input={isRoot}
+                        />
+                        <button class="unit-toggle" onclick={() => toggleIndividualRadiusUnit('BottomLeft')} disabled={isRoot}>
+                            {borderBottomLeftRadiusUnit}
+                        </button>
+                    </div>
+
+                    <div class="attr-item">
+                        <label for="border-bottom-right-radius">下右圆角</label>
+                        <input
+                            id="border-bottom-right-radius"
+                            type="number"
+                            min="0"
+                            bind:value={borderBottomRightRadius}
+                            oninput={(e) => updateIndividualBorder('BottomRight', 'Radius', e.currentTarget.value)}
+                            onkeydown={(e) => {
+                                e.stopPropagation()
+                                handleNumberKeydown(e, borderBottomRightRadius, (v) => {
+                                    borderBottomRightRadius = v
+                                    updateIndividualBorder('BottomRight', 'Radius', v)
+                                })
+                            }}
+                            onwheel={(e) => e.stopPropagation()}
+                            placeholder="圆角值..."
+                            disabled={isRoot}
+                            class:disabled-input={isRoot}
+                        />
+                        <button class="unit-toggle" onclick={() => toggleIndividualRadiusUnit('BottomRight')} disabled={isRoot}>
+                            {borderBottomRightRadiusUnit}
+                        </button>
+                    </div>
+                </div>
+            </div>
         {/if}
     {:else}
         <p class="placeholder">请选择一个节点来编辑边框样式</p>
@@ -484,12 +732,7 @@
         font-weight: 600;
         color: #cbd5e1;
     }
-    h4 {
-        margin: 0 0 calc(12px * var(--scale-ratio, 1)) 0;
-        font-size: calc(14px * var(--scale-ratio, 1));
-        font-weight: 500;
-        color: #94a3b8;
-    }
+
     .attr-list {
         display: flex;
         flex-direction: column;
