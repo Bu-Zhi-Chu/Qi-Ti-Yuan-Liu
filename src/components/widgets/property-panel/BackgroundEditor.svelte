@@ -920,18 +920,17 @@
                 <button class="unit-toggle" onclick={addGradientColor} title="添加渐变颜色" style="background: rgba(34, 197, 94, 0.2); color: #4ade80;" disabled={gradientColors.length >= 2}>+</button>
             </div>
 
-            <!-- 背景裁剪为文字形状开关 -->
-            <div class="background-item">
-                <label for="background-clip-toggle">背景裁剪</label>
-                <label class="switch">
-                    <input id="background-clip-toggle" type="checkbox" bind:checked={backgroundClipToText} onchange={updateBackgroundStyles} />
-                    <span class="slider"></span>
-                </label>
-                <span class="unit-placeholder"></span>
-            </div>
-
             <!-- 渐变颜色选择器 -->
             {#if gradientColors.length > 0}
+                <!-- 背景裁剪为文字形状开关 -->
+                <div class="background-item">
+                    <label for="background-clip-toggle">背景裁剪</label>
+                    <label class="switch">
+                        <input id="background-clip-toggle" type="checkbox" bind:checked={backgroundClipToText} onchange={updateBackgroundStyles} />
+                        <span class="slider"></span>
+                    </label>
+                    <span class="unit-placeholder"></span>
+                </div>
                 <!-- 渐变方向 -->
                 <div class="background-item">
                     <label for="gradient-direction">渐变方向</label>
