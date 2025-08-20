@@ -410,11 +410,20 @@
             updateBackgroundStyles()
             isUploading = false
             uploadProgress = 100
+            
+            // 重置文件输入，允许再次上传同一张图片
+            if (fileInput) {
+                fileInput.value = ''
+            }
         } catch (error) {
             console.error('图片上传失败:', error)
             alert('图片上传失败，请重试')
             isUploading = false
             uploadProgress = 0
+            // 重置文件输入
+            if (fileInput) {
+                fileInput.value = ''
+            }
         }
     }
 
