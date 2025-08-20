@@ -725,6 +725,7 @@
         font-size: calc(13px * var(--scale-ratio, 1));
         cursor: pointer;
         transition: all 0.3s ease;
+        gap: calc(8px * var(--scale-ratio, 1));
     }
 
     .color-picker-button:hover:not(.disabled) {
@@ -744,9 +745,11 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        max-width: calc(120px * var(--scale-ratio, 1));
         min-width: 0;
+        margin-right: calc(8px * var(--scale-ratio, 1));
     }
+
+
 
     .color-picker-panel {
         position: absolute;
