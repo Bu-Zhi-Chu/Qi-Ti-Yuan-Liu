@@ -40,6 +40,7 @@
     let gradientColors: Array<{ color: string; opacity: number }> = []
     let gradientDirection: string = 'to right'
     let gradientRatio: number = 50 // 渐变比例，0-100，控制两个颜色的占比
+    let backgroundClipToText: boolean = false // 控制背景裁剪为文字形状的开关
 
     // 单位设置 - 支持px和%切换
     let sizeUnitX: 'px' | '%' = '%'
@@ -156,8 +157,8 @@
                 })
 
                 // 找出0%和100%位置的颜色
-                const color0 = colorStops.find(stop => stop.position === 0) || colorStops[0]
-                const color100 = colorStops.find(stop => stop.position === 100) || colorStops[colorStops.length - 1]
+                const color0 = colorStops.find((stop) => stop.position === 0) || colorStops[0]
+                const color100 = colorStops.find((stop) => stop.position === 100) || colorStops[colorStops.length - 1]
 
                 gradientColors = [color0, color100].filter(Boolean).slice(0, 2)
 
@@ -232,6 +233,9 @@
         // 背景重复
         backgroundRepeat = styles.backgroundRepeat || 'no-repeat'
 
+        // 背景裁剪为文字形状
+        backgroundClipToText = (styles.backgroundClip === 'text') || (styles.webkitBackgroundClip === 'text')
+
         // 渐变比例已经在前面处理过了
     }
 
@@ -250,6 +254,7 @@
         sizeUnitY = '%'
         positionUnitX = '%'
         positionUnitY = '%'
+        backgroundClipToText = false
     }
 
     // RGB转十六进制
@@ -478,6 +483,17 @@
 
         // 背景重复
         styles.backgroundRepeat = backgroundRepeat
+
+        // 背景裁剪为文字形状
+        if (backgroundClipToText) {
+            styles.backgroundClip = 'text'
+            styles.webkitBackgroundClip = 'text'
+            styles.color = 'transparent'
+        } else {
+            styles.backgroundClip = ''
+            styles.webkitBackgroundClip = ''
+            styles.color = ''
+        }
 
         updateNodeProps(selectedId, { styles })
 
@@ -904,6 +920,21 @@
                 <button class="unit-toggle" onclick={addGradientColor} title="添加渐变颜色" style="background: rgba(34, 197, 94, 0.2); color: #4ade80;" disabled={gradientColors.length >= 2}>+</button>
             </div>
 
+            <!-- 背景裁剪为文字形状开关 -->
+            <div class="background-item">
+                <label for="background-clip-toggle">文字渐变</label>
+                <label class="switch">
+                    <input 
+                        id="background-clip-toggle"
+                        type="checkbox" 
+                        bind:checked={backgroundClipToText}
+                        onchange={updateBackgroundStyles}
+                    />
+                    <span class="slider"></span>
+                </label>
+                <span class="unit-placeholder"></span>
+            </div>
+
             <!-- 渐变颜色选择器 -->
             {#if gradientColors.length > 0}
                 <!-- 渐变方向 -->
@@ -1072,6 +1103,47 @@
         border-color: #cbd5e1;
         background: rgba(255, 255, 255, 0.15);
         box-shadow: 0 0 0 calc(3px * var(--scale-ratio, 1)) rgba(255, 255, 255, 0.1);
+    }
+
+    /* 开关组件样式 */
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: calc(44px * var(--scale-ratio, 1));
+        height: calc(24px * var(--scale-ratio, 1));
+    }
+    .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(255, 255, 255, 0.1);
+        transition: 0.3s;
+        border-radius: calc(12px * var(--scale-ratio, 1));
+    }
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: calc(18px * var(--scale-ratio, 1));
+        width: calc(18px * var(--scale-ratio, 1));
+        left: calc(3px * var(--scale-ratio, 1));
+        bottom: calc(3px * var(--scale-ratio, 1));
+        background-color: white;
+        transition: 0.3s;
+        border-radius: 50%;
+    }
+    input:checked + .slider {
+        background-color: #6366f1;
+    }
+    input:checked + .slider:before {
+        transform: translateX(calc(20px * var(--scale-ratio, 1)));
     }
     /* 拖拽上传视觉反馈 */
     .input-style:hover {
