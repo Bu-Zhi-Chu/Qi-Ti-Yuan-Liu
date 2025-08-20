@@ -1000,7 +1000,7 @@
         gap: calc(10px * var(--scale-ratio, 1));
     }
     label {
-        min-width: calc(70px * var(--scale-ratio, 1));
+        min-width: calc(30px * var(--scale-ratio, 1));
         font-size: calc(13px * var(--scale-ratio, 1));
         font-weight: 500;
         color: #94a3b8;
