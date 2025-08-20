@@ -1137,8 +1137,8 @@
         background-color: #6366f1;
     }
     input:checked + .slider:before {
-    transform: translateX(calc(38px * var(--scale-ratio, 1)));
-  }
+        transform: translateX(calc(38px * var(--scale-ratio, 1)));
+    }
     /* 拖拽上传视觉反馈 */
     .input-style:hover {
         border-color: rgba(99, 102, 241, 0.5);

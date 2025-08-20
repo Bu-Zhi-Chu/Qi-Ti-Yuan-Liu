@@ -103,47 +103,47 @@
 
     // 文本换行组合选项
     const textWrapOptions = [
-        { 
-            value: 'normal-normal', 
-            label: '正常换行', 
-            whiteSpace: 'normal', 
-            wordBreak: 'normal' 
+        {
+            value: 'normal-normal',
+            label: '正常换行',
+            whiteSpace: 'normal',
+            wordBreak: 'normal'
         },
-        { 
-            value: 'nowrap-normal', 
-            label: '不换行', 
-            whiteSpace: 'nowrap', 
-            wordBreak: 'normal' 
+        {
+            value: 'nowrap-normal',
+            label: '不换行',
+            whiteSpace: 'nowrap',
+            wordBreak: 'normal'
         },
-        { 
-            value: 'pre-normal', 
-            label: '保留格式', 
-            whiteSpace: 'pre', 
-            wordBreak: 'normal' 
+        {
+            value: 'pre-normal',
+            label: '保留格式',
+            whiteSpace: 'pre',
+            wordBreak: 'normal'
         },
-        { 
-            value: 'pre-wrap-normal', 
-            label: '保留格式换行', 
-            whiteSpace: 'pre-wrap', 
-            wordBreak: 'normal' 
+        {
+            value: 'pre-wrap-normal',
+            label: '保留格式换行',
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'normal'
         },
-        { 
-            value: 'pre-line-normal', 
-            label: '合并空格换行', 
-            whiteSpace: 'pre-line', 
-            wordBreak: 'normal' 
+        {
+            value: 'pre-line-normal',
+            label: '合并空格换行',
+            whiteSpace: 'pre-line',
+            wordBreak: 'normal'
         },
-        { 
-            value: 'normal-break-all', 
-            label: '强制断词', 
-            whiteSpace: 'normal', 
-            wordBreak: 'break-all' 
+        {
+            value: 'normal-break-all',
+            label: '强制断词',
+            whiteSpace: 'normal',
+            wordBreak: 'break-all'
         },
-        { 
-            value: 'pre-wrap-break-word', 
-            label: '保留格式断词', 
-            whiteSpace: 'pre-wrap', 
-            wordBreak: 'break-word' 
+        {
+            value: 'pre-wrap-break-word',
+            label: '保留格式断词',
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word'
         }
     ]
 
@@ -213,11 +213,9 @@
         // 文字换行 - 根据whiteSpace和wordBreak匹配合适的组合
         const whiteSpaceValue = styles.whiteSpace || 'normal'
         const wordBreakValue = styles.wordBreak || 'normal'
-        
+
         // 查找匹配的组合
-        const matchedOption = textWrapOptions.find(option => 
-            option.whiteSpace === whiteSpaceValue && option.wordBreak === wordBreakValue
-        )
+        const matchedOption = textWrapOptions.find((option) => option.whiteSpace === whiteSpaceValue && option.wordBreak === wordBreakValue)
         newTextWrapStyle = matchedOption ? matchedOption.value : 'normal-normal'
 
         // 文本内容
@@ -372,7 +370,7 @@
         styles.wordSpacing = formatSize(wordSpacing, 'px')
 
         // 文字换行
-        const wrapStyle = textWrapOptions.find(opt => opt.value === textWrapStyle)
+        const wrapStyle = textWrapOptions.find((opt) => opt.value === textWrapStyle)
         styles.whiteSpace = wrapStyle ? wrapStyle.whiteSpace : 'normal'
         styles.wordBreak = wrapStyle ? wrapStyle.wordBreak : 'normal'
 

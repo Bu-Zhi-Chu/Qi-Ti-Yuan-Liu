@@ -221,11 +221,11 @@ export async function loadDomTreeFromDatabase(projectId: string): Promise<boolea
     if (domTreeFromDoms) {
       Object.assign(domTreeData, domTreeFromDoms);
       console.log('【数据库交互】已从doms表加载DOM树数据');
-      
+
       // 恢复之前保存的选中节点，如果节点存在的话
-        const targetSelectedId = savedSelectedNodeId && hasNodeWithId(domTreeData, savedSelectedNodeId) 
-          ? savedSelectedNodeId 
-          : 'root';
+      const targetSelectedId = savedSelectedNodeId && hasNodeWithId(domTreeData, savedSelectedNodeId)
+        ? savedSelectedNodeId
+        : 'root';
       await setSelectedId(targetSelectedId);
       return true;
     }
@@ -253,8 +253,8 @@ export async function loadDomTreeFromDatabase(projectId: string): Promise<boolea
         await saveDomNodesToDomsTable(projectId, domTreeData);
 
         // 恢复之前保存的选中节点，如果节点存在的话
-        const targetSelectedId = savedSelectedNodeId && hasNodeWithId(domTreeData, savedSelectedNodeId) 
-          ? savedSelectedNodeId 
+        const targetSelectedId = savedSelectedNodeId && hasNodeWithId(domTreeData, savedSelectedNodeId)
+          ? savedSelectedNodeId
           : 'root';
         await setSelectedId(targetSelectedId);
         return true;
@@ -411,7 +411,7 @@ export async function setSelectedId(id: string | null): Promise<void> {
  */
 export function findNodeById(node: DomNode, id: string): DomNode | null {
   if (!node || !id) return null;
-  
+
   if (node.id === id) {
     return node;
   }
@@ -706,15 +706,15 @@ export function resetActivePropertyTab(): void {
  */
 export function hasNodeWithId(node: DomNode, targetId: string): boolean {
   if (!node || !targetId) return false;
-  
+
   if (node.id === targetId) return true;
-  
+
   if (node.children && Array.isArray(node.children)) {
     for (const child of node.children) {
       if (hasNodeWithId(child, targetId)) return true;
     }
   }
-  
+
   return false;
 }
 
