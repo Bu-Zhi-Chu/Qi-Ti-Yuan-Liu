@@ -722,7 +722,7 @@
         border-radius: calc(6px * var(--scale-ratio, 1));
         background: rgba(45, 55, 72, 0.9);
         color: #e2e8f0;
-        font-size: calc(13px * var(--scale-ratio, 1));
+        font-size: calc(11px * var(--scale-ratio, 1));
         cursor: pointer;
         transition: all 0.3s ease;
         gap: calc(8px * var(--scale-ratio, 1));
@@ -748,8 +748,6 @@
         min-width: 0;
         margin-right: calc(8px * var(--scale-ratio, 1));
     }
-
-
 
     .color-picker-panel {
         position: absolute;

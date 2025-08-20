@@ -72,11 +72,49 @@
             })
             .join(';')
 
+        // 检查是否有边框宽度设置
+        const hasBorderWidth = () => {
+            const styles = node.styles ?? {}
+
+            // 辅助函数：检查宽度值是否为有效非零值
+            const isNonZeroWidth = (width: string | number | undefined): boolean => {
+                if (!width) return false
+                const widthStr = String(width).trim()
+                if (!widthStr) return false
+
+                // 处理calc()表达式
+                if (widthStr.includes('calc(')) {
+                    // 提取calc中的数值部分，处理类似 calc(0px * var(--scale-ratio, 1)) 的情况
+                    const calcMatch = widthStr.match(/calc\s*\(\s*([\d.]+)\s*px/)
+                    if (calcMatch && calcMatch[1]) {
+                        return parseFloat(calcMatch[1]) !== 0
+                    }
+                    // 如果无法解析calc表达式，保守地认为有边框
+                    return true
+                }
+
+                // 处理简单数值和单位
+                const numericValue = parseFloat(widthStr.replace(/[^\d.]/g, ''))
+                if (isNaN(numericValue)) return false
+                return numericValue !== 0
+            }
+
+            // 检查统一边框宽度
+            if (isNonZeroWidth(styles.borderWidth)) {
+                return true
+            }
+
+            // 检查四边独立边框宽度
+            const borderWidths = [styles.borderTopWidth, styles.borderRightWidth, styles.borderBottomWidth, styles.borderLeftWidth]
+            return borderWidths.some(isNonZeroWidth)
+        }
+
         // 使用多层box-shadow实现选中高亮，从内到外逐渐变淡
         let outlineStyles = ''
 
         // 只在编辑模式下且当前节点被选中时显示高亮轮廓
-        if (editing && isSelected) {
+        // 当边框宽度不为空且不为0时，不显示高亮边框以避免重叠
+        if (editing && isSelected && !hasBorderWidth()) {
             outlineStyles = `outline: none !important; box-shadow: 0 0 calc(2px * var(--scale-ratio, 1)) calc(2px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.8), 0 0 calc(4px * var(--scale-ratio, 1)) calc(4px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.5), 0 0 calc(6px * var(--scale-ratio, 1)) calc(6px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.3) !important`
         }
 

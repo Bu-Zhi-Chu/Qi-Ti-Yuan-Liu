@@ -59,7 +59,7 @@
         if (selectedId) {
             isRoot = selectedId === 'root'
             const props = getNodeProps(selectedId)
-            
+
             // 读取统一边框属性
             borderWidth = parsePxValue(props?.styles?.borderWidth) || ''
             borderColor = props?.styles?.borderColor || '#000000'
@@ -81,12 +81,7 @@
             borderLeftStyle = props?.styles?.borderLeftStyle || 'solid'
 
             // 判断是否使用统一控制
-            unifiedControl = !(
-                props?.styles?.borderTopWidth ||
-                props?.styles?.borderRightWidth ||
-                props?.styles?.borderBottomWidth ||
-                props?.styles?.borderLeftWidth
-            )
+            unifiedControl = !(props?.styles?.borderTopWidth || props?.styles?.borderRightWidth || props?.styles?.borderBottomWidth || props?.styles?.borderLeftWidth)
         } else {
             // 清空所有属性
             resetAllProperties()
@@ -130,9 +125,9 @@
     // 更新统一边框样式
     function updateUnifiedBorder() {
         if (!selectedId || isRoot) return
-        
+
         const styles: Record<string, string> = {}
-        
+
         if (borderWidth) {
             styles.borderWidth = formatPxValue(borderWidth)
         }
@@ -166,11 +161,11 @@
     // 更新四边独立边框样式
     function updateIndividualBorder(side: string, prop: string, value: string) {
         if (!selectedId || isRoot) return
-        
+
         const styles: Record<string, string> = {}
         const key = `border${side}${prop}`
         styles[key] = prop === 'Width' || prop === 'Radius' ? formatPxValue(value) : value
-        
+
         updateNodeProps(selectedId, { styles })
     }
 
@@ -191,7 +186,7 @@
 
 <div class="border-editor">
     <h3>边框样式</h3>
-    
+
     {#if selectedId}
         <!-- 统一控制开关 -->
         <div class="border-section">
@@ -200,11 +195,7 @@
                     <label for="unified-control">统一控制</label>
                     <div class="switch-wrapper">
                         <label class="switch">
-                            <input 
-                                type="checkbox" 
-                                bind:checked={unifiedControl}
-                                disabled={isRoot}
-                            />
+                            <input type="checkbox" bind:checked={unifiedControl} disabled={isRoot} />
                             <span class="slider"></span>
                         </label>
                     </div>
@@ -219,19 +210,20 @@
                 <div class="attr-list">
                     <div class="attr-item">
                         <label for="border-width">边框宽度</label>
-                        <input 
+                        <input
                             id="border-width"
-                            type="number" 
+                            type="number"
                             min="0"
                             bind:value={borderWidth}
                             oninput={(e) => {
                                 borderWidth = e.currentTarget.value
                                 updateUnifiedBorder()
                             }}
-                            onkeydown={(e) => handleNumberKeydown(e, borderWidth, (v) => {
-                                borderWidth = v
-                                updateUnifiedBorder()
-                            })}
+                            onkeydown={(e) =>
+                                handleNumberKeydown(e, borderWidth, (v) => {
+                                    borderWidth = v
+                                    updateUnifiedBorder()
+                                })}
                             placeholder="宽度值..."
                             disabled={isRoot}
                             class:disabled-input={isRoot}
@@ -242,7 +234,7 @@
                     <div class="attr-item">
                         <label for="border-color">边框颜色</label>
                         <div class="color-picker-wrapper">
-                            <ColorPicker 
+                            <ColorPicker
                                 value={borderColor}
                                 onchange={(color: string) => {
                                     borderColor = color
@@ -257,12 +249,7 @@
                     <div class="attr-item">
                         <label for="border-style">边框样式</label>
                         <div class="select-wrapper">
-                            <select 
-                                id="border-style"
-                                bind:value={borderStyle}
-                                onchange={updateUnifiedBorder}
-                                disabled={isRoot}
-                            >
+                            <select id="border-style" bind:value={borderStyle} onchange={updateUnifiedBorder} disabled={isRoot}>
                                 {#each borderStyleOptions as option}
                                     <option value={option.value}>{option.label}</option>
                                 {/each}
@@ -273,19 +260,20 @@
 
                     <div class="attr-item">
                         <label for="border-radius">边框圆角</label>
-                        <input 
+                        <input
                             id="border-radius"
-                            type="number" 
+                            type="number"
                             min="0"
                             bind:value={borderRadius}
                             oninput={(e) => {
                                 borderRadius = e.currentTarget.value
                                 updateUnifiedBorder()
                             }}
-                            onkeydown={(e) => handleNumberKeydown(e, borderRadius, (v) => {
-                                borderRadius = v
-                                updateUnifiedBorder()
-                            })}
+                            onkeydown={(e) =>
+                                handleNumberKeydown(e, borderRadius, (v) => {
+                                    borderRadius = v
+                                    updateUnifiedBorder()
+                                })}
                             placeholder="圆角值..."
                             disabled={isRoot}
                             class:disabled-input={isRoot}
@@ -300,16 +288,17 @@
                 <div class="attr-list">
                     <div class="attr-item">
                         <label for="border-top-width">上边宽度</label>
-                        <input 
+                        <input
                             id="border-top-width"
-                            type="number" 
+                            type="number"
                             min="0"
                             bind:value={borderTopWidth}
                             oninput={(e) => updateIndividualBorder('Top', 'Width', e.currentTarget.value)}
-                            onkeydown={(e) => handleNumberKeydown(e, borderTopWidth, (v) => {
-                                borderTopWidth = v
-                                updateIndividualBorder('Top', 'Width', v)
-                            })}
+                            onkeydown={(e) =>
+                                handleNumberKeydown(e, borderTopWidth, (v) => {
+                                    borderTopWidth = v
+                                    updateIndividualBorder('Top', 'Width', v)
+                                })}
                             placeholder="宽度值..."
                             disabled={isRoot}
                             class:disabled-input={isRoot}
@@ -320,11 +309,7 @@
                     <div class="attr-item">
                         <label for="border-top-color">上边颜色</label>
                         <div class="color-picker-wrapper">
-                            <ColorPicker 
-                                value={borderTopColor}
-                                onchange={(color: string) => updateIndividualBorder('Top', 'Color', color)}
-                                disabled={isRoot}
-                            />
+                            <ColorPicker value={borderTopColor} onchange={(color: string) => updateIndividualBorder('Top', 'Color', color)} disabled={isRoot} />
                         </div>
                         <span class="unit-placeholder"></span>
                     </div>
@@ -332,12 +317,7 @@
                     <div class="attr-item">
                         <label for="border-top-style">上边样式</label>
                         <div class="select-wrapper">
-                            <select 
-                                id="border-top-style"
-                                bind:value={borderTopStyle}
-                                onchange={() => updateIndividualBorder('Top', 'Style', borderTopStyle)}
-                                disabled={isRoot}
-                            >
+                            <select id="border-top-style" bind:value={borderTopStyle} onchange={() => updateIndividualBorder('Top', 'Style', borderTopStyle)} disabled={isRoot}>
                                 {#each borderStyleOptions as option}
                                     <option value={option.value}>{option.label}</option>
                                 {/each}
@@ -352,16 +332,17 @@
                 <div class="attr-list">
                     <div class="attr-item">
                         <label for="border-right-width">右边宽度</label>
-                        <input 
+                        <input
                             id="border-right-width"
-                            type="number" 
+                            type="number"
                             min="0"
                             bind:value={borderRightWidth}
                             oninput={(e) => updateIndividualBorder('Right', 'Width', e.currentTarget.value)}
-                            onkeydown={(e) => handleNumberKeydown(e, borderRightWidth, (v) => {
-                                borderRightWidth = v
-                                updateIndividualBorder('Right', 'Width', v)
-                            })}
+                            onkeydown={(e) =>
+                                handleNumberKeydown(e, borderRightWidth, (v) => {
+                                    borderRightWidth = v
+                                    updateIndividualBorder('Right', 'Width', v)
+                                })}
                             placeholder="宽度值..."
                             disabled={isRoot}
                             class:disabled-input={isRoot}
@@ -372,11 +353,7 @@
                     <div class="attr-item">
                         <label for="border-right-color">右边颜色</label>
                         <div class="color-picker-wrapper">
-                            <ColorPicker 
-                                value={borderRightColor}
-                                onchange={(color: string) => updateIndividualBorder('Right', 'Color', color)}
-                                disabled={isRoot}
-                            />
+                            <ColorPicker value={borderRightColor} onchange={(color: string) => updateIndividualBorder('Right', 'Color', color)} disabled={isRoot} />
                         </div>
                         <span class="unit-placeholder"></span>
                     </div>
@@ -384,12 +361,7 @@
                     <div class="attr-item">
                         <label for="border-right-style">右边样式</label>
                         <div class="select-wrapper">
-                            <select 
-                                id="border-right-style"
-                                bind:value={borderRightStyle}
-                                onchange={() => updateIndividualBorder('Right', 'Style', borderRightStyle)}
-                                disabled={isRoot}
-                            >
+                            <select id="border-right-style" bind:value={borderRightStyle} onchange={() => updateIndividualBorder('Right', 'Style', borderRightStyle)} disabled={isRoot}>
                                 {#each borderStyleOptions as option}
                                     <option value={option.value}>{option.label}</option>
                                 {/each}
@@ -404,16 +376,17 @@
                 <div class="attr-list">
                     <div class="attr-item">
                         <label for="border-bottom-width">下边宽度</label>
-                        <input 
+                        <input
                             id="border-bottom-width"
-                            type="number" 
+                            type="number"
                             min="0"
                             bind:value={borderBottomWidth}
                             oninput={(e) => updateIndividualBorder('Bottom', 'Width', e.currentTarget.value)}
-                            onkeydown={(e) => handleNumberKeydown(e, borderBottomWidth, (v) => {
-                                borderBottomWidth = v
-                                updateIndividualBorder('Bottom', 'Width', v)
-                            })}
+                            onkeydown={(e) =>
+                                handleNumberKeydown(e, borderBottomWidth, (v) => {
+                                    borderBottomWidth = v
+                                    updateIndividualBorder('Bottom', 'Width', v)
+                                })}
                             placeholder="宽度值..."
                             disabled={isRoot}
                             class:disabled-input={isRoot}
@@ -424,11 +397,7 @@
                     <div class="attr-item">
                         <label for="border-bottom-color">下边颜色</label>
                         <div class="color-picker-wrapper">
-                            <ColorPicker 
-                                value={borderBottomColor}
-                                onchange={(color: string) => updateIndividualBorder('Bottom', 'Color', color)}
-                                disabled={isRoot}
-                            />
+                            <ColorPicker value={borderBottomColor} onchange={(color: string) => updateIndividualBorder('Bottom', 'Color', color)} disabled={isRoot} />
                         </div>
                         <span class="unit-placeholder"></span>
                     </div>
@@ -436,12 +405,7 @@
                     <div class="attr-item">
                         <label for="border-bottom-style">下边样式</label>
                         <div class="select-wrapper">
-                            <select 
-                                id="border-bottom-style"
-                                bind:value={borderBottomStyle}
-                                onchange={() => updateIndividualBorder('Bottom', 'Style', borderBottomStyle)}
-                                disabled={isRoot}
-                            >
+                            <select id="border-bottom-style" bind:value={borderBottomStyle} onchange={() => updateIndividualBorder('Bottom', 'Style', borderBottomStyle)} disabled={isRoot}>
                                 {#each borderStyleOptions as option}
                                     <option value={option.value}>{option.label}</option>
                                 {/each}
@@ -456,16 +420,17 @@
                 <div class="attr-list">
                     <div class="attr-item">
                         <label for="border-left-width">左边宽度</label>
-                        <input 
+                        <input
                             id="border-left-width"
-                            type="number" 
+                            type="number"
                             min="0"
                             bind:value={borderLeftWidth}
                             oninput={(e) => updateIndividualBorder('Left', 'Width', e.currentTarget.value)}
-                            onkeydown={(e) => handleNumberKeydown(e, borderLeftWidth, (v) => {
-                                borderLeftWidth = v
-                                updateIndividualBorder('Left', 'Width', v)
-                            })}
+                            onkeydown={(e) =>
+                                handleNumberKeydown(e, borderLeftWidth, (v) => {
+                                    borderLeftWidth = v
+                                    updateIndividualBorder('Left', 'Width', v)
+                                })}
                             placeholder="宽度值..."
                             disabled={isRoot}
                             class:disabled-input={isRoot}
@@ -476,11 +441,7 @@
                     <div class="attr-item">
                         <label for="border-left-color">左边颜色</label>
                         <div class="color-picker-wrapper">
-                            <ColorPicker 
-                                value={borderLeftColor}
-                                onchange={(color: string) => updateIndividualBorder('Left', 'Color', color)}
-                                disabled={isRoot}
-                            />
+                            <ColorPicker value={borderLeftColor} onchange={(color: string) => updateIndividualBorder('Left', 'Color', color)} disabled={isRoot} />
                         </div>
                         <span class="unit-placeholder"></span>
                     </div>
@@ -488,12 +449,7 @@
                     <div class="attr-item">
                         <label for="border-left-style">左边样式</label>
                         <div class="select-wrapper">
-                            <select 
-                                id="border-left-style"
-                                bind:value={borderLeftStyle}
-                                onchange={() => updateIndividualBorder('Left', 'Style', borderLeftStyle)}
-                                disabled={isRoot}
-                            >
+                            <select id="border-left-style" bind:value={borderLeftStyle} onchange={() => updateIndividualBorder('Left', 'Style', borderLeftStyle)} disabled={isRoot}>
                                 {#each borderStyleOptions as option}
                                     <option value={option.value}>{option.label}</option>
                                 {/each}
@@ -514,11 +470,11 @@
         padding: calc(20px * var(--scale-ratio, 1));
         color: #e2e8f0;
     }
-    
+
     .border-section {
         margin-bottom: calc(32px * var(--scale-ratio, 1));
     }
-    
+
     .border-section:last-child {
         margin-bottom: 0;
     }
