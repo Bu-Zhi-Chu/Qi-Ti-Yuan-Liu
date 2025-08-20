@@ -195,6 +195,10 @@ export async function loadDomTreeFromDatabase(projectId: string): Promise<boolea
   }
 
   try {
+    // 先从数据库读取之前保存的选中节点ID
+    const project = await DexieService.getRecord<any>('qi-qiao-ban', 'projects', projectId);
+    const savedSelectedNodeId = project?.selectedNodeId || null;
+
     // 立即清空旧数据，确保无残影
     console.log('【数据库交互】立即清空DOM树数据，避免残影');
     Object.assign(domTreeData, {
@@ -210,22 +214,23 @@ export async function loadDomTreeFromDatabase(projectId: string): Promise<boolea
       expanded: true,
       children: []
     });
-    selectedNodeId = 'root';
+    selectedNodeId = savedSelectedNodeId || 'root';
 
     // 首先尝试从doms表加载
     const domTreeFromDoms = await loadDomNodesFromDomsTable(projectId);
     if (domTreeFromDoms) {
       Object.assign(domTreeData, domTreeFromDoms);
       console.log('【数据库交互】已从doms表加载DOM树数据');
-      // 重新设置选中节点以触发属性面板刷新
-      await setSelectedId(null);
-      // 下一事件循环强制选中 root，避免被后续覆盖
-      setTimeout(() => setSelectedId('root'), 0);
+      
+      // 恢复之前保存的选中节点，如果节点存在的话
+        const targetSelectedId = savedSelectedNodeId && hasNodeWithId(domTreeData, savedSelectedNodeId) 
+          ? savedSelectedNodeId 
+          : 'root';
+      await setSelectedId(targetSelectedId);
       return true;
     }
 
     // 如果doms表没有数据，尝试从projects表加载
-    const project = await DexieService.getRecord<any>('qi-qiao-ban', 'projects', projectId);
     if (project && project.data) {
       try {
         let loadedData: any;
@@ -247,9 +252,11 @@ export async function loadDomTreeFromDatabase(projectId: string): Promise<boolea
         // 同时迁移到doms表
         await saveDomNodesToDomsTable(projectId, domTreeData);
 
-        // 重新设置选中节点以触发属性面板刷新
-        await setSelectedId(null);
-        setTimeout(() => setSelectedId('root'), 0);
+        // 恢复之前保存的选中节点，如果节点存在的话
+        const targetSelectedId = savedSelectedNodeId && hasNodeWithId(domTreeData, savedSelectedNodeId) 
+          ? savedSelectedNodeId 
+          : 'root';
+        await setSelectedId(targetSelectedId);
         return true;
       } catch (error) {
         console.error('解析domTree数据失败:', error);
@@ -403,6 +410,8 @@ export async function setSelectedId(id: string | null): Promise<void> {
  * @returns 找到的节点或null
  */
 export function findNodeById(node: DomNode, id: string): DomNode | null {
+  if (!node || !id) return null;
+  
   if (node.id === id) {
     return node;
   }
@@ -690,6 +699,23 @@ export function resetActivePropertyTab(): void {
   }
   resetNodeTab(domTreeData);
   console.log('所有节点的 activePropertyTab 已重置');
+}
+
+/**
+ * 检查指定ID的节点是否存在于DOM树中
+ */
+export function hasNodeWithId(node: DomNode, targetId: string): boolean {
+  if (!node || !targetId) return false;
+  
+  if (node.id === targetId) return true;
+  
+  if (node.children && Array.isArray(node.children)) {
+    for (const child of node.children) {
+      if (hasNodeWithId(child, targetId)) return true;
+    }
+  }
+  
+  return false;
 }
 
 /**
