@@ -446,7 +446,7 @@
         padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
         border: none;
     }
-    
+
     select option:hover,
     select option:focus,
     select option:checked {

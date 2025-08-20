@@ -421,20 +421,20 @@
         background: #1e293b;
         color: #e2e8f0;
     }
-    
+
     /* 改善下拉面板样式 */
     select {
         background-color: rgba(30, 41, 59, 0.95);
         color: #e2e8f0;
         border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.3);
     }
-    
+
     select option {
         background-color: #1e293b;
         color: #e2e8f0;
         padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
     }
-    
+
     select option:hover,
     select option:focus,
     select option:checked {

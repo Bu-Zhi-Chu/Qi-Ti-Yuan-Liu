@@ -83,8 +83,6 @@
         { value: 'justify', label: '两端对齐' }
     ]
 
-
-
     // 文字装饰选项
     const textDecorationOptions = [
         { value: 'none', label: '无装饰' },
@@ -271,8 +269,6 @@
     function formatSize(val: string, unit: 'px'): string {
         return `calc(${val}px * var(--scale-ratio, 1))`
     }
-
-
 
     // 统一更新文字样式
     function updateTextStyles() {

@@ -410,7 +410,7 @@
             updateBackgroundStyles()
             isUploading = false
             uploadProgress = 100
-            
+
             // 重置文件输入，允许再次上传同一张图片
             if (fileInput) {
                 fileInput.value = ''
