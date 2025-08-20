@@ -234,7 +234,7 @@
         backgroundRepeat = styles.backgroundRepeat || 'no-repeat'
 
         // 背景裁剪为文字形状
-        backgroundClipToText = (styles.backgroundClip === 'text') || (styles.webkitBackgroundClip === 'text')
+        backgroundClipToText = styles.backgroundClip === 'text' || styles.webkitBackgroundClip === 'text'
 
         // 渐变比例已经在前面处理过了
     }
@@ -924,12 +924,7 @@
             <div class="background-item">
                 <label for="background-clip-toggle">背景裁剪</label>
                 <label class="switch">
-                    <input 
-                        id="background-clip-toggle"
-                        type="checkbox" 
-                        bind:checked={backgroundClipToText}
-                        onchange={updateBackgroundStyles}
-                    />
+                    <input id="background-clip-toggle" type="checkbox" bind:checked={backgroundClipToText} onchange={updateBackgroundStyles} />
                     <span class="slider"></span>
                 </label>
                 <span class="unit-placeholder"></span>
@@ -1130,10 +1125,10 @@
     }
     .slider:before {
         position: absolute;
-        content: "";
+        content: '';
         height: calc(18px * var(--scale-ratio, 1));
         width: calc(18px * var(--scale-ratio, 1));
-        left: calc(3px * var(--scale-ratio, 1));
+        left: calc(6px * var(--scale-ratio, 1));
         bottom: calc(3px * var(--scale-ratio, 1));
         background-color: white;
         transition: 0.3s;
@@ -1143,8 +1138,8 @@
         background-color: #6366f1;
     }
     input:checked + .slider:before {
-        transform: translateX(calc(20px * var(--scale-ratio, 1)));
-    }
+    transform: translateX(calc(38px * var(--scale-ratio, 1)));
+  }
     /* 拖拽上传视觉反馈 */
     .input-style:hover {
         border-color: rgba(99, 102, 241, 0.5);
