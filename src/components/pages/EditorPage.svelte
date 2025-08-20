@@ -188,7 +188,7 @@
                     <PropertyPanel showToolbar={false} {activeTab} onTabChange={setTab} />
                 </div>
                 <!-- 标签切换按钮栏 -->
-                <div class="prop-tabbar" style="width: 12%;height: 100%;display: flex;flex-direction: column;align-items: center;justify-content: flex-start;padding-top: calc(12px * var(--scale-ratio, 1));gap: calc(8px * var(--scale-ratio, 1));pointer-events: auto;">
+                <div class="prop-tabbar" style="width: 12%;height: 100%;display: flex;flex-direction: column;align-items: center;justify-content: flex-start;padding-top: calc(12px * var(--scale-ratio, 1));gap: calc(8px * var(--scale-ratio, 1));pointer-events: auto;background: rgba(30, 41, 59, 0.95);">
                     {#each tabs as t}
                         <button class:active={activeTab === t.key} onclick={() => setTab(t.key)} title={t.title}>
                             <Icon name={t.icon} size={16} style="width: calc(16px * var(--scale-ratio, 1)); height: calc(16px * var(--scale-ratio, 1))" />
