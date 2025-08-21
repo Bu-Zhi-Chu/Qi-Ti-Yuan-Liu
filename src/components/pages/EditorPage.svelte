@@ -81,22 +81,116 @@
         }
     }
 
-    // 注册/注销快捷键
+    // Konami Code验证器状态
+    let isVerifying = $state(false)
+    let konamiSequence: string[] = []
+    const KONAMI_CODE = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a', 'b', 'a']
+    let verificationTimeout: number | null = null
+    const VERIFICATION_TIMEOUT_MS = 15000 // 15秒超时，给用户足够时间输入
+
+    // 注册/注销快捷键和Konami验证器
     let unregister: () => void
+    let unregisterKonami: () => void = () => {}
+
     onMount(async () => {
         // 初始化项目模式
         await initializeProjectMode()
 
+        console.log('注册Ctrl+E快捷键用于Konami Code验证')
+
+        // 替换原有的Ctrl+E快捷键为Konami验证器
         unregister = registerShortcut('Ctrl+E', () => {
-            showWorkspace = !showWorkspace
-            // 切换工作区时更新项目模式
-            updateProjectMode()
+            console.log('Ctrl+E快捷键被触发')
+            startKonamiVerification()
         })
     })
 
     onDestroy(() => {
         unregister && unregister()
+        stopKonamiVerification()
     })
+
+    // Konami Code验证器相关函数
+    function startKonamiVerification() {
+        if (isVerifying) return
+
+        console.log('开始Konami Code验证...')
+
+        // 如果当前是编辑模式，直接切换回正常模式，不需要验证
+        if (showWorkspace) {
+            showWorkspace = false
+            updateProjectMode()
+            return
+        }
+
+        // 从正常模式切换到编辑模式需要验证
+        isVerifying = true
+        konamiSequence = []
+
+        console.log('Konami Code序列:', KONAMI_CODE)
+
+        // 设置15秒超时
+        verificationTimeout = window.setTimeout(() => {
+            console.log('Konami Code验证超时')
+            stopKonamiVerification()
+        }, VERIFICATION_TIMEOUT_MS)
+
+        // 注册键盘监听
+        const handleKeyDown = (e: KeyboardEvent) => {
+            handleKonamiKey(e)
+        }
+
+        document.addEventListener('keydown', handleKeyDown)
+        unregisterKonami = () => {
+            document.removeEventListener('keydown', handleKeyDown)
+        }
+    }
+
+    function handleKonamiKey(e: KeyboardEvent) {
+        if (!isVerifying) return
+
+        console.log('键盘事件:', e.key, '当前序列:', [...konamiSequence, e.key])
+
+        // 添加当前按键到序列
+        konamiSequence.push(e.key)
+
+        // 检查序列是否匹配
+        for (let i = 0; i < konamiSequence.length; i++) {
+            if (konamiSequence[i] !== KONAMI_CODE[i]) {
+                console.log('序列不匹配，重置。期望:', KONAMI_CODE[i], '实际:', konamiSequence[i])
+                // 输入错误，重置序列
+                resetKonamiSequence()
+                return
+            }
+        }
+
+        console.log('序列匹配进度:', konamiSequence.length, '/', KONAMI_CODE.length)
+
+        // 检查是否完成整个序列
+        if (konamiSequence.length === KONAMI_CODE.length) {
+            console.log('Konami Code验证成功！')
+            // 验证成功，切换编辑模式
+            showWorkspace = !showWorkspace
+            updateProjectMode()
+            stopKonamiVerification()
+        }
+    }
+
+    function resetKonamiSequence() {
+        konamiSequence = []
+    }
+
+    function stopKonamiVerification() {
+        isVerifying = false
+        konamiSequence = []
+
+        if (verificationTimeout) {
+            clearTimeout(verificationTimeout)
+            verificationTimeout = null
+        }
+
+        unregisterKonami()
+    }
 
     // 初始化项目模式
     async function initializeProjectMode() {
