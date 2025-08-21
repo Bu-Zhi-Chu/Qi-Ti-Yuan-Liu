@@ -136,75 +136,7 @@ export default class DexieService {
                                 height: '100%',
                                 overflow: 'hidden',
                                 pointerEvents: 'auto',
-                                width: '100%',
-                                border: 'calc(1px * var(--scale-ratio, 1)) solid #94a3b8'
-                            },
-                            textContent: ''
-                        }
-                    ]
-                },
-                {
-                    id: 'test-layout',
-                    name: '测试布局',
-                    desc: '包含两个SimpleBox元素的测试模板',
-                    cover: testBlob,
-                    tag: '测试',
-                    thumbnailUrl: testBlob,
-                    domStructure: [
-                        {
-                            projectId: 'template-test',
-                            id: 'root',
-                            parentId: null,
-                            type: 'SimpleBox',
-                            attributes: {
-                                expanded: true,
-                                hidden: false
-                            },
-                            style: {
-                                backgroundColor: '#ffffff',
-                                height: '100%',
-                                overflow: 'hidden',
-                                pointerEvents: 'auto',
-                                width: '100%',
-                                border: 'calc(1px * var(--scale-ratio, 1)) solid #94a3b8'
-                            },
-                            textContent: ''
-                        },
-                        {
-                            projectId: 'template-test',
-                            id: '56e9e903-0d8a-4c33-93ae-114864ab095e',
-                            parentId: 'root',
-                            type: 'SimpleBox',
-                            attributes: {
-                                expanded: true,
-                                hidden: undefined,
-                                'data-name': '元素'
-                            },
-                            style: {
-                                position: 'absolute',
-                                left: '24.79079617282111%',
-                                top: '23%',
-                                width: '32.94979132089322%',
-                                height: '34%'
-                            },
-                            textContent: ''
-                        },
-                        {
-                            projectId: 'template-test',
-                            id: 'd9ff9adc-1fbc-46d6-ad6e-17cd66d50e78',
-                            parentId: 'root',
-                            type: 'SimpleBox',
-                            attributes: {
-                                expanded: true,
-                                hidden: undefined,
-                                'data-name': '元素'
-                            },
-                            style: {
-                                position: 'absolute',
-                                left: '70.8159015099418%',
-                                top: '53%',
-                                width: '21.443514986613046%',
-                                height: '31%'
+                                width: '100%'
                             },
                             textContent: ''
                         }
@@ -263,12 +195,6 @@ export default class DexieService {
         console.log(`【数据库交互】添加记录: 数据库=${dbName}, 表=${tableName}`)
         try {
             const db = new Dexie(dbName)
-            // 配置Dexie以支持Blob存储
-            db.version(2).stores({
-                templates: '++id, name, desc, cover, tag, thumbnailUrl, domStructure',
-                projects: 'id, name, templateId, data, createdAt, updatedAt, canvasState, mode',
-                doms: '[projectId+id], projectId, parentId, type, attributes, style, textContent'
-            })
             await db.open()
             const id = await db.table(tableName).add(data as any)
             console.log(`【数据库交互】添加记录成功: 新记录ID=${id}`)
@@ -291,12 +217,6 @@ export default class DexieService {
         console.log(`【数据库交互】更新记录: 数据库=${dbName}, 表=${tableName}, ID=${key}`)
         try {
             const db = new Dexie(dbName)
-            // 配置Dexie以支持Blob存储
-            db.version(2).stores({
-                templates: '++id, name, desc, cover, tag, thumbnailUrl, domStructure',
-                projects: 'id, name, templateId, data, createdAt, updatedAt, canvasState, mode',
-                doms: '[projectId+id], projectId, parentId, type, attributes, style, textContent'
-            })
             await db.open()
             await db.table(tableName).update(key, data as any)
             console.log('【数据库交互】更新记录成功')
