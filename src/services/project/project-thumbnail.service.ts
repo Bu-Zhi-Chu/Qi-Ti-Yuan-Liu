@@ -14,6 +14,16 @@
 
 import DexieService from '../database/dexie-service'
 
+interface DomNode {
+  projectId: string
+  id: string
+  parentId?: string
+  type: string
+  attributes?: Record<string, any>
+  style?: Record<string, any>
+  textContent?: string
+}
+
 export class ProjectThumbnailService {
   // 已创建默认缩略图的项目缓存，避免频繁重复写入
   private static defaultThumbnailCreated: Set<string> = new Set()
@@ -83,18 +93,7 @@ export class ProjectThumbnailService {
     }
   }
 
-  /**
-   * 从项目数据中获取背景图片
-   * @param domTreeData DOM树数据
-   * @returns 背景图片URL或空字符串
-   */
-  static extractBackgroundFromRoot(domTreeData: any): string {
-    if (!domTreeData || !domTreeData.styles) {
-      return ''
-    }
 
-    return domTreeData.styles.backgroundImage || ''
-  }
 
   /**
    * 自动生成项目缩略图（从根节点背景）
@@ -102,16 +101,18 @@ export class ProjectThumbnailService {
    */
   static async autoGenerateThumbnail(projectId: string): Promise<void> {
     try {
-      // 获取项目数据
+      // 从doms表获取根节点数据
       console.log(`【数据库交互】获取项目缩略图: 项目ID=${projectId}`)
-      const project = await DexieService.getRecord<any>('qi-qiao-ban', 'projects', projectId)
-      if (!project || !project.data) {
-        console.warn('项目数据为空，无法生成缩略图')
+      const rootNodes = await DexieService.queryRecords('qi-qiao-ban', 'doms')
+      const rootNode = (rootNodes as DomNode[]).find((node) => node.projectId === projectId && node.id === 'root')
+
+      if (!rootNode) {
+        console.warn('根节点数据为空，无法生成缩略图')
         return
       }
 
-      // 从项目数据中提取背景图片
-      const backgroundImage = this.extractBackgroundFromRoot(project.data)
+      // 从根节点样式中提取背景图片
+      const backgroundImage = rootNode.style?.backgroundImage || ''
       if (backgroundImage) {
         await this.syncBackgroundToThumbnail(projectId, backgroundImage)
       }

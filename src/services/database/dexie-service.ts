@@ -44,10 +44,10 @@ export default class DexieService {
         console.log(`【数据库交互】开始创建数据库: ${dbName}`)
         const db = new Dexie(dbName)
 
-        // 版本2：添加templates表的domStructure字段
+        // 开发环境无需修改版本号
         db.version(1).stores({
             templates: '++id, name, desc, cover, tag, thumbnailUrl, domStructure',
-            projects: 'id, name, templateId, data, createdAt, updatedAt, canvasState, mode',
+            projects: 'id, name, templateId, createdAt, updatedAt, canvasState, mode',
             doms: '[projectId+id], projectId, parentId, type, attributes, style, textContent'
         })
 

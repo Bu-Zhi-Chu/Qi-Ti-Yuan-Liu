@@ -230,42 +230,9 @@ export async function loadDomTreeFromDatabase(projectId: string): Promise<boolea
       return true;
     }
 
-    // 如果doms表没有数据，尝试从projects表加载
-    if (project && project.data) {
-      try {
-        let loadedData: any;
-
-        // 检查数据类型，避免重复解析
-        if (typeof project.data === 'string') {
-          loadedData = JSON.parse(project.data);
-        } else if (typeof project.data === 'object') {
-          loadedData = project.data;
-        } else {
-          console.error('不支持的domTree数据格式:', typeof project.data);
-          return false;
-        }
-
-        // 更新domTree数据
-        Object.assign(domTreeData, loadedData);
-        console.log('【数据库交互】已从projects表加载domTree数据');
-
-        // 同时迁移到doms表
-        await saveDomNodesToDomsTable(projectId, domTreeData);
-
-        // 恢复之前保存的选中节点，如果节点存在的话
-        const targetSelectedId = savedSelectedNodeId && hasNodeWithId(domTreeData, savedSelectedNodeId)
-          ? savedSelectedNodeId
-          : 'root';
-        await setSelectedId(targetSelectedId);
-        return true;
-      } catch (error) {
-        console.error('解析domTree数据失败:', error);
-        return false;
-      }
-    } else {
-      console.log('【数据库交互】未找到domTree数据，使用默认结构');
-      return false;
-    }
+    // doms表没有数据时使用默认结构
+    console.log('【数据库交互】未找到domTree数据，使用默认结构');
+    return false;
   } catch (error) {
     console.error('【数据库交互】加载domTree数据失败:', error);
     return false;
@@ -335,42 +302,7 @@ async function saveDomNodesToDomsTable(projectId: string, domTree: DomNode): Pro
   }
 }
 
-/**
- * 手动保存domTree数据到projects表的data字段
- * 由用户点击按钮触发，避免频繁自动保存
- */
-export async function saveDomTreeToProjectsData(): Promise<boolean> {
-  if (!currentProjectId) {
-    console.warn('项目ID为空，无法保存domTree数据');
-    return false;
-  }
 
-  // 验证项目ID与路由一致性
-  if (!validateProjectIdConsistency()) {
-    console.warn('项目ID与路由不匹配，跳过手动保存');
-    return false;
-  }
-
-  try {
-    console.log('【数据库交互】手动保存domTree数据到projects表:', currentProjectId);
-
-    const success = await DexieService.updateRecord('qi-qiao-ban', 'projects', currentProjectId, {
-      data: JSON.stringify(domTreeData),
-      updatedAt: Date.now()
-    });
-
-    if (success) {
-      console.log('【数据库交互】domTree数据已手动保存到projects表');
-      return true;
-    } else {
-      console.warn('【数据库交互】保存domTree数据失败');
-      return false;
-    }
-  } catch (error) {
-    console.error('【数据库交互】保存domTree数据失败:', error);
-    return false;
-  }
-}
 
 /**
  * 自动保存到doms表（细粒度存储，性能影响小）

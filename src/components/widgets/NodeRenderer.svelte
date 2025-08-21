@@ -84,7 +84,7 @@
                 const kebab = k.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
                 let value: any = v
 
-                // 处理背景图片 - 直接处理 Blob 对象、渐变字符串或 URL 字符串
+                // 处理背景图片 - 直接处理 Blob 对象或 URL 字符串
                 if (k === 'backgroundImage') {
                     if (v instanceof Blob) {
                         let url = blobUrlMap.get(v)
@@ -94,14 +94,12 @@
                             blobUrlSet.add(url)
                         }
                         value = `url(${url})`
+                    } else if (typeof v === 'string' && v.startsWith('url(')) {
+                        // 兼容旧版 URL 格式
+                        value = v
                     } else if (typeof v === 'string' && v) {
-                        // 处理渐变字符串（linear-gradient, radial-gradient等）和URL
-                        if (v.startsWith('url(') || v.startsWith('linear-gradient(') || v.startsWith('radial-gradient(') || v.startsWith('conic-gradient(')) {
-                            value = v
-                        } else {
-                            // 处理普通图片路径
-                            value = `url(${v})`
-                        }
+                        // 处理字符串路径
+                        value = `url(${v})`
                     } else if (v) {
                         // 其他情况直接使用原值
                         value = v
