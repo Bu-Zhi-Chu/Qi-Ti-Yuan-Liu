@@ -94,20 +94,6 @@ export class PWAChecker {
      * 初始化PWA注册，支持降级（防止重复执行）
      */
     static async initPWA(): Promise<void> {
-        // 开发环境直接跳过 Service Worker，避免调试时缓存干扰
-        if (import.meta.env.DEV) {
-            // 开发环境：主动注销已存在的 Service Worker，避免缓存干扰
-            if ('serviceWorker' in navigator) {
-                try {
-                    const registrations = await navigator.serviceWorker.getRegistrations()
-                    for (const reg of registrations) {
-                        await reg.unregister()
-                    }
-                } catch (err) {}
-            }
-
-            return
-        }
         // 防止重复初始化
         if (this._initialized) {
             return
@@ -122,9 +108,11 @@ export class PWAChecker {
         }
 
         try {
-            // 正常PWA注册流程
+            // 正常PWA注册流程（包括开发环境）
             if ('serviceWorker' in navigator) {
-                await navigator.serviceWorker.register('/sw.js')
+                const isDev = import.meta.env.DEV
+                const swPath = isDev ? '/dev-sw.js?dev-sw' : '/sw.js'
+                await navigator.serviceWorker.register(swPath)
             }
         } catch (error) {
             this.setupFallback()

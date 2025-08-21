@@ -40,15 +40,15 @@ export default defineConfig({
                 ]
             },
             devOptions: {
-                // 开发模式下启用PWA manifest生成，但使用模块模式避免Service Worker注册
+                // 开发模式下启用完整的PWA功能，包括Service Worker注册
                 enabled: true,
-                type: 'module'
+                type: 'classic'
             }
         })
     ],
     server: {
         fs: {
-            allow: ['src', 'public', 'index.html', 'manifest.json'],
+            allow: ['src', 'public', 'index.html', 'manifest.json', 'dev-dist'],
             deny: ['study'] // 明确禁止访问study目录
         },
         watch: {
