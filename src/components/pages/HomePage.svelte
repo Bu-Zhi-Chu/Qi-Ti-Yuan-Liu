@@ -100,7 +100,7 @@
             createdAt: now,
             updatedAt: now,
             canvasState: { x: 0, y: 0, scale: 1 },
-            mode: 'editing' // 默认模式为编辑模式，用户进入编辑器时显示工作区
+            mode: 'normal' // 默认模式为正常模式，用户进入编辑器时隐藏工作区
         })
 
         // 根据模板加载DOM结构

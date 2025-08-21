@@ -217,9 +217,9 @@
                 showWorkspace = project.mode === 'editing'
                 console.log(`项目模式已初始化为: ${project.mode}`)
             } else {
-                // 如果没有模式字段，默认为正常模式
+                // 如果没有模式字段，默认为正常模式，不保存到数据库
                 showWorkspace = false
-                await updateProjectMode() // 保存默认模式
+                console.log('项目模式已初始化为: normal (默认模式)')
             }
         } catch (error) {
             console.error('初始化项目模式失败:', error)
