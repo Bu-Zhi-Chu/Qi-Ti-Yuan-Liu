@@ -16,7 +16,7 @@
 
     // Props定义
     interface Props {
-        onConfirm?: (name: string) => void
+        onConfirm?: (name: string, templateId: string) => void
         onCancel?: () => void
     }
     let { onConfirm, onCancel }: Props = $props()
@@ -33,7 +33,7 @@
 
     // 状态管理
     let templates = $state<TemplateInfo[]>([])
-    let selected = $state('blank')
+    let selected = $state('')
     let projectName = $state('')
     let isLoading = $state(true)
     const inputId: string = 'project-name-' + Math.random().toString(36).slice(2)
@@ -43,6 +43,9 @@
             console.log('【数据库交互】加载模板列表')
             const data = await DexieService.queryRecords<TemplateInfo>('qi-qiao-ban', 'templates')
             templates = data
+            if (data.length > 0) {
+                selected = data[0].id
+            }
         } finally {
             isLoading = false
         }
@@ -65,7 +68,7 @@
             Toast.warning('请输入项目名称')
             return
         }
-        onConfirm?.(name)
+        onConfirm?.(name, selected)
     }
 
     const cancel = () => onCancel?.()

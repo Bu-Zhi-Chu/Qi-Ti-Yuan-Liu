@@ -66,8 +66,8 @@
 </script>
 
 <ResponsiveBox
-    style="position: relative; background: rgba(30, 41, 59, 0.5); border-radius: 16px; padding: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); cursor: pointer; transition: all 0.3s ease; width: 100%; border: 1px solid {selected
-        ? 'rgba(99, 102, 241, 0.8)'
+    style="position: relative; background: {selected ? 'rgba(30, 41, 59, 0.8)' : 'rgba(30, 41, 59, 0.5)'}; border-radius: 16px; padding: 20px; box-shadow: {selected ? '0 0 20px rgba(99, 102, 241, 0.6), 0 0 40px rgba(139, 92, 246, 0.4)' : '0 8px 32px rgba(0,0,0,0.3)'}; cursor: pointer; transition: all 0.3s ease; width: 100%; border: 1px solid {selected
+        ? 'rgba(99, 102, 241, 1)'
         : 'rgba(99, 102, 241, 0.2)'}; backdrop-filter: blur(10px); transform: translateY(0px);"
     onclick={onClick}
     onmouseenter={(e: MouseEvent) => {
@@ -75,14 +75,14 @@
         const target = e.currentTarget as HTMLElement
         target.style.transform = 'translateY(calc(-8px * var(--scale-ratio, 1))) scale(1.02)'
         target.style.boxShadow = '0 calc(20px * var(--scale-ratio, 1)) calc(60px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.4), 0 0 calc(30px * var(--scale-ratio, 1)) rgba(139, 92, 246, 0.3)'
-        target.style.borderColor = 'rgba(99, 102, 241, 0.5)'
+        target.style.borderColor = selected ? 'rgba(99, 102, 241, 0.8)' : 'rgba(99, 102, 241, 0.5)'
     }}
     onmouseleave={(e: MouseEvent) => {
         isHovered = false
         const target = e.currentTarget as HTMLElement
         target.style.transform = 'translateY(calc(0px * var(--scale-ratio, 1))) scale(1)'
-        target.style.boxShadow = '0 calc(8px * var(--scale-ratio, 1)) calc(32px * var(--scale-ratio, 1)) rgba(0,0,0,0.3)'
-        target.style.borderColor = 'rgba(99, 102, 241, 0.2)'
+        target.style.boxShadow = selected ? '0 0 calc(20px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.6), 0 0 calc(40px * var(--scale-ratio, 1)) rgba(139, 92, 246, 0.4)' : '0 calc(8px * var(--scale-ratio, 1)) calc(32px * var(--scale-ratio, 1)) rgba(0,0,0,0.3)'
+        target.style.borderColor = selected ? 'rgba(99, 102, 241, 0.8)' : 'rgba(99, 102, 241, 0.2)'
     }}
 >
     <!-- 图片区域 -->

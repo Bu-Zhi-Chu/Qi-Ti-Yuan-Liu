@@ -84,7 +84,7 @@
         }
     }
 
-    async function confirmNewProject(name: string) {
+    async function confirmNewProject(name: string, templateId: string = 'blank') {
         // 清理内存中的旧项目数据
         clearMemoryState()
 
@@ -95,13 +95,81 @@
         await DexieService.addRecord('qi-qiao-ban', 'projects', {
             id,
             name,
-            templateId: 'blank',
+            templateId,
             data: {},
             createdAt: now,
             updatedAt: now,
             canvasState: { x: 0, y: 0, scale: 1 },
             mode: 'editing' // 默认模式为编辑模式，用户进入编辑器时显示工作区
         })
+
+        // 根据模板加载DOM结构
+        try {
+            const db = await DexieService.getDatabase('qi-qiao-ban')
+            if (db) {
+                const template = await db.table('templates').get(templateId)
+                if (template && template.domStructure && template.domStructure.length > 0) {
+                    // 使用模板的DOM结构
+                    const domNodes = template.domStructure.map((node: any) => ({
+                        ...node,
+                        projectId: id,
+                        id: node.id || crypto.randomUUID()
+                    }))
+                    
+                    await db.table('doms').bulkAdd(domNodes)
+                    console.log(`【模板加载】使用模板 ${template.name} 的DOM结构，共 ${domNodes.length} 个节点`)
+                } else {
+                    // 使用默认根节点
+                    const rootNode = {
+                        id: 'root',
+                        projectId: id,
+                        componentType: 'SimpleBox',
+                        props: {},
+                        style: {
+                            width: '100%',
+                            height: '100%',
+                            backgroundColor: '#ffffff',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '8px',
+                            padding: '16px'
+                        },
+                        children: [],
+                        position: { x: 0, y: 0 },
+                        size: { width: 100, height: 100 },
+                        expanded: true,
+                        createdAt: now,
+                        updatedAt: now
+                    }
+                    await db.table('doms').add(rootNode)
+                    console.log('【模板加载】使用默认根节点结构')
+                }
+            }
+        } catch (error) {
+            console.error('加载模板DOM结构失败:', error)
+            // 回退到默认根节点
+            const rootNode = {
+                id: 'root',
+                projectId: id,
+                componentType: 'SimpleBox',
+                props: {},
+                style: {
+                    width: '100%',
+                    height: '100%',
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '8px',
+                    padding: '16px'
+                },
+                children: [],
+                position: { x: 0, y: 0 },
+                size: { width: 100, height: 100 },
+                expanded: true,
+                createdAt: now,
+                updatedAt: now
+            }
+            const db = await DexieService.getDatabase('qi-qiao-ban')
+            if (db) await db.table('doms').add(rootNode)
+        }
 
         // 生成默认项目缩略图
         try {
