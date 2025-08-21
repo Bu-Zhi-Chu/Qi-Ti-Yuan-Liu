@@ -149,8 +149,8 @@ npm run check
 
 ## 🙋‍♂️ 联系我们
 
--   📧 Email: dev@qiqiaoban.com
--   💬 微信群: 七巧板开发者社区
+-   📧 Email: `****@**.com`
+-   💬 微信群: `七巧板开发者社区`
 -   🐛 Issues: [GitHub Issues](https://github.com/your-org/qi-qiao-ban/issues)
 
 ---
