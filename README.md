@@ -3,6 +3,11 @@
 <div align="center">
 
 [![七巧板](https://img.shields.io/badge/七巧板-国产自研低代码平台-blue?style=for-the-badge&logo=svelte&logoColor=white)](https://github.com/your-org/qi-qiao-ban)
+
+</div>
+
+<div align="center">
+
 [![Svelte5](https://img.shields.io/badge/Svelte5-最新版-FF3E00?style=flat-square&logo=svelte)](https://svelte.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-严格模式-3178C6?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![Vite](https://img.shields.io/badge/Vite-极速构建-646CFF?style=flat-square&logo=vite)](https://vitejs.dev)
