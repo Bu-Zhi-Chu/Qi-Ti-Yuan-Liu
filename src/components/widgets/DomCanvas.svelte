@@ -199,12 +199,12 @@
     // 当画布状态变化时自动保存
     let isInitialLoad = $state(true)
     let lastSavedState = $state<string>('')
-    
+
     $effect(() => {
         // 依赖画布状态，状态变化时触发保存
         const currentState = { x: offsetX, y: offsetY, scale: scale }
         const stateStr = JSON.stringify(currentState)
-        
+
         if (projectId && !isInitialLoad && stateStr !== lastSavedState) {
             // 防抖保存，避免频繁更新
             const timeout = setTimeout(() => {
@@ -243,22 +243,15 @@
 
     /**
      * 处理 NodeRenderer 选中事件
+     * 通过 setSelectedId 统一处理选中逻辑和数据库保存
      */
     async function handleSelect(id: string) {
         // 拖动画布过程中忽略节点选中
         if (isDragging) return
         // 绘画模式下不触发选中
         if (isDrawMode()) return
-        // 更新全局选中 ID
+        // 更新全局选中 ID（已包含变化检测和数据库保存）
         await setSelectedId(id)
-
-        // 保存选中状态到数据库
-        if (projectId) {
-            console.log(`【数据库交互】保存选中节点: 项目ID=${projectId}, 节点ID=${id}`)
-            DexieService.updateRecord('qi-qiao-ban', 'projects', projectId, {
-                selectedNodeId: id
-            }).catch(console.error)
-        }
     }
 
     /*
@@ -316,7 +309,9 @@
     <!-- 加载状态 -->
     {#if isLoading}
         <div style="position: absolute;top: 50%;left: 50%;transform: translate(-50%, -50%);color: white;font-size: calc(16px * var(--scale-ratio, 1));text-align: center;z-index: 100;">
-            <div style="width: calc(40px * var(--scale-ratio, 1));height: calc(40px * var(--scale-ratio, 1));border: calc(3px * var(--scale-ratio, 1)) solid rgba(255,255,255,0.3);border-top: calc(3px * var(--scale-ratio, 1)) solid white;border-radius: 50%;animation: spin 1s linear infinite;margin: 0 auto calc(10px * var(--scale-ratio, 1));"></div>
+            <div
+                style="width: calc(40px * var(--scale-ratio, 1));height: calc(40px * var(--scale-ratio, 1));border: calc(3px * var(--scale-ratio, 1)) solid rgba(255,255,255,0.3);border-top: calc(3px * var(--scale-ratio, 1)) solid white;border-radius: 50%;animation: spin 1s linear infinite;margin: 0 auto calc(10px * var(--scale-ratio, 1));"
+            ></div>
             加载中...
         </div>
         <style>

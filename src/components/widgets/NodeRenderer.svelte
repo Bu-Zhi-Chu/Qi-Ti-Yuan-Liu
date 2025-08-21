@@ -46,6 +46,9 @@
 
     /** 点击选中 - 精确点击，不冒泡 */
     function handleClick(event: MouseEvent) {
+        // 只在编辑模式下允许节点选择
+        if (!editing) return
+
         // console.log(`[NodeRenderer] 点击事件触发: ${nodeKey}, target:`, event.target, 'currentTarget:', event.currentTarget)
 
         // 检查是否是直接点击当前元素（不是子元素冒泡上来的）

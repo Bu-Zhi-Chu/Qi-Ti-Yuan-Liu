@@ -330,11 +330,17 @@ function autoSaveToDomsTable(): void {
 
 /**
  * 设置选中的节点ID
+ * 仅在节点ID发生变化时更新数据库，避免重复保存
  */
 export async function setSelectedId(id: string | null): Promise<void> {
+  // 如果选择的节点ID与当前相同，则跳过更新
+  if (selectedNodeId === id) {
+    return;
+  }
+
   selectedNodeId = id;
 
-  // 同时更新数据库中的selectedNodeId
+  // 仅在节点ID变化时更新数据库中的selectedNodeId
   if (currentProjectId) {
     try {
       console.log(`【数据库交互】更新项目选中节点ID: 项目ID=${currentProjectId}, 选中节点ID=${id}`)

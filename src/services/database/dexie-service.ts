@@ -7,6 +7,7 @@
  */
 
 import Dexie from 'dexie'
+import { DatabaseLogger } from '../../utils/color-logger'
 
 export default class DexieService {
     /**
@@ -23,16 +24,16 @@ export default class DexieService {
             return DexieService.dbExistenceCache.get(dbName) as boolean
         }
 
-        console.log(`【数据库交互】检查数据库是否存在: ${dbName}`)
+        DatabaseLogger.checkingDatabase(dbName)
         try {
             const dbs = await indexedDB.databases()
             const exists = dbs.some(db => db.name === dbName)
             // 写入缓存
             DexieService.dbExistenceCache.set(dbName, exists)
-            console.log(`【数据库交互】数据库${dbName}存在状态: ${exists}`)
+            DatabaseLogger.databaseExists(dbName, exists)
             return exists
         } catch (error) {
-            console.error(`【数据库交互】检查数据库是否存在失败: ${dbName}`, error)
+            DatabaseLogger.operationError(`检查数据库是否存在: ${dbName}`, error)
             return false
         }
     }
@@ -41,7 +42,7 @@ export default class DexieService {
      * 创建数据库并插入默认模板
      */
     static async createDatabase(dbName: string): Promise<void> {
-        console.log(`【数据库交互】开始创建数据库: ${dbName}`)
+        DatabaseLogger.creatingDatabase(dbName)
         const db = new Dexie(dbName)
 
         // 开发环境无需修改版本号
@@ -54,7 +55,7 @@ export default class DexieService {
         await db.open()
         // 打开成功后写入缓存，避免后续重复检查
         DexieService.dbExistenceCache.set(dbName, true)
-        console.log('【数据库交互】数据库创建成功')
+        DatabaseLogger.databaseCreated(dbName)
 
         // 插入默认模板
         const count = await db.table('templates').count()
@@ -150,11 +151,11 @@ export default class DexieService {
      * 查询表数据
      */
     static async queryRecords<T>(dbName: string, tableName: string): Promise<T[]> {
-        console.log(`【数据库交互】查询数据: 数据库=${dbName}, 表=${tableName}`)
+        DatabaseLogger.queryingRecords(dbName, tableName)
         const db = new Dexie(dbName)
         await db.open()
         const result = await db.table(tableName).toArray()
-        console.log(`【数据库交互】查询结果: 共${result.length}条记录`)
+        DatabaseLogger.queryResults(result.length)
         return result
     }
 
@@ -162,11 +163,11 @@ export default class DexieService {
      * 获取指定主键的记录
      */
     static async getRecord<T>(dbName: string, tableName: string, key: any): Promise<T | undefined> {
-        console.log(`【数据库交互】获取单条记录: 数据库=${dbName}, 表=${tableName}, ID=${key}`)
+        DatabaseLogger.gettingRecord(dbName, tableName, key)
         const db = new Dexie(dbName)
         await db.open()
         const result = await db.table(tableName).get(key)
-        console.log(`【数据库交互】获取记录结果: ${result ? '找到记录' : '未找到记录'}`)
+        DatabaseLogger.recordFound(!!result)
         return result
     }
 
@@ -178,29 +179,29 @@ export default class DexieService {
      * @returns 删除是否成功
      */
     static async deleteRecord(dbName: string, tableName: string, key: any): Promise<boolean> {
-        console.log(`【数据库交互】删除记录: 数据库=${dbName}, 表=${tableName}, ID=${key}`)
+        DatabaseLogger.deletingRecord(dbName, tableName, key)
         try {
             const db = new Dexie(dbName)
             await db.open()
             await db.table(tableName).delete(key)
-            console.log('【数据库交互】删除记录成功')
+            DatabaseLogger.recordDeleted(true)
             return true
         } catch (error) {
-            console.error(`【数据库交互】删除记录失败: ${tableName}.${key}`, error)
+            DatabaseLogger.operationError(`删除记录: ${tableName}.${key}`, error)
             return false
         }
     }
 
     static async addRecord<T>(dbName: string, tableName: string, data: T): Promise<any> {
-        console.log(`【数据库交互】添加记录: 数据库=${dbName}, 表=${tableName}`)
+        DatabaseLogger.addingRecord(dbName, tableName)
         try {
             const db = new Dexie(dbName)
             await db.open()
             const id = await db.table(tableName).add(data as any)
-            console.log(`【数据库交互】添加记录成功: 新记录ID=${id}`)
+            DatabaseLogger.recordAdded(id)
             return id
         } catch (error) {
-            console.error(`【数据库交互】新增记录失败: ${tableName}`, error)
+            DatabaseLogger.operationError(`添加记录: ${tableName}`, error)
             throw error
         }
     }
@@ -214,15 +215,15 @@ export default class DexieService {
      * @returns 更新是否成功
      */
     static async updateRecord<T>(dbName: string, tableName: string, key: any, data: Partial<T>): Promise<boolean> {
-        console.log(`【数据库交互】更新记录: 数据库=${dbName}, 表=${tableName}, ID=${key}`)
+        DatabaseLogger.updatingRecord(dbName, tableName, key)
         try {
             const db = new Dexie(dbName)
             await db.open()
             await db.table(tableName).update(key, data as any)
-            console.log('【数据库交互】更新记录成功')
+            DatabaseLogger.recordUpdated(true)
             return true
         } catch (error) {
-            console.error(`【数据库交互】更新记录失败: ${tableName}.${key}`, error)
+            DatabaseLogger.operationError(`更新记录: ${tableName}.${key}`, error)
             return false
         }
     }
@@ -253,7 +254,7 @@ export default class DexieService {
             await db.open()
             return db
         } catch (error) {
-            console.error(`获取数据库实例失败: ${dbName}`, error)
+            DatabaseLogger.operationError(`获取数据库实例: ${dbName}`, error)
             return null
         }
     }
