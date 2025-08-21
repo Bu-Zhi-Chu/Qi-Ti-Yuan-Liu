@@ -123,6 +123,14 @@
             return
         }
 
+        // 开发模式下跳过验证，直接进入编辑模式
+        if (!import.meta.env.PROD) {
+            console.log('开发模式：跳过Konami Code验证，直接进入编辑模式')
+            showWorkspace = true
+            updateProjectMode()
+            return
+        }
+
         // 从正常模式切换到编辑模式需要验证
         isVerifying = true
         konamiSequence = []
@@ -148,6 +156,11 @@
 
     function handleKonamiKey(e: KeyboardEvent) {
         if (!isVerifying) return
+
+        // 开发模式下不处理键盘事件
+        if (!import.meta.env.PROD) {
+            return
+        }
 
         console.log('键盘事件:', e.key, '当前序列:', [...konamiSequence, e.key])
 
