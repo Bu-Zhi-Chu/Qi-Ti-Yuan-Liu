@@ -67,7 +67,8 @@ export function createDrawNode(rect: RelativeRect): DomNode {
             left: `${rect.left}%`,
             top: `${rect.top}%`,
             width: `${rect.width}%`,
-            height: `${rect.height}%`
+            height: `${rect.height}%`,
+            backgroundColor: 'rgba(30, 41, 59, 0.15)' // 与主背景协调的蓝灰色半透明背景
         },
         attributes: {
             'data-name': '元素'
