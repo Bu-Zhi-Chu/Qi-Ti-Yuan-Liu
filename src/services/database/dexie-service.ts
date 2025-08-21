@@ -100,6 +100,19 @@ export default class DexieService {
                 { type: 'image/svg+xml' }
             )
 
+            // 测试模板 - 包含两个SimpleBox元素的布局
+            const testBlob = new Blob(
+                [
+                    `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="150" viewBox="0 0 200 150">
+                        <rect width="200" height="150" fill="#f0f9ff"/>
+                        <rect x="20" y="30" width="60" height="40" fill="#3b82f6" rx="4"/>
+                        <rect x="120" y="80" width="60" height="40" fill="#10b981" rx="4"/>
+                        <text x="100" y="130" text-anchor="middle" font-family="Arial" font-size="12" fill="#374151">测试布局</text>
+                    </svg>`
+                ],
+                { type: 'image/svg+xml' }
+            )
+
             await db.table('templates').bulkAdd([
                 {
                     id: 'blank',
@@ -108,283 +121,92 @@ export default class DexieService {
                     cover: blankBlob,
                     tag: '默认',
                     thumbnailUrl: blankBlob,
-                    domStructure: []
-                },
-                {
-                    id: 'login',
-                    name: '登录页面',
-                    desc: '包含登录表单的基础页面',
-                    cover: loginBlob,
-                    tag: '页面',
-                    thumbnailUrl: loginBlob,
                     domStructure: [
                         {
-                            id: 'header',
-                            componentType: 'SimpleBox',
-                            styles: {
+                            projectId: 'template-blank',
+                            id: 'root',
+                            parentId: null,
+                            type: 'SimpleBox',
+                            attributes: {
+                                expanded: true,
+                                hidden: undefined
+                            },
+                            style: {
+                                backgroundColor: '#ffffff',
+                                height: '100%',
+                                overflow: 'hidden',
+                                pointerEvents: 'auto',
                                 width: '100%',
-                                height: '60px',
-                                backgroundColor: '#ffffff',
-                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
+                                border: 'calc(1px * var(--scale-ratio, 1)) solid #94a3b8'
                             },
-                            children: [
-                                {
-                                    id: 'logo',
-                                    componentType: 'SimpleBox',
-                                    styles: {
-                                        width: '40px',
-                                        height: '40px',
-                                        backgroundColor: '#3b82f6',
-                                        borderRadius: '50%'
-                                    }
-                                },
-                                {
-                                    id: 'title',
-                                    componentType: 'SimpleBox',
-                                    styles: {
-                                        marginLeft: '12px',
-                                        fontSize: '20px',
-                                        fontWeight: 'bold',
-                                        color: '#1f2937'
-                                    },
-                                    textContent: '欢迎登录'
-                                }
-                            ]
-                        },
-                        {
-                            id: 'login-form',
-                            componentType: 'SimpleBox',
-                            styles: {
-                                width: '400px',
-                                margin: '100px auto',
-                                padding: '40px',
-                                backgroundColor: '#ffffff',
-                                borderRadius: '8px',
-                                boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-                            },
-                            children: [
-                                {
-                                    id: 'form-title',
-                                    componentType: 'SimpleBox',
-                                    styles: {
-                                        fontSize: '24px',
-                                        fontWeight: 'bold',
-                                        textAlign: 'center',
-                                        marginBottom: '24px',
-                                        color: '#1f2937'
-                                    },
-                                    textContent: '用户登录'
-                                },
-                                {
-                                    id: 'username-input',
-                                    componentType: 'SimpleBox',
-                                    styles: {
-                                        width: '100%',
-                                        height: '40px',
-                                        marginBottom: '16px',
-                                        padding: '8px 12px',
-                                        border: '1px solid #d1d5db',
-                                        borderRadius: '4px',
-                                        fontSize: '16px'
-                                    },
-                                    attributes: { placeholder: '请输入用户名' }
-                                },
-                                {
-                                    id: 'password-input',
-                                    componentType: 'SimpleBox',
-                                    styles: {
-                                        width: '100%',
-                                        height: '40px',
-                                        marginBottom: '24px',
-                                        padding: '8px 12px',
-                                        border: '1px solid #d1d5db',
-                                        borderRadius: '4px',
-                                        fontSize: '16px'
-                                    },
-                                    attributes: { placeholder: '请输入密码', type: 'password' }
-                                },
-                                {
-                                    id: 'login-button',
-                                    componentType: 'SimpleBox',
-                                    styles: {
-                                        width: '100%',
-                                        height: '40px',
-                                        backgroundColor: '#3b82f6',
-                                        color: '#ffffff',
-                                        borderRadius: '4px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        cursor: 'pointer',
-                                        fontSize: '16px',
-                                        fontWeight: '500'
-                                    },
-                                    textContent: '登录'
-                                }
-                            ]
+                            textContent: ''
                         }
                     ]
                 },
                 {
-                    id: 'dashboard',
-                    name: '仪表盘',
-                    desc: '数据展示和分析页面',
-                    cover: dashboardBlob,
-                    tag: '页面',
-                    thumbnailUrl: dashboardBlob,
+                    id: 'test-layout',
+                    name: '测试布局',
+                    desc: '包含两个SimpleBox元素的测试模板',
+                    cover: testBlob,
+                    tag: '测试',
+                    thumbnailUrl: testBlob,
                     domStructure: [
                         {
-                            id: 'sidebar',
-                            componentType: 'SimpleBox',
-                            styles: {
-                                width: '250px',
-                                height: '100vh',
-                                backgroundColor: '#1f2937',
-                                position: 'fixed',
-                                left: '0',
-                                top: '0',
-                                padding: '20px',
-                                color: '#ffffff'
+                            projectId: 'template-test',
+                            id: 'root',
+                            parentId: null,
+                            type: 'SimpleBox',
+                            attributes: {
+                                expanded: true,
+                                hidden: false
                             },
-                            children: [
-                                {
-                                    id: 'sidebar-title',
-                                    componentType: 'SimpleBox',
-                                    styles: {
-                                        fontSize: '20px',
-                                        fontWeight: 'bold',
-                                        marginBottom: '30px'
-                                    },
-                                    textContent: '仪表盘'
-                                },
-                                {
-                                    id: 'nav-item-1',
-                                    componentType: 'SimpleBox',
-                                    styles: {
-                                        padding: '12px 16px',
-                                        marginBottom: '8px',
-                                        backgroundColor: '#374151',
-                                        borderRadius: '6px',
-                                        cursor: 'pointer'
-                                    },
-                                    textContent: '总览'
-                                },
-                                {
-                                    id: 'nav-item-2',
-                                    componentType: 'SimpleBox',
-                                    styles: {
-                                        padding: '12px 16px',
-                                        marginBottom: '8px',
-                                        backgroundColor: '#374151',
-                                        borderRadius: '6px',
-                                        cursor: 'pointer'
-                                    },
-                                    textContent: '数据分析'
-                                }
-                            ]
+                            style: {
+                                backgroundColor: '#ffffff',
+                                height: '100%',
+                                overflow: 'hidden',
+                                pointerEvents: 'auto',
+                                width: '100%',
+                                border: 'calc(1px * var(--scale-ratio, 1)) solid #94a3b8'
+                            },
+                            textContent: ''
                         },
                         {
-                            id: 'main-content',
-                            componentType: 'SimpleBox',
-                            styles: {
-                                marginLeft: '250px',
-                                padding: '20px',
-                                backgroundColor: '#f3f4f6',
-                                minHeight: '100vh'
+                            projectId: 'template-test',
+                            id: '56e9e903-0d8a-4c33-93ae-114864ab095e',
+                            parentId: 'root',
+                            type: 'SimpleBox',
+                            attributes: {
+                                expanded: true,
+                                hidden: undefined,
+                                'data-name': '元素'
                             },
-                            children: [
-                                {
-                                    id: 'page-header',
-                                    componentType: 'SimpleBox',
-                                    styles: {
-                                        fontSize: '28px',
-                                        fontWeight: 'bold',
-                                        marginBottom: '24px',
-                                        color: '#1f2937'
-                                    },
-                                    textContent: '数据总览'
-                                },
-                                {
-                                    id: 'stats-row',
-                                    componentType: 'SimpleBox',
-                                    styles: {
-                                        display: 'flex',
-                                        gap: '20px',
-                                        marginBottom: '24px'
-                                    },
-                                    children: [
-                                        {
-                                            id: 'stat-card-1',
-                                            componentType: 'SimpleBox',
-                                            styles: {
-                                                flex: '1',
-                                                padding: '20px',
-                                                backgroundColor: '#ffffff',
-                                                borderRadius: '8px',
-                                                boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-                                            },
-                                            children: [
-                                                {
-                                                    id: 'stat-title-1',
-                                                    componentType: 'SimpleBox',
-                                                    styles: {
-                                                        fontSize: '14px',
-                                                        color: '#6b7280',
-                                                        marginBottom: '4px'
-                                                    },
-                                                    textContent: '总用户数'
-                                                },
-                                                {
-                                                    id: 'stat-value-1',
-                                                    componentType: 'SimpleBox',
-                                                    styles: {
-                                                        fontSize: '24px',
-                                                        fontWeight: 'bold',
-                                                        color: '#1f2937'
-                                                    },
-                                                    textContent: '1,234'
-                                                }
-                                            ]
-                                        },
-                                        {
-                                            id: 'stat-card-2',
-                                            componentType: 'SimpleBox',
-                                            styles: {
-                                                flex: '1',
-                                                padding: '20px',
-                                                backgroundColor: '#ffffff',
-                                                borderRadius: '8px',
-                                                boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-                                            },
-                                            children: [
-                                                {
-                                                    id: 'stat-title-2',
-                                                    componentType: 'SimpleBox',
-                                                    styles: {
-                                                        fontSize: '14px',
-                                                        color: '#6b7280',
-                                                        marginBottom: '4px'
-                                                    },
-                                                    textContent: '今日订单'
-                                                },
-                                                {
-                                                    id: 'stat-value-2',
-                                                    componentType: 'SimpleBox',
-                                                    styles: {
-                                                        fontSize: '24px',
-                                                        fontWeight: 'bold',
-                                                        color: '#1f2937'
-                                                    },
-                                                    textContent: '56'
-                                                }
-                                            ]
-                                        }
-                                    ]
-                                }
-                            ]
+                            style: {
+                                position: 'absolute',
+                                left: '24.79079617282111%',
+                                top: '23%',
+                                width: '32.94979132089322%',
+                                height: '34%'
+                            },
+                            textContent: ''
+                        },
+                        {
+                            projectId: 'template-test',
+                            id: 'd9ff9adc-1fbc-46d6-ad6e-17cd66d50e78',
+                            parentId: 'root',
+                            type: 'SimpleBox',
+                            attributes: {
+                                expanded: true,
+                                hidden: undefined,
+                                'data-name': '元素'
+                            },
+                            style: {
+                                position: 'absolute',
+                                left: '70.8159015099418%',
+                                top: '53%',
+                                width: '21.443514986613046%',
+                                height: '31%'
+                            },
+                            textContent: ''
                         }
                     ]
                 }
