@@ -115,11 +115,11 @@
                         projectId: id,
                         id: node.id || crypto.randomUUID()
                     }))
-                    
+
                     await db.table('doms').bulkAdd(domNodes)
                     console.log(`【模板加载】使用模板 ${template.name} 的DOM结构，共 ${domNodes.length} 个节点`)
                 } else {
-                    // 使用默认根节点
+                    // 使用最简单的默认根节点，不设置任何样式，让模板系统完全负责
                     const rootNode = {
                         id: 'root',
                         projectId: id,
@@ -127,11 +127,7 @@
                         props: {},
                         style: {
                             width: '100%',
-                            height: '100%',
-                            backgroundColor: '#ffffff',
-                            border: '1px solid #e2e8f0',
-                            borderRadius: '8px',
-                            padding: '16px'
+                            height: '100%'
                         },
                         children: [],
                         position: { x: 0, y: 0 },
@@ -141,12 +137,12 @@
                         updatedAt: now
                     }
                     await db.table('doms').add(rootNode)
-                    console.log('【模板加载】使用默认根节点结构')
+                    console.log('【模板加载】使用最简默认根节点结构')
                 }
             }
         } catch (error) {
             console.error('加载模板DOM结构失败:', error)
-            // 回退到默认根节点
+            // 回退到最简默认根节点，不设置任何样式
             const rootNode = {
                 id: 'root',
                 projectId: id,
@@ -154,11 +150,7 @@
                 props: {},
                 style: {
                     width: '100%',
-                    height: '100%',
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '8px',
-                    padding: '16px'
+                    height: '100%'
                 },
                 children: [],
                 position: { x: 0, y: 0 },

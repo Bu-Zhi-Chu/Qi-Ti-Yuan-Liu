@@ -67,11 +67,7 @@ export function createDrawNode(rect: RelativeRect): DomNode {
             left: `${rect.left}%`,
             top: `${rect.top}%`,
             width: `${rect.width}%`,
-            height: `${rect.height}%`,
-            background: '#ffffff',
-            border: 'calc(1px * var(--scale-ratio, 1)) solid #94a3b8',
-            overflow: 'hidden',
-            pointerEvents: 'auto'
+            height: `${rect.height}%`
         },
         attributes: {
             'data-name': '元素'

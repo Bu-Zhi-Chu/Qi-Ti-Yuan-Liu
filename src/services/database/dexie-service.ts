@@ -132,9 +132,9 @@ export default class DexieService {
                                 hidden: undefined
                             },
                             style: {
+                                overflow: 'hidden',
                                 backgroundColor: '#ffffff',
                                 height: '100%',
-                                overflow: 'hidden',
                                 pointerEvents: 'auto',
                                 width: '100%'
                             },
