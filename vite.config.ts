@@ -40,8 +40,9 @@ export default defineConfig({
                 ]
             },
             devOptions: {
-                // 开发阶段禁用 PWA Service Worker，避免 Workbox 报错
-                enabled: false
+                // 开发模式下启用PWA manifest生成，但使用模块模式避免Service Worker注册
+                enabled: true,
+                type: 'module'
             }
         })
     ],
