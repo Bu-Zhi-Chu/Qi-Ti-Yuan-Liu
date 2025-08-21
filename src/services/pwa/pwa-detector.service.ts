@@ -124,13 +124,7 @@ export class PWAChecker {
         try {
             // 正常PWA注册流程
             if ('serviceWorker' in navigator) {
-                // 检查sw.js是否存在
-                const response = await fetch('/sw.js', { method: 'HEAD' })
-                if (response.ok) {
-                    await navigator.serviceWorker.register('/sw.js')
-                } else {
-                    this.setupFallback()
-                }
+                await navigator.serviceWorker.register('/sw.js')
             }
         } catch (error) {
             this.setupFallback()

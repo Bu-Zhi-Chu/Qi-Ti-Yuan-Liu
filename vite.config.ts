@@ -3,11 +3,12 @@ import { svelte } from '@sveltejs/vite-plugin-svelte'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
-    base: './', // 关键：使用相对路径
+    base: '/', // 使用绝对路径避免路径重复问题
     plugins: [
         svelte(),
         VitePWA({
             registerType: 'autoUpdate',
+            injectRegister: 'auto',
             workbox: {
                 globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
                 globIgnores: ['study/**/*']
@@ -20,18 +21,18 @@ export default defineConfig({
                 background_color: '#ffffff',
                 display: 'standalone',
                 orientation: 'portrait',
-                start_url: '/',
+                start_url: './',
                 lang: 'zh-CN',
-                scope: '/',
+                scope: './',
                 icons: [
                     {
-                        src: 'src/assets/img/icon-192.png',
+                        src: '/icon-192.png',
                         sizes: '192x192',
                         type: 'image/png',
                         purpose: 'any maskable'
                     },
                     {
-                        src: 'src/assets/img/icon-512.png',
+                        src: '/icon-512.png',
                         sizes: '512x512',
                         type: 'image/png',
                         purpose: 'any maskable'

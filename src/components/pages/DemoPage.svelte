@@ -23,7 +23,7 @@
     import DragDropList from '../widgets/DragDropList.svelte'
 
     import GenericCard from '../widgets/GenericCard.svelte'
-    import logoImage from '../../assets/img/icon-192.png'
+    import logoImage from '/icon-192.png'
     import { useNavigate } from '@dvcol/svelte-simple-router/router'
 
     const { push } = useNavigate()

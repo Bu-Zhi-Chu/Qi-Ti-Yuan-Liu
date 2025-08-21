@@ -228,8 +228,6 @@
         }
     }
 
-
-
     // 更新项目模式
     import DexieService from '../../services/database/dexie-service'
 
@@ -262,8 +260,55 @@
     <div class="workspace" style="position: absolute;width: 100%;height: 100%;z-index: 10;pointer-events: none;">
         <!-- 顶部导航区 -->
         <div style="display: flex;align-items: center;justify-content: flex-start;gap: 10px;padding: 0 10px;width: 100%;height: 4%;background: rgba(1, 255, 255, 0.3);pointer-events: auto;">
-
             <button onclick={() => (window.location.href = '/')} style="padding: calc(4px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));background: none;border: none;color: white;cursor: pointer;font-size: calc(12px * var(--scale-ratio, 1));">首页</button>
+
+            <!-- 开发环境构建按钮 -->
+            {#if !import.meta.env.PROD}
+                <button onclick={async (event) => {
+                    const button = event.target as HTMLButtonElement;
+                    
+                    try {
+                        console.log('开始构建项目...');
+                        
+                        // 显示构建中状态
+                        const originalText = button.textContent;
+                        button.textContent = '构建中...';
+                        button.disabled = true;
+                        
+                        // 使用构建服务
+                        const { BuildService } = await import('../../services/build/build.service');
+                        const buildService = BuildService.getInstance();
+                        
+                        // 执行构建和预览
+                        const result = await buildService.buildAndPreview({
+                            mode: 'production',
+                            sourcemap: false,
+                            minify: true
+                        });
+                        
+                        console.log('构建完成:', result.build);
+                        console.log('预览地址:', result.preview.url);
+                        
+                        // 自动打开浏览器
+                        buildService.openBrowser(result.preview.url);
+                        
+                        // 恢复按钮状态
+                        button.textContent = originalText;
+                        button.disabled = false;
+                        
+                    } catch (error) {
+                 console.error('构建失败:', error);
+                 
+                 // 提供更友好的错误提示
+                 const errorMessage = (error as Error).message;
+                 alert(`构建失败: ${errorMessage}\n\n请检查网络连接或稍后重试。`);
+                 
+                 // 恢复按钮状态
+                 button.textContent = '构建';
+                 button.disabled = false;
+             }
+                }} style="padding: calc(4px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));background: none;border: none;color: white;cursor: pointer;font-size: calc(12px * var(--scale-ratio, 1));">构建</button>
+            {/if}
         </div>
 
         <div style="display: flex;justify-content: space-between;width: 100%;height: 94%;">

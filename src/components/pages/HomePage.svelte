@@ -10,7 +10,7 @@
     import TangramBackground from '../widgets/TangramBackground.svelte'
     import ActionButton from '../widgets/ActionButton.svelte'
     import GenericCard from '../widgets/GenericCard.svelte'
-    import logoImage from '../../assets/img/icon-192.png'
+    import logoImage from '/icon-192.png'
     import WindowBox from '../widgets/WindowBox.svelte'
     import NewProjectDialog from '../widgets/NewProjectDialog.svelte'
     import { onMount } from 'svelte'
