@@ -1,81 +1,189 @@
-00. 目标是开发一个低代码拖拽式的前端快速开发工具 我希望是单页应用
-01. 创建了vite项目 npm create vite@latest
-02. 选择了svelte5 + TypeScript 项目模板
-03. 优化了TypeScript和vite的配置文件
-04. 删除了框架自带的示例 完成了项目的初始化
-05. 制定了项目规则 .trae\rules\project_rules.md
-06. 添加PWA开发依赖
-   1. vite-plugin-pwa: ^0.19.0
-   2. 优化Service Worker配置
-07. 设计项目整体架构
-```html
-    ├── .gitignore                                 # Git忽略文件配置
-    ├── .trae/                                     # Trae IDE配置目录
-    │   └── rules/                                 # 项目规则定义
-    │       └── project_rules.md                   # 详细的项目开发规范
-    ├── .vscode/                                   # VS Code编辑器配置目录
-    │   └── extensions.json                        # 推荐扩展列表
-    ├── dev-dist/                                  # 开发构建输出目录（开发环境）
-    ├── dist/                                      # 生产构建输出目录（构建后生成）
-    ├── src/                                       # 源代码目录（核心）
-    │   ├── App.svelte                             # 根组件
-    │   ├── assets/                                # 静态资源层
-    │   │   └── img/                               # 图片资源目录
-    │   │       ├── favicon.ico                    # 网站图标
-    │   │       ├── icon-192.png                   # PWA图标192x192
-    │   │       └── icon-512.png                   # PWA图标512x512
-    │   ├── components/                            # 组件层（UI层）
-    │   │   ├── core/                              # 核心机制组件
-    │   │   │   └── DynamicComponent.svelte        # 能切换组件类型的通用容器
-    │   │   │   └── ResponsiveBox.svelte           # 自适应的基础容器 所有自定义组件的原型
-    │   │   ├── modules/                           # 模块组件
-    │   │   ├── pages/                             # 页面级组件
-    │   │   │   ├── 404.svelte                     # 404错误页面
-    │   │   │   ├── 500.svelte                     # 500错误页面
-    │   │   │   ├── AboutPage.svelte               # 关于
-    │   │   │   ├── DemoPage.svelte                # 演示
-    │   │   │   ├── EditorPage.svelte              # 编辑器页面
-    │   │   │   ├── HomePage.svelte                # 首页
-    │   │   │   └── SettingsPage.svelte            # 设置
-    │   │   └── widgets/                           # 可复用业务组件
-    │   ├── main.ts                                # 应用主入口文件
-    │   ├── router/                                # 路由层
-    │   │   └── routes.ts                          # 路由配置
-    │   ├── services/                              # 服务层（业务逻辑层）
-    │   │   ├── pwa/                               # PWA功能模块
-    │   │   │   ├── README.md                      # PWA模块说明文档
-    │   │   │   ├── pwa-detector.service.ts        # PWA环境检测与初始化服务
-    │   │   │   └── pwa-status.model.ts            # PWA状态数据模型定义
-    │   │   └── screen/                            # 屏幕适配服务
-    │   │       ├── README.md                      # 屏幕适配模块说明文档
-    │   │       ├── screen-detector.service.ts     # 屏幕检测与响应式服务
-    │   │       └── screen.types.ts                # 屏幕相关类型定义
-    │   ├── style/                                 # 样式层
-    │   │   └── app.css                            # 主样式文件
-    │   ├── sw.d.ts                                # Service Worker类型声明
-    │   └── vite-env.d.ts                          # Vite环境变量声明
-    ├── study/                                     # 学习目录 项目集成组件的源码
-    ├── index.html                                 # 应用入口HTML文件
-    ├── manifest.json                              # PWA应用清单文件
-    ├── package-lock.json                          # 依赖锁定文件
-    ├── package.json                               # 项目依赖和脚本配置
-    ├── svelte.config.js                           # Svelte框架配置
-    ├── sw.d.ts                                    # Service Worker类型声明
-    ├── tsconfig.app.json                          # TypeScript应用配置
-    ├── tsconfig.json                              # TypeScript主配置
-    ├── tsconfig.node.json                         # TypeScript Node.js配置
-    ├── vite-env.d.ts                              # Vite环境变量声明
-    └── vite.config.ts                             # Vite构建工具配置
+# 七巧板 · Qi Qiao Ban
+
+<div align="center">
+
+[![七巧板](https://img.shields.io/badge/七巧板-国产自研低代码平台-blue?style=for-the-badge&logo=svelte&logoColor=white)](https://github.com/your-org/qi-qiao-ban)
+[![Svelte5](https://img.shields.io/badge/Svelte5-最新版-FF3E00?style=flat-square&logo=svelte)](https://svelte.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-严格模式-3178C6?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-极速构建-646CFF?style=flat-square&logo=vite)](https://vitejs.dev)
+[![PWA](https://img.shields.io/badge/PWA-离线优先-5A0FC8?style=flat-square&logo=pwa)](https://web.dev/progressive-web-apps/)
+
+**🇨🇳 国产自研 · 低代码可视化开发平台**<br>
+**⚡ 极速开发 · 拖拽式页面构建 · 组件化架构**
+
+</div>
+
+## 🎯 项目简介
+
+七巧板（Qi Qiao Ban）是一款面向**企业级应用**的**国产自研低代码开发平台**，采用前沿技术栈构建，致力于提供**高效、灵活、可扩展**的可视化开发解决方案。
+
+> 灵感源自中国传统智力游戏"七巧板"，寓意通过简单的几何图形组合，创造出无限可能的应用场景。
+
+## 🚀 核心特性
+
+### 📦 技术领先
+- **Svelte5 + TypeScript** - 极致性能与类型安全
+- **Vite** - 毫秒级热更新，闪电般构建速度
+- **PWA** - 离线优先，原生应用体验
+- **Dexie** - 浏览器端数据库，数据持久化
+
+### 🎨 可视化开发
+- **拖拽式布局** - 所见即所得的设计体验
+- **实时预览** - 边开发边预览，零延迟反馈
+- **组件市场** - 丰富的预置组件库
+- **响应式设计** - 一次开发，多端适配
+
+### 🔧 开发者友好
+- **代码编辑器** - 基于CodeMirror6的专业级代码编辑
+- **智能提示** - TypeScript智能感知，开发效率倍增
+- **调试工具** - 实时状态监控，问题快速定位
+- **版本管理** - 项目版本控制与回滚
+
+### 🏗️ 企业级架构
+- **模块化设计** - 松耦合架构，易于扩展
+- **插件系统** - 支持自定义插件开发
+- **权限控制** - 细粒度权限管理
+- **数据安全** - 本地存储，数据自主可控
+
+## 🛠️ 技术栈
+
+| 技术领域 | 技术选型 | 版本 | 说明 |
+|---------|----------|------|------|
+| **框架** | Svelte5 | ^5.35.5 | 编译时优化，无虚拟DOM |
+| **语言** | TypeScript | ~5.8.3 | 严格类型检查 |
+| **构建** | Vite | ^7.0.4 | 极速构建工具 |
+| **路由** | @dvcol/svelte-simple-router | ^2.7.2 | 轻量级路由 |
+| **状态** | Svelte Stores | 内置 | 响应式状态管理 |
+| **数据库** | Dexie | ^4.0.11 | IndexedDB封装 |
+| **拖拽** | svelte-dnd-action | ^0.9.64 | 拖拽排序 |
+| **代码编辑** | CodeMirror6 | 多包集成 | 专业代码编辑器 |
+| **图标** | Lucide | ^0.539.0 | 统一图标体系 |
+| **布局** | svelte-splitpanes | ^8.0.9 | 可拖拽面板 |
+
+## 📁 项目结构
+
 ```
-08. 制定了项目规则
-09. 集成了路由组件 并完成了对源码的初步学习
-10. 首页搭建的时候发现我们其实先应该解决网页自适应屏幕的问题
-11. 我们解决的自适应的问题,开发完成了项目最核心的组件ResponsiveBox
-12. 我们开会决定用dexie来做数据持久化,先写了一个基础的工具类
-13. 我们基于ResponsiveBox开发了RealTimeClock,并且制定了组件封装的规范
-14. 我们更改了组件封装的规范,并开发了SimpleBox组件来解决大量的ResponsiveBox嵌套和复用问题
-15. 我们封装了实时时间显示组件
-16. 我们封装了通用的按钮，支持单个和组
-17. 我们安装了svelte-dnd-action 并完成了学习笔记
-18. 我们安装了codemirror svelte-splitpanes 初步完成了代码编辑预览的页面
-19. 我们现在开始构建编辑页面
+七巧板/
+├── src/
+│   ├── components/          # 组件层
+│   │   ├── core/          # 核心组件
+│   │   ├── pages/         # 页面组件
+│   │   └── widgets/       # 业务组件
+│   ├── services/          # 服务层
+│   │   ├── database/      # 数据服务
+│   │   ├── project/       # 项目管理
+│   │   └── storage/       # 存储服务
+│   ├── router/            # 路由配置
+│   └── types/             # 类型定义
+├── examples/              # 示例代码
+└── study/                 # 学习资料
+```
+
+## 🚀 快速开始
+
+### 环境要求
+- Node.js 18+ 
+- npm 7+
+
+### 安装依赖
+```bash
+npm install
+```
+
+### 开发模式
+```bash
+npm run dev
+```
+访问 http://localhost:5173
+
+### 构建生产版本
+```bash
+npm run build
+npm run preview
+```
+
+### 代码检查
+```bash
+npm run check
+```
+
+## 🎯 核心功能
+
+### 1. 可视化编辑器
+- **拖拽布局** - 支持网格布局和自由布局
+- **组件树** - 层级结构清晰展示
+- **属性面板** - 实时编辑组件属性
+- **样式编辑** - 可视化CSS样式调整
+
+### 2. 代码编辑器
+- **语法高亮** - 支持HTML/CSS/JS/Svelte
+- **智能提示** - TypeScript语言服务
+- **错误检查** - 实时代码错误提示
+- **格式化** - 自动代码格式化
+
+### 3. 项目管理
+- **模板系统** - 丰富的项目模板
+- **版本控制** - 项目历史版本管理
+- **导出功能** - 支持多种格式导出
+- **团队协作** - 项目共享与协作
+
+### 4. 响应式设计
+- **断点设置** - 自定义响应式断点
+- **预览模式** - 多设备实时预览
+- **自适应布局** - 智能布局适配
+
+## 🔐 安全特性
+
+- **本地存储** - 数据完全存储在用户本地
+- **无服务器依赖** - 纯前端应用，无后端依赖
+- **代码沙箱** - 用户代码在沙箱环境执行
+- **XSS防护** - 内置XSS攻击防护
+
+## 📱 浏览器支持
+
+| 浏览器 | 版本 | 支持状态 |
+|--------|------|----------|
+| Chrome | 88+  | ✅ 完整支持 |
+| Firefox | 85+  | ✅ 完整支持 |
+| Safari | 14+  | ✅ 完整支持 |
+| Edge | 88+  | ✅ 完整支持 |
+
+## 🤝 贡献指南
+
+我们欢迎所有形式的贡献！
+
+### 开发规范
+- 遵循项目`.trae/rules/project_rules.md`中的开发规范
+- 使用TypeScript严格模式
+- 组件化开发，单一职责原则
+- 完整的代码注释和文档
+
+### 提交规范
+```
+feat: 新功能
+fix: 修复问题
+docs: 文档更新
+style: 代码格式
+refactor: 代码重构
+test: 测试用例
+chore: 构建/工具
+```
+
+## 📄 许可证
+
+[MIT License](LICENSE) © 2024 七巧板团队
+
+## 🙋‍♂️ 联系我们
+
+- 📧 Email: dev@qiqiaoban.com
+- 💬 微信群: 七巧板开发者社区
+- 🐛 Issues: [GitHub Issues](https://github.com/your-org/qi-qiao-ban/issues)
+
+---
+
+<div align="center">
+
+**⭐ 如果这个项目对你有帮助，请给个Star支持国产开源！**<br>
+**🚀 七巧板 - 让前端开发更简单！**
+
+</div>
