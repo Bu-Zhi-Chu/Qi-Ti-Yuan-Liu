@@ -17,7 +17,7 @@ const COLORS = {
     INFO: '#6B7280',        // 灰色 - 信息
     ERROR: '#DC2626',       // 深红色 - 错误
     SUCCESS: '#059669',     // 深绿色 - 成功
-    
+
     // 文本颜色
     WHITE: '#FFFFFF',
     BLACK: '#000000'
@@ -39,11 +39,11 @@ export class ColorLogger {
     static log(type: LogType, message: string, data?: any): void {
         const color = COLORS[type]
         const timestamp = new Date().toLocaleTimeString()
-        
+
         // 构建日志前缀
         const prefix = `%c[${timestamp}] [${type}]`
         const styles = `color: ${COLORS.WHITE}; background-color: ${color}; padding: 2px 6px; border-radius: 3px; font-weight: bold;`
-        
+
         if (data !== undefined) {
             console.log(prefix + ` ${message}`, styles, data)
         } else {
@@ -113,12 +113,12 @@ export class ColorLogger {
     static table(type: LogType, title: string, data: any[]): void {
         const color = COLORS[type]
         const timestamp = new Date().toLocaleTimeString()
-        
+
         console.log(
             `%c[${timestamp}] [${type}] ${title} (共${data.length}条)`,
             `color: ${COLORS.WHITE}; background-color: ${color}; padding: 2px 6px; border-radius: 3px; font-weight: bold;`
         )
-        
+
         if (data.length > 0) {
             console.table(data)
         }
