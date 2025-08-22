@@ -1,7 +1,7 @@
 /**
  * 环境判断工具服务
  * - LITE=true: 生产精简模式
- * 
+ *
  * 环境变量说明：
  * - LITE=true: 生产精简模式
  * - import.meta.env.PROD: 标准生产模式

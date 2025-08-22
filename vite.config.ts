@@ -85,5 +85,8 @@ export default defineConfig({
         alias: {
             '@': '/src'
         }
+    },
+    define: {
+        'import.meta.env.LITE': JSON.stringify(process.env.LITE === 'true' ? 'true' : 'false')
     }
 })
