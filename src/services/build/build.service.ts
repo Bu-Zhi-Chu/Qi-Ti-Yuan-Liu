@@ -6,6 +6,7 @@
 import { get } from 'svelte/store';
 
 export interface BuildOptions {
+  // 精简模式专用，保留基础构建配置
   mode?: 'production' | 'development';
   sourcemap?: boolean;
   minify?: boolean;
@@ -31,7 +32,7 @@ export interface PreviewResult {
  */
 export class BuildService {
   private static instance: BuildService;
-  
+
   public static getInstance(): BuildService {
     if (!BuildService.instance) {
       BuildService.instance = new BuildService();
@@ -44,26 +45,28 @@ export class BuildService {
    */
   async buildProject(options: BuildOptions = {}): Promise<BuildResult> {
     const startTime = Date.now();
-    
+
     try {
       console.log('开始构建项目...', options);
-      
+
       // 模拟构建过程
       // 在实际应用中，这里应该调用Vite的构建API
       await this.simulateBuildProcess(options);
-      
+
       const duration = Date.now() - startTime;
-      
+      const outputPath = '/dist-lite';
+      const message = '精简构建成功完成';
+
       return {
         success: true,
-        message: '构建成功完成',
-        outputPath: '/dist',
+        message,
+        outputPath,
         duration
       };
-      
+
     } catch (error) {
       const duration = Date.now() - startTime;
-      
+
       return {
         success: false,
         message: '构建失败: ' + (error as Error).message,
@@ -76,26 +79,29 @@ export class BuildService {
   /**
    * 启动预览服务器
    */
-  async startPreview(port: number = 4173): Promise<PreviewResult> {
+  async startPreview(port?: number): Promise<PreviewResult> {
+    const defaultPort = 4174;
+    const actualPort = port || defaultPort;
+
     try {
-      console.log(`启动预览服务器，端口: ${port}`);
-      
+      console.log(`启动预览服务器，端口: ${actualPort} (精简模式)`);
+
       // 模拟预览服务器启动
-      await this.simulatePreviewStart(port);
-      
-      const url = `http://localhost:${port}`;
-      
+      await this.simulatePreviewStart(actualPort);
+
+      const url = `http://localhost:${actualPort}`;
+
       return {
         success: true,
         url,
-        port
+        port: actualPort
       };
-      
+
     } catch (error) {
       return {
         success: false,
         url: '',
-        port
+        port: actualPort
       };
     }
   }
@@ -109,13 +115,13 @@ export class BuildService {
     preview: PreviewResult;
   }> {
     const buildResult = await this.buildProject(options);
-    
+
     if (!buildResult.success) {
       throw new Error(buildResult.message);
     }
-    
+
     const previewResult = await this.startPreview();
-    
+
     return {
       build: buildResult,
       preview: previewResult
@@ -128,7 +134,7 @@ export class BuildService {
   private async simulateBuildProcess(options: BuildOptions): Promise<void> {
     // 模拟构建时间
     const buildTime = Math.random() * 1500 + 1000; // 1-2.5秒
-    
+
     return new Promise((resolve, reject) => {
       setTimeout(() => {
         // 99%的成功率，减少失败概率

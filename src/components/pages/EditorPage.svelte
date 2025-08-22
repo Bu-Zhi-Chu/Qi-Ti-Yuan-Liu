@@ -265,50 +265,54 @@
 
             <!-- 开发环境构建按钮 -->
             {#if isDevMode()}
-                <button onclick={async (event) => {
-                    const button = event.target as HTMLButtonElement;
-                    
-                    try {
-                        console.log('开始构建项目...');
-                        
-                        // 显示构建中状态
-                        const originalText = button.textContent;
-                        button.textContent = '构建中...';
-                        button.disabled = true;
-                        
-                        // 使用构建服务
-                        const { BuildService } = await import('../../services/build/build.service');
-                        const buildService = BuildService.getInstance();
-                        
-                        // 执行构建和预览
-                        const result = await buildService.buildAndPreview({
-                            mode: 'production',
-                            sourcemap: false,
-                            minify: true
-                        });
-                        
-                        console.log('构建完成:', result.build);
-                        console.log('预览地址:', result.preview.url);
-                        
-                        // 自动打开浏览器
-                        buildService.openBrowser(result.preview.url);
-                        
-                        // 恢复按钮状态
-                        button.textContent = originalText;
-                        button.disabled = false;
-                        
-                    } catch (error) {
-                 console.error('构建失败:', error);
-                 
-                 // 提供更友好的错误提示
-                 const errorMessage = (error as Error).message;
-                 alert(`构建失败: ${errorMessage}\n\n请检查网络连接或稍后重试。`);
-                 
-                 // 恢复按钮状态
-                 button.textContent = '构建';
-                 button.disabled = false;
-             }
-                }} style="padding: calc(4px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));background: none;border: none;color: white;cursor: pointer;font-size: calc(12px * var(--scale-ratio, 1));">构建</button>
+                <button
+                    onclick={async (event) => {
+                        const button = event.target as HTMLButtonElement
+
+                        try {
+                            console.log('开始构建项目...')
+
+                            // 显示构建中状态
+                            const originalText = button.textContent
+                            button.textContent = '精简构建中...'
+                            button.disabled = true
+
+                            // 使用构建服务
+                            const { BuildService } = await import('../../services/build/build.service')
+                            const buildService = BuildService.getInstance()
+
+                            // 执行构建和预览（精简模式）
+                            const result = await buildService.buildAndPreview({
+                                mode: 'production',
+                                sourcemap: false,
+                                minify: true
+                            })
+
+                            console.log('构建完成:', result.build)
+                            console.log('预览地址:', result.preview.url)
+
+                            // 自动打开浏览器
+                            buildService.openBrowser(result.preview.url)
+
+                            // 恢复按钮状态
+                            button.textContent = originalText
+                            button.disabled = false
+                        } catch (error) {
+                            console.error('构建失败:', error)
+
+                            // 提供更友好的错误提示
+                            const errorMessage = (error as Error).message
+                            alert(`构建失败: ${errorMessage}\n\n请检查网络连接或稍后重试。`)
+
+                            // 恢复按钮状态
+                            button.textContent = '精简构建'
+                            button.disabled = false
+                        }
+                    }}
+                    style="padding: calc(4px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));background: none;border: none;color: white;cursor: pointer;font-size: calc(12px * var(--scale-ratio, 1));"
+                >
+                    精简构建
+                </button>
             {/if}
         </div>
 

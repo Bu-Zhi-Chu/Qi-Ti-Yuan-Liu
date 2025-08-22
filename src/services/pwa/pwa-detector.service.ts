@@ -102,6 +102,12 @@ export class PWAChecker {
         this._initialized = true
         const status = this.checkEnvironment()
 
+        // 开发模式下完全跳过PWA注册
+        if (import.meta.env.DEV) {
+            this.setupFallback()
+            return
+        }
+
         if (status.downgradeMode) {
             this.setupFallback()
             return
