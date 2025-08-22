@@ -490,12 +490,27 @@
     }
 
     // 加载颜色卡
-    // 深度遍历 domTree，收集所有背景颜色
+    // 深度遍历 domTree，收集所有背景颜色和边框颜色
     function getColorsFromDomTree(node: any, acc: string[] = []) {
-        const bg = node?.styles?.backgroundColor
+        const styles = node?.styles || {}
+        
+        // 收集背景颜色
+        const bg = styles.backgroundColor
         if (bg && bg !== 'transparent' && bg !== 'rgba(0, 0, 0, 0)') {
             acc.push(bg)
         }
+        
+        // 收集边框颜色
+        const borderColors = [
+            styles.borderColor,
+            styles.borderTopColor,
+            styles.borderRightColor,
+            styles.borderBottomColor,
+            styles.borderLeftColor
+        ].filter(color => color && color !== 'transparent' && color !== 'rgba(0, 0, 0, 0)')
+        
+        acc.push(...borderColors)
+        
         if (Array.isArray(node?.children)) {
             for (const child of node.children) {
                 getColorsFromDomTree(child, acc)
