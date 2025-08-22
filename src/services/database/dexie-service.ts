@@ -7,7 +7,7 @@
  */
 
 import Dexie from 'dexie'
-import { DatabaseLogger } from '../../utils/color-logger'
+import { DatabaseLogger } from '../utils/color-logger'
 
 export default class DexieService {
     /**

@@ -6,8 +6,8 @@
  *   - clearColorPalette: 清空指定项目的颜色卡
  */
 
-import DexieService from './database/dexie-service'
-import { DEFAULT_DB_NAME } from './database/database.config'
+import DexieService from '../database/dexie-service'
+import { DEFAULT_DB_NAME } from '../database/database.config'
 
 export interface ColorPaletteItem {
     id?: number
@@ -85,7 +85,7 @@ export default class ColorPaletteService {
             // 提取背景色，过滤透明色与空值
             const colors = nodes
                 .map((n: any) => n.styles?.backgroundColor as string)
-                .filter((c) => !!c && c !== 'rgba(0, 0, 0, 0)' && c !== 'transparent')
+                .filter((c: string) => !!c && c !== 'rgba(0, 0, 0, 0)' && c !== 'transparent')
             ColorPaletteService.componentColorCache.set(projectId, colors)
             return colors
         } catch (error) {
@@ -193,7 +193,7 @@ export default class ColorPaletteService {
             await db.table('doms')
                 .where('[projectId+id]')
                 .equals([projectId, componentId])
-                .modify(node => {
+                .modify((node: any) => {
                     if (!node.styles) {
                         node.styles = {}
                     }
