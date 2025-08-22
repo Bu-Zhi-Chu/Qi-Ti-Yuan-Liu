@@ -69,7 +69,7 @@
         if (isProdLiteMode()) {
             // 精简模式下使用默认项目ID，跳过URL提取
             projectId = 'lite-mode-demo'
-            console.warn('生产精简模式：跳过URL项目ID提取，使用默认项目ID:', projectId)
+            console.log('生产精简模式：跳过URL项目ID提取，使用默认项目ID:', projectId)
             loadCanvasState()
             isLoading = false
             return
