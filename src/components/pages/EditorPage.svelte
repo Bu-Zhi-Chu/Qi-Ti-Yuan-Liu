@@ -15,7 +15,7 @@
 <script lang="ts">
     import { onMount, onDestroy } from 'svelte'
     import { registerShortcut } from '../../services/interactions/shortcut.service'
-    import { isStandardProdMode, isDevMode, isProdLiteMode } from '../../services/env/environment.service'
+    import { isStandardProdMode, isDevMode, isLiteMode } from '../../services/env/environment.service'
 
     /* 新增：Dom 区域与 Dom 树列表组件 */
     import DomCanvas from '../widgets/DomCanvas.svelte'

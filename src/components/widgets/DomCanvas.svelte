@@ -41,7 +41,7 @@
     import { onMount } from 'svelte'
     import { domTree, selectedId, setSelectedId, setProjectId, loadDomTreeFromDatabase } from '../../services/repository/dom-tree.store.svelte'
     import Dexie from 'dexie'
-    import { isProdLiteMode } from '../../services/env/environment.service'
+    import { isLiteMode } from '../../services/env/environment.service'
     // 顶部容器引用，用于渲染画布内容
     let canvasContainerRef: HTMLDivElement | null = null
 
@@ -63,10 +63,10 @@
         console.log('当前URL:', window.location.href)
         console.log('当前hash:', window.location.hash)
         console.log('当前pathname:', window.location.pathname)
-        console.log('是否为精简模式:', isProdLiteMode())
+        console.log('是否为精简模式:', isLiteMode())
 
         // 检查是否为生产精简模式
-        if (isProdLiteMode()) {
+        if (isLiteMode()) {
             // 精简模式下使用默认项目ID，跳过URL提取
             projectId = 'lite-mode-demo'
             console.log('生产精简模式：跳过URL项目ID提取，使用默认项目ID:', projectId)
@@ -94,7 +94,7 @@
 
         // 监听路由变化（仅在非精简模式下）
         const handleRouteChange = () => {
-            if (isProdLiteMode()) return
+            if (isLiteMode()) return
 
             let newMatch = window.location.hash.match(/\/editor\/([^\/]+)/)
             if (!newMatch) {

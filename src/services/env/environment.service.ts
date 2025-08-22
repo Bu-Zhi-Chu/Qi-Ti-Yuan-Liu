@@ -9,10 +9,10 @@
  */
 
 /**
- * 判断是否为生产精简模式
- * 当LITE=true时返回true，即使PROD也为true
+ * 判断是否为精简模式
+ * 当LITE=true时返回true
  */
-export function isProdLiteMode(): boolean {
+export function isLiteMode(): boolean {
   return import.meta.env.LITE === 'true';
 }
 
@@ -21,7 +21,7 @@ export function isProdLiteMode(): boolean {
  * 仅在PROD=true且LITE=false时返回true
  */
 export function isStandardProdMode(): boolean {
-  return import.meta.env.PROD && !isProdLiteMode();
+  return import.meta.env.PROD && !isLiteMode();
 }
 
 /**
@@ -35,7 +35,7 @@ export function isDevMode(): boolean {
  * 判断是否为任何生产模式（包括标准生产和精简生产）
  */
 export function isAnyProdMode(): boolean {
-  return import.meta.env.PROD || isProdLiteMode();
+  return import.meta.env.PROD || isLiteMode();
 }
 
 /**
@@ -45,12 +45,12 @@ export function getEnvironmentInfo(): {
   mode: string;
   isDev: boolean;
   isStandardProd: boolean;
-  isProdLite: boolean;
+  isLite: boolean;
 } {
   return {
     mode: import.meta.env.MODE,
     isDev: isDevMode(),
     isStandardProd: isStandardProdMode(),
-    isProdLite: isProdLiteMode()
+    isLite: isLiteMode()
   };
 }

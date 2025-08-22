@@ -1,7 +1,7 @@
 <script lang="ts">
     import { RouterView } from '@dvcol/svelte-simple-router/components'
     import { routerOptions } from './router/routes'
-    import { isProdLiteMode } from './services/env/environment.service'
+    import { isLiteMode } from './services/env/environment.service'
     import EditorPage from './components/pages/EditorPage.svelte'
 
     /**
@@ -24,7 +24,7 @@
   通过statuses配置处理404页面，避免通配符路由拦截所有路径
 -->
 
-{#if isProdLiteMode()}
+{#if isLiteMode()}
     <!-- 生产精简模式：直接显示编辑页面 -->
     <EditorPage />
 {:else}
