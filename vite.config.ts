@@ -59,6 +59,7 @@ export default defineConfig({
         exclude: ['study'] // 排除study目录依赖预构建
     },
     build: {
+        outDir: process.env.VITE_PROD_LITE ? 'dist-lite' : 'dist',
         rollupOptions: {
             output: {
                 manualChunks: (id) => {

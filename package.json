@@ -5,10 +5,10 @@
     "type": "module",
     "scripts": {
         "dev": "vite",
-        "build": "vite build",
-        "build:lite": "cross-env VITE_PROD_LITE=true vite build",
+        "build": "vite build && vite preview --open",
+        "build:lite": "cross-env VITE_PROD_LITE=true vite build && cross-env VITE_PROD_LITE=true vite preview --outDir dist-lite --open",
         "preview": "vite preview",
-        "preview:lite": "cross-env VITE_PROD_LITE=true vite preview",
+        "preview:lite": "cross-env VITE_PROD_LITE=true vite preview --outDir dist-lite",
         "check": "svelte-check --tsconfig ./tsconfig.app.json && tsc -p tsconfig.node.json"
     },
     "devDependencies": {
