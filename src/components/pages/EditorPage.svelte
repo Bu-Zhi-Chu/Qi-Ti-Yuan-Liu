@@ -284,6 +284,10 @@
                     onclick={async (event) => {
                         const button = event.target as HTMLButtonElement
 
+                        // 打印环境变量，快速确认 LITE 模式是否生效
+                        console.log('当前环境变量:', import.meta.env)
+                        console.log('LITE 模式:', import.meta.env.LITE)
+
                         try {
                             console.log('开始构建项目...')
 
@@ -292,22 +296,53 @@
                             button.textContent = '精简构建中...'
                             button.disabled = true
 
-                            // 使用构建服务
+                            // 获取项目ID
+                            const projectId = window.location.hash.split('/').pop()
+                            if (!projectId) {
+                                throw new Error('无法获取项目ID')
+                            }
+
+                            // 导入服务
                             const { BuildService } = await import('../../services/build/build.service')
+                            const { liteExportService } = await import('../../services/export/lite-export.service')
                             const buildService = BuildService.getInstance()
 
-                            // 执行构建和预览（精简模式）
-                            const result = await buildService.buildAndPreview({
+                            // 预检查：确保API端点可用
+                            try {
+                                const healthCheck = await fetch('/api/build', {
+                                    method: 'OPTIONS'
+                                }).catch(() => null)
+                                console.log('API健康检查:', healthCheck ? '通过' : '跳过')
+                            } catch (e) {
+                                console.warn('API健康检查失败，继续构建...', e)
+                            }
+
+                            let buildOptions: any = {
                                 mode: 'production',
                                 sourcemap: false,
                                 minify: true
-                            })
+                            }
+
+                            const projectData = await liteExportService.exportLiteJson(projectId)
+                            console.log('导出的项目数据长度:', projectData.length)
+                            buildOptions.liteData = {
+                                projectData,
+                                filename: 'project-data.json' // 使用固定文件名
+                            }
+                            console.log('项目数据导出完成')
+
+                            // 执行构建和预览
+                            const result = await buildService.buildAndPreview(buildOptions)
 
                             console.log('构建完成:', result.build)
                             console.log('预览地址:', result.preview.url)
 
-                            // 自动打开浏览器
-                            buildService.openBrowser(result.preview.url)
+                            if (result.preview.success) {
+                                // 直接打开预览页面，不显示alert
+                                window.open(result.preview.url, '_blank')
+                            } else {
+                                console.error('预览服务器启动失败')
+                            }
 
                             // 恢复按钮状态
                             button.textContent = originalText
@@ -315,9 +350,14 @@
                         } catch (error) {
                             console.error('构建失败:', error)
 
-                            // 提供更友好的错误提示
-                            const errorMessage = (error as Error).message
-                            alert(`构建失败: ${errorMessage}\n\n请检查网络连接或稍后重试。`)
+                            // 在控制台打印详细错误信息
+                            console.error('构建失败:', error)
+
+                            // 在控制台打印详细错误信息
+                            console.error('构建失败详细错误:', {
+                                message: (error as Error).message,
+                                stack: (error as Error).stack
+                            })
 
                             // 恢复按钮状态
                             button.textContent = '精简构建'

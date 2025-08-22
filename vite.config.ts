@@ -1,12 +1,16 @@
 import { defineConfig } from 'vite'
 import { svelte } from '@sveltejs/vite-plugin-svelte'
 import { VitePWA } from 'vite-plugin-pwa'
+import { viteBuildPlugin } from './vite-build-plugin'
+
+const isLite = process.env.LITE === 'true';
 
 export default defineConfig({
     base: './', // 使用相对路径适配子目录部署
     plugins: [
         svelte(),
-        VitePWA({
+        viteBuildPlugin(),
+        ...(!isLite ? [VitePWA({
             registerType: 'autoUpdate',
             injectRegister: 'inline',
             strategies: 'generateSW',
@@ -46,7 +50,7 @@ export default defineConfig({
                 // 开发模式下禁用PWA功能，避免子目录部署问题
                 enabled: false
             }
-        })
+        })] : [])
     ],
     server: {
         fs: {
@@ -63,6 +67,11 @@ export default defineConfig({
     build: {
         outDir: process.env.LITE ? 'dist-lite' : 'dist',
         rollupOptions: {
+            external: (id) => {
+                    if (['vite', 'module', 'fsevents'].includes(id)) return true;
+                    if (id.startsWith('node:')) return true; // 排除所有 node: 前缀的核心模块
+                    return false;
+                },
             output: {
                 manualChunks: (id) => {
                     if (id.includes('node_modules')) {
