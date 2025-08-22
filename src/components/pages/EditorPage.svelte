@@ -15,6 +15,7 @@
 <script lang="ts">
     import { onMount, onDestroy } from 'svelte'
     import { registerShortcut } from '../../services/interactions/shortcut.service'
+    import { isStandardProdMode, isDevMode } from '../../services/env/environment.service'
 
     /* 新增：Dom 区域与 Dom 树列表组件 */
     import DomCanvas from '../widgets/DomCanvas.svelte'
@@ -124,7 +125,7 @@
         }
 
         // 开发模式下跳过验证，直接进入编辑模式
-        if (!import.meta.env.PROD) {
+        if (isDevMode()) {
             console.log('开发模式：跳过Konami Code验证，直接进入编辑模式')
             showWorkspace = true
             updateProjectMode()
@@ -158,7 +159,7 @@
         if (!isVerifying) return
 
         // 开发模式下不处理键盘事件
-        if (!import.meta.env.PROD) {
+        if (isDevMode()) {
             return
         }
 
@@ -263,7 +264,7 @@
             <button onclick={() => (window.location.href = '/')} style="padding: calc(4px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));background: none;border: none;color: white;cursor: pointer;font-size: calc(12px * var(--scale-ratio, 1));">首页</button>
 
             <!-- 开发环境构建按钮 -->
-            {#if !import.meta.env.PROD}
+            {#if isDevMode()}
                 <button onclick={async (event) => {
                     const button = event.target as HTMLButtonElement;
                     

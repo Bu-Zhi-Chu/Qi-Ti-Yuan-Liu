@@ -12,7 +12,7 @@ import DexieService from './services/database/dexie-service'
 // localStorage.setItem('debug', 'true'); location.reload();
 // 亦可在 Vite 的 .env 文件中设置 VITE_DEBUG=true 强制开启日志。
 // ------------------------------------------------------------
-const DEBUG_MODE: boolean = import.meta.env.DEV || (typeof localStorage !== 'undefined' && localStorage.getItem('debug') === 'true') || import.meta.env.VITE_DEBUG === 'true'
+const DEBUG_MODE: boolean = import.meta.env.DEV || (typeof localStorage !== 'undefined' && localStorage.getItem('debug') === 'true') || import.meta.env.VITE_DEBUG === 'true' || import.meta.env.VITE_PROD_LITE === 'true'
 
 if (!DEBUG_MODE) {
     console.log = () => { }
