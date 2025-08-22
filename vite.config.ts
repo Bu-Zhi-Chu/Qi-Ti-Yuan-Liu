@@ -3,15 +3,17 @@ import { svelte } from '@sveltejs/vite-plugin-svelte'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
-    base: '/', // 使用绝对路径避免路径重复问题
+    base: './', // 使用相对路径适配子目录部署
     plugins: [
         svelte(),
         VitePWA({
             registerType: 'autoUpdate',
-            injectRegister: 'auto',
+            injectRegister: 'inline',
+            strategies: 'generateSW',
             workbox: {
                 globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
-                globIgnores: ['study/**/*']
+                globIgnores: ['study/**/*'],
+                navigateFallback: null // 禁用导航回退，避免子目录问题
             },
             manifest: {
                 name: '七巧板 - Qi Qiao Ban',
@@ -26,23 +28,23 @@ export default defineConfig({
                 scope: './',
                 icons: [
                     {
-                        src: '/icon-192.png',
+                        src: './icon-192.png',
                         sizes: '192x192',
                         type: 'image/png',
                         purpose: 'any maskable'
                     },
                     {
-                        src: '/icon-512.png',
+                        src: './icon-512.png',
                         sizes: '512x512',
                         type: 'image/png',
                         purpose: 'any maskable'
                     }
                 ]
             },
+
             devOptions: {
-                // 开发模式下启用完整的PWA功能，包括Service Worker注册
-                enabled: true,
-                type: 'classic'
+                // 开发模式下禁用PWA功能，避免子目录部署问题
+                enabled: false
             }
         })
     ],

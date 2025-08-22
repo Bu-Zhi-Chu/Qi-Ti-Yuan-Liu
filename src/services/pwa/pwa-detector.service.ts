@@ -111,8 +111,8 @@ export class PWAChecker {
             // 正常PWA注册流程（包括开发环境）
             if ('serviceWorker' in navigator) {
                 const isDev = import.meta.env.DEV || import.meta.env.VITE_PROD_LITE === 'true'
-                const swPath = isDev ? '/dev-sw.js?dev-sw' : '/sw.js'
-                await navigator.serviceWorker.register(swPath)
+                const swPath = isDev ? './dev-sw.js?dev-sw' : './sw.js'
+                await navigator.serviceWorker.register(swPath, { scope: './' })
             }
         } catch (error) {
             this.setupFallback()
