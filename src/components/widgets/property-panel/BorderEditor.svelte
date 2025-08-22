@@ -832,7 +832,6 @@
     select option:hover,
     select option:focus,
     select option:checked {
-        background-color: rgba(99, 102, 241, 0.2);
         color: #e2e8f0;
     }
     input::placeholder {
