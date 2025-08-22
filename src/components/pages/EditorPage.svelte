@@ -15,7 +15,7 @@
 <script lang="ts">
     import { onMount, onDestroy } from 'svelte'
     import { registerShortcut } from '../../services/interactions/shortcut.service'
-    import { isStandardProdMode, isDevMode } from '../../services/env/environment.service'
+    import { isStandardProdMode, isDevMode, isProdLiteMode } from '../../services/env/environment.service'
 
     /* 新增：Dom 区域与 Dom 树列表组件 */
     import DomCanvas from '../widgets/DomCanvas.svelte'
@@ -261,7 +261,9 @@
     <div class="workspace" style="position: absolute;width: 100%;height: 100%;z-index: 10;pointer-events: none;">
         <!-- 顶部导航区 -->
         <div style="display: flex;align-items: center;justify-content: flex-start;gap: 10px;padding: 0 10px;width: 100%;height: 4%;background: rgba(1, 255, 255, 0.3);pointer-events: auto;">
-            <button onclick={() => (window.location.href = '/')} style="padding: calc(4px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));background: none;border: none;color: white;cursor: pointer;font-size: calc(12px * var(--scale-ratio, 1));">首页</button>
+            {#if isDevMode() || isStandardProdMode()}
+                <button onclick={() => (window.location.href = '/')} style="padding: calc(4px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));background: none;border: none;color: white;cursor: pointer;font-size: calc(12px * var(--scale-ratio, 1));">首页</button>
+            {/if}
 
             <!-- 开发环境构建按钮 -->
             {#if isDevMode()}

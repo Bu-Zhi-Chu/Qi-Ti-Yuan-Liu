@@ -11,7 +11,7 @@ lerna-debug.log*
 .trae
 node_modules
 dist
-dist-lite
+lite
 dev-dist
 *.local
 

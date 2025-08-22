@@ -6,9 +6,9 @@
     "scripts": {
         "dev": "vite",
         "build": "vite build && vite preview --port 4173 --open",
-        "build:lite": "cross-env VITE_PROD_LITE=true vite build && cross-env VITE_PROD_LITE=true vite preview --outDir dist-lite --port 4174 --open",
+        "build:lite": "cross-env LITE=true vite build && cross-env LITE=true vite preview --outDir dist-lite --port 4174 --open",
         "preview": "vite preview --port 4173",
-        "preview:lite": "cross-env VITE_PROD_LITE=true vite preview --outDir dist-lite --port 4174",
+        "preview:lite": "cross-env LITE=true vite preview --outDir dist-lite --port 4174",
         "check": "svelte-check --tsconfig ./tsconfig.app.json && tsc -p tsconfig.node.json"
     },
     "devDependencies": {
