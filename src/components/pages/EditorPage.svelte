@@ -124,9 +124,9 @@
             return
         }
 
-        // 开发模式或生产模式下跳过验证，直接进入编辑模式
-        if (isDevMode() || isStandardProdMode()) {
-            console.log('开发模式/生产模式：跳过Konami Code验证，直接进入编辑模式')
+        // 非精简模式下跳过验证，直接进入编辑模式
+        if (!isLiteMode()) {
+            console.log('非精简模式：跳过Konami Code验证，直接进入编辑模式')
             showWorkspace = true
             updateProjectMode()
             return
@@ -158,8 +158,8 @@
     function handleKonamiKey(e: KeyboardEvent) {
         if (!isVerifying) return
 
-        // 开发模式或生产模式下不处理键盘事件
-        if (isDevMode() || isStandardProdMode()) {
+        // 非精简模式下不处理键盘事件
+        if (!isLiteMode()) {
             return
         }
 
@@ -274,12 +274,12 @@
     <div class="workspace" style="position: absolute;width: 100%;height: 100%;z-index: 10;pointer-events: none;">
         <!-- 顶部导航区 -->
         <div style="display: flex;align-items: center;justify-content: flex-start;gap: 10px;padding: 0 10px;width: 100%;height: 4%;background: rgba(1, 255, 255, 0.3);pointer-events: auto;">
-            {#if isDevMode() || isStandardProdMode()}
+            {#if !isLiteMode()}
                 <button onclick={() => (window.location.href = '/')} style="padding: calc(4px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));background: none;border: none;color: white;cursor: pointer;font-size: calc(12px * var(--scale-ratio, 1));">首页</button>
             {/if}
 
             <!-- 开发环境构建按钮 -->
-            {#if isDevMode()}
+            {#if isDevMode() && !isLiteMode()}
                 <button
                     onclick={async (event) => {
                         const button = event.target as HTMLButtonElement
@@ -336,13 +336,6 @@
 
                             console.log('构建完成:', result.build)
                             console.log('预览地址:', result.preview.url)
-
-                            if (result.preview.success) {
-                                // 直接打开预览页面，不显示alert
-                                window.open(result.preview.url, '_blank')
-                            } else {
-                                console.error('预览服务器启动失败')
-                            }
 
                             // 恢复按钮状态
                             button.textContent = originalText

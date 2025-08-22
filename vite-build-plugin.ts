@@ -2,9 +2,10 @@ import type { Plugin } from 'vite'
 import { build as viteBuild } from 'vite';
 import { resolve } from 'path';
 import { writeFileSync, existsSync, mkdirSync } from 'fs';
-import { createServer } from 'http';
+import { createServer, Server } from 'http';
 import { parse } from 'url';
 import { readFile } from 'fs/promises';
+import { exec } from 'child_process';
 
 interface BuildRequest {
   mode?: 'development' | 'production';
@@ -18,6 +19,9 @@ interface BuildResponse {
   outputPath?: string;
   duration?: number;
 }
+
+// 全局变量，用于跟踪预览服务器实例
+let previewServerInstance: Server | null = null;
 
 export function viteBuildPlugin(): Plugin {
   return {
@@ -134,116 +138,16 @@ export function viteBuildPlugin(): Plugin {
               throw new Error(`目录不存在: ${staticDir}`);
             }
 
-            // 创建静态文件服务器
-            const previewServer = createServer(async (req, res) => {
-              try {
-                const parsedUrl = parse(req.url || '/', true);
-                let pathname = parsedUrl.pathname || '/';
-
-                // 默认访问index.html
-                if (pathname === '/') {
-                  pathname = '/index.html';
-                }
-
-                // 构建文件路径
-                const filePath = resolve(staticDir, `.${pathname}`);
-
-                // 安全检查：确保文件在静态目录内
-                if (!filePath.startsWith(staticDir)) {
-                  res.statusCode = 403;
-                  res.end('Forbidden');
-                  return;
-                }
-
-                // 读取文件
-                const data = await readFile(filePath);
-
-                // 设置正确的Content-Type
-                const ext = pathname.split('.').pop()?.toLowerCase();
-                const mimeTypes: Record<string, string> = {
-                  'html': 'text/html',
-                  'js': 'text/javascript',
-                  'css': 'text/css',
-                  'json': 'application/json',
-                  'png': 'image/png',
-                  'jpg': 'image/jpeg',
-                  'jpeg': 'image/jpeg',
-                  'gif': 'image/gif',
-                  'svg': 'image/svg+xml',
-                  'ico': 'image/x-icon'
-                };
-
-                res.setHeader('Content-Type', mimeTypes[ext || ''] || 'text/plain');
-                res.end(data);
-
-              } catch (error) {
-                if ((error as any).code === 'ENOENT') {
-                  res.statusCode = 404;
-                  res.end('File not found');
-                } else {
-                  res.statusCode = 500;
-                  res.end('Internal server error');
-                }
-              }
-            });
-
-            // 查找可用端口
-            const findAvailablePort = (startPort: number): Promise<number> => {
-              return new Promise((resolve, reject) => {
-                const server = createServer();
-                server.listen(startPort, () => {
-                  const port = (server.address() as any).port;
-                  server.close(() => resolve(port));
-                });
-                server.on('error', (error) => {
-                  if ((error as any).code === 'EADDRINUSE') {
-                    resolve(findAvailablePort(startPort + 1));
-                  } else {
-                    reject(error);
-                  }
-                });
+            // 关闭之前的预览服务器（如果存在）
+            if (previewServerInstance) {
+              console.log('[vite-build-plugin] 关闭之前的预览服务器...');
+              previewServerInstance.close(() => {
+                console.log('[vite-build-plugin] 之前的预览服务器已关闭');
               });
-            };
+            }
 
-            // 查找可用端口并启动服务器
-            findAvailablePort(port).then(availablePort => {
-              if (availablePort !== port) {
-                console.log(`[vite-build-plugin] 端口${port}被占用，使用端口${availablePort}`);
-              }
-
-              previewServer.listen(availablePort, () => {
-                console.log(`[vite-build-plugin] 预览服务器已启动: http://localhost:${availablePort}`);
-                
-                res.setHeader('Content-Type', 'application/json');
-                res.end(JSON.stringify({
-                  success: true,
-                  port: availablePort,
-                  url: `http://localhost:${availablePort}`
-                }));
-              });
-
-              previewServer.on('error', (error) => {
-                console.error('[vite-build-plugin] 预览服务器错误:', error);
-                if (!res.headersSent) {
-                  res.statusCode = 500;
-                  res.end(JSON.stringify({
-                    success: false,
-                    message: error instanceof Error ? error.message : '启动失败',
-                    port: availablePort
-                  }));
-                }
-              });
-            }).catch(error => {
-              console.error('[vite-build-plugin] 查找可用端口失败:', error);
-              if (!res.headersSent) {
-                res.statusCode = 500;
-                res.end(JSON.stringify({
-                  success: false,
-                  message: error instanceof Error ? error.message : '启动失败',
-                  port: port
-                }));
-              }
-            });
+            // 启动新的预览服务器
+            startNewPreviewServer(port, directory, res);
 
           } catch (error) {
             console.error('[vite-build-plugin] 预览服务器启动失败:', error);
@@ -258,6 +162,140 @@ export function viteBuildPlugin(): Plugin {
       });
     }
   };
+}
+
+// 启动新的预览服务器
+function startNewPreviewServer(port: number, directory: string, res: any) {
+  try {
+    const staticDir = resolve(process.cwd(), directory);
+
+    if (!existsSync(staticDir)) {
+      throw new Error(`目录不存在: ${staticDir}`);
+    }
+
+    // 创建静态文件服务器
+    const previewServer = createServer(async (req, res) => {
+      try {
+        const parsedUrl = parse(req.url || '/', true);
+        let pathname = parsedUrl.pathname || '/';
+
+        // 默认访问index.html
+        if (pathname === '/') {
+          pathname = '/index.html';
+        }
+
+        // 构建文件路径
+        const filePath = resolve(staticDir, `.${pathname}`);
+
+        // 安全检查：确保文件在静态目录内
+        if (!filePath.startsWith(staticDir)) {
+          res.statusCode = 403;
+          res.end('Forbidden');
+          return;
+        }
+
+        // 读取文件
+        const data = await readFile(filePath);
+
+        // 设置正确的Content-Type
+        const ext = pathname.split('.').pop()?.toLowerCase();
+        const mimeTypes: Record<string, string> = {
+          'html': 'text/html',
+          'js': 'text/javascript',
+          'css': 'text/css',
+          'json': 'application/json',
+          'png': 'image/png',
+          'jpg': 'image/jpeg',
+          'jpeg': 'image/jpeg',
+          'gif': 'image/gif',
+          'svg': 'image/svg+xml',
+          'ico': 'image/x-icon'
+        };
+
+        res.setHeader('Content-Type', mimeTypes[ext || ''] || 'text/plain');
+        res.end(data);
+
+      } catch (error) {
+        if ((error as any).code === 'ENOENT') {
+          res.statusCode = 404;
+          res.end('File not found');
+        } else {
+          res.statusCode = 500;
+          res.end('Internal server error');
+        }
+      }
+    });
+
+    // 启动服务器
+    previewServer.listen(port, () => {
+      console.log(`[vite-build-plugin] 预览服务器已启动: http://localhost:${port}`);
+      
+      // 自动打开浏览器，模拟vite preview --open的行为
+      try {
+        const url = `http://localhost:${port}`;
+        
+        // 根据操作系统选择合适的打开命令
+        let command: string;
+        switch (process.platform) {
+          case 'win32':
+            command = `start "" "${url}"`;
+            break;
+          case 'darwin':
+            command = `open "${url}"`;
+            break;
+          case 'linux':
+            command = `xdg-open "${url}"`;
+            break;
+          default:
+            console.warn(`[vite-build-plugin] 不支持的平台: ${process.platform}`);
+            return;
+        }
+        
+        exec(command, (error: any) => {
+          if (error) {
+            console.warn(`[vite-build-plugin] 打开浏览器失败: ${error.message}`);
+          } else {
+            console.log(`[vite-build-plugin] 已自动打开浏览器: ${url}`);
+          }
+        });
+      } catch (e) {
+        console.warn('[vite-build-plugin] 自动打开浏览器功能不可用:', e);
+      }
+      
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify({
+        success: true,
+        port: port,
+        url: `http://localhost:${port}`
+      }));
+    });
+
+    previewServer.on('error', (error) => {
+      console.error('[vite-build-plugin] 预览服务器错误:', error);
+      if (!res.headersSent) {
+        res.statusCode = 500;
+        res.end(JSON.stringify({
+          success: false,
+          message: error instanceof Error ? error.message : '启动失败',
+          port: port
+        }));
+      }
+    });
+
+    // 记录新的服务器实例
+    previewServerInstance = previewServer;
+
+  } catch (error) {
+    console.error('[vite-build-plugin] 预览服务器启动失败:', error);
+    if (!res.headersSent) {
+      res.statusCode = 500;
+      res.end(JSON.stringify({
+        success: false,
+        message: error instanceof Error ? error.message : '启动失败',
+        port: port
+      }));
+    }
+  }
 }
 
 async function performRealBuild(request: BuildRequest): Promise<BuildResponse> {

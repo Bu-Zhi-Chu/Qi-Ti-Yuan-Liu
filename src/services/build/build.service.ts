@@ -164,22 +164,31 @@ export class BuildService {
    * 一键完成构建和预览
    */
   async buildAndPreview(options: BuildOptions = {}): Promise<{
-    build: BuildResult;
-    preview: PreviewResult;
-  }> {
-    const buildResult = await this.buildProject(options);
+        build: BuildResult;
+        preview: PreviewResult;
+    }> {
+        console.log('🚀 开始构建并启动4174端口预览...')
+        
+        const buildResult = await this.buildProject(options);
 
-    if (!buildResult.success) {
-      throw new Error(buildResult.message);
+        if (!buildResult.success) {
+            throw new Error(buildResult.message);
+        }
+
+        const previewResult = await this.startPreview();
+        
+        // 确保使用4174端口并准备预览数据
+        if (previewResult.success) {
+            console.log('✅ 构建完成，4174端口预览服务器已启动:', previewResult.url)
+            // 返回预览URL供前端处理，不再自动打开浏览器
+            // 这样可以避免Node.js环境下的弹窗拦截问题
+        }
+
+        return {
+            build: buildResult,
+            preview: previewResult
+        };
     }
-
-    const previewResult = await this.startPreview();
-
-    return {
-      build: buildResult,
-      preview: previewResult
-    };
-  }
 
   /**
    * 执行真实的Vite构建

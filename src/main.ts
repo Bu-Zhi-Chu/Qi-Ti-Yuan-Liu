@@ -6,19 +6,7 @@ import { screenDetector } from './services/screen/screen-detector.service'
 import DexieService from './services/database/dexie-service'
 import { isLiteMode } from './services/env/environment.service'
 
-// ------------------------------------------------------------
-// 全局调试开关
-// 生产环境默认关闭 console.log / console.debug
-// 若需在生产环境排查问题，可在控制台执行：
-// localStorage.setItem('debug', 'true'); location.reload();
-// 亦可在 Vite 的 .env 文件中设置 VITE_DEBUG=true 强制开启日志。
-// ------------------------------------------------------------
-const DEBUG_MODE: boolean = import.meta.env.DEV || (typeof localStorage !== 'undefined' && localStorage.getItem('debug') === 'true') || import.meta.env.VITE_DEBUG === 'true'
-
-if (!DEBUG_MODE) {
-    console.log = () => { }
-    console.debug = () => { }
-}
+// 控制台日志始终开启，便于调试和监控
 
 let app: ReturnType<typeof mount> | undefined // 提前声明，供导出使用
 
