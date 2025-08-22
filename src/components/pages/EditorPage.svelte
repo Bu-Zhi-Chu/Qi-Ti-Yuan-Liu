@@ -124,15 +124,15 @@
             return
         }
 
-        // 开发模式下跳过验证，直接进入编辑模式
-        if (isDevMode()) {
-            console.log('开发模式：跳过Konami Code验证，直接进入编辑模式')
+        // 开发模式或生产模式下跳过验证，直接进入编辑模式
+        if (isDevMode() || isStandardProdMode()) {
+            console.log('开发模式/生产模式：跳过Konami Code验证，直接进入编辑模式')
             showWorkspace = true
             updateProjectMode()
             return
         }
 
-        // 从正常模式切换到编辑模式需要验证
+        // 精简模式下从正常模式切换到编辑模式需要验证
         isVerifying = true
         konamiSequence = []
 
@@ -158,8 +158,8 @@
     function handleKonamiKey(e: KeyboardEvent) {
         if (!isVerifying) return
 
-        // 开发模式下不处理键盘事件
-        if (isDevMode()) {
+        // 开发模式或生产模式下不处理键盘事件
+        if (isDevMode() || isStandardProdMode()) {
             return
         }
 
@@ -208,6 +208,13 @@
 
     // 初始化项目模式
     async function initializeProjectMode() {
+        // 精简模式下直接设置为正常模式，跳过数据库操作
+        if (isLiteMode()) {
+            showWorkspace = false
+            console.log('精简模式：项目模式已初始化为 normal (默认关闭编辑模式)')
+            return
+        }
+
         const projectId = window.location.hash.split('/').pop()
         if (!projectId) return
 
@@ -233,6 +240,12 @@
     import DexieService from '../../services/database/dexie-service'
 
     async function updateProjectMode() {
+        // 精简模式下跳过数据库更新
+        if (isLiteMode()) {
+            console.log('精简模式：跳过项目模式的数据库更新')
+            return
+        }
+
         // 从URL获取项目ID
         const projectId = window.location.hash.split('/').pop()
         if (!projectId) return
