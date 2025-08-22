@@ -29,8 +29,6 @@
         return typeof value === 'string' ? value : ''
     }
 
-
-
     // 外部传入当前选中节点 id
     export let selectedId: string | null = null
 
@@ -87,8 +85,6 @@
         const nodeProps = getNodeProps(selectedId)
         const styles = nodeProps?.styles || {}
 
-
-
         // 先从 styles.backgroundColor 读取背景颜色（与其他属性一致）
         const bgColorStyle = getStringValue(styles.backgroundColor)
         if (bgColorStyle) {
@@ -136,41 +132,41 @@
                     const colorStr = colorPositionMatch[1].trim()
                     const position = colorPositionMatch[2] || ''
 
-                            // 解析颜色值
-                            let color = colorStr
-                            let opacity = 1
+                    // 解析颜色值
+                    let color = colorStr
+                    let opacity = 1
 
-                            if (colorStr.startsWith('rgb')) {
-                                const rgbaMatch = colorStr.match(/rgba?\(([^)]+)\)/)
-                                if (rgbaMatch) {
-                                    const parts = rgbaMatch[1].split(',').map((s: string) => s.trim())
-                                    const r = parseInt(parts[0])
-                                    const g = parseInt(parts[1])
-                                    const b = parseInt(parts[2])
-                                    opacity = parts.length > 3 ? parseFloat(parts[3]) : 1
-                                    color = rgbToHex(r, g, b)
-                                }
-                            } else if (colorStr.startsWith('#')) {
-                                color = colorStr
-                                opacity = 1
-                            } else {
-                                // 处理颜色名称
-                                color = colorStr
-                                opacity = 1
-                            }
+                    if (colorStr.startsWith('rgb')) {
+                        const rgbaMatch = colorStr.match(/rgba?\(([^)]+)\)/)
+                        if (rgbaMatch) {
+                            const parts = rgbaMatch[1].split(',').map((s: string) => s.trim())
+                            const r = parseInt(parts[0])
+                            const g = parseInt(parts[1])
+                            const b = parseInt(parts[2])
+                            opacity = parts.length > 3 ? parseFloat(parts[3]) : 1
+                            color = rgbToHex(r, g, b)
+                        }
+                    } else if (colorStr.startsWith('#')) {
+                        color = colorStr
+                        opacity = 1
+                    } else {
+                        // 处理颜色名称
+                        color = colorStr
+                        opacity = 1
+                    }
 
-                            // 解析位置百分比
-                            let positionPercent = -1
-                            if (position) {
-                                if (position.includes('%')) {
-                                    positionPercent = parseFloat(position.replace('%', ''))
-                                } else {
-                                    positionPercent = parseFloat(position)
-                                }
-                            }
+                    // 解析位置百分比
+                    let positionPercent = -1
+                    if (position) {
+                        if (position.includes('%')) {
+                            positionPercent = parseFloat(position.replace('%', ''))
+                        } else {
+                            positionPercent = parseFloat(position)
+                        }
+                    }
 
-                            return { color, opacity, position: positionPercent }
-                        })
+                    return { color, opacity, position: positionPercent }
+                })
 
                 // 找出0%和100%位置的颜色
                 const color0 = colorStops.find((stop) => stop.position === 0) || colorStops[0]
@@ -209,8 +205,6 @@
                 // 不设置默认值，让ColorPicker从doms表加载颜色
             }
         }
-
-
 
         // 背景尺寸 - 优先使用新的存储格式，兼容旧格式
         if (styles.backgroundSizeX !== undefined) {
@@ -513,8 +507,16 @@
 
         // 如果是根节点，仅当背景图片状态发生变化时才处理缩略图
         if (selectedId === 'root') {
-            const prevIsRealImage = lastBackgroundImage && typeof lastBackgroundImage === 'string' && lastBackgroundImage.trim().startsWith('url(')
-        const currIsRealImage = backgroundImage && typeof backgroundImage === 'string' && backgroundImage.trim().startsWith('url(')
+            const isRealImage = (image: any): boolean => {
+                if (!image) return false
+                if (typeof image === 'string') {
+                    return image.trim().startsWith('url(')
+                }
+                return image instanceof Blob
+            }
+
+            const prevIsRealImage = isRealImage(lastBackgroundImage)
+            const currIsRealImage = isRealImage(backgroundImage)
 
             if (currIsRealImage && !prevIsRealImage) {
                 // 新上传了图片，生成缩略图
