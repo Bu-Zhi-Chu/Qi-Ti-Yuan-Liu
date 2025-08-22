@@ -11,8 +11,8 @@ lerna-debug.log*
 .trae
 node_modules
 dist
+dist-lite
 dev-dist
-dist-ssr
 *.local
 
 # Editor directories and files

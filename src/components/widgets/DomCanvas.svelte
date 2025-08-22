@@ -41,6 +41,7 @@
     import { onMount } from 'svelte'
     import { domTree, selectedId, setSelectedId, setProjectId, loadDomTreeFromDatabase } from '../../services/repository/dom-tree.store.svelte'
     import Dexie from 'dexie'
+    import { isProdLiteMode } from '../../services/env/environment.service'
     // 顶部容器引用，用于渲染画布内容
     let canvasContainerRef: HTMLDivElement | null = null
 
@@ -53,15 +54,26 @@
     // 拖动状态
     let isDragging = $state(false)
 
-    // 项目ID - 从路由参数获取
+    // 项目ID - 从路由参数获取或默认
     let projectId = $state('')
     let isLoading = $state(true)
 
-    // 从URL获取项目ID
+    // 从URL获取项目ID或设置默认值
     onMount(() => {
         console.log('当前URL:', window.location.href)
         console.log('当前hash:', window.location.hash)
         console.log('当前pathname:', window.location.pathname)
+        console.log('是否为精简模式:', isProdLiteMode())
+
+        // 检查是否为生产精简模式
+        if (isProdLiteMode()) {
+            // 精简模式下使用默认项目ID，跳过URL提取
+            projectId = 'lite-mode-demo'
+            console.warn('生产精简模式：跳过URL项目ID提取，使用默认项目ID:', projectId)
+            loadCanvasState()
+            isLoading = false
+            return
+        }
 
         // 支持多种路由格式：hash路由和path路由
         let match = window.location.hash.match(/\/editor\/([^\/]+)/)
@@ -80,8 +92,10 @@
             console.warn('未从URL中提取到项目ID，当前URL:', window.location.href)
         }
 
-        // 监听路由变化
+        // 监听路由变化（仅在非精简模式下）
         const handleRouteChange = () => {
+            if (isProdLiteMode()) return
+
             let newMatch = window.location.hash.match(/\/editor\/([^\/]+)/)
             if (!newMatch) {
                 newMatch = window.location.pathname.match(/\/editor\/([^\/]+)/)
