@@ -37,7 +37,7 @@ let app: ReturnType<typeof mount> | undefined // 提前声明，供导出使用
                     console.log('【数据库交互】数据库已存在')
                 }
             }
-            
+
             // 挂载 Svelte 应用
             await PWAChecker.checkEnvironment()
             await PWAChecker.initPWA()

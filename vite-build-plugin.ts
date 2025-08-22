@@ -187,37 +187,61 @@ export function viteBuildPlugin(): Plugin {
               }
             });
 
-            // 启动服务器
-            previewServer.listen(port, () => {
-              console.log(`[vite-build-plugin] 预览服务器已启动: http://localhost:${port}`);
-
-              res.setHeader('Content-Type', 'application/json');
-              res.end(JSON.stringify({
-                success: true,
-                port,
-                url: `http://localhost:${port}`
-              }));
-            });
-
-            // 处理服务器错误
-            previewServer.on('error', (error) => {
-              console.error('[vite-build-plugin] 预览服务器错误:', error);
-
-              // 如果端口被占用，尝试使用下一个可用端口
-              if ((error as any).code === 'EADDRINUSE') {
-                const newPort = port + 1;
-                previewServer.listen(newPort, () => {
-                  console.log(`[vite-build-plugin] 端口${port}被占用，使用端口${newPort}`);
-
-                  res.setHeader('Content-Type', 'application/json');
-                  res.end(JSON.stringify({
-                    success: true,
-                    port: newPort,
-                    url: `http://localhost:${newPort}`
-                  }));
+            // 查找可用端口
+            const findAvailablePort = (startPort: number): Promise<number> => {
+              return new Promise((resolve, reject) => {
+                const server = createServer();
+                server.listen(startPort, () => {
+                  const port = (server.address() as any).port;
+                  server.close(() => resolve(port));
                 });
-              } else {
-                throw error;
+                server.on('error', (error) => {
+                  if ((error as any).code === 'EADDRINUSE') {
+                    resolve(findAvailablePort(startPort + 1));
+                  } else {
+                    reject(error);
+                  }
+                });
+              });
+            };
+
+            // 查找可用端口并启动服务器
+            findAvailablePort(port).then(availablePort => {
+              if (availablePort !== port) {
+                console.log(`[vite-build-plugin] 端口${port}被占用，使用端口${availablePort}`);
+              }
+
+              previewServer.listen(availablePort, () => {
+                console.log(`[vite-build-plugin] 预览服务器已启动: http://localhost:${availablePort}`);
+                
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({
+                  success: true,
+                  port: availablePort,
+                  url: `http://localhost:${availablePort}`
+                }));
+              });
+
+              previewServer.on('error', (error) => {
+                console.error('[vite-build-plugin] 预览服务器错误:', error);
+                if (!res.headersSent) {
+                  res.statusCode = 500;
+                  res.end(JSON.stringify({
+                    success: false,
+                    message: error instanceof Error ? error.message : '启动失败',
+                    port: availablePort
+                  }));
+                }
+              });
+            }).catch(error => {
+              console.error('[vite-build-plugin] 查找可用端口失败:', error);
+              if (!res.headersSent) {
+                res.statusCode = 500;
+                res.end(JSON.stringify({
+                  success: false,
+                  message: error instanceof Error ? error.message : '启动失败',
+                  port: port
+                }));
               }
             });
 
