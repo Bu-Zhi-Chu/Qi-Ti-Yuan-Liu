@@ -208,15 +208,36 @@
 
     // 初始化项目模式
     async function initializeProjectMode() {
-        // 精简模式下直接设置为正常模式，跳过数据库操作
-        if (isLiteMode()) {
-            showWorkspace = false
-            console.log('精简模式：项目模式已初始化为 normal (默认关闭编辑模式)')
-            return
-        }
+        let projectId: string | undefined
 
-        const projectId = window.location.hash.split('/').pop()
-        if (!projectId) return
+        // 精简模式下从数据库获取唯一的项目ID
+        if (isLiteMode()) {
+            try {
+                console.log('精简模式：从数据库获取项目ID')
+
+                // 从数据库获取所有项目
+                const projects = await DexieService.getAllRecords('qi-qiao-ban', 'projects')
+
+                if (projects && projects.length > 0) {
+                    // 获取第一个项目的ID
+                    projectId = (projects[0] as any).id
+                    console.log('精简模式：获取到项目ID:', projectId)
+                } else {
+                    console.warn('精简模式：数据库中没有项目')
+                    return
+                }
+            } catch (error) {
+                console.error('精简模式：获取项目ID失败', error)
+                return
+            }
+        } else {
+            // 非精简模式从URL获取项目ID
+            projectId = window.location.hash.split('/').pop()
+            if (!projectId) {
+                console.warn('非精简模式：无法从URL获取项目ID')
+                return
+            }
+        }
 
         try {
             const project = await DexieService.getRecord<any>('qi-qiao-ban', 'projects', projectId)
@@ -225,7 +246,7 @@
                 showWorkspace = project.mode === 'editing'
                 console.log(`项目模式已初始化为: ${project.mode}`)
             } else {
-                // 如果没有模式字段，默认为正常模式，不保存到数据库
+                // 如果没有模式字段，默认为正常模式
                 showWorkspace = false
                 console.log('项目模式已初始化为: normal (默认模式)')
             }
@@ -240,12 +261,6 @@
     import DexieService from '../../services/database/dexie-service'
 
     async function updateProjectMode() {
-        // 精简模式下跳过数据库更新
-        if (isLiteMode()) {
-            console.log('精简模式：跳过项目模式的数据库更新')
-            return
-        }
-
         // 从URL获取项目ID
         const projectId = window.location.hash.split('/').pop()
         if (!projectId) return

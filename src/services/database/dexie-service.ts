@@ -40,22 +40,35 @@ export default class DexieService {
 
     /**
      * 创建数据库并插入默认模板
+     * @param dbName 数据库名称
+     * @param isLiteMode 是否为精简模式，默认为false。在精简模式下不会添加默认模板数据
      */
-    static async createDatabase(dbName: string): Promise<void> {
+    static async createDatabase(dbName: string, isLiteMode: boolean = false): Promise<void> {
         DatabaseLogger.creatingDatabase(dbName)
         const db = new Dexie(dbName)
 
         // 开发环境无需修改版本号
-        db.version(1).stores({
-            templates: '++id, name, desc, cover, tag, thumbnailUrl, domStructure',
-            projects: 'id, name, templateId, createdAt, updatedAt, canvasState, mode',
+        const stores: Record<string, string> = {
+            projects: 'id, name, templateId, createdAt, updatedAt, canvasState, mode, exportTime',
             doms: '[projectId+id], projectId, parentId, type, attributes, style, textContent'
-        })
+        }
+
+        // 精简模式下不创建templates表
+        if (!isLiteMode) {
+            stores.templates = '++id, name, desc, cover, tag, thumbnailUrl, domStructure'
+        }
+
+        db.version(1).stores(stores)
 
         await db.open()
         // 打开成功后写入缓存，避免后续重复检查
         DexieService.dbExistenceCache.set(dbName, true)
         DatabaseLogger.databaseCreated(dbName)
+
+        // 精简模式下不插入默认模板
+        if (isLiteMode) {
+            return
+        }
 
         // 插入默认模板
         const count = await db.table('templates').count()
@@ -71,48 +84,7 @@ export default class DexieService {
                 { type: 'image/svg+xml' }
             )
 
-            // 登录页面模板
-            const loginBlob = new Blob(
-                [
-                    `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="150" viewBox="0 0 200 150">
-                        <rect width="200" height="150" fill="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"/>
-                        <rect x="50" y="40" width="100" height="70" fill="#ffffff" rx="8"/>
-                        <circle cx="100" cy="60" r="12" fill="#e5e7eb"/>
-                        <rect x="70" y="80" width="60" height="8" fill="#e5e7eb" rx="4"/>
-                        <rect x="70" y="95" width="60" height="8" fill="#e5e7eb" rx="4"/>
-                        <text x="100" y="130" text-anchor="middle" font-family="Arial" font-size="12" fill="#ffffff">登录页</text>
-                    </svg>`
-                ],
-                { type: 'image/svg+xml' }
-            )
 
-            // 仪表盘模板
-            const dashboardBlob = new Blob(
-                [
-                    `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="150" viewBox="0 0 200 150">
-                        <rect width="200" height="150" fill="#f8fafc"/>
-                        <rect x="10" y="10" width="180" height="40" fill="#ffffff" stroke="#e2e8f0" rx="4"/>
-                        <rect x="10" y="60" width="85" height="35" fill="#3b82f6" rx="4"/>
-                        <rect x="105" y="60" width="85" height="35" fill="#10b981" rx="4"/>
-                        <rect x="10" y="105" width="180" height="35" fill="#ffffff" stroke="#e2e8f0" rx="4"/>
-                        <text x="100" y="145" text-anchor="middle" font-family="Arial" font-size="12" fill="#64748b">仪表盘</text>
-                    </svg>`
-                ],
-                { type: 'image/svg+xml' }
-            )
-
-            // 测试模板 - 包含两个SimpleBox元素的布局
-            const testBlob = new Blob(
-                [
-                    `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="150" viewBox="0 0 200 150">
-                        <rect width="200" height="150" fill="#f0f9ff"/>
-                        <rect x="20" y="30" width="60" height="40" fill="#3b82f6" rx="4"/>
-                        <rect x="120" y="80" width="60" height="40" fill="#10b981" rx="4"/>
-                        <text x="100" y="130" text-anchor="middle" font-family="Arial" font-size="12" fill="#374151">测试布局</text>
-                    </svg>`
-                ],
-                { type: 'image/svg+xml' }
-            )
 
             await db.table('templates').bulkAdd([
                 {
@@ -151,6 +123,18 @@ export default class DexieService {
      * 查询表数据
      */
     static async queryRecords<T>(dbName: string, tableName: string): Promise<T[]> {
+        DatabaseLogger.queryingRecords(dbName, tableName)
+        const db = new Dexie(dbName)
+        await db.open()
+        const result = await db.table(tableName).toArray()
+        DatabaseLogger.queryResults(result.length)
+        return result
+    }
+
+    /**
+     * 获取表中的所有记录
+     */
+    static async getAllRecords<T>(dbName: string, tableName: string): Promise<T[]> {
         DatabaseLogger.queryingRecords(dbName, tableName)
         const db = new Dexie(dbName)
         await db.open()

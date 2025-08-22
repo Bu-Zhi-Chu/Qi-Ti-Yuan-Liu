@@ -65,32 +65,8 @@
         console.log('当前pathname:', window.location.pathname)
         console.log('是否为精简模式:', isLiteMode())
 
-        // 检查是否为生产精简模式
-        if (isLiteMode()) {
-            // 精简模式下使用默认项目ID，跳过URL提取
-            projectId = 'lite-mode-demo'
-            console.log('生产精简模式：跳过URL项目ID提取，使用默认项目ID:', projectId)
-            loadCanvasState()
-            isLoading = false
-            return
-        }
-
-        // 支持多种路由格式：hash路由和path路由
-        let match = window.location.hash.match(/\/editor\/([^\/]+)/)
-        if (!match) {
-            match = window.location.pathname.match(/\/editor\/([^\/]+)/)
-        }
-        if (!match) {
-            match = window.location.pathname.match(/\/search\/editor\/([^\/]+)/)
-        }
-
-        if (match) {
-            projectId = match[1]
-            console.log('提取到项目ID:', projectId)
-            loadCanvasState()
-        } else {
-            console.warn('未从URL中提取到项目ID，当前URL:', window.location.href)
-        }
+        // 立即执行加载逻辑
+        loadProjectData()
 
         // 监听路由变化（仅在非精简模式下）
         const handleRouteChange = () => {
@@ -119,6 +95,43 @@
             window.removeEventListener('popstate', handleRouteChange)
         }
     })
+
+    // 分离的异步函数处理项目数据加载
+    async function loadProjectData() {
+        // 精简模式下从数据库获取项目ID
+        if (isLiteMode()) {
+            try {
+                console.log('精简模式：从数据库获取项目ID')
+                const projects = await DexieService.getAllRecords('qi-qiao-ban', 'projects')
+                if (projects && projects.length > 0) {
+                    projectId = (projects[0] as any).id
+                    console.log('精简模式：获取到项目ID:', projectId)
+                    loadCanvasState()
+                } else {
+                    console.warn('精简模式：数据库中没有项目')
+                }
+            } catch (error) {
+                console.error('精简模式：获取项目ID失败', error)
+            }
+        } else {
+            // 非精简模式从URL获取项目ID
+            let match = window.location.hash.match(/\/editor\/([^\/]+)/)
+            if (!match) {
+                match = window.location.pathname.match(/\/editor\/([^\/]+)/)
+            }
+            if (!match) {
+                match = window.location.pathname.match(/\/search\/editor\/([^\/]+)/)
+            }
+
+            if (match) {
+                projectId = match[1]
+                console.log('提取到项目ID:', projectId)
+                loadCanvasState()
+            } else {
+                console.warn('未从URL中提取到项目ID，当前URL:', window.location.href)
+            }
+        }
+    }
 
     // 从项目数据加载canvas状态
     async function loadCanvasState() {

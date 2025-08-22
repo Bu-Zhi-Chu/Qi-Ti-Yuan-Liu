@@ -229,11 +229,11 @@ function startNewPreviewServer(port: number, directory: string, res: any) {
     // 启动服务器
     previewServer.listen(port, () => {
       console.log(`[vite-build-plugin] 预览服务器已启动: http://localhost:${port}`);
-      
+
       // 自动打开浏览器，模拟vite preview --open的行为
       try {
         const url = `http://localhost:${port}`;
-        
+
         // 根据操作系统选择合适的打开命令
         let command: string;
         switch (process.platform) {
@@ -250,7 +250,7 @@ function startNewPreviewServer(port: number, directory: string, res: any) {
             console.warn(`[vite-build-plugin] 不支持的平台: ${process.platform}`);
             return;
         }
-        
+
         exec(command, (error: any) => {
           if (error) {
             console.warn(`[vite-build-plugin] 打开浏览器失败: ${error.message}`);
@@ -261,7 +261,7 @@ function startNewPreviewServer(port: number, directory: string, res: any) {
       } catch (e) {
         console.warn('[vite-build-plugin] 自动打开浏览器功能不可用:', e);
       }
-      
+
       res.setHeader('Content-Type', 'application/json');
       res.end(JSON.stringify({
         success: true,

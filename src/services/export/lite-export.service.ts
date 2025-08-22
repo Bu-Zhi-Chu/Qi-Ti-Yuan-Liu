@@ -38,6 +38,11 @@ export class LiteExportService {
                 throw new Error(`未找到项目: ${projectId}`);
             }
 
+            // 更新导出时间到数据库
+            const exportTime = new Date().toISOString();
+            await DexieService.updateRecord('qi-qiao-ban', 'projects', projectId, { exportTime });
+            console.log(`已更新项目 ${projectId} 的导出时间: ${exportTime}`);
+
             // 用户要求的调试输出
             console.log('项目记录:', project);
             // 获取该项目的所有DOM数据
@@ -48,9 +53,9 @@ export class LiteExportService {
             console.log('DOM 数量:', projectDoms.length);
 
             const exportData: LiteExportData = {
-                projects: [project],
+                projects: [{ ...project, exportTime }],
                 doms: projectDoms,
-                exportTime: new Date().toISOString(),
+                exportTime,
                 projectId
             };
 
@@ -77,7 +82,7 @@ export class LiteExportService {
             // 定义表结构
             db.version(1).stores({
                 templates: '++id, name, desc, cover, tag, thumbnailUrl, domStructure',
-                projects: 'id, name, templateId, createdAt, updatedAt, canvasState, mode',
+                projects: 'id, name, templateId, createdAt, updatedAt, canvasState, mode, exportTime',
                 doms: '[projectId+id], projectId, parentId, type, attributes, style, textContent'
             });
 

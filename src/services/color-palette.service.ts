@@ -30,11 +30,11 @@ export default class ColorPaletteService {
     static async saveColor(projectId: string, componentId: string, color: string): Promise<void> {
         console.log(`【数据库交互】保存颜色到颜色卡: 项目ID=${projectId}, 组件ID=${componentId}, 颜色=${color}`)
         try {
-            // 确保数据库已初始化
+            // 检查数据库是否存在
             const dbExists = await DexieService.databaseExists(DEFAULT_DB_NAME)
             if (!dbExists) {
-                console.log('【数据库交互】数据库不存在，开始创建数据库')
-                await DexieService.createDatabase(DEFAULT_DB_NAME)
+                console.warn('【数据库交互】数据库不存在，无法保存颜色')
+                return
             }
 
             // 直接同步到 doms 表，保持与 updateColorInDoms 一致
@@ -67,11 +67,11 @@ export default class ColorPaletteService {
         }
         console.log(`【数据库交互】获取项目全部色卡值: 项目ID=${projectId}`)
         try {
-            // 确保数据库已初始化
+            // 检查数据库是否存在
             const dbExists = await DexieService.databaseExists(DEFAULT_DB_NAME)
             if (!dbExists) {
-                console.log('【数据库交互】数据库不存在，开始创建数据库')
-                await DexieService.createDatabase(DEFAULT_DB_NAME)
+                console.warn('【数据库交互】数据库不存在，无法获取颜色卡')
+                return []
             }
 
             const db = await DexieService.getDatabase(DEFAULT_DB_NAME)
@@ -103,11 +103,11 @@ export default class ColorPaletteService {
     static async getColorFromDoms(projectId: string, componentId: string): Promise<string | null> {
         console.log(`【数据库交互】从doms表获取节点颜色: 项目ID=${projectId}, 组件ID=${componentId}`)
         try {
-            // 确保数据库已初始化
+            // 检查数据库是否存在
             const dbExists = await DexieService.databaseExists(DEFAULT_DB_NAME)
             if (!dbExists) {
-                console.log('【数据库交互】数据库不存在，开始创建数据库')
-                await DexieService.createDatabase(DEFAULT_DB_NAME)
+                console.warn('【数据库交互】数据库不存在，无法获取节点颜色')
+                return null
             }
 
             const db = await DexieService.getDatabase(DEFAULT_DB_NAME)
@@ -167,11 +167,11 @@ export default class ColorPaletteService {
     static async updateColorInDoms(projectId: string, componentId: string, color: string): Promise<void> {
         console.log(`【数据库交互】更新doms表节点颜色: 项目ID=${projectId}, 组件ID=${componentId}, 颜色=${color}`)
         try {
-            // 确保数据库已初始化
+            // 检查数据库是否存在
             const dbExists = await DexieService.databaseExists(DEFAULT_DB_NAME)
             if (!dbExists) {
-                console.log('【数据库交互】数据库不存在，开始创建数据库')
-                await DexieService.createDatabase(DEFAULT_DB_NAME)
+                console.warn('【数据库交互】数据库不存在，无法更新节点颜色')
+                return
             }
 
             const db = await DexieService.getDatabase(DEFAULT_DB_NAME)
@@ -222,10 +222,11 @@ export default class ColorPaletteService {
     // 通过遍历 doms 表将匹配颜色的节点置为透明并删除缓存。
     static async deleteColor(projectId: string, color: string): Promise<void> {
         try {
-            // 确保数据库已初始化
+            // 检查数据库是否存在
             const dbExists = await DexieService.databaseExists(DEFAULT_DB_NAME)
             if (!dbExists) {
-                await DexieService.createDatabase(DEFAULT_DB_NAME)
+                console.warn('【数据库交互】数据库不存在，无法删除颜色')
+                return
             }
 
             const db = await DexieService.getDatabase(DEFAULT_DB_NAME)
