@@ -127,7 +127,10 @@
                         props: {},
                         style: {
                             width: '100%',
-                            height: '100%'
+                            height: '100%',
+                            boxSizing: 'border-box',
+                            overflow: 'hidden',
+                            pointerEvents: 'auto'
                         },
                         children: [],
                         position: { x: 0, y: 0 },
@@ -150,7 +153,10 @@
                 props: {},
                 style: {
                     width: '100%',
-                    height: '100%'
+                    height: '100%',
+                    boxSizing: 'border-box',
+                    overflow: 'hidden',
+                    pointerEvents: 'auto'
                 },
                 children: [],
                 position: { x: 0, y: 0 },

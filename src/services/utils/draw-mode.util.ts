@@ -68,7 +68,10 @@ export function createDrawNode(rect: RelativeRect): DomNode {
             top: `${rect.top}%`,
             width: `${rect.width}%`,
             height: `${rect.height}%`,
-            backgroundColor: 'rgba(30, 41, 59, 0.15)' // 与主背景协调的蓝灰色半透明背景
+            backgroundColor: 'rgba(30, 41, 59, 0.15)', // 与主背景协调的蓝灰色半透明背景
+            boxSizing: 'border-box', // 默认使用边框盒模型
+            overflow: 'hidden', // 默认隐藏溢出内容
+            pointerEvents: 'auto' // 默认允许鼠标事件
         },
         attributes: {
             'data-name': '元素'

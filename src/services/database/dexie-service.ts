@@ -109,7 +109,8 @@ export default class DexieService {
                                 backgroundColor: '#ffffff',
                                 height: '100%',
                                 pointerEvents: 'auto',
-                                width: '100%'
+                                width: '100%',
+                                boxSizing: 'border-box'
                             },
                             textContent: ''
                         }

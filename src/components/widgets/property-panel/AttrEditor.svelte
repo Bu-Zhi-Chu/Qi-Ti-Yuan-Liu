@@ -7,13 +7,31 @@
     import { onMount } from 'svelte'
     import { getElementByNodeId } from '../../../services/utils/dom-geometry.util'
     import { getScaleRatio } from '../../../services/utils/get-scale-ratio.util'
-
+    import PropertyRow from './PropertyRow.svelte'
+    import PropertySelect from './PropertySelect.svelte'
     interface BlockItem {
         type: string
         nameZh: string
         path: string
     }
     let componentOptions: BlockItem[] = []
+    $: typeOptions = componentOptions.map((item) => ({ value: item.type, label: `${item.nameZh} (${item.type})` }))
+
+    // 盒子类型、溢出处理、鼠标穿透下拉框选项
+    const boxSizingOptions = [
+        { value: 'border-box', label: '边框盒 (border-box)' },
+        { value: 'content-box', label: '内容盒 (content-box)' }
+    ]
+    const overflowOptions = [
+        { value: 'hidden', label: '隐藏 (hidden)' },
+        { value: 'auto', label: '自动 (auto)' },
+        { value: 'scroll', label: '滚动 (scroll)' },
+        { value: 'visible', label: '可见 (visible)' }
+    ]
+    const pointerEventsOptions = [
+        { value: 'auto', label: '自动 (auto)' },
+        { value: 'none', label: '禁止 (none)' }
+    ]
 
     onMount(async () => {
         const config = await import('../../blocks/blocks.config.json', { assert: { type: 'json' } })
@@ -248,16 +266,12 @@
     {#if selectedId}
         <h3>主要属性</h3>
         <div class="attr-list">
-            <div class="attr-item">
-                <label for="node-id">节点编号</label>
-                <input id="node-id" type="text" value={selectedId} readonly class="disabled-input" title="系统内部ID，不可编辑" />
-                <span class="unit-placeholder"></span>
-            </div>
-            <div class="attr-item">
-                <label for="node-name">节点名称</label>
-                <input id="node-name" type="text" bind:value={currentName} oninput={(e) => handleNameChange(e.currentTarget.value)} placeholder="输入节点名称..." disabled={isRoot} class:disabled-input={isRoot} autocomplete="off" />
-                <span class="unit-placeholder"></span>
-            </div>
+            <PropertyRow label="节点编号">
+                <input type="text" value={selectedId} readonly class="disabled-input" title="系统内部ID，不可编辑" />
+            </PropertyRow>
+            <PropertyRow label="节点名称">
+                <input type="text" bind:value={currentName} oninput={(e) => handleNameChange(e.currentTarget.value)} placeholder="输入节点名称..." disabled={isRoot} class:disabled-input={isRoot} autocomplete="off" />
+            </PropertyRow>
             <div class="attr-item">
                 <label for="node-type">节点类型</label>
                 {#if isRoot}
@@ -276,6 +290,13 @@
                 {/if}
                 <span class="unit-placeholder"></span>
             </div>
+            <PropertyRow label="节点类型">
+                {#if isRoot}
+                    <input id="node-type-text-2" type="text" value="画布" disabled class="disabled-input" />
+                {:else}
+                    <PropertySelect bind:value={currentType} options={typeOptions} disabled={isRoot} change={handleTypeChange} />
+                {/if}
+            </PropertyRow>
 
             <!-- 宽度输入 -->
             <div class="attr-item">
@@ -295,43 +316,20 @@
                 </button>
             </div>
 
-            <!-- box-sizing 下拉框 -->
-            <div class="attr-item">
-                <label for="node-box-sizing">盒子类型</label>
-                <div class="select-wrapper">
-                    <select id="node-box-sizing" bind:value={currentBoxSizing} onchange={(e) => handleBoxSizingChange(e.currentTarget.value)}>
-                        <option value="border-box">边框盒模型 (border-box)</option>
-                        <option value="content-box">内容盒模型 (content-box)</option>
-                    </select>
-                </div>
-                <span class="unit-placeholder"></span>
-            </div>
+            <!-- 盒子类型（box-sizing） -->
+            <PropertyRow label="盒子类型">
+                <PropertySelect bind:value={currentBoxSizing} options={boxSizingOptions} change={handleBoxSizingChange} />
+            </PropertyRow>
 
-            <!-- overflow 下拉框 -->
-            <div class="attr-item">
-                <label for="node-overflow">溢出处理</label>
-                <div class="select-wrapper">
-                    <select id="node-overflow" bind:value={currentOverflow} onchange={(e) => handleOverflowChange(e.currentTarget.value)}>
-                        <option value="hidden">隐藏 (hidden)</option>
-                        <option value="auto">自动 (auto)</option>
-                        <option value="scroll">滚动 (scroll)</option>
-                        <option value="visible">显示 (visible)</option>
-                    </select>
-                </div>
-                <span class="unit-placeholder"></span>
-            </div>
+            <!-- 溢出处理（overflow） -->
+            <PropertyRow label="溢出处理">
+                <PropertySelect bind:value={currentOverflow} options={overflowOptions} change={handleOverflowChange} />
+            </PropertyRow>
 
-            <!-- 鼠标穿透下拉框 -->
-            <div class="attr-item">
-                <label for="node-pointer-events">鼠标穿透</label>
-                <div class="select-wrapper">
-                    <select id="node-pointer-events" bind:value={currentPointerEvents} onchange={(e) => handlePointerEventsChange(e.currentTarget.value)}>
-                        <option value="auto">阻挡 (auto)</option>
-                        <option value="none">穿透 (none)</option>
-                    </select>
-                </div>
-                <span class="unit-placeholder"></span>
-            </div>
+            <!-- 鼠标穿透（pointer-events） -->
+            <PropertyRow label="鼠标穿透">
+                <PropertySelect bind:value={currentPointerEvents} options={pointerEventsOptions} change={handlePointerEventsChange} />
+            </PropertyRow>
 
             <!-- 新增备注字段 -->
             <div class="attr-item">
