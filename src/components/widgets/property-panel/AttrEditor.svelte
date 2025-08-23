@@ -351,7 +351,6 @@
         color: #94a3b8;
     }
     input,
-    select,
     textarea {
         flex: 1;
         padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
@@ -364,7 +363,6 @@
         appearance: none;
     }
     input:disabled,
-    select:disabled,
     textarea:disabled {
         color: #64748b;
     }
@@ -398,66 +396,10 @@
         color: #64748b !important; /* 统一禁用状态文本颜色 */
     }
 
-    .unit-placeholder {
-        width: calc(40px * var(--scale-ratio, 1));
-    }
 
-    select:focus,
-    input:focus,
-    textarea:focus {
-        outline: none;
-        border-color: #cbd5e1;
-        background: rgba(255, 255, 255, 0.15);
-        box-shadow: 0 0 0 calc(3px * var(--scale-ratio, 1)) rgba(255, 255, 255, 0.1);
-    }
-    select option {
-        background: #1e293b;
-        color: #e2e8f0;
-    }
+    /* select option 样式块已移除 */
 
-    /* 改善下拉面板样式 */
-    select {
-        background-color: rgba(30, 41, 59, 0.95);
-        color: #e2e8f0;
-        border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.3);
-    }
 
-    select option {
-        background-color: #1e293b;
-        color: #e2e8f0;
-        padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
-    }
-
-    select option:hover,
-    select option:focus,
-    select option:checked {
-        background-color: rgba(99, 102, 241, 0.2);
-        color: #e2e8f0;
-    }
-
-    .select-wrapper {
-        position: relative;
-        flex: 1;
-    }
-
-    .select-wrapper::after {
-        content: '';
-        position: absolute;
-        right: calc(12px * var(--scale-ratio, 1));
-        top: 50%;
-        transform: translateY(-50%);
-        width: 0;
-        height: 0;
-        border-left: calc(4px * var(--scale-ratio, 1)) solid transparent;
-        border-right: calc(4px * var(--scale-ratio, 1)) solid transparent;
-        border-top: calc(4px * var(--scale-ratio, 1)) solid #94a3b8;
-        pointer-events: none;
-    }
-
-    .select-wrapper select {
-        width: 100%;
-        padding-right: calc(30px * var(--scale-ratio, 1));
-    }
     input::placeholder,
     textarea::placeholder {
         color: #9ca3af;
