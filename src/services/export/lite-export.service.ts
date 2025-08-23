@@ -25,15 +25,16 @@ export class LiteExportService {
     }
 
     /**
-     * 导出所有项目的精简数据
+     * 导出指定项目的精简数据
      * 使用 dexie-export-import 的 exportDB() 方法直接导出 Blob 数据
-     * 包含完整的项目和 DOM 数据，包括 Blob 类型的图片数据
-     * @param projectId 项目ID（保留参数，但不再用于筛选）
-     * @returns 包含完整数据库数据的 Blob
+     * 包含指定项目的完整数据，包括 Blob 类型的图片数据
+     * 自动排除模板表（templates），只包含项目和 DOM 数据
+     * @param projectId 项目ID，用于筛选特定项目的数据（必需）
+     * @returns 包含指定项目完整数据库数据的 Blob（不包含模板数据）
      */
-    async exportLiteData(projectId?: string): Promise<Blob> {
+    async exportLiteData(projectId: string): Promise<Blob> {
         try {
-            console.log(`开始导出所有项目的精简数据（含Blob数据）...`);
+            console.log(`开始导出项目 ${projectId} 的精简数据（含Blob数据）...`);
 
             // 使用 dexie-export-import 直接导出完整数据库
             const exportBlob = await this.exportTablesWithDexie(['projects', 'doms'], projectId);
@@ -49,12 +50,13 @@ export class LiteExportService {
 
     /**
      * 使用dexie-export-import导出数据库中的指定表
-     * 支持完整导出，包括Blob类型的图片数据
+     * 支持按项目ID过滤数据，自动排除模板表（templates）
+     * 包括Blob类型的图片数据
      * @param tables 要导出的表名数组
-     * @param projectId 项目ID，用于筛选特定项目的数据（仅用于日志记录）
-     * @returns Blob格式的导出数据（包含完整数据，包括Blob字段）
+     * @param projectId 项目ID，用于筛选特定项目的数据（必需）
+     * @returns Blob格式的导出数据（包含过滤后的数据，包括Blob字段，不包含模板数据）
      */
-    async exportTablesWithDexie(tables: string[], projectId?: string): Promise<Blob> {
+    async exportTablesWithDexie(tables: string[], projectId: string): Promise<Blob> {
         try {
             // 获取现有的数据库实例
             const db = await DexieService.getDatabase('qi-qiao-ban');
@@ -62,7 +64,7 @@ export class LiteExportService {
                 throw new Error('无法获取数据库实例');
             }
 
-            console.log(`正在使用dexie-export-import导出表: ${tables.join(', ')}, 项目ID: ${projectId || '全部'}`);
+            console.log(`正在使用dexie-export-import导出项目 ${projectId} 的表: ${tables.join(', ')}`);
 
             // 在导出前检查数据库中的实际数据量
             for (const tableName of tables) {
@@ -74,10 +76,33 @@ export class LiteExportService {
                 }
             }
 
-            // 使用exportDB导出完整数据库，包括Blob数据
-            // 移除filter参数，确保导出所有数据
+            // 使用exportDB导出数据，支持按项目ID过滤和排除模板表
             const exportBlob = await exportDB(db, {
-                prettyJson: true
+                prettyJson: true,
+                filter: (table, value, key) => {
+                    // 排除模板表（templates表不需要导出）
+                    if (table === 'templates') {
+                        return false;
+                    }
+
+                    // 确保只导出指定的表
+                    if (!tables.includes(table)) {
+                        return false;
+                    }
+
+                    // 按项目ID过滤数据
+                    switch (table) {
+                        case 'projects':
+                            // projects表按id过滤
+                            return value?.id === projectId;
+                        case 'doms':
+                            // doms表按projectId过滤
+                            return value?.projectId === projectId;
+                        default:
+                            // 其他表默认包含
+                            return true;
+                    }
+                }
             });
 
             console.log(`导出完成，Blob大小: ${exportBlob.size} 字节`);
@@ -156,18 +181,18 @@ export class LiteExportService {
         }
     }
     /**
-     * 导出所有项目的精简数据为JSON格式
-     * @param projectId 项目ID（保留参数，但不再用于筛选）
+     * 导出指定项目的精简数据为JSON格式
+     * @param projectId 项目ID，用于筛选特定项目的数据（必需）
      * @returns JSON字符串
      */
-    async exportLiteJson(projectId?: string): Promise<string> {
+    async exportLiteJson(projectId: string): Promise<string> {
         try {
             const exportBlob = await this.exportLiteData(projectId);
             const jsonString = await exportBlob.text();
-            console.log('exportLiteJson length:', jsonString.length);
+            console.log(`项目 ${projectId} 导出JSON长度:`, jsonString.length);
             return jsonString;
         } catch (error) {
-            console.error('导出JSON失败:', error);
+            console.error(`项目 ${projectId} 导出JSON失败:`, error);
             throw error;
         }
     }
