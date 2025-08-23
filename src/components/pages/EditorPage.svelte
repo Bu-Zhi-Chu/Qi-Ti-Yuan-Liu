@@ -24,7 +24,7 @@
     import Icon from '../widgets/Icon.svelte'
 
     // 引入 DOM 树集中式状态管理
-    import { domTree, selectedId } from '../../services/repository/dom-tree.store.svelte'
+    import { domTree, selectedId, removeNodeById } from '../../services/repository/dom-tree.store.svelte'
 
     // 是否显示工作区，默认显示工作区
     let showWorkspace = $state(true)
@@ -92,6 +92,7 @@
     // 注册/注销快捷键和Konami验证器
     let unregister: () => void
     let unregisterKonami: () => void = () => {}
+    let unregisterDelKey: () => void = () => {}
 
     onMount(async () => {
         // 初始化项目模式
@@ -104,11 +105,29 @@
             console.log('Ctrl+E快捷键被触发')
             startKonamiVerification()
         })
+
+        // 注册DEL键删除选中节点的快捷键
+        unregisterDelKey = registerShortcut('Delete', () => {
+            const currentSelectedId = selectedId()
+            if (currentSelectedId && currentSelectedId !== 'root') {
+                console.log('DEL键删除节点:', currentSelectedId)
+                removeNodeById(currentSelectedId).then((success) => {
+                    if (success) {
+                        console.log('节点删除成功:', currentSelectedId)
+                    } else {
+                        console.warn('节点删除失败:', currentSelectedId)
+                    }
+                })
+            } else {
+                console.log('DEL键按下，但没有选中节点或选中的是根节点')
+            }
+        })
     })
 
     onDestroy(() => {
         unregister && unregister()
         stopKonamiVerification()
+        unregisterDelKey && unregisterDelKey()
     })
 
     // Konami Code验证器相关函数
