@@ -272,24 +272,6 @@
             <PropertyRow label="节点名称">
                 <input type="text" bind:value={currentName} oninput={(e) => handleNameChange(e.currentTarget.value)} placeholder="输入节点名称..." disabled={isRoot} class:disabled-input={isRoot} autocomplete="off" />
             </PropertyRow>
-            <div class="attr-item">
-                <label for="node-type">节点类型</label>
-                {#if isRoot}
-                    <input id="node-type-text" type="text" value="画布" disabled class="disabled-input" />
-                {:else}
-                    <div class="select-wrapper">
-                        <select id="node-type" bind:value={currentType} onchange={(e) => handleTypeChange(e.currentTarget.value)}>
-                            {#if !currentType}
-                                <option value="">请选择组件类型...</option>
-                            {/if}
-                            {#each componentOptions as item}
-                                <option value={item.type}>{item.nameZh}</option>
-                            {/each}
-                        </select>
-                    </div>
-                {/if}
-                <span class="unit-placeholder"></span>
-            </div>
             <PropertyRow label="节点类型">
                 {#if isRoot}
                     <input id="node-type-text-2" type="text" value="画布" disabled class="disabled-input" />
@@ -331,12 +313,10 @@
                 <PropertySelect bind:value={currentPointerEvents} options={pointerEventsOptions} change={handlePointerEventsChange} />
             </PropertyRow>
 
-            <!-- 新增备注字段 -->
-            <div class="attr-item">
-                <label for="node-remark">节点备注</label>
-                <textarea id="node-remark" rows="3" bind:value={currentRemark} oninput={(e) => handleRemarkChange(e.currentTarget.value)} placeholder="输入备注..." style="resize: vertical;"></textarea>
-                <span class="unit-placeholder"></span>
-            </div>
+            <!-- 节点备注 -->
+            <PropertyRow label="节点备注">
+                <textarea rows="3" bind:value={currentRemark} oninput={(e) => handleRemarkChange(e.currentTarget.value)} placeholder="输入备注..." style="resize: vertical;"></textarea>
+            </PropertyRow>
         </div>
     {:else}
         <p class="placeholder">请选择一个节点来编辑属性</p>

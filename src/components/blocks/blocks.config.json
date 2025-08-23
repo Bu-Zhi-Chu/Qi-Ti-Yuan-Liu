@@ -1,7 +1,7 @@
 [
   {
     "type": "SimpleBox",
-    "nameZh": "容器",
+    "nameZh": "简单容器",
     "path": "../Core/SimpleBox.svelte"
   }
 ]
