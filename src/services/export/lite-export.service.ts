@@ -37,7 +37,7 @@ export class LiteExportService {
 
             // 使用 dexie-export-import 直接导出完整数据库
             const exportBlob = await this.exportTablesWithDexie(['projects', 'doms'], projectId);
-            
+
             console.log(`导出完成: Blob大小 ${exportBlob.size} 字节`);
             return exportBlob;
 
