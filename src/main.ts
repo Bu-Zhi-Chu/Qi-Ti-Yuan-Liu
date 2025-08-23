@@ -43,8 +43,17 @@ let app: ReturnType<typeof mount> | undefined // 提前声明，供导出使用
                             console.warn('【数据库交互】无法获取现有导出时间', error)
                         }
 
+                        // 对于dexie-export-import格式，尝试从元数据中获取导出时间
+                        let jsonExportTime = projectData.exportTime
+                        if (!jsonExportTime && projectData.data && Array.isArray(projectData.data)) {
+                            // 查找projects表中是否有exportTime字段
+                            const projectsTable = projectData.data.find((item: any) => item.tableName === 'projects')
+                            if (projectsTable && projectsTable.rows && projectsTable.rows.length > 0) {
+                                jsonExportTime = projectsTable.rows[0].exportTime
+                            }
+                        }
+
                         // 比较导出时间，决定是否导入
-                        const jsonExportTime = projectData.exportTime
                         const shouldImport = existingProjectCount === 0 ||
                             !dbExportTime ||
                             (jsonExportTime && new Date(jsonExportTime) > new Date(dbExportTime))
@@ -81,22 +90,15 @@ let app: ReturnType<typeof mount> | undefined // 提前声明，供导出使用
                             })
                             console.log('【缓存清理】本地存储数据已清理')
 
-                            // 处理自定义格式的项目数据导入
-                            if (projectData.projects && Array.isArray(projectData.projects)) {
-                                // 导入项目数据
-                                for (const project of projectData.projects) {
-                                    await db.table('projects').put(project)
-                                    console.log(`【数据库交互】精简模式：导入项目数据 ${project.id}`)
-                                }
-                            }
+                            // 使用dexie-export-import的importInto导入标准格式数据
+                            console.log('【数据库交互】使用dexie-export-import导入数据')
 
-                            if (projectData.doms && Array.isArray(projectData.doms)) {
-                                // 导入DOM数据
-                                for (const dom of projectData.doms) {
-                                    await db.table('doms').put(dom)
-                                    console.log(`【数据库交互】精简模式：导入DOM数据 ${dom.id}`)
-                                }
-                            }
+                            // 将JSON数据转换为Blob，然后使用importInto导入
+                            const jsonString = JSON.stringify(projectData)
+                            const blob = new Blob([jsonString], { type: 'application/json' })
+                            await importInto(db, blob, { overwriteValues: true })
+
+                            console.log('【数据库交互】dexie-export-import导入完成')
                         } else {
                             console.log(`【数据库交互】跳过导入 - JSON时间: ${jsonExportTime}, 数据库时间: ${dbExportTime || '无'}`)
                         }

@@ -230,12 +230,36 @@ export default class DexieService {
     }
 
     /**
-     * 获取数据库实例
+     * 数据库实例缓存，避免重复创建实例
+     */
+    private static dbInstanceCache: Map<string, Dexie> = new Map()
+
+    /**
+     * 获取数据库实例（单例模式）
      */
     static async getDatabase(dbName: string): Promise<Dexie | null> {
         try {
+            // 如果已缓存，直接返回
+            if (DexieService.dbInstanceCache.has(dbName)) {
+                return DexieService.dbInstanceCache.get(dbName)!
+            }
+
+            // 创建新的数据库实例
             const db = new Dexie(dbName)
+            
+            // 定义表结构（与createDatabase保持一致）
+            const stores: Record<string, string> = {
+                projects: 'id, name, templateId, createdAt, updatedAt, canvasState, mode, exportTime',
+                doms: '[projectId+id], projectId, parentId, type, attributes, style, textContent',
+                templates: '++id, name, desc, cover, tag, thumbnailUrl, domStructure'
+            }
+            
+            db.version(1).stores(stores)
             await db.open()
+            
+            // 缓存实例
+            DexieService.dbInstanceCache.set(dbName, db)
+            
             return db
         } catch (error) {
             DatabaseLogger.operationError(`获取数据库实例: ${dbName}`, error)
