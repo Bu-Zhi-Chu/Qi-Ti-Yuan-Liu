@@ -239,14 +239,6 @@
         return unit === 'px' ? `calc(${val}px * var(--scale-ratio, 1))` : `${val}%`
     }
 
-    // 宽度数值变更
-    function handleWidthValueChange(val: string) {
-        if (!selectedId || isRoot) return
-        const rounded = currentWidthUnit === '%' ? String(Math.round(parseFloat(val) * 10) / 10) : val
-        currentWidthValue = rounded
-        updateNodeProps(selectedId, { styles: { width: formatSize(rounded, currentWidthUnit) } })
-    }
-
     // 将宽度从一个单位转换到另一个单位
     function convertWidth(val: number, from: '%' | 'px', to: '%' | 'px'): number {
         if (from === to) return val
@@ -265,25 +257,6 @@
         }
     }
 
-    // 宽度单位切换（% ↔ px）
-    function toggleWidthUnit() {
-        if (!selectedId || isRoot) return
-        const numericVal = parseFloat(currentWidthValue) || 0
-        const nextUnit: '%' | 'px' = currentWidthUnit === '%' ? 'px' : '%'
-        const converted = convertWidth(numericVal, currentWidthUnit, nextUnit)
-        currentWidthValue = String(nextUnit === '%' ? Math.round(converted * 10) / 10 : Math.round(converted * 100) / 100)
-        currentWidthUnit = nextUnit
-        updateNodeProps(selectedId, { styles: { width: formatSize(currentWidthValue, currentWidthUnit) } })
-    }
-
-    // 高度数值变更
-    function handleHeightValueChange(val: string) {
-        if (!selectedId || isRoot) return
-        const rounded = currentHeightUnit === '%' ? String(Math.round(parseFloat(val) * 10) / 10) : val
-        currentHeightValue = rounded
-        updateNodeProps(selectedId, { styles: { height: formatSize(rounded, currentHeightUnit) } })
-    }
-
     // 将高度从一个单位转换到另一个单位
     function convertHeight(val: number, from: '%' | 'px', to: '%' | 'px'): number {
         if (from === to) return val
@@ -298,17 +271,6 @@
         } else {
             return ((val / 100) * parentHeight) / sr
         }
-    }
-
-    // 高度单位切换（% ↔ px）
-    function toggleHeightUnit() {
-        if (!selectedId || isRoot) return
-        const numericVal = parseFloat(currentHeightValue) || 0
-        const nextUnit: '%' | 'px' = currentHeightUnit === '%' ? 'px' : '%'
-        const converted = convertHeight(numericVal, currentHeightUnit, nextUnit)
-        currentHeightValue = String(nextUnit === '%' ? Math.round(converted * 10) / 10 : Math.round(converted * 100) / 100)
-        currentHeightUnit = nextUnit
-        updateNodeProps(selectedId, { styles: { height: formatSize(currentHeightValue, currentHeightUnit) } })
     }
 
     // 处理鼠标穿透属性变更
