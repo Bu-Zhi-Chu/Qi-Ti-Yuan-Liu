@@ -5,8 +5,10 @@
 -->
 <script lang="ts">
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { getNodePropsStore, getNodeProps as _getNodeProps, updateNodeProps } from '../../../services/property-panel/property-panel.service'
+    import { getNodePropsStore, getNodeProps as _getNodeProps, updateNodeProps } from '../../../services/property-panel/property-panel.service'
     import { onMount } from 'svelte'
+    import PropertyRow from './PropertyRow.svelte'
+    import PropertySelect from './PropertySelect.svelte'
 
     interface Props {
         selectedId: string | null
@@ -14,10 +16,10 @@ import { getNodePropsStore, getNodeProps as _getNodeProps, updateNodeProps } fro
 
     let { selectedId }: Props = $props()
 
-// 当前节点 props 快照类型
-let propsSnapshot: ReturnType<typeof _getNodeProps> | null = null
-// 订阅函数
-let unsubscribe = () => {};
+    // 当前节点 props 快照类型
+    let propsSnapshot: ReturnType<typeof _getNodeProps> | null = null
+    // 订阅函数
+    let unsubscribe = () => {}
 
     // display属性状态
     let currentDisplay = $state('block')
@@ -55,7 +57,7 @@ let unsubscribe = () => {};
     }
 
     /* deprecated: snapshot fetch via getNodeProps */
-/*
+    /*
 $effect(() => {
         if (selectedId) {
             const props = getNodeProps(selectedId)
@@ -79,36 +81,36 @@ $effect(() => {
     })
 */
 
-// 新版：通过 getNodePropsStore 订阅实时变化
-$effect(() => {
-    // 清理旧订阅
-    unsubscribe();
-    if (selectedId) {
-        const store = getNodePropsStore(selectedId);
-        unsubscribe = store.subscribe((props) => {
-            propsSnapshot = props;
-            if (!props) return;
-            currentDisplay = typeof props.styles?.display === 'string' ? props.styles.display : 'block';
+    // 新版：通过 getNodePropsStore 订阅实时变化
+    $effect(() => {
+        // 清理旧订阅
+        unsubscribe()
+        if (selectedId) {
+            const store = getNodePropsStore(selectedId)
+            unsubscribe = store.subscribe((props) => {
+                propsSnapshot = props
+                if (!props) return
+                currentDisplay = typeof props.styles?.display === 'string' ? props.styles.display : 'block'
 
-            // 初始化flex属性
-            currentFlexDirection = getStringValue(props.styles?.flexDirection) || 'row';
-            currentJustifyContent = getStringValue(props.styles?.justifyContent) || 'flex-start';
-            currentAlignItems = getStringValue(props.styles?.alignItems) || 'stretch';
-            currentFlexWrap = getStringValue(props.styles?.flexWrap) || 'nowrap';
+                // 初始化flex属性
+                currentFlexDirection = getStringValue(props.styles?.flexDirection) || 'row'
+                currentJustifyContent = getStringValue(props.styles?.justifyContent) || 'flex-start'
+                currentAlignItems = getStringValue(props.styles?.alignItems) || 'stretch'
+                currentFlexWrap = getStringValue(props.styles?.flexWrap) || 'nowrap'
 
-            // 初始化grid属性
-            currentGridTemplateColumns = getStringValue(props.styles?.gridTemplateColumns);
-            currentGridTemplateRows = getStringValue(props.styles?.gridTemplateRows);
-            currentGridGap = getStringValue(props.styles?.gap || props.styles?.gridGap);
-            currentGridColumnGap = getStringValue(props.styles?.columnGap || props.styles?.gridColumnGap);
-            currentGridRowGap = getStringValue(props.styles?.rowGap || props.styles?.gridRowGap);
-        });
-    }
-    return () => {
-        unsubscribe();
-        unsubscribe = () => {};
-    };
-});
+                // 初始化grid属性
+                currentGridTemplateColumns = getStringValue(props.styles?.gridTemplateColumns)
+                currentGridTemplateRows = getStringValue(props.styles?.gridTemplateRows)
+                currentGridGap = getStringValue(props.styles?.gap || props.styles?.gridGap)
+                currentGridColumnGap = getStringValue(props.styles?.columnGap || props.styles?.gridColumnGap)
+                currentGridRowGap = getStringValue(props.styles?.rowGap || props.styles?.gridRowGap)
+            })
+        }
+        return () => {
+            unsubscribe()
+            unsubscribe = () => {}
+        }
+    })
 
     // 处理display属性变更
     function handleDisplayChange(newValue: string) {
@@ -149,92 +151,87 @@ $effect(() => {
         <h3>布局样式</h3>
         <div class="layout-list">
             <!-- display属性 -->
-            <div class="layout-item">
-                <label for="node-display">显示类型</label>
-                <div class="select-wrapper">
-                    <select id="node-display" bind:value={currentDisplay} onchange={(e) => handleDisplayChange(e.currentTarget.value)}>
-                        {#each displayOptions as option}
-                            <option value={option.value}>{option.label}</option>
-                        {/each}
-                    </select>
-                </div>
-                <span class="unit-placeholder"></span>
-            </div>
+            <PropertyRow label="显示类型">
+                <PropertySelect bind:value={currentDisplay} options={displayOptions} change={handleDisplayChange} />
+            </PropertyRow>
 
             <!-- Flex属性 -->
             {#if currentDisplay === 'flex'}
-                <div class="layout-item">
-                    <label for="node-flex-direction">排列方向</label>
-                    <div class="select-wrapper">
-                        <select id="node-flex-direction" bind:value={currentFlexDirection} onchange={(e) => handleFlexPropChange('flexDirection', e.currentTarget.value)}>
-                            <option value="row">水平 (row)</option>
-                            <option value="column">垂直 (column)</option>
-                            <option value="row-reverse">水平反向 (row-reverse)</option>
-                            <option value="column-reverse">垂直反向 (column-reverse)</option>
-                        </select>
-                    </div>
-                    <span class="unit-placeholder"></span>
-                </div>
+                <PropertyRow label="排列方向">
+                    <PropertySelect
+                        id="node-flex-direction"
+                        bind:value={currentFlexDirection}
+                        options={[
+                            { value: 'row', label: '水平 (row)' },
+                            { value: 'column', label: '垂直 (column)' },
+                            { value: 'row-reverse', label: '水平反向 (row-reverse)' },
+                            { value: 'column-reverse', label: '垂直反向 (column-reverse)' }
+                        ]}
+                        change={(v) => handleFlexPropChange('flexDirection', v)}
+                    />
+                </PropertyRow>
+                <PropertyRow label="主轴对齐">
+                    <PropertySelect
+                        id="node-justify-content"
+                        bind:value={currentJustifyContent}
+                        options={[
+                            { value: 'flex-start', label: '起始对齐' },
+                            { value: 'flex-end', label: '末尾对齐' },
+                            { value: 'center', label: '居中对齐' },
+                            { value: 'space-between', label: '两端对齐' },
+                            { value: 'space-around', label: '环绕对齐' },
+                            { value: 'space-evenly', label: '均匀对齐' }
+                        ]}
+                        change={(v) => handleFlexPropChange('justifyContent', v)}
+                    />
+                </PropertyRow>
 
-                <div class="layout-item">
-                    <label for="node-justify-content">主轴对齐</label>
-                    <div class="select-wrapper">
-                        <select id="node-justify-content" bind:value={currentJustifyContent} onchange={(e) => handleFlexPropChange('justifyContent', e.currentTarget.value)}>
-                            <option value="flex-start">起始对齐</option>
-                            <option value="flex-end">末尾对齐</option>
-                            <option value="center">居中对齐</option>
-                            <option value="space-between">两端对齐</option>
-                            <option value="space-around">环绕对齐</option>
-                            <option value="space-evenly">均匀对齐</option>
-                        </select>
-                    </div>
-                    <span class="unit-placeholder"></span>
-                </div>
+                <PropertyRow label="副轴对齐">
+                    <PropertySelect
+                        id="node-align-items"
+                        bind:value={currentAlignItems}
+                        options={[
+                            { value: 'stretch', label: '拉伸对齐' },
+                            { value: 'flex-start', label: '起始对齐' },
+                            { value: 'flex-end', label: '末尾对齐' },
+                            { value: 'center', label: '居中对齐' },
+                            { value: 'baseline', label: '基线对齐' }
+                        ]}
+                        change={(v) => handleFlexPropChange('alignItems', v)}
+                    />
+                </PropertyRow>
 
-                <div class="layout-item">
-                    <label for="node-align-items">副轴对齐</label>
-                    <div class="select-wrapper">
-                        <select id="node-align-items" bind:value={currentAlignItems} onchange={(e) => handleFlexPropChange('alignItems', e.currentTarget.value)}>
-                            <option value="stretch">拉伸对齐</option>
-                            <option value="flex-start">起始对齐</option>
-                            <option value="flex-end">末尾对齐</option>
-                            <option value="center">居中对齐</option>
-                            <option value="baseline">基线对齐</option>
-                        </select>
-                    </div>
-                    <span class="unit-placeholder"></span>
-                </div>
+                <PropertyRow label="换行设置">
+                    <PropertySelect
+                        id="node-flex-wrap"
+                        bind:value={currentFlexWrap}
+                        options={[
+                            { value: 'nowrap', label: '不换行' },
+                            { value: 'wrap', label: '换行' },
+                            { value: 'wrap-reverse', label: '反向换行' }
+                        ]}
+                        change={(v) => handleFlexPropChange('flexWrap', v)}
+                    />
+                </PropertyRow>
 
-                <div class="layout-item">
-                    <label for="node-flex-wrap">换行设置</label>
-                    <div class="select-wrapper">
-                        <select id="node-flex-wrap" bind:value={currentFlexWrap} onchange={(e) => handleFlexPropChange('flexWrap', e.currentTarget.value)}>
-                            <option value="nowrap">不换行</option>
-                            <option value="wrap">换行</option>
-                            <option value="wrap-reverse">反向换行</option>
-                        </select>
-                    </div>
-                    <span class="unit-placeholder"></span>
-                </div>
+                <PropertyRow label="多轴对齐">
+                    <PropertySelect
+                        id="node-align-content"
+                        bind:value={currentAlignContent}
+                        options={[
+                            { value: 'stretch', label: '拉伸对齐' },
+                            { value: 'flex-start', label: '起始对齐' },
+                            { value: 'flex-end', label: '末尾对齐' },
+                            { value: 'center', label: '居中对齐' },
+                            { value: 'space-between', label: '两端对齐' },
+                            { value: 'space-around', label: '环绕对齐' },
+                            { value: 'space-evenly', label: '均匀对齐' }
+                        ]}
+                        change={(v) => handleFlexPropChange('alignContent', v)}
+                    />
+                </PropertyRow>
 
-                <div class="layout-item">
-                    <label for="node-align-content">多轴对齐</label>
-                    <div class="select-wrapper">
-                        <select id="node-align-content" bind:value={currentAlignContent} onchange={(e) => handleFlexPropChange('alignContent', e.currentTarget.value)}>
-                            <option value="stretch">拉伸对齐</option>
-                            <option value="flex-start">起始对齐</option>
-                            <option value="flex-end">末尾对齐</option>
-                            <option value="center">居中对齐</option>
-                            <option value="space-between">两端对齐</option>
-                            <option value="space-around">环绕对齐</option>
-                            <option value="space-evenly">均匀对齐</option>
-                        </select>
-                    </div>
-                    <span class="unit-placeholder"></span>
-                </div>
-
-                <div class="layout-item">
-                    <label for="node-flex-gap">间距设置</label>
+                <PropertyRow label="间距设置">
                     <input
                         id="node-flex-gap"
                         type="number"
@@ -260,11 +257,10 @@ $effect(() => {
                         }}
                         placeholder="间距..."
                     />
-                    <button class="unit-toggle" disabled>px</button>
-                </div>
+                    <button slot="unit" class="unit-toggle" disabled>px</button>
+                </PropertyRow>
 
-                <div class="layout-item">
-                    <label for="node-flex-row-gap">行间距值</label>
+                <PropertyRow label="行间距值">
                     <input
                         id="node-flex-row-gap"
                         type="number"
@@ -290,11 +286,10 @@ $effect(() => {
                         }}
                         placeholder="行间距..."
                     />
-                    <button class="unit-toggle" disabled>px</button>
-                </div>
+                    <button slot="unit" class="unit-toggle" disabled>px</button>
+                </PropertyRow>
 
-                <div class="layout-item">
-                    <label for="node-flex-column-gap">列间距值</label>
+                <PropertyRow label="列间距值">
                     <input
                         id="node-flex-column-gap"
                         type="number"
@@ -320,26 +315,21 @@ $effect(() => {
                         }}
                         placeholder="列间距..."
                     />
-                    <button class="unit-toggle" disabled>px</button>
-                </div>
+                    <button slot="unit" class="unit-toggle" disabled>px</button>
+                </PropertyRow>
             {/if}
 
             <!-- Grid属性 -->
             {#if currentDisplay === 'grid'}
-                <div class="layout-item">
-                    <label for="node-grid-columns">列模板项</label>
+                <PropertyRow label="列模板项">
                     <input id="node-grid-columns" type="text" bind:value={currentGridTemplateColumns} oninput={(e) => handleGridPropChange('gridTemplateColumns', e.currentTarget.value)} placeholder="例: 1fr 2fr 1fr" />
-                    <span class="unit-placeholder"></span>
-                </div>
+                </PropertyRow>
 
-                <div class="layout-item">
-                    <label for="node-grid-rows">行模板项</label>
+                <PropertyRow label="行模板项">
                     <input id="node-grid-rows" type="text" bind:value={currentGridTemplateRows} oninput={(e) => handleGridPropChange('gridTemplateRows', e.currentTarget.value)} placeholder="例: auto 100px auto" />
-                    <span class="unit-placeholder"></span>
-                </div>
+                </PropertyRow>
 
-                <div class="layout-item">
-                    <label for="node-grid-gap">间距设置</label>
+                <PropertyRow label="间距设置">
                     <input
                         id="node-grid-gap"
                         type="number"
@@ -365,11 +355,10 @@ $effect(() => {
                         }}
                         placeholder="间距..."
                     />
-                    <button class="unit-toggle" disabled>px</button>
-                </div>
+                    <button slot="unit" class="unit-toggle" disabled>px</button>
+                </PropertyRow>
 
-                <div class="layout-item">
-                    <label for="node-grid-column-gap">列间距值</label>
+                <PropertyRow label="列间距值">
                     <input
                         id="node-grid-column-gap"
                         type="number"
@@ -395,11 +384,10 @@ $effect(() => {
                         }}
                         placeholder="列间距..."
                     />
-                    <button class="unit-toggle" disabled>px</button>
-                </div>
+                    <button slot="unit" class="unit-toggle" disabled>px</button>
+                </PropertyRow>
 
-                <div class="layout-item">
-                    <label for="node-grid-row-gap">行间距值</label>
+                <PropertyRow label="行间距值">
                     <input
                         id="node-grid-row-gap"
                         type="number"
@@ -425,8 +413,8 @@ $effect(() => {
                         }}
                         placeholder="行间距..."
                     />
-                    <button class="unit-toggle" disabled>px</button>
-                </div>
+                    <button slot="unit" class="unit-toggle" disabled>px</button>
+                </PropertyRow>
             {/if}
         </div>
     {:else}
@@ -450,23 +438,8 @@ $effect(() => {
         flex-direction: column;
         gap: calc(12px * var(--scale-ratio, 1));
     }
-    .layout-item {
-        display: flex;
-        align-items: center;
-        gap: calc(10px * var(--scale-ratio, 1));
-        border-radius: calc(8px * var(--scale-ratio, 1));
-        transition: all 0.3s ease;
-    }
 
-    label {
-        min-width: calc(30px * var(--scale-ratio, 1));
-        font-size: calc(13px * var(--scale-ratio, 1));
-        font-weight: 500;
-        color: #94a3b8;
-    }
-
-    input,
-    select {
+    input {
         flex: 1;
         padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
         border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.2);
@@ -478,28 +451,11 @@ $effect(() => {
         appearance: none;
     }
 
-    select:focus,
     input:focus {
         outline: none;
         border-color: #cbd5e1;
         background: rgba(255, 255, 255, 0.15);
         box-shadow: 0 0 0 calc(3px * var(--scale-ratio, 1)) rgba(255, 255, 255, 0.1);
-    }
-    select option {
-        background: #1e293b;
-        color: #e2e8f0;
-        padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
-        border: none;
-    }
-
-    select option:hover,
-    select option:focus,
-    select option:checked {
-        background: #334155;
-    }
-
-    .unit-placeholder {
-        width: calc(40px * var(--scale-ratio, 1));
     }
 
     .unit-toggle {
@@ -532,30 +488,6 @@ $effect(() => {
     input[type='number'] {
         -moz-appearance: textfield;
         appearance: textfield;
-    }
-
-    .select-wrapper {
-        position: relative;
-        flex: 1;
-    }
-
-    .select-wrapper::after {
-        content: '';
-        position: absolute;
-        right: calc(12px * var(--scale-ratio, 1));
-        top: 50%;
-        transform: translateY(-50%);
-        width: 0;
-        height: 0;
-        border-left: calc(4px * var(--scale-ratio, 1)) solid transparent;
-        border-right: calc(4px * var(--scale-ratio, 1)) solid transparent;
-        border-top: calc(4px * var(--scale-ratio, 1)) solid #94a3b8;
-        pointer-events: none;
-    }
-
-    .select-wrapper select {
-        width: 100%;
-        padding-right: calc(30px * var(--scale-ratio, 1));
     }
 
     .placeholder {
