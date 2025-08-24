@@ -15,7 +15,7 @@
 -->
 <script lang="ts">
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { getNodePropsStore, getNodeProps as _getNodeProps, updateNodeProps } from '../../../services/property-panel/property-panel.service'
+    import { getNodePropsStore, getNodeProps as _getNodeProps, updateNodeProps } from '../../../services/property-panel/property-panel.service'
     import { domTree } from '../../../services/repository/dom-tree.store.svelte'
     import { getElementByNodeId } from '../../../services/utils/dom-geometry.util'
     import { getScaleRatio } from '../../../services/utils/get-scale-ratio.util'
@@ -26,8 +26,8 @@ import { getNodePropsStore, getNodeProps as _getNodeProps, updateNodeProps } fro
     // 当前节点样式快照
     let isRoot = $state<boolean>(false)
     let styleSnapshot: ReturnType<typeof _getNodeProps> | null = null
-// 订阅函数
-let unsubscribe = () => {};
+    // 订阅函数
+    let unsubscribe = () => {}
 
     // 本地可编辑字段 - 定位类型
     let currentPosition = $state<'static' | 'relative' | 'absolute' | 'fixed' | 'sticky'>('static')
@@ -66,10 +66,10 @@ let unsubscribe = () => {};
 
     // 根节点判定、显示控制逻辑
     $effect(() => {
-        isRoot = selectedId === 'root';
-        showPositionProps = currentPosition !== 'static';
-        showMarginProps = currentPosition === 'static';
-    });
+        isRoot = selectedId === 'root'
+        showPositionProps = currentPosition !== 'static'
+        showMarginProps = currentPosition === 'static'
+    })
 
     /* deprecated reactive block
     // 当选中节点变化时，同步样式
@@ -120,36 +120,36 @@ let unsubscribe = () => {};
 
     // 当选中节点或 domTreeVersion 变化时，同步样式
     $effect(() => {
-        unsubscribe();
+        unsubscribe()
         if (selectedId) {
-            const store = getNodePropsStore(selectedId);
+            const store = getNodePropsStore(selectedId)
             unsubscribe = store.subscribe((snapshot) => {
-                styleSnapshot = snapshot;
-                currentPosition = (snapshot?.styles?.position as any) || 'static';
-                [currentTop, currentTopUnit] = parseSize(snapshot?.styles?.top);
-                [currentRight, currentRightUnit] = parseSize(snapshot?.styles?.right);
-                [currentBottom, currentBottomUnit] = parseSize(snapshot?.styles?.bottom);
-                [currentLeft, currentLeftUnit] = parseSize(snapshot?.styles?.left);
-                [currentMarginTop, currentMarginTopUnit] = parseSize(snapshot?.styles?.marginTop);
-                [currentMarginRight, currentMarginRightUnit] = parseSize(snapshot?.styles?.marginRight);
-                [currentMarginBottom, currentMarginBottomUnit] = parseSize(snapshot?.styles?.marginBottom);
-                [currentMarginLeft, currentMarginLeftUnit] = parseSize(snapshot?.styles?.marginLeft);
-                const zIndexValue = snapshot?.styles?.zIndex;
-                currentZIndex = typeof zIndexValue === 'string' ? zIndexValue : '';
-            });
+                styleSnapshot = snapshot
+                currentPosition = (snapshot?.styles?.position as any) || 'static'
+                ;[currentTop, currentTopUnit] = parseSize(snapshot?.styles?.top)
+                ;[currentRight, currentRightUnit] = parseSize(snapshot?.styles?.right)
+                ;[currentBottom, currentBottomUnit] = parseSize(snapshot?.styles?.bottom)
+                ;[currentLeft, currentLeftUnit] = parseSize(snapshot?.styles?.left)
+                ;[currentMarginTop, currentMarginTopUnit] = parseSize(snapshot?.styles?.marginTop)
+                ;[currentMarginRight, currentMarginRightUnit] = parseSize(snapshot?.styles?.marginRight)
+                ;[currentMarginBottom, currentMarginBottomUnit] = parseSize(snapshot?.styles?.marginBottom)
+                ;[currentMarginLeft, currentMarginLeftUnit] = parseSize(snapshot?.styles?.marginLeft)
+                const zIndexValue = snapshot?.styles?.zIndex
+                currentZIndex = typeof zIndexValue === 'string' ? zIndexValue : ''
+            })
         } else {
-            currentPosition = 'static';
-            currentTop = currentRight = currentBottom = currentLeft = '';
-            currentTopUnit = currentRightUnit = currentBottomUnit = currentLeftUnit = defaultUnit;
-            currentMarginTop = currentMarginRight = currentMarginBottom = currentMarginLeft = '';
-            currentMarginTopUnit = currentMarginRightUnit = currentMarginBottomUnit = currentMarginLeftUnit = defaultUnit;
-            currentZIndex = '';
+            currentPosition = 'static'
+            currentTop = currentRight = currentBottom = currentLeft = ''
+            currentTopUnit = currentRightUnit = currentBottomUnit = currentLeftUnit = defaultUnit
+            currentMarginTop = currentMarginRight = currentMarginBottom = currentMarginLeft = ''
+            currentMarginTopUnit = currentMarginRightUnit = currentMarginBottomUnit = currentMarginLeftUnit = defaultUnit
+            currentZIndex = ''
         }
         return () => {
-            unsubscribe();
-            unsubscribe = () => {};
-        };
-    });
+            unsubscribe()
+            unsubscribe = () => {}
+        }
+    })
 
     // 解析尺寸值和单位
     function parseSize(size: string | Blob | undefined): [string, 'px' | '%'] {
