@@ -341,17 +341,7 @@
         flex-direction: column;
         gap: calc(12px * var(--scale-ratio, 1));
     }
-    .attr-item {
-        display: flex;
-        align-items: center;
-        gap: calc(10px * var(--scale-ratio, 1));
-    }
-    label {
-        min-width: calc(30px * var(--scale-ratio, 1));
-        font-size: calc(13px * var(--scale-ratio, 1));
-        font-weight: 500;
-        color: #94a3b8;
-    }
+
     input,
     textarea {
         flex: 1;
