@@ -10,6 +10,8 @@
 
     let blocksConfig: any = null
     let componentMap: Record<string, () => Promise<{ default: Component }>> = {}
+    // 标记组件映射是否已准备好，确保 effect 在映射加载后重新触发
+    let mapReady = $state(false)
 
     onMount(async () => {
         // 使用动态导入避免静态导入冲突
@@ -21,6 +23,9 @@
         for (const item of blocksConfig) {
             componentMap[item.type] = () => import(/* @vite-ignore */ item.path)
         }
+
+        // 更新 mapReady 以触发响应式 effect 重新执行
+        mapReady = true
     })
 
     // 组件属性定义
@@ -45,7 +50,7 @@
 
     // 监听类型变化，动态加载对应组件
     $effect(() => {
-        if (type && componentMap[type]) {
+        if (type && mapReady && componentMap[type]) {
             componentMap[type]().then((module) => {
                 TargetComponent = module.default
             })
