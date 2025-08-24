@@ -4,7 +4,8 @@
   提供布局相关属性的可视化编辑界面
 -->
 <script lang="ts">
-    import { getNodeProps, updateNodeProps } from '../../../services/property-panel/property-panel.service'
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { getNodePropsStore, getNodeProps as _getNodeProps, updateNodeProps } from '../../../services/property-panel/property-panel.service'
     import { onMount } from 'svelte'
 
     interface Props {
@@ -12,6 +13,11 @@
     }
 
     let { selectedId }: Props = $props()
+
+// 当前节点 props 快照类型
+let propsSnapshot: ReturnType<typeof _getNodeProps> | null = null
+// 订阅函数
+let unsubscribe = () => {};
 
     // display属性状态
     let currentDisplay = $state('block')
@@ -48,7 +54,9 @@
         return typeof value === 'string' ? value : ''
     }
 
-    $effect(() => {
+    /* deprecated: snapshot fetch via getNodeProps */
+/*
+$effect(() => {
         if (selectedId) {
             const props = getNodeProps(selectedId)
             if (props) {
@@ -69,6 +77,38 @@
             }
         }
     })
+*/
+
+// 新版：通过 getNodePropsStore 订阅实时变化
+$effect(() => {
+    // 清理旧订阅
+    unsubscribe();
+    if (selectedId) {
+        const store = getNodePropsStore(selectedId);
+        unsubscribe = store.subscribe((props) => {
+            propsSnapshot = props;
+            if (!props) return;
+            currentDisplay = typeof props.styles?.display === 'string' ? props.styles.display : 'block';
+
+            // 初始化flex属性
+            currentFlexDirection = getStringValue(props.styles?.flexDirection) || 'row';
+            currentJustifyContent = getStringValue(props.styles?.justifyContent) || 'flex-start';
+            currentAlignItems = getStringValue(props.styles?.alignItems) || 'stretch';
+            currentFlexWrap = getStringValue(props.styles?.flexWrap) || 'nowrap';
+
+            // 初始化grid属性
+            currentGridTemplateColumns = getStringValue(props.styles?.gridTemplateColumns);
+            currentGridTemplateRows = getStringValue(props.styles?.gridTemplateRows);
+            currentGridGap = getStringValue(props.styles?.gap || props.styles?.gridGap);
+            currentGridColumnGap = getStringValue(props.styles?.columnGap || props.styles?.gridColumnGap);
+            currentGridRowGap = getStringValue(props.styles?.rowGap || props.styles?.gridRowGap);
+        });
+    }
+    return () => {
+        unsubscribe();
+        unsubscribe = () => {};
+    };
+});
 
     // 处理display属性变更
     function handleDisplayChange(newValue: string) {

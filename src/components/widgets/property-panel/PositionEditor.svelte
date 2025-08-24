@@ -14,62 +14,64 @@
      - 当 static 定位时，top/right/bottom/left 属性无效，应使用 margin 属性调整位置
 -->
 <script lang="ts">
-    import { getNodeProps, updateNodeProps } from '../../../services/property-panel/property-panel.service'
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { getNodePropsStore, getNodeProps as _getNodeProps, updateNodeProps } from '../../../services/property-panel/property-panel.service'
     import { domTree } from '../../../services/repository/dom-tree.store.svelte'
     import { getElementByNodeId } from '../../../services/utils/dom-geometry.util'
     import { getScaleRatio } from '../../../services/utils/get-scale-ratio.util'
 
     // 外部传入当前选中节点 id
-    export let selectedId: string | null = null
+    let { selectedId = null } = $props<{ selectedId?: string | null }>()
 
     // 当前节点样式快照
-    let isRoot: boolean = false
-    let styleSnapshot: ReturnType<typeof getNodeProps> | null = null
+    let isRoot = $state<boolean>(false)
+    let styleSnapshot: ReturnType<typeof _getNodeProps> | null = null
+// 订阅函数
+let unsubscribe = () => {};
 
     // 本地可编辑字段 - 定位类型
-    let currentPosition: 'static' | 'relative' | 'absolute' | 'fixed' | 'sticky' = 'static'
+    let currentPosition = $state<'static' | 'relative' | 'absolute' | 'fixed' | 'sticky'>('static')
 
     // 坐标位置属性
-    let currentTop: string = ''
-    let currentRight: string = ''
-    let currentBottom: string = ''
-    let currentLeft: string = ''
-    let currentZIndex: string = ''
+    let currentTop = $state<string>('')
+    let currentRight = $state<string>('')
+    let currentBottom = $state<string>('')
+    let currentLeft = $state<string>('')
+    let currentZIndex = $state<string>('')
 
     // 外边距属性
-    let currentMarginTop: string = ''
-    let currentMarginRight: string = ''
-    let currentMarginBottom: string = ''
-    let currentMarginLeft: string = ''
+    let currentMarginTop = $state<string>('')
+    let currentMarginRight = $state<string>('')
+    let currentMarginBottom = $state<string>('')
+    let currentMarginLeft = $state<string>('')
 
     // 默认单位设置
     const defaultUnit: 'px' | '%' = '%'
 
     // 单位选择 - 位置属性
-    let currentTopUnit: 'px' | '%' = defaultUnit
-    let currentRightUnit: 'px' | '%' = defaultUnit
-    let currentBottomUnit: 'px' | '%' = defaultUnit
-    let currentLeftUnit: 'px' | '%' = defaultUnit
+    let currentTopUnit = $state<'px' | '%'>(defaultUnit)
+    let currentRightUnit = $state<'px' | '%'>(defaultUnit)
+    let currentBottomUnit = $state<'px' | '%'>(defaultUnit)
+    let currentLeftUnit = $state<'px' | '%'>(defaultUnit)
 
     // 单位选择 - 外边距属性
-    let currentMarginTopUnit: 'px' | '%' = defaultUnit
-    let currentMarginRightUnit: 'px' | '%' = defaultUnit
-    let currentMarginBottomUnit: 'px' | '%' = defaultUnit
-    let currentMarginLeftUnit: 'px' | '%' = defaultUnit
+    let currentMarginTopUnit = $state<'px' | '%'>(defaultUnit)
+    let currentMarginRightUnit = $state<'px' | '%'>(defaultUnit)
+    let currentMarginBottomUnit = $state<'px' | '%'>(defaultUnit)
+    let currentMarginLeftUnit = $state<'px' | '%'>(defaultUnit)
 
     // 显示控制
-    let showPositionProps: boolean = false
-    let showMarginProps: boolean = true
+    let showPositionProps = $state<boolean>(false)
+    let showMarginProps = $state<boolean>(true)
 
-    // 根节点判定
-    $: isRoot = selectedId === 'root'
+    // 根节点判定、显示控制逻辑
+    $effect(() => {
+        isRoot = selectedId === 'root';
+        showPositionProps = currentPosition !== 'static';
+        showMarginProps = currentPosition === 'static';
+    });
 
-    // 是否显示位置属性（非static定位才显示）
-    $: showPositionProps = currentPosition !== 'static'
-
-    // 是否显示外边距属性（在static定位时显示）
-    $: showMarginProps = currentPosition === 'static'
-
+    /* deprecated reactive block
     // 当选中节点变化时，同步样式
     $: if (selectedId) {
         styleSnapshot = getNodeProps(selectedId)
@@ -113,6 +115,41 @@
         currentMarginBottomUnit = defaultUnit
         currentMarginLeftUnit = defaultUnit
     }
+
+    */
+
+    // 当选中节点或 domTreeVersion 变化时，同步样式
+    $effect(() => {
+        unsubscribe();
+        if (selectedId) {
+            const store = getNodePropsStore(selectedId);
+            unsubscribe = store.subscribe((snapshot) => {
+                styleSnapshot = snapshot;
+                currentPosition = (snapshot?.styles?.position as any) || 'static';
+                [currentTop, currentTopUnit] = parseSize(snapshot?.styles?.top);
+                [currentRight, currentRightUnit] = parseSize(snapshot?.styles?.right);
+                [currentBottom, currentBottomUnit] = parseSize(snapshot?.styles?.bottom);
+                [currentLeft, currentLeftUnit] = parseSize(snapshot?.styles?.left);
+                [currentMarginTop, currentMarginTopUnit] = parseSize(snapshot?.styles?.marginTop);
+                [currentMarginRight, currentMarginRightUnit] = parseSize(snapshot?.styles?.marginRight);
+                [currentMarginBottom, currentMarginBottomUnit] = parseSize(snapshot?.styles?.marginBottom);
+                [currentMarginLeft, currentMarginLeftUnit] = parseSize(snapshot?.styles?.marginLeft);
+                const zIndexValue = snapshot?.styles?.zIndex;
+                currentZIndex = typeof zIndexValue === 'string' ? zIndexValue : '';
+            });
+        } else {
+            currentPosition = 'static';
+            currentTop = currentRight = currentBottom = currentLeft = '';
+            currentTopUnit = currentRightUnit = currentBottomUnit = currentLeftUnit = defaultUnit;
+            currentMarginTop = currentMarginRight = currentMarginBottom = currentMarginLeft = '';
+            currentMarginTopUnit = currentMarginRightUnit = currentMarginBottomUnit = currentMarginLeftUnit = defaultUnit;
+            currentZIndex = '';
+        }
+        return () => {
+            unsubscribe();
+            unsubscribe = () => {};
+        };
+    });
 
     // 解析尺寸值和单位
     function parseSize(size: string | Blob | undefined): [string, 'px' | '%'] {

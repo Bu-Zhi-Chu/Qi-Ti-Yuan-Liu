@@ -3,14 +3,29 @@
      事件配置将通过其他方式处理
 -->
 <script lang="ts">
-    import { getNodeProps } from '../../../services/property-panel/property-panel.service'
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { getNodePropsStore, getNodeProps as _getNodeProps } from '../../../services/property-panel/property-panel.service'
 
-    export let selectedId: string | null = null
-    let eventSnapshot: ReturnType<typeof getNodeProps> | null = null
+    let { selectedId = null } = $props<{ selectedId?: string | null }>()
+    let eventSnapshot = $state<ReturnType<typeof _getNodeProps> | null>(null)
 
-    $: if (selectedId) {
-        eventSnapshot = getNodeProps(selectedId)
+    let unsubscribe = () => {}
+$effect(() => {
+    unsubscribe()
+    if (selectedId) {
+        const store = getNodePropsStore(selectedId)
+        eventSnapshot = _getNodeProps(selectedId)
+        unsubscribe = store.subscribe(() => {
+            eventSnapshot = _getNodeProps(selectedId)
+        })
+    } else {
+        eventSnapshot = null
     }
+    return () => {
+        unsubscribe()
+        unsubscribe = () => {}
+    }
+})
 </script>
 
 <div class="event-editor">
@@ -47,7 +62,7 @@
         /* 禁用状态统一使用 #64748b */
         color: #64748b;
     }
-    
+
     /* 占位符文本统一使用 #64748b */
     .placeholder {
         color: #64748b;

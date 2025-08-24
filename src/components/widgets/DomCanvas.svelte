@@ -143,10 +143,7 @@
         // 立即显示加载状态，阻止渲染旧数据
         isLoading = true
 
-        // 立即清空当前项目ID，确保dom-tree.store.ts立即清理数据
-        setProjectId('')
-
-        // 设置新项目ID
+        // 设置新项目ID（避免多余的清空步骤，减少数据库调用）
         setProjectId(projectId)
 
         try {

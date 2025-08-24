@@ -15,7 +15,8 @@
 -->
 <script lang="ts">
     import { onDestroy } from 'svelte'
-    import { getNodeProps, updateNodeProps, getFullNode } from '../../../services/property-panel/property-panel.service'
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { getNodePropsStore, getNodeProps as _getNodeProps, updateNodeProps, getFullNode } from '../../../services/property-panel/property-panel.service'
     import { getElementByNodeId } from '../../../services/utils/dom-geometry.util'
     import { getScaleRatio } from '../../../services/utils/get-scale-ratio.util'
     import { projectId } from '../../../services/repository/dom-tree.store.svelte'
@@ -30,28 +31,44 @@
     }
 
     // 外部传入当前选中节点 id
-    export let selectedId: string | null = null
+    let { selectedId = null } = $props<{ selectedId?: string | null }>()
+
+// 通过 getNodePropsStore 订阅节点样式变化
+let unsubscribe = () => {};
+$effect(() => {
+    unsubscribe();
+    if (selectedId) {
+        const store = getNodePropsStore(selectedId);
+        unsubscribe = store.subscribe(() => {
+            initBackgroundProps();
+        });
+    }
+    return () => {
+        unsubscribe();
+        unsubscribe = () => {};
+    };
+});
 
     // 背景样式状态
-    let backgroundImage: string | Blob = ''
-    let backgroundColor: string = ''
-    let backgroundOpacity: number = 1
-    let backgroundSizeX: string = '100'
-    let backgroundSizeY: string = '100'
-    let backgroundPositionX: string = '50'
-    let backgroundPositionY: string = '50'
-    let backgroundRepeat: string = 'no-repeat'
-    let lastBackgroundImage: string = ''
-    let gradientColors: Array<{ color: string; opacity: number }> = []
-    let gradientDirection: string = 'to right'
-    let gradientRatio: number = 50 // 渐变比例，0-100，控制两个颜色的占比
-    let backgroundClipToText: boolean = false // 控制背景裁剪为文字形状的开关
+    let backgroundImage = $state<string | Blob>('')
+    let backgroundColor = $state<string>('')
+    let backgroundOpacity = $state<number>(1)
+    let backgroundSizeX = $state<string>('100')
+    let backgroundSizeY = $state<string>('100')
+    let backgroundPositionX = $state<string>('50')
+    let backgroundPositionY = $state<string>('50')
+    let backgroundRepeat = $state<string>('no-repeat')
+    let lastBackgroundImage = $state<string>('')
+    let gradientColors = $state<Array<{ color: string; opacity: number }>>([])
+    let gradientDirection = $state<string>('to right')
+    let gradientRatio = $state<number>(50) // 渐变比例，0-100，控制两个颜色的占比
+    let backgroundClipToText = $state<boolean>(false) // 控制背景裁剪为文字形状的开关
 
     // 单位设置 - 支持px和%切换
-    let sizeUnitX: 'px' | '%' = '%'
-    let sizeUnitY: 'px' | '%' = '%'
-    let positionUnitX: 'px' | '%' = '%'
-    let positionUnitY: 'px' | '%' = '%'
+    let sizeUnitX = $state<'px' | '%'>('%')
+    let sizeUnitY = $state<'px' | '%'>('%')
+    let positionUnitX = $state<'px' | '%'>('%')
+    let positionUnitY = $state<'px' | '%'>('%')
 
     // 平铺选项
     const repeatOptions = [
@@ -75,14 +92,14 @@
 
     // 图片文件引用
     let fileInput: HTMLInputElement
-    let isUploading = false
-    let uploadProgress = 0
+    let isUploading = $state(false)
+    let uploadProgress = $state(0)
 
     // 从样式对象初始化背景属性
     async function initBackgroundProps() {
         if (!selectedId) return
 
-        const nodeProps = getNodeProps(selectedId)
+        const nodeProps = _getNodeProps(selectedId)
         const styles = nodeProps?.styles || {}
 
         // 先从 styles.backgroundColor 读取背景颜色（与其他属性一致）
@@ -251,23 +268,7 @@
         // 渐变比例已经在前面处理过了
     }
 
-    // 监听 selectedId 变化，自动调用初始化函数
-    $: if (selectedId) {
-        initBackgroundProps()
-    } else {
-        // 重置所有属性
-        backgroundImage = ''
-        backgroundSizeX = '100'
-        backgroundSizeY = '100'
-        backgroundPositionX = '50'
-        backgroundPositionY = '50'
-        backgroundRepeat = 'no-repeat'
-        sizeUnitX = '%'
-        sizeUnitY = '%'
-        positionUnitX = '%'
-        positionUnitY = '%'
-        backgroundClipToText = false
-    }
+    // 旧 $: 块已由 $effect 订阅替换，避免重复初始化
 
     // RGB转十六进制
     function rgbToHex(r: number, g: number, b: number): string {
@@ -827,7 +828,10 @@
     }
 
     // 当有背景图片时（包括Blob对象和URL字符串）
-    $: hasBackgroundImage = !!(backgroundImage && (backgroundImage instanceof Blob || (typeof backgroundImage === 'string' && backgroundImage.trim() && !backgroundImage.includes('gradient'))))
+    let hasBackgroundImage = $state(false);
+    $effect(() => {
+        hasBackgroundImage = !!(backgroundImage && (backgroundImage instanceof Blob || (typeof backgroundImage === 'string' && backgroundImage.trim() && !backgroundImage.includes('gradient'))));
+    });
 
     // 拖拽上传处理
     function handleDragOver(event: DragEvent) {

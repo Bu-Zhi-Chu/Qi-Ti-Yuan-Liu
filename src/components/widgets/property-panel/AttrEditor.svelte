@@ -3,19 +3,29 @@
      提供节点属性的可视化编辑界面
 -->
 <script lang="ts">
-    import { getNodeProps, updateNodeProps, getFullNode } from '../../../services/property-panel/property-panel.service'
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    import { getNodePropsStore, getNodeProps as _getNodeProps, updateNodeProps, getFullNode } from '../../../services/property-panel/property-panel.service'
     import { onMount } from 'svelte'
     import { getElementByNodeId } from '../../../services/utils/dom-geometry.util'
     import { getScaleRatio } from '../../../services/utils/get-scale-ratio.util'
     import PropertyRow from './PropertyRow.svelte'
     import PropertySelect from './PropertySelect.svelte'
+    import { updateNodeProperties } from '../../../services/repository/dom-tree.store.svelte'
     interface BlockItem {
         type: string
         nameZh: string
         path: string
     }
-    let componentOptions: BlockItem[] = []
-    $: typeOptions = componentOptions.map((item) => ({ value: item.type, label: `${item.nameZh} (${item.type})` }))
+    let componentOptions = $state<BlockItem[]>([])
+    let typeOptions = $state<{ value: string; label: string }[]>([])
+
+    $effect(() => {
+        typeOptions = componentOptions.map((item) => ({ value: item.type, label: `${item.nameZh} (${item.type})` }))
+        // 如果当前未选中类型且已获取到组件列表，默认选中第一个组件类型，便于回显
+        if (!currentType && componentOptions.length > 0 && !isRoot) {
+            currentType = componentOptions[0].type
+        }
+    })
 
     // 盒子类型、溢出处理、鼠标穿透下拉框选项
     const boxSizingOptions = [
@@ -39,84 +49,143 @@
     })
 
     // 当前选中节点 id（来自外部）
-    export let selectedId: string | null = null
+    let { selectedId = null } = $props<{ selectedId?: string | null }>()
 
     // 当前节点属性快照 & id 值
-    let propsSnapshot: ReturnType<typeof getNodeProps> | null = null
+    let propsSnapshot: ReturnType<typeof _getNodeProps> | null = null
     let currentId: string = ''
-    let currentName: string = ''
-    let currentType: string = ''
-    let currentRemark: string = ''
+    let currentName = $state<string>('')
+    let currentType = $state<string>('')
+    let currentRemark = $state<string>('')
     // 新增根节点判断
-    let isRoot = false
+    let isRoot = $state(false)
     // 根节点判定
-    $: isRoot = selectedId === 'root'
+    $effect(() => {
+        isRoot = selectedId === 'root'
+    })
 
     // 宽度和高度相关变量
-    let currentWidthValue: string = ''
-    let currentWidthUnit: '%' | 'px' = '%'
-    let currentHeightValue: string = ''
-    let currentHeightUnit: '%' | 'px' = '%'
+    let currentWidthValue = $state<string>('')
+    let currentWidthUnit = $state<'%' | 'px'>('%')
+    let currentHeightValue = $state<string>('')
+    let currentHeightUnit = $state<'%' | 'px'>('%')
 
     // 鼠标穿透相关变量
-    let currentPointerEvents: 'auto' | 'none' = 'auto'
+    let currentPointerEvents = $state<'auto' | 'none'>('auto')
 
     // box-sizing 相关变量
-    let currentBoxSizing: 'content-box' | 'border-box' = 'border-box'
+    let currentBoxSizing = $state<'content-box' | 'border-box'>('border-box')
 
     // overflow 相关变量
-    let currentOverflow: 'hidden' | 'auto' | 'scroll' | 'visible' = 'hidden'
+    let currentOverflow = $state<'hidden' | 'auto' | 'scroll' | 'visible'>('hidden')
 
-    // 当选中节点变化时，同步所有属性
-    $: if (selectedId) {
-        // 获取节点属性和节点对象
-        propsSnapshot = getNodeProps(selectedId)
-        const node = getFullNode(selectedId)
-
-        // 同步基本属性 - 只使用id
-        currentId = selectedId
-
-        // 同步名称 - 直接从节点属性中读取data-name
-        currentName = node?.attributes?.['data-name'] ?? ''
-
-        // 同步类型，如果为空则使用第一个组件类型作为默认值
-        currentType = node?.componentType || componentOptions[0]?.type || ''
-
-        // 同步备注
-        currentRemark = propsSnapshot?.attributes?.['data-remark'] ?? ''
-
-        // 同步宽高
-        ;[currentWidthValue, currentWidthUnit] = parseSize(propsSnapshot?.styles?.width)
-        ;[currentHeightValue, currentHeightUnit] = parseSize(propsSnapshot?.styles?.height)
-
-        // 格式化百分比值，保留一位小数
-        if (currentWidthUnit === '%') currentWidthValue = String(Math.round(parseFloat(currentWidthValue) * 10) / 10)
-        if (currentHeightUnit === '%') currentHeightValue = String(Math.round(parseFloat(currentHeightValue) * 10) / 10)
-
-        // 同步鼠标穿透属性
-        currentPointerEvents = (propsSnapshot?.styles?.pointerEvents as 'auto' | 'none') || 'auto'
-        // 同步 overflow 属性
-        currentOverflow = (propsSnapshot?.styles?.overflow as 'hidden' | 'auto' | 'scroll' | 'visible') || 'hidden'
-        // 同步 box-sizing 属性
-        currentBoxSizing = (propsSnapshot?.styles?.boxSizing as 'content-box' | 'border-box') || 'border-box'
-
-        // 若为根节点，固定名称为"画布"
-        if (isRoot) {
-            currentName = '画布'
-        }
-    } else {
-        // 清空所有属性
-        propsSnapshot = null
-        currentId = ''
-        currentName = ''
-        currentType = ''
-        currentRemark = ''
-        currentWidthValue = ''
-        currentWidthUnit = '%'
-        currentHeightValue = ''
-        currentHeightUnit = '%'
-        currentPointerEvents = 'auto'
+    // 当选中节点或 domTreeVersion 变化时，同步所有属性
+    let unsubscribeProps: () => void = () => {}
+    // 新增：记录上一次同步的关键值，避免重复写入触发循环
+    let lastSynced = {
+        name: '',
+        type: '',
+        remark: '',
+        width: '',
+        height: '',
+        pointerEvents: 'auto',
+        overflow: 'hidden',
+        boxSizing: 'border-box'
     }
+    $effect(() => {
+        // 清理上一次订阅
+        unsubscribeProps()
+        if (selectedId) {
+            const store = getNodePropsStore(selectedId)
+            unsubscribeProps = store.subscribe((snapshot) => {
+                propsSnapshot = snapshot
+                const node = getFullNode(selectedId)
+
+                // 需要对比的新值
+                const nextName = node?.attributes?.['data-name'] ?? ''
+                const nextType = node?.componentType || componentOptions[0]?.type || ''
+                const nextRemark = snapshot?.attributes?.['data-remark'] ?? ''
+                const [nextWidthValue, nextWidthUnit] = parseSize(snapshot?.styles?.width)
+                const [nextHeightValue, nextHeightUnit] = parseSize(snapshot?.styles?.height)
+                const nextPointerEvents = (snapshot?.styles?.pointerEvents as 'auto' | 'none') || 'auto'
+                const nextOverflow = (snapshot?.styles?.overflow as 'hidden' | 'auto' | 'scroll' | 'visible') || 'hidden'
+                const nextBoxSizing = (snapshot?.styles?.boxSizing as 'content-box' | 'border-box') || 'border-box'
+
+                // 若为根节点，固定名称为"画布"
+                const finalName = isRoot ? '画布' : nextName
+
+                // 仅当值发生变化时才写入，避免重复触发
+                if (
+                    lastSynced.name === finalName &&
+                    lastSynced.type === nextType &&
+                    lastSynced.remark === nextRemark &&
+                    lastSynced.width === `${nextWidthValue}${nextWidthUnit}` &&
+                    lastSynced.height === `${nextHeightValue}${nextHeightUnit}` &&
+                    lastSynced.pointerEvents === nextPointerEvents &&
+                    lastSynced.overflow === nextOverflow &&
+                    lastSynced.boxSizing === nextBoxSizing
+                ) {
+                    return
+                }
+
+                // 更新 lastSynced 记录
+                lastSynced = {
+                    name: finalName,
+                    type: nextType,
+                    remark: nextRemark,
+                    width: `${nextWidthValue}${nextWidthUnit}`,
+                    height: `${nextHeightValue}${nextHeightUnit}`,
+                    pointerEvents: nextPointerEvents,
+                    overflow: nextOverflow,
+                    boxSizing: nextBoxSizing
+                }
+
+                // 同步基本属性
+                currentId = selectedId
+                currentName = finalName
+                currentType = nextType
+                currentRemark = nextRemark
+
+                // 同步宽高
+                currentWidthValue = nextWidthValue
+                currentWidthUnit = nextWidthUnit
+                currentHeightValue = nextHeightValue
+                currentHeightUnit = nextHeightUnit
+
+                // 格式化百分比值，保留一位小数
+                if (currentWidthUnit === '%') {
+                    const num = parseFloat(currentWidthValue)
+                    if (!isNaN(num)) currentWidthValue = String(Math.round(num * 10) / 10)
+                }
+                if (currentHeightUnit === '%') {
+                    const numH = parseFloat(currentHeightValue)
+                    if (!isNaN(numH)) currentHeightValue = String(Math.round(numH * 10) / 10)
+                }
+
+                // 同步其他样式
+                currentPointerEvents = nextPointerEvents
+                currentOverflow = nextOverflow
+                currentBoxSizing = nextBoxSizing
+            })
+        } else {
+            // 清空所有属性
+            propsSnapshot = null
+            currentId = ''
+            currentName = ''
+            currentType = ''
+            currentRemark = ''
+            currentWidthValue = ''
+            currentWidthUnit = '%'
+            currentHeightValue = ''
+            currentHeightUnit = '%'
+            currentPointerEvents = 'auto'
+        }
+
+        return () => {
+            unsubscribeProps()
+            unsubscribeProps = () => {}
+        }
+    })
 
     // 可用的组件类型列表
     // 删除原先硬编码
@@ -136,9 +205,9 @@
         // 如果为空，使用第一个组件类型作为默认值
         const finalType = newType || componentOptions[0]?.type || ''
         currentType = finalType
-        updateNodeProps(selectedId, {
-            attributes: { type: finalType }
-        })
+
+        // 直接更新节点的 componentType 字段，确保回显与渲染一致
+        updateNodeProperties(selectedId, { componentType: finalType })
     }
 
     // 新增：修改备注
@@ -165,6 +234,7 @@
 
     // 统一格式化尺寸，px 单位使用 calc 结合 --scale-ratio 实现自适应
     function formatSize(val: string, unit: '%' | 'px'): string {
+        if (val === '' || isNaN(parseFloat(val))) return ''
         return unit === 'px' ? `calc(${val}px * var(--scale-ratio, 1))` : `${val}%`
     }
 

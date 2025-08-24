@@ -14,6 +14,9 @@ export interface PropPatch {
   events?: Record<string, Function | undefined>;
 }
 
+import { derived } from 'svelte/store';
+import { domTreeVersionStore } from '../repository/dom-tree.store.svelte';
+
 // -------------------- 查询接口 --------------------
 /**
  * 获取节点属性快照（深拷贝）
@@ -35,6 +38,14 @@ export function getNodeProps(
  */
 export function getFullNode(id: string): DomNode | null {
   return findNodeById(domTree, id);
+}
+
+/**
+ * 获取节点属性的可订阅 store
+ * 当 domTreeVersion 递增时自动推导最新属性快照
+ */
+export function getNodePropsStore(id: string) {
+  return derived(domTreeVersionStore, () => getNodeProps(id));
 }
 
 // -------------------- 更新接口 --------------------

@@ -9,6 +9,7 @@
 import type { DomNode } from '../../types/dom-node.types';
 import DexieService from '../database/dexie-service';
 import Dexie from 'dexie';
+import { writable } from 'svelte/store';
 
 // 初始 domTree 数据结构
 const domTreeData = $state<DomNode>({
@@ -35,6 +36,18 @@ let currentProjectId = $state<string>('');
 
 // 导出只读引用
 export const domTree = domTreeData;
+/** domTree 版本号：每次数据变动都会递增，用于属性面板订阅刷新 */
+let domTreeVersionData = $state(0);
+export const domTreeVersion = domTreeVersionData;
+
+/** 可订阅的 domTree 版本号 store */
+export const domTreeVersionStore = writable(0);
+
+/** 内部工具：递增版本号 */
+function bumpDomTreeVersion() {
+  domTreeVersionData = domTreeVersionData + 1;
+  domTreeVersionStore.update(n => n + 1);
+}
 
 // 导出函数以获取当前项目ID，避免直接导出派生状态
 export function projectId() {
@@ -607,6 +620,7 @@ export function updateNodeProperties(nodeId: string, updates: Partial<DomNode>):
   if (node) {
     // 合并更新并触发响应式更新
     Object.assign(node, updates);
+    bumpDomTreeVersion();
     // 自动保存到doms表（不影响projects表）
     autoSaveToDomsTable();
     return true;
@@ -629,6 +643,7 @@ export function updateNodeStyles(nodeId: string, styles: Record<string, string |
     }
     // 合并样式并触发响应式更新
     node.styles = { ...node.styles, ...styles };
+    bumpDomTreeVersion();
     // 自动保存到doms表（不影响projects表）
     autoSaveToDomsTable();
     return true;

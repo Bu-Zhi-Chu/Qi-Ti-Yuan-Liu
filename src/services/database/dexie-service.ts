@@ -149,8 +149,11 @@ export default class DexieService {
      */
     static async getRecord<T>(dbName: string, tableName: string, key: any): Promise<T | undefined> {
         DatabaseLogger.gettingRecord(dbName, tableName, key)
-        const db = new Dexie(dbName)
-        await db.open()
+        const db = await DexieService.getDatabase(dbName)
+        if (!db) {
+            DatabaseLogger.operationError(`获取数据库实例失败: ${dbName}`, new Error('db is null'))
+            return undefined
+        }
         const result = await db.table(tableName).get(key)
         DatabaseLogger.recordFound(!!result)
         return result

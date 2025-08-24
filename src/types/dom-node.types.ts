@@ -9,8 +9,9 @@ export interface DomNode {
   /** 节点类型（属性面板中的类型），可选 */
   type?: string
 
-  /** 组件类型，指定使用 DynamicComponent 中的哪种组件，默认为 'SimpleBox' */
-  componentType?: 'RealTimeClock' | 'ResponsiveBox' | 'SimpleBox'
+
+  /** 组件类型，使用 DynamicComponent 中注册的组件名 */
+  componentType?: string
   /** 传递给组件的属性 */
   componentProps?: Record<string, any>
   /** 子节点列表 */

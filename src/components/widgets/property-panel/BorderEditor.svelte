@@ -5,7 +5,8 @@
   支持统一控制与四边独立控制两种模式
 -->
 <script lang="ts">
-    import { getNodeProps, updateNodeProps } from '../../../services/property-panel/property-panel.service'
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { getNodePropsStore, getNodeProps as _getNodeProps, updateNodeProps } from '../../../services/property-panel/property-panel.service'
     import ColorPicker from '../ColorPicker.svelte'
     import { onMount } from 'svelte'
 
@@ -14,6 +15,11 @@
     }
 
     let { selectedId }: Props = $props()
+
+// 当前节点 props 快照类型
+let propsSnapshot: ReturnType<typeof _getNodeProps> | null = null
+// 订阅函数
+let unsubscribe = () => {};
 
     // 统一控制开关
     let unifiedControl = $state(true)
@@ -66,7 +72,9 @@
     ]
 
     // 当选中节点变化时，同步所有边框属性
-    $effect(() => {
+    /* deprecated: snapshot fetch via getNodeProps */
+/*
+$effect(() => {
         if (selectedId) {
             isRoot = selectedId === 'root'
             const props = getNodeProps(selectedId)
@@ -109,6 +117,55 @@
             resetAllProperties()
         }
     })
+*/
+
+// 新版：通过 getNodePropsStore 订阅实时变化
+$effect(() => {
+    unsubscribe();
+    if (selectedId) {
+        const store = getNodePropsStore(selectedId);
+        unsubscribe = store.subscribe((props) => {
+            propsSnapshot = props;
+            if (!props) return;
+            const getStringValue = (value: string | Blob | undefined): string => (typeof value === 'string' ? value : '');
+
+            // 读取统一边框属性
+            borderWidth = parsePxValue(getStringValue(props.styles?.borderWidth)) || '';
+            borderColor = getStringValue(props.styles?.borderColor) || '#000000';
+            borderStyle = getStringValue(props.styles?.borderStyle) || 'solid';
+            [borderRadius, borderRadiusUnit] = parseBorderRadius(getStringValue(props.styles?.borderRadius));
+
+            // 读取四边独立属性
+            borderTopWidth = parsePxValue(getStringValue(props.styles?.borderTopWidth)) || '';
+            borderTopColor = getStringValue(props.styles?.borderTopColor) || '#000000';
+            borderTopStyle = getStringValue(props.styles?.borderTopStyle) || 'solid';
+            borderRightWidth = parsePxValue(getStringValue(props.styles?.borderRightWidth)) || '';
+            borderRightColor = getStringValue(props.styles?.borderRightColor) || '#000000';
+            borderRightStyle = getStringValue(props.styles?.borderRightStyle) || 'solid';
+            borderBottomWidth = parsePxValue(getStringValue(props.styles?.borderBottomWidth)) || '';
+            borderBottomColor = getStringValue(props.styles?.borderBottomColor) || '#000000';
+            borderBottomStyle = getStringValue(props.styles?.borderBottomStyle) || 'solid';
+            borderLeftWidth = parsePxValue(getStringValue(props.styles?.borderLeftWidth)) || '';
+            borderLeftColor = getStringValue(props.styles?.borderLeftColor) || '#000000';
+            borderLeftStyle = getStringValue(props.styles?.borderLeftStyle) || 'solid';
+
+            // 读取四个独立圆角属性
+            [borderTopLeftRadius, borderTopLeftRadiusUnit] = parseBorderRadius(getStringValue(props.styles?.borderTopLeftRadius));
+            [borderTopRightRadius, borderTopRightRadiusUnit] = parseBorderRadius(getStringValue(props.styles?.borderTopRightRadius));
+            [borderBottomLeftRadius, borderBottomLeftRadiusUnit] = parseBorderRadius(getStringValue(props.styles?.borderBottomLeftRadius));
+            [borderBottomRightRadius, borderBottomRightRadiusUnit] = parseBorderRadius(getStringValue(props.styles?.borderBottomRightRadius));
+
+            // 判断是否使用统一控制
+            unifiedControl = !(getStringValue(props.styles?.borderTopWidth) || getStringValue(props.styles?.borderRightWidth) || getStringValue(props.styles?.borderBottomWidth) || getStringValue(props.styles?.borderLeftWidth));
+        });
+    } else {
+        resetAllProperties();
+    }
+    return () => {
+        unsubscribe();
+        unsubscribe = () => {};
+    };
+});
 
     // 解析 px 值
     function parsePxValue(value: string | undefined): string {

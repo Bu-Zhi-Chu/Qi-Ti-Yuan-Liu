@@ -23,7 +23,8 @@
   - 文本换行提供常用预设组合，简化white-space和word-break的复杂配置
 -->
 <script lang="ts">
-    import { getNodeProps, updateNodeProps, getFullNode } from '../../../services/property-panel/property-panel.service'
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { getNodePropsStore, getNodeProps as _getNodeProps, updateNodeProps, getFullNode } from '../../../services/property-panel/property-panel.service'
     import { updateNodeProperties } from '../../../services/repository/dom-tree.store.svelte'
     import { projectId } from '../../../services/repository/dom-tree.store.svelte'
     import ColorPicker from '../ColorPicker.svelte'
@@ -151,7 +152,7 @@
     function initTextProps() {
         if (!selectedId) return
 
-        const nodeProps = getNodeProps(selectedId)
+        const nodeProps = _getNodeProps(selectedId)
         const fullNode = getFullNode(selectedId)
         if (!nodeProps || !fullNode) return
 
@@ -241,10 +242,20 @@
         textWrapStyle = newTextWrapStyle
     }
 
-    // 监听selectedId变化，自动调用初始化函数
+    // 通过 getNodePropsStore 订阅节点属性变化，实时刷新文字样式
+    let unsubscribe = () => {}
     $effect(() => {
+        // 先取消之前的订阅
+        unsubscribe()
+
         if (selectedId) {
+            const store = getNodePropsStore(selectedId)
+            // 初始化一次
             initTextProps()
+            // 订阅后续变化
+            unsubscribe = store.subscribe(() => {
+                initTextProps()
+            })
         } else {
             // 重置所有属性
             textContent = ''
@@ -260,6 +271,12 @@
             letterSpacing = '0'
             wordSpacing = '0'
             textWrapStyle = 'normal-normal'
+        }
+
+        // 清理函数，组件卸载或依赖变化时执行
+        return () => {
+            unsubscribe()
+            unsubscribe = () => {}
         }
     })
 
