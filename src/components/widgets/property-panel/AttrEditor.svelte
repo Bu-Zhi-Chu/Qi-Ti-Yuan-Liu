@@ -353,21 +353,13 @@
             <!-- 新增：使用 PropertyRow 复刻宽度输入 -->
             <PropertyRow label="节点宽度">
                 <input id="node-width-2" type="number" step={currentWidthUnit === '%' ? 0.1 : 1} bind:value={currentWidthValue} oninput={(e) => handleWidthValueChange(e.currentTarget.value)} placeholder="宽度值..." disabled={isRoot} class:disabled-input={isRoot} />
-                {#snippet unit()}
-                    <button class="unit-toggle" class:disabled-input={isRoot} onclick={toggleWidthUnit} disabled={isRoot}>
-                        {currentWidthUnit}
-                    </button>
-                {/snippet}
+                <button slot="unit" class="unit-toggle" class:disabled-input={isRoot} onclick={toggleWidthUnit} disabled={isRoot}>{currentWidthUnit}</button>
             </PropertyRow>
 
             <!-- 新增：使用 PropertyRow 复刻高度输入 -->
             <PropertyRow label="节点高度">
                 <input id="node-height-2" type="number" step={currentHeightUnit === '%' ? 0.1 : 1} bind:value={currentHeightValue} oninput={(e) => handleHeightValueChange(e.currentTarget.value)} placeholder="高度值..." disabled={isRoot} class:disabled-input={isRoot} />
-                {#snippet unit()}
-                    <button class="unit-toggle" class:disabled-input={isRoot} onclick={toggleHeightUnit} disabled={isRoot}>
-                        {currentHeightUnit}
-                    </button>
-                {/snippet}
+                <button slot="unit" class="unit-toggle" class:disabled-input={isRoot} onclick={toggleHeightUnit} disabled={isRoot}>{currentHeightUnit}</button>
             </PropertyRow>
 
             <!-- 盒子类型（box-sizing） -->
