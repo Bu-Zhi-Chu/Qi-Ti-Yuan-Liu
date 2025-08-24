@@ -18,7 +18,6 @@
  -->
 
 <script lang="ts">
-    import { createEventDispatcher } from 'svelte'
     import Icon from '../Icon.svelte'
 
     /**
@@ -32,7 +31,7 @@
 
     /* --------------------------- Props (Runes) --------------------------- */
     // 接收 tabs 和可选的 initialTab
-    let { tabs = [], initialTab = '' } = $props<{ tabs: TabItem[]; initialTab?: string }>()
+    let { tabs = [], initialTab = '', onChange } = $props<{ tabs: TabItem[]; initialTab?: string; onChange?: (detail: { tab: string }) => void }>()
 
     /* --------------------------- 内部状态 --------------------------- */
     // 当前激活的标签页（使用 $state 以支持响应式更新）
@@ -40,15 +39,12 @@
 
     /* --------------------------- 事件处理 --------------------------- */
     // 创建事件分发器（用于向父组件传递 change 事件）
-    const dispatch = createEventDispatcher<{
-        change: { tab: string }
-    }>()
 
     // 切换标签页并派发 change 事件
     function setTab(key: string) {
         if (activeTab !== key) {
             activeTab = key
-            dispatch('change', { tab: key })
+            onChange?.({ tab: key })
         }
     }
 

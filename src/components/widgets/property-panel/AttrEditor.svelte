@@ -10,6 +10,7 @@
     import { getScaleRatio } from '../../../services/utils/get-scale-ratio.util'
     import PropertyRow from './PropertyRow.svelte'
     import PropertySelect from './PropertySelect.svelte'
+    import SizeInput from './SizeInput.svelte'
     import { updateNodeProperties } from '../../../services/repository/dom-tree.store.svelte'
     interface BlockItem {
         type: string
@@ -351,15 +352,33 @@
             </PropertyRow>
 
             <!-- 新增：使用 PropertyRow 复刻宽度输入 -->
-            <PropertyRow label="节点宽度">
-                <input id="node-width-2" type="number" step={currentWidthUnit === '%' ? 0.1 : 1} bind:value={currentWidthValue} oninput={(e) => handleWidthValueChange(e.currentTarget.value)} placeholder="宽度值..." disabled={isRoot} class:disabled-input={isRoot} />
-                <button slot="unit" class="unit-toggle" class:disabled-input={isRoot} onclick={toggleWidthUnit} disabled={isRoot}>{currentWidthUnit}</button>
-            </PropertyRow>
 
             <!-- 新增：使用 PropertyRow 复刻高度输入 -->
+
+            <!-- 使用 SizeInput 复刻宽高 -->
+            <PropertyRow label="节点宽度">
+                <SizeInput
+                    bind:value={currentWidthValue}
+                    bind:unit={currentWidthUnit}
+                    disabled={isRoot}
+                    convert={convertWidth}
+                    on:change={({ detail: { value, unit } }) => {
+                        if (!selectedId || isRoot) return
+                        updateNodeProps(selectedId, { styles: { width: formatSize(value, unit) } })
+                    }}
+                />
+            </PropertyRow>
             <PropertyRow label="节点高度">
-                <input id="node-height-2" type="number" step={currentHeightUnit === '%' ? 0.1 : 1} bind:value={currentHeightValue} oninput={(e) => handleHeightValueChange(e.currentTarget.value)} placeholder="高度值..." disabled={isRoot} class:disabled-input={isRoot} />
-                <button slot="unit" class="unit-toggle" class:disabled-input={isRoot} onclick={toggleHeightUnit} disabled={isRoot}>{currentHeightUnit}</button>
+                <SizeInput
+                    bind:value={currentHeightValue}
+                    bind:unit={currentHeightUnit}
+                    disabled={isRoot}
+                    convert={convertHeight}
+                    on:change={({ detail: { value, unit } }) => {
+                        if (!selectedId || isRoot) return
+                        updateNodeProps(selectedId, { styles: { height: formatSize(value, unit) } })
+                    }}
+                />
             </PropertyRow>
 
             <!-- 盒子类型（box-sizing） -->
@@ -421,24 +440,6 @@
         color: #64748b;
     }
 
-    /* 单位切换按钮样式 */
-    .unit-toggle {
-        width: calc(40px * var(--scale-ratio, 1));
-        padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
-        border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.2);
-        border-radius: calc(6px * var(--scale-ratio, 1));
-        font-size: calc(13px * var(--scale-ratio, 1));
-        background: rgba(255, 255, 255, 0.1);
-        color: #e2e8f0;
-        text-align: center;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-    .unit-toggle:hover {
-        background: rgba(255, 255, 255, 0.15);
-    }
-    /* 禁用状态光标与视觉提示 */
-    .unit-toggle:disabled,
     input:disabled {
         cursor: not-allowed;
         opacity: 0.5;
@@ -465,16 +466,5 @@
     }
     textarea {
         min-height: calc(80px * var(--scale-ratio, 1));
-    }
-
-    /* 隐藏原生 number 输入框的上下箭头 */
-    input[type='number']::-webkit-inner-spin-button,
-    input[type='number']::-webkit-outer-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
-    }
-    input[type='number'] {
-        appearance: textfield; /* 标准属性 */
-        -moz-appearance: textfield; /* Firefox */
     }
 </style>
