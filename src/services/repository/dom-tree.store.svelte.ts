@@ -38,7 +38,7 @@ let currentProjectId = $state<string>('');
 export const domTree = domTreeData;
 /** domTree 版本号：每次数据变动都会递增，用于属性面板订阅刷新 */
 let domTreeVersionData = $state(0);
-export const domTreeVersion = domTreeVersionData;
+export const domTreeVersion = () => domTreeVersionData;
 
 /** 可订阅的 domTree 版本号 store */
 export const domTreeVersionStore = writable(0);
