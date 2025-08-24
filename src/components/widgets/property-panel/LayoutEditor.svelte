@@ -46,7 +46,7 @@
     const displayOptions = [
         { value: 'block', label: '块级 (block)' },
         { value: 'inline', label: '行内 (inline)' },
-        { value: 'inline-block', label: '行内块级 (inline-block)' },
+        { value: 'inline-block', label: '行块 (inline-block)' },
         { value: 'flex', label: '弹性 (flex)' },
         { value: 'grid', label: '网格 (grid)' }
     ]

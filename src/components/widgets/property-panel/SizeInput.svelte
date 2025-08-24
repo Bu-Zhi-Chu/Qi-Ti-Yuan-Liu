@@ -71,7 +71,9 @@
 <div class="size-input-wrapper">
     <input type="number" step={calcStep} bind:value oninput={handleInput} {placeholder} {disabled} class:disabled-input={disabled} />
 </div>
-<button class="unit-toggle" class:disabled-input={disabled} onclick={toggleUnit} {disabled}>{unit}</button>
+<button class="unit-toggle" class:disabled-input={disabled || unitOptions.length < 2} onclick={toggleUnit} disabled={disabled || unitOptions.length < 2}>
+    {unit}
+</button>
 
 <style>
     input {
