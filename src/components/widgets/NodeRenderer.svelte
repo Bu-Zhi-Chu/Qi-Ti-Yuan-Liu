@@ -193,7 +193,7 @@
     const dataNameAttr = $derived.by(() => (nodeKey === 'root' ? '画布' : ((restAttrs as Record<string, any>)?.['data-name'] ?? node.type ?? '元素')))
 
     /** 获取组件类型，默认为 SimpleBox */
-    const componentType = node.componentType ?? 'SimpleBox'
+    const componentType = $derived.by(() => node.componentType ?? 'SimpleBox')
 
     /** 获取组件属性，合并 componentProps 和其他属性（保持响应式） */
     const componentProps = $derived.by(() => ({ 'data-name': dataNameAttr, ...restAttrs, ...(node.componentProps ?? {}) }))
