@@ -9,6 +9,7 @@
     import { onMount } from 'svelte'
     import PropertyRow from './PropertyRow.svelte'
     import PropertySelect from './PropertySelect.svelte'
+    import SizeInput from './SizeInput.svelte'
 
     interface Props {
         selectedId: string | null
@@ -232,90 +233,15 @@ $effect(() => {
                 </PropertyRow>
 
                 <PropertyRow label="间距设置">
-                    <input
-                        id="node-flex-gap"
-                        type="number"
-                        step="1"
-                        bind:value={currentGap}
-                        oninput={(e) => handleFlexPropChange('gap', e.currentTarget.value + 'px')}
-                        onwheel={(e) => {
-                            e.preventDefault()
-                            const val = parseInt(currentGap) || 0
-                            currentGap = val + (e.deltaY < 0 ? 1 : -1) + ''
-                        }}
-                        onkeydown={(e) => {
-                            if (e.key === 'ArrowUp') {
-                                e.preventDefault()
-                                const val = parseInt(currentGap) || 0
-                                currentGap = val + 1 + ''
-                            }
-                            if (e.key === 'ArrowDown') {
-                                e.preventDefault()
-                                const val = parseInt(currentGap) || 0
-                                currentGap = val - 1 + ''
-                            }
-                        }}
-                        placeholder="间距..."
-                    />
-                    <button slot="unit" class="unit-toggle" disabled>px</button>
+                    <SizeInput bind:value={currentGap} unitOptions={['px']} step={1} on:change={({ detail: { value, unit } }) => handleFlexPropChange('gap', value + unit)} />
                 </PropertyRow>
 
                 <PropertyRow label="行间距值">
-                    <input
-                        id="node-flex-row-gap"
-                        type="number"
-                        step="1"
-                        bind:value={currentRowGap}
-                        oninput={(e) => handleFlexPropChange('rowGap', e.currentTarget.value + 'px')}
-                        onwheel={(e) => {
-                            e.preventDefault()
-                            const val = parseInt(currentRowGap) || 0
-                            currentRowGap = val + (e.deltaY < 0 ? 1 : -1) + ''
-                        }}
-                        onkeydown={(e) => {
-                            if (e.key === 'ArrowUp') {
-                                e.preventDefault()
-                                const val = parseInt(currentRowGap) || 0
-                                currentRowGap = val + 1 + ''
-                            }
-                            if (e.key === 'ArrowDown') {
-                                e.preventDefault()
-                                const val = parseInt(currentRowGap) || 0
-                                currentRowGap = val - 1 + ''
-                            }
-                        }}
-                        placeholder="行间距..."
-                    />
-                    <button slot="unit" class="unit-toggle" disabled>px</button>
+                    <SizeInput bind:value={currentRowGap} unitOptions={['px']} step={1} on:change={({ detail: { value, unit } }) => handleFlexPropChange('rowGap', value + unit)} />
                 </PropertyRow>
 
                 <PropertyRow label="列间距值">
-                    <input
-                        id="node-flex-column-gap"
-                        type="number"
-                        step="1"
-                        bind:value={currentColumnGap}
-                        oninput={(e) => handleFlexPropChange('columnGap', e.currentTarget.value + 'px')}
-                        onwheel={(e) => {
-                            e.preventDefault()
-                            const val = parseInt(currentColumnGap) || 0
-                            currentColumnGap = val + (e.deltaY < 0 ? 1 : -1) + ''
-                        }}
-                        onkeydown={(e) => {
-                            if (e.key === 'ArrowUp') {
-                                e.preventDefault()
-                                const val = parseInt(currentColumnGap) || 0
-                                currentColumnGap = val + 1 + ''
-                            }
-                            if (e.key === 'ArrowDown') {
-                                e.preventDefault()
-                                const val = parseInt(currentColumnGap) || 0
-                                currentColumnGap = val - 1 + ''
-                            }
-                        }}
-                        placeholder="列间距..."
-                    />
-                    <button slot="unit" class="unit-toggle" disabled>px</button>
+                    <SizeInput bind:value={currentColumnGap} unitOptions={['px']} step={1} on:change={({ detail: { value, unit } }) => handleFlexPropChange('columnGap', value + unit)} />
                 </PropertyRow>
             {/if}
 
@@ -330,90 +256,15 @@ $effect(() => {
                 </PropertyRow>
 
                 <PropertyRow label="间距设置">
-                    <input
-                        id="node-grid-gap"
-                        type="number"
-                        step="1"
-                        bind:value={currentGridGap}
-                        oninput={(e) => handleGridPropChange('gap', e.currentTarget.value + 'px')}
-                        onwheel={(e) => {
-                            e.preventDefault()
-                            const val = parseInt(currentGridGap) || 0
-                            currentGridGap = val + (e.deltaY < 0 ? 1 : -1) + ''
-                        }}
-                        onkeydown={(e) => {
-                            if (e.key === 'ArrowUp') {
-                                e.preventDefault()
-                                const val = parseInt(currentGridGap) || 0
-                                currentGridGap = val + 1 + ''
-                            }
-                            if (e.key === 'ArrowDown') {
-                                e.preventDefault()
-                                const val = parseInt(currentGridGap) || 0
-                                currentGridGap = val - 1 + ''
-                            }
-                        }}
-                        placeholder="间距..."
-                    />
-                    <button slot="unit" class="unit-toggle" disabled>px</button>
+                    <SizeInput bind:value={currentGridGap} unitOptions={['px']} step={1} on:change={({ detail: { value, unit } }) => handleGridPropChange('gap', value + unit)} />
                 </PropertyRow>
 
                 <PropertyRow label="列间距值">
-                    <input
-                        id="node-grid-column-gap"
-                        type="number"
-                        step="1"
-                        bind:value={currentGridColumnGap}
-                        oninput={(e) => handleGridPropChange('columnGap', e.currentTarget.value + 'px')}
-                        onwheel={(e) => {
-                            e.preventDefault()
-                            const val = parseInt(currentGridColumnGap) || 0
-                            currentGridColumnGap = val + (e.deltaY < 0 ? 1 : -1) + ''
-                        }}
-                        onkeydown={(e) => {
-                            if (e.key === 'ArrowUp') {
-                                e.preventDefault()
-                                const val = parseInt(currentGridColumnGap) || 0
-                                currentGridColumnGap = val + 1 + ''
-                            }
-                            if (e.key === 'ArrowDown') {
-                                e.preventDefault()
-                                const val = parseInt(currentGridColumnGap) || 0
-                                currentGridColumnGap = val - 1 + ''
-                            }
-                        }}
-                        placeholder="列间距..."
-                    />
-                    <button slot="unit" class="unit-toggle" disabled>px</button>
+                    <SizeInput bind:value={currentGridColumnGap} unitOptions={['px']} step={1} on:change={({ detail: { value, unit } }) => handleGridPropChange('columnGap', value + unit)} />
                 </PropertyRow>
 
                 <PropertyRow label="行间距值">
-                    <input
-                        id="node-grid-row-gap"
-                        type="number"
-                        step="1"
-                        bind:value={currentGridRowGap}
-                        oninput={(e) => handleGridPropChange('rowGap', e.currentTarget.value + 'px')}
-                        onwheel={(e) => {
-                            e.preventDefault()
-                            const val = parseInt(currentGridRowGap) || 0
-                            currentGridRowGap = val + (e.deltaY < 0 ? 1 : -1) + ''
-                        }}
-                        onkeydown={(e) => {
-                            if (e.key === 'ArrowUp') {
-                                e.preventDefault()
-                                const val = parseInt(currentGridRowGap) || 0
-                                currentGridRowGap = val + 1 + ''
-                            }
-                            if (e.key === 'ArrowDown') {
-                                e.preventDefault()
-                                const val = parseInt(currentGridRowGap) || 0
-                                currentGridRowGap = val - 1 + ''
-                            }
-                        }}
-                        placeholder="行间距..."
-                    />
-                    <button slot="unit" class="unit-toggle" disabled>px</button>
+                    <SizeInput bind:value={currentGridRowGap} unitOptions={['px']} step={1} on:change={({ detail: { value, unit } }) => handleGridPropChange('rowGap', value + unit)} />
                 </PropertyRow>
             {/if}
         </div>
@@ -456,38 +307,6 @@ $effect(() => {
         border-color: #cbd5e1;
         background: rgba(255, 255, 255, 0.15);
         box-shadow: 0 0 0 calc(3px * var(--scale-ratio, 1)) rgba(255, 255, 255, 0.1);
-    }
-
-    .unit-toggle {
-        width: calc(40px * var(--scale-ratio, 1));
-        padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
-        border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.2);
-        border-radius: calc(6px * var(--scale-ratio, 1));
-        font-size: calc(13px * var(--scale-ratio, 1));
-        background: rgba(255, 255, 255, 0.1);
-        color: #e2e8f0;
-        text-align: center;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-    .unit-toggle:hover {
-        background: rgba(255, 255, 255, 0.15);
-    }
-    .unit-toggle:disabled {
-        cursor: not-allowed;
-        color: #64748b;
-        opacity: 0.7;
-    }
-
-    /* 隐藏原生 number 输入框的上下箭头 */
-    input[type='number']::-webkit-inner-spin-button,
-    input[type='number']::-webkit-outer-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
-    }
-    input[type='number'] {
-        -moz-appearance: textfield;
-        appearance: textfield;
     }
 
     .placeholder {

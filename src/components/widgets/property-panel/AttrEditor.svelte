@@ -313,11 +313,6 @@
                 {/if}
             </PropertyRow>
 
-            <!-- 新增：使用 PropertyRow 复刻宽度输入 -->
-
-            <!-- 新增：使用 PropertyRow 复刻高度输入 -->
-
-            <!-- 使用 SizeInput 复刻宽高 -->
             <PropertyRow label="节点宽度">
                 <SizeInput
                     bind:value={currentWidthValue}
