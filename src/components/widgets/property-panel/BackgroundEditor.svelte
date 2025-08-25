@@ -16,7 +16,7 @@
 <script lang="ts">
     import { onDestroy } from 'svelte'
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { getNodePropsStore, getNodeProps as _getNodeProps, updateNodeProps, getFullNode } from '../../../services/property-panel/property-panel.service'
+    import { getNodePropsStore, getNodeProps as _getNodeProps, updateNodeProps, getFullNode } from '../../../services/property-panel/property-panel.service'
     import { getElementByNodeId } from '../../../services/utils/dom-geometry.util'
     import { getScaleRatio } from '../../../services/utils/get-scale-ratio.util'
     import { projectId } from '../../../services/repository/dom-tree.store.svelte'
@@ -24,6 +24,7 @@ import { getNodePropsStore, getNodeProps as _getNodeProps, updateNodeProps, getF
     import ColorPaletteService from '../../../services/project/color-palette.service'
     import ColorPicker from '../ColorPicker.svelte'
     import ResponsiveSlider from '../ResponsiveSlider.svelte'
+    import ToggleSwitch from '../ToggleSwitch.svelte'
 
     // 工具函数：安全获取字符串值
     function getStringValue(value: string | Blob | undefined): string {
@@ -33,21 +34,21 @@ import { getNodePropsStore, getNodeProps as _getNodeProps, updateNodeProps, getF
     // 外部传入当前选中节点 id
     let { selectedId = null } = $props<{ selectedId?: string | null }>()
 
-// 通过 getNodePropsStore 订阅节点样式变化
-let unsubscribe = () => {};
-$effect(() => {
-    unsubscribe();
-    if (selectedId) {
-        const store = getNodePropsStore(selectedId);
-        unsubscribe = store.subscribe(() => {
-            initBackgroundProps();
-        });
-    }
-    return () => {
-        unsubscribe();
-        unsubscribe = () => {};
-    };
-});
+    // 通过 getNodePropsStore 订阅节点样式变化
+    let unsubscribe = () => {}
+    $effect(() => {
+        unsubscribe()
+        if (selectedId) {
+            const store = getNodePropsStore(selectedId)
+            unsubscribe = store.subscribe(() => {
+                initBackgroundProps()
+            })
+        }
+        return () => {
+            unsubscribe()
+            unsubscribe = () => {}
+        }
+    })
 
     // 背景样式状态
     let backgroundImage = $state<string | Blob>('')
@@ -341,6 +342,10 @@ $effect(() => {
 
         // 清空渐变颜色和背景图片
         gradientColors = []
+
+        // 退出渐变模式时同步关闭背景裁剪开关
+        backgroundClipToText = false
+
         if (backgroundImage) {
             cleanupBlobUrls()
             backgroundImage = ''
@@ -828,10 +833,10 @@ $effect(() => {
     }
 
     // 当有背景图片时（包括Blob对象和URL字符串）
-    let hasBackgroundImage = $state(false);
+    let hasBackgroundImage = $state(false)
     $effect(() => {
-        hasBackgroundImage = !!(backgroundImage && (backgroundImage instanceof Blob || (typeof backgroundImage === 'string' && backgroundImage.trim() && !backgroundImage.includes('gradient'))));
-    });
+        hasBackgroundImage = !!(backgroundImage && (backgroundImage instanceof Blob || (typeof backgroundImage === 'string' && backgroundImage.trim() && !backgroundImage.includes('gradient'))))
+    })
 
     // 拖拽上传处理
     function handleDragOver(event: DragEvent) {
@@ -947,10 +952,7 @@ $effect(() => {
                 <!-- 背景裁剪为文字形状开关 -->
                 <div class="background-item">
                     <label for="background-clip-toggle">背景裁剪</label>
-                    <label class="switch">
-                        <input id="background-clip-toggle" type="checkbox" bind:checked={backgroundClipToText} onchange={updateBackgroundStyles} />
-                        <span class="slider"></span>
-                    </label>
+                    <ToggleSwitch id="background-clip-toggle" bind:checked={backgroundClipToText} on:change={updateBackgroundStyles} />
                     <span class="unit-placeholder"></span>
                 </div>
                 <!-- 渐变方向 -->
@@ -1127,46 +1129,6 @@ $effect(() => {
         box-shadow: 0 0 0 calc(3px * var(--scale-ratio, 1)) rgba(255, 255, 255, 0.1);
     }
 
-    /* 开关组件样式 */
-    .switch {
-        position: relative;
-        display: inline-block;
-        width: calc(44px * var(--scale-ratio, 1));
-        height: calc(24px * var(--scale-ratio, 1));
-    }
-    .switch input {
-        opacity: 0;
-        width: 0;
-        height: 0;
-    }
-    .slider {
-        position: absolute;
-        cursor: pointer;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: rgba(255, 255, 255, 0.1);
-        transition: 0.3s;
-        border-radius: calc(12px * var(--scale-ratio, 1));
-    }
-    .slider:before {
-        position: absolute;
-        content: '';
-        height: calc(18px * var(--scale-ratio, 1));
-        width: calc(18px * var(--scale-ratio, 1));
-        left: calc(6px * var(--scale-ratio, 1));
-        bottom: calc(3px * var(--scale-ratio, 1));
-        background-color: white;
-        transition: 0.3s;
-        border-radius: 50%;
-    }
-    input:checked + .slider {
-        background-color: #6366f1;
-    }
-    input:checked + .slider:before {
-        transform: translateX(calc(17px * var(--scale-ratio, 1)));
-    }
     /* 拖拽上传视觉反馈 */
     .input-style:hover {
         border-color: rgba(99, 102, 241, 0.5);

@@ -97,12 +97,15 @@
                             blobUrlSet.add(url)
                         }
                         value = `url(${url})`
-                    } else if (typeof v === 'string' && v.startsWith('url(')) {
-                        // 兼容旧版 URL 格式
-                        value = v
-                    } else if (typeof v === 'string' && v) {
-                        // 处理字符串路径
-                        value = `url(${v})`
+                    } else if (typeof v === 'string') {
+                        const str = v.trim()
+                        // 保留已有 url()、线性/径向渐变字符串
+                        if (str.startsWith('url(') || str.startsWith('linear-gradient(') || str.startsWith('radial-gradient(')) {
+                            value = str
+                        } else if (str) {
+                            // 处理普通路径
+                            value = `url(${str})`
+                        }
                     } else if (v) {
                         // 其他情况直接使用原值
                         value = v
