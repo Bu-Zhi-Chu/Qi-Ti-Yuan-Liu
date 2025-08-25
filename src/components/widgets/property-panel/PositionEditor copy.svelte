@@ -19,9 +19,6 @@
     import { domTree } from '../../../services/repository/dom-tree.store.svelte'
     import { getElementByNodeId } from '../../../services/utils/dom-geometry.util'
     import { getScaleRatio } from '../../../services/utils/get-scale-ratio.util'
-    import PropertyRow from './PropertyRow.svelte'
-    import SizeInput from './SizeInput.svelte'
-    import PropertySelect from './PropertySelect.svelte'
 
     // 外部传入当前选中节点 id
     let { selectedId = null } = $props<{ selectedId?: string | null }>()
@@ -50,15 +47,6 @@
 
     // 默认单位设置
     const defaultUnit: 'px' | '%' = '%'
-
-    // 定位类型选项
-    const positionTypeOptions = [
-        { value: 'static', label: '静态 (static)' },
-        { value: 'relative', label: '相对 (relative)' },
-        { value: 'absolute', label: '绝对 (absolute)' },
-        { value: 'fixed', label: '固定 (fixed)' },
-        { value: 'sticky', label: '粘性 (sticky)' }
-    ]
 
     // 单位选择 - 位置属性
     let currentTopUnit = $state<'px' | '%'>(defaultUnit)
@@ -281,7 +269,6 @@
         }
     }
 
-    /*
     // 切换单位 - 位置属性
     function toggleUnit(prop: 'top' | 'right' | 'bottom' | 'left') {
         if (!selectedId || isRoot) return
@@ -348,8 +335,6 @@
         }
     }
 
-    */
-
     // 将外边距属性从一个单位转换到另一个单位
     function convertMargin(val: number, from: '%' | 'px', to: '%' | 'px', prop: 'marginTop' | 'marginRight' | 'marginBottom' | 'marginLeft'): number {
         if (from === to) return val
@@ -372,7 +357,6 @@
         }
     }
 
-    /*
     // 切换单位 - 外边距属性
     function toggleMarginUnit(prop: 'marginTop' | 'marginRight' | 'marginBottom' | 'marginLeft') {
         if (!selectedId || isRoot) return
@@ -438,7 +422,6 @@
             handleMarginPropChange(prop, roundedValue, nextUnit)
         }
     }
-*/
 </script>
 
 <div class="position-editor">
@@ -446,91 +429,107 @@
         <h3>定位样式</h3>
         <div class="position-list">
             <!-- 定位类型 -->
-            <PropertyRow label="定位类型">
+            <div class="position-item">
+                <label for="node-position">定位类型</label>
                 {#if isRoot}
                     <input id="node-position-text" type="text" value="静态 (static) - 画布固定" disabled class="disabled-input" />
                 {:else}
-                    <PropertySelect id="node-position" bind:value={currentPosition} options={positionTypeOptions} disabled={isRoot} change={handlePositionChange} />
+                    <div class="select-wrapper">
+                        <select id="node-position" bind:value={currentPosition} onchange={(e) => handlePositionChange(e.currentTarget.value)}>
+                            <option value="static">静态 (static)</option>
+                            <option value="relative">相对 (relative)</option>
+                            <option value="absolute">绝对 (absolute)</option>
+                            <option value="fixed">固定 (fixed)</option>
+                            <option value="sticky">粘性 (sticky)</option>
+                        </select>
+                    </div>
                 {/if}
-            </PropertyRow>
+                <span class="unit-placeholder"></span>
+            </div>
 
             <!-- 位置属性 - 仅在非static定位时显示 -->
             {#if showPositionProps && !isRoot}
                 <!-- 上边距 -->
-                <PropertyRow label="上边距值">
-                    <SizeInput bind:value={currentTop} bind:unit={currentTopUnit} disabled={isRoot} convert={(val, from, to) => convertPosition(val, from, to, 'top')} placeholder="上边距..." on:change={({ detail: { value, unit } }) => handlePositionPropChange('top', value, unit)} />
-                </PropertyRow>
+                <div class="position-item">
+                    <label for="node-top">上边距值</label>
+                    <input id="node-top" type="number" step="1" bind:value={currentTop} oninput={(e) => handlePositionPropChange('top', e.currentTarget.value, currentTopUnit)} placeholder="上边距..." disabled={isRoot} class:disabled-input={isRoot} />
+                    <button class="unit-toggle" onclick={() => toggleUnit('top')} disabled={isRoot} class:disabled-input={isRoot}>
+                        {currentTopUnit}
+                    </button>
+                </div>
 
                 <!-- 右边距 -->
-                <PropertyRow label="右边距值">
-                    <SizeInput bind:value={currentRight} bind:unit={currentRightUnit} disabled={isRoot} convert={(val, from, to) => convertPosition(val, from, to, 'right')} placeholder="右边距..." on:change={({ detail: { value, unit } }) => handlePositionPropChange('right', value, unit)} />
-                </PropertyRow>
+                <div class="position-item">
+                    <label for="node-right">右边距值</label>
+                    <input id="node-right" type="number" step="1" bind:value={currentRight} oninput={(e) => handlePositionPropChange('right', e.currentTarget.value, currentRightUnit)} placeholder="右边距..." disabled={isRoot} class:disabled-input={isRoot} />
+                    <button class="unit-toggle" onclick={() => toggleUnit('right')} disabled={isRoot} class:disabled-input={isRoot}>
+                        {currentRightUnit}
+                    </button>
+                </div>
 
                 <!-- 下边距 -->
-                <PropertyRow label="下边距值">
-                    <SizeInput bind:value={currentBottom} bind:unit={currentBottomUnit} disabled={isRoot} convert={(val, from, to) => convertPosition(val, from, to, 'bottom')} placeholder="下边距..." on:change={({ detail: { value, unit } }) => handlePositionPropChange('bottom', value, unit)} />
-                </PropertyRow>
+                <div class="position-item">
+                    <label for="node-bottom">下边距值</label>
+                    <input id="node-bottom" type="number" step="1" bind:value={currentBottom} oninput={(e) => handlePositionPropChange('bottom', e.currentTarget.value, currentBottomUnit)} placeholder="下边距..." disabled={isRoot} class:disabled-input={isRoot} />
+                    <button class="unit-toggle" onclick={() => toggleUnit('bottom')} disabled={isRoot} class:disabled-input={isRoot}>
+                        {currentBottomUnit}
+                    </button>
+                </div>
 
                 <!-- 左边距 -->
-                <PropertyRow label="左边距值">
-                    <SizeInput bind:value={currentLeft} bind:unit={currentLeftUnit} disabled={isRoot} convert={(val, from, to) => convertPosition(val, from, to, 'left')} placeholder="左边距..." on:change={({ detail: { value, unit } }) => handlePositionPropChange('left', value, unit)} />
-                </PropertyRow>
+                <div class="position-item">
+                    <label for="node-left">左边距值</label>
+                    <input id="node-left" type="number" step="1" bind:value={currentLeft} oninput={(e) => handlePositionPropChange('left', e.currentTarget.value, currentLeftUnit)} placeholder="左边距..." disabled={isRoot} class:disabled-input={isRoot} />
+                    <button class="unit-toggle" onclick={() => toggleUnit('left')} disabled={isRoot} class:disabled-input={isRoot}>
+                        {currentLeftUnit}
+                    </button>
+                </div>
 
                 <!-- Z轴层级 -->
-                <PropertyRow label="层级指数">
+                <div class="position-item">
+                    <label for="node-zindex">层级指数</label>
                     <input id="node-zindex" type="number" step="1" bind:value={currentZIndex} oninput={(e) => handleZIndexChange(e.currentTarget.value)} placeholder="z-index..." disabled={isRoot} class:disabled-input={isRoot} />
-                </PropertyRow>
+                    <span class="unit-placeholder"></span>
+                </div>
             {/if}
 
             <!-- 外边距属性 - 在static定位时特别有用 -->
             {#if showMarginProps && !isRoot}
                 <!-- 上外边距 -->
-                <PropertyRow label="上外边距">
-                    <SizeInput
-                        bind:value={currentMarginTop}
-                        bind:unit={currentMarginTopUnit}
-                        disabled={isRoot}
-                        convert={(val, from, to) => convertMargin(val, from, to, 'marginTop')}
-                        placeholder="上外边距..."
-                        on:change={({ detail: { value, unit } }) => handleMarginPropChange('marginTop', value, unit)}
-                    />
-                </PropertyRow>
+                <div class="position-item">
+                    <label for="node-margin-top">上外边距</label>
+                    <input id="node-margin-top" type="number" step="1" bind:value={currentMarginTop} oninput={(e) => handleMarginPropChange('marginTop', e.currentTarget.value, currentMarginTopUnit)} placeholder="上外边距..." disabled={isRoot} class:disabled-input={isRoot} />
+                    <button class="unit-toggle" onclick={() => toggleMarginUnit('marginTop')} disabled={isRoot} class:disabled-input={isRoot}>
+                        {currentMarginTopUnit}
+                    </button>
+                </div>
 
                 <!-- 右外边距 -->
-                <PropertyRow label="右外边距">
-                    <SizeInput
-                        bind:value={currentMarginRight}
-                        bind:unit={currentMarginRightUnit}
-                        disabled={isRoot}
-                        convert={(val, from, to) => convertMargin(val, from, to, 'marginRight')}
-                        placeholder="右外边距..."
-                        on:change={({ detail: { value, unit } }) => handleMarginPropChange('marginRight', value, unit)}
-                    />
-                </PropertyRow>
+                <div class="position-item">
+                    <label for="node-margin-right">右外边距</label>
+                    <input id="node-margin-right" type="number" step="1" bind:value={currentMarginRight} oninput={(e) => handleMarginPropChange('marginRight', e.currentTarget.value, currentMarginRightUnit)} placeholder="右外边距..." disabled={isRoot} class:disabled-input={isRoot} />
+                    <button class="unit-toggle" onclick={() => toggleMarginUnit('marginRight')} disabled={isRoot} class:disabled-input={isRoot}>
+                        {currentMarginRightUnit}
+                    </button>
+                </div>
 
                 <!-- 下外边距 -->
-                <PropertyRow label="下外边距">
-                    <SizeInput
-                        bind:value={currentMarginBottom}
-                        bind:unit={currentMarginBottomUnit}
-                        disabled={isRoot}
-                        convert={(val, from, to) => convertMargin(val, from, to, 'marginBottom')}
-                        placeholder="下外边距..."
-                        on:change={({ detail: { value, unit } }) => handleMarginPropChange('marginBottom', value, unit)}
-                    />
-                </PropertyRow>
+                <div class="position-item">
+                    <label for="node-margin-bottom">下外边距</label>
+                    <input id="node-margin-bottom" type="number" step="1" bind:value={currentMarginBottom} oninput={(e) => handleMarginPropChange('marginBottom', e.currentTarget.value, currentMarginBottomUnit)} placeholder="下外边距..." disabled={isRoot} class:disabled-input={isRoot} />
+                    <button class="unit-toggle" onclick={() => toggleMarginUnit('marginBottom')} disabled={isRoot} class:disabled-input={isRoot}>
+                        {currentMarginBottomUnit}
+                    </button>
+                </div>
 
                 <!-- 左外边距 -->
-                <PropertyRow label="左外边距">
-                    <SizeInput
-                        bind:value={currentMarginLeft}
-                        bind:unit={currentMarginLeftUnit}
-                        disabled={isRoot}
-                        convert={(val, from, to) => convertMargin(val, from, to, 'marginLeft')}
-                        placeholder="左外边距..."
-                        on:change={({ detail: { value, unit } }) => handleMarginPropChange('marginLeft', value, unit)}
-                    />
-                </PropertyRow>
+                <div class="position-item">
+                    <label for="node-margin-left">左外边距</label>
+                    <input id="node-margin-left" type="number" step="1" bind:value={currentMarginLeft} oninput={(e) => handleMarginPropChange('marginLeft', e.currentTarget.value, currentMarginLeftUnit)} placeholder="左外边距..." disabled={isRoot} class:disabled-input={isRoot} />
+                    <button class="unit-toggle" onclick={() => toggleMarginUnit('marginLeft')} disabled={isRoot} class:disabled-input={isRoot}>
+                        {currentMarginLeftUnit}
+                    </button>
+                </div>
             {/if}
         </div>
     {:else}
@@ -554,8 +553,43 @@
         flex-direction: column;
         gap: calc(12px * var(--scale-ratio, 1));
     }
+    .position-item {
+        display: flex;
+        align-items: center;
+        gap: calc(10px * var(--scale-ratio, 1));
+        border-radius: calc(8px * var(--scale-ratio, 1));
+        transition: all 0.3s ease;
+    }
 
-    input {
+    .unit-placeholder {
+        width: calc(40px * var(--scale-ratio, 1));
+    }
+
+    /* 单位切换按钮样式 */
+    .unit-toggle {
+        width: calc(40px * var(--scale-ratio, 1));
+        padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
+        border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.2);
+        border-radius: calc(6px * var(--scale-ratio, 1));
+        font-size: calc(13px * var(--scale-ratio, 1));
+        background: rgba(255, 255, 255, 0.1);
+        color: #e2e8f0;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    .unit-toggle:hover {
+        background: rgba(255, 255, 255, 0.15);
+    }
+
+    label {
+        min-width: calc(30px * var(--scale-ratio, 1));
+        font-size: calc(13px * var(--scale-ratio, 1));
+        font-weight: 500;
+        color: #94a3b8;
+    }
+    input,
+    select {
         flex: 1;
         padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
         border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.2);
@@ -567,16 +601,22 @@
         appearance: none;
     }
 
+    select:focus,
     input:focus {
         outline: none;
         border-color: #cbd5e1;
         background: rgba(255, 255, 255, 0.15);
         box-shadow: 0 0 0 calc(3px * var(--scale-ratio, 1)) rgba(255, 255, 255, 0.1);
     }
+    select option {
+        background: #1e293b;
+        color: #e2e8f0;
+    }
 
     /* 统一禁用态样式 */
-
-    input:disabled {
+    select:disabled,
+    input:disabled,
+    .unit-toggle:disabled {
         cursor: not-allowed;
         opacity: 0.5;
     }
@@ -606,5 +646,29 @@
     input[type='number'] {
         -moz-appearance: textfield;
         appearance: textfield;
+    }
+
+    .select-wrapper {
+        position: relative;
+        flex: 1;
+    }
+
+    .select-wrapper::after {
+        content: '';
+        position: absolute;
+        right: calc(12px * var(--scale-ratio, 1));
+        top: 50%;
+        transform: translateY(-50%);
+        width: 0;
+        height: 0;
+        border-left: calc(4px * var(--scale-ratio, 1)) solid transparent;
+        border-right: calc(4px * var(--scale-ratio, 1)) solid transparent;
+        border-top: calc(4px * var(--scale-ratio, 1)) solid #94a3b8;
+        pointer-events: none;
+    }
+
+    .select-wrapper select {
+        width: 100%;
+        padding-right: calc(30px * var(--scale-ratio, 1));
     }
 </style>
