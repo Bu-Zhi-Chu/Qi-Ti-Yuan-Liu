@@ -795,9 +795,19 @@
         const elementSize = axis === 'x' ? el.offsetWidth : el.offsetHeight
         if (elementSize === 0) return val
 
-        const imageSize = axis === 'x' ? displaySizeCache.width : displaySizeCache.height
+        let imageSize = axis === 'x' ? displaySizeCache.width : displaySizeCache.height
+        // 当异步缓存尚未就绪时，根据当前 background-size 估算图片显示尺寸，保证换算准确
+        if (imageSize === 0) {
+            const sizeVal = parseFloat(axis === 'x' ? backgroundSizeX : backgroundSizeY) || 0
+            const unit = axis === 'x' ? sizeUnitX : sizeUnitY
+            if (unit === '%') {
+                imageSize = (sizeVal / 100) * elementSize
+            } else if (unit === 'px') {
+                // 设计 px 乘全局缩放比得到真实像素尺寸
+                imageSize = sizeVal * getScaleRatio()
+            }
+        }
         const sr = getScaleRatio()
-
         if (from === 'px') {
             // 设计 px → % (需乘全局缩放比)
             if (imageSize === 0) {
