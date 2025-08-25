@@ -408,10 +408,11 @@
                 filteredStyles[key] = undefined
             }
         })
-        updateNodeProps(selectedId, { styles: filteredStyles })
-
-        // 单独更新文本内容
+        // 单独更新文本内容 - 必须先执行，避免订阅回调覆盖输入
         updateNodeProperties(selectedId, { textContent })
+
+        // 更新样式
+        updateNodeProps(selectedId, { styles: filteredStyles })
     }
 </script>
 
