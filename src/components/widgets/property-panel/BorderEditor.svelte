@@ -112,7 +112,26 @@
                 ;[borderBottomRightRadius, borderBottomRightRadiusUnit] = parseBorderRadius(getStringValue(props.styles?.borderBottomRightRadius))
 
                 // 判断是否使用统一控制
-                unifiedControl = !(getStringValue(props.styles?.borderTopWidth) || getStringValue(props.styles?.borderRightWidth) || getStringValue(props.styles?.borderBottomWidth) || getStringValue(props.styles?.borderLeftWidth))
+                const hasUnified = getStringValue(props.styles?.borderWidth) || getStringValue(props.styles?.borderColor) || getStringValue(props.styles?.borderStyle) || getStringValue(props.styles?.borderRadius)
+                const hasIndividual =
+                    getStringValue(props.styles?.borderTopWidth) ||
+                    getStringValue(props.styles?.borderTopColor) ||
+                    getStringValue(props.styles?.borderTopStyle) ||
+                    getStringValue(props.styles?.borderRightWidth) ||
+                    getStringValue(props.styles?.borderRightColor) ||
+                    getStringValue(props.styles?.borderRightStyle) ||
+                    getStringValue(props.styles?.borderBottomWidth) ||
+                    getStringValue(props.styles?.borderBottomColor) ||
+                    getStringValue(props.styles?.borderBottomStyle) ||
+                    getStringValue(props.styles?.borderLeftWidth) ||
+                    getStringValue(props.styles?.borderLeftColor) ||
+                    getStringValue(props.styles?.borderLeftStyle)
+
+                if (hasUnified && !hasIndividual) {
+                    unifiedControl = true
+                } else if (hasIndividual && !hasUnified) {
+                    unifiedControl = false
+                } // 如果两者都没有或同时存在，保持现状
             })
         } else {
             resetAllProperties()
@@ -249,6 +268,27 @@
             styles[key] = value
         }
 
+        // 如果当前修改的不是样式属性，且未显式指定样式，则为该边补充默认样式（solid）
+        if (prop !== 'Style') {
+            const styleKey = `border${side}Style`
+            let currentStyle = 'solid'
+            switch (side) {
+                case 'Top':
+                    currentStyle = borderTopStyle || 'solid'
+                    break
+                case 'Right':
+                    currentStyle = borderRightStyle || 'solid'
+                    break
+                case 'Bottom':
+                    currentStyle = borderBottomStyle || 'solid'
+                    break
+                case 'Left':
+                    currentStyle = borderLeftStyle || 'solid'
+                    break
+            }
+            styles[styleKey] = currentStyle
+        }
+
         // 清除统一边框样式，确保互斥
         styles.borderWidth = ''
         styles.borderColor = ''
@@ -341,6 +381,23 @@
             updateUnifiedBorder()
         }
     }
+
+    // 新增：切换统一/分别控制时互斥更新样式的处理函数
+    function handleUnifiedToggle() {
+        if (!selectedId || isRoot) return
+        if (unifiedControl) {
+            updateUnifiedBorder()
+        } else {
+            updateNodeProps(selectedId, {
+                styles: {
+                    borderWidth: '',
+                    borderColor: '',
+                    borderStyle: '',
+                    borderRadius: ''
+                }
+            })
+        }
+    }
 </script>
 
 <div class="border-editor">
@@ -351,7 +408,7 @@
         <div class="border-section">
             <div class="attr-list">
                 <PropertyRow label="统一控制">
-                    <ToggleSwitch id="unified-control" bind:checked={unifiedControl} disabled={isRoot} />
+                    <ToggleSwitch id="unified-control" bind:checked={unifiedControl} disabled={isRoot} on:change={handleUnifiedToggle} />
                 </PropertyRow>
             </div>
         </div>
