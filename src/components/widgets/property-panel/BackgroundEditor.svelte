@@ -25,6 +25,9 @@
     import ColorPicker from '../ColorPicker.svelte'
     import ResponsiveSlider from '../ResponsiveSlider.svelte'
     import ToggleSwitch from '../ToggleSwitch.svelte'
+    import PropertyRow from './PropertyRow.svelte'
+    import PropertySelect from './PropertySelect.svelte'
+    import SizeInput from './SizeInput.svelte'
 
     // 工具函数：安全获取字符串值
     function getStringValue(value: string | Blob | undefined): string {
@@ -782,6 +785,34 @@
         }
     }
 
+    // 同步版本 - 背景位置单位换算（供 SizeInput 使用）
+    // 通过预先缓存的 displaySizeCache 达到与异步版本相同的精度
+    function convertBackgroundPositionSync(val: number, from: 'px' | '%', to: 'px' | '%', axis: 'x' | 'y'): number {
+        if (from === to) return val
+        if (!selectedId) return val
+        const el = getElementByNodeId(selectedId)
+        if (!el) return val
+        const elementSize = axis === 'x' ? el.offsetWidth : el.offsetHeight
+        if (elementSize === 0) return val
+
+        const imageSize = axis === 'x' ? displaySizeCache.width : displaySizeCache.height
+        const sr = getScaleRatio()
+
+        if (from === 'px') {
+            // 设计 px → % (需乘全局缩放比)
+            if (imageSize === 0) {
+                return ((val * sr) / elementSize) * 100
+            }
+            return ((val * sr) / (elementSize - imageSize)) * 100
+        } else {
+            // % → 设计 px (需除全局缩放比)
+            if (imageSize === 0) {
+                return ((val / 100) * elementSize) / sr
+            }
+            return ((val / 100) * (elementSize - imageSize)) / sr
+        }
+    }
+
     // 单位切换函数 - 带数值换算
     function toggleSizeUnitX() {
         if (!selectedId) return
@@ -834,6 +865,14 @@
 
     // 当有背景图片时（包括Blob对象和URL字符串）
     let hasBackgroundImage = $state(false)
+    // 缓存背景图片在元素中的显示尺寸，供同步换算使用
+    let displaySizeCache = $state<{ width: number; height: number }>({ width: 0, height: 0 })
+    $effect(() => {
+        ;(async () => {
+            const size = await getBackgroundDisplaySize()
+            displaySizeCache = size
+        })()
+    })
     $effect(() => {
         hasBackgroundImage = !!(backgroundImage && (backgroundImage instanceof Blob || (typeof backgroundImage === 'string' && backgroundImage.trim() && !backgroundImage.includes('gradient'))))
     })
@@ -886,49 +925,74 @@
             {/if}
 
             <!-- 背景尺寸 -->
-            <div class="background-item">
-                <label for="background-size-x">背景宽度</label>
-                <input id="background-size-x" type="number" step={sizeUnitX === '%' ? 0.1 : 1} min="0" max="9999" bind:value={backgroundSizeX} oninput={updateBackgroundStyles} placeholder="宽度值..." />
-                <button class="unit-toggle" onclick={toggleSizeUnitX}>
-                    {sizeUnitX}
-                </button>
-            </div>
+            <PropertyRow label="背景宽度">
+                <SizeInput
+                    bind:value={backgroundSizeX}
+                    bind:unit={sizeUnitX}
+                    convert={(val, from, to) => convertBackgroundSize(val, from, to, 'x')}
+                    on:change={(e: CustomEvent<{ value: string; unit: 'px' | '%' }>) => {
+                        const { value, unit } = e.detail
+                        backgroundSizeX = value
+                        sizeUnitX = unit
+                        updateBackgroundStyles()
+                    }}
+                />
+            </PropertyRow>
 
-            <div class="background-item">
-                <label for="background-size-y">背景高度</label>
-                <input id="background-size-y" type="number" step={sizeUnitY === '%' ? 0.1 : 1} min="0" max="9999" bind:value={backgroundSizeY} oninput={updateBackgroundStyles} placeholder="高度值..." />
-                <button class="unit-toggle" onclick={toggleSizeUnitY}>
-                    {sizeUnitY}
-                </button>
-            </div>
+            <PropertyRow label="背景高度">
+                <SizeInput
+                    bind:value={backgroundSizeY}
+                    bind:unit={sizeUnitY}
+                    convert={(val, from, to) => convertBackgroundSize(val, from, to, 'y')}
+                    on:change={(e: CustomEvent<{ value: string; unit: 'px' | '%' }>) => {
+                        const { value, unit } = e.detail
+                        backgroundSizeY = value
+                        sizeUnitY = unit
+                        updateBackgroundStyles()
+                    }}
+                />
+            </PropertyRow>
 
             <!-- 背景位置 -->
-            <div class="background-item">
-                <label for="background-position-x">水平位置</label>
-                <input id="background-position-x" type="number" step={positionUnitX === '%' ? 0.1 : 1} min="-9999" max="9999" bind:value={backgroundPositionX} oninput={updateBackgroundStyles} placeholder="水平位置..." />
-                <button class="unit-toggle" onclick={togglePositionUnitX}>
-                    {positionUnitX}
-                </button>
-            </div>
+            <PropertyRow label="水平位置">
+                <SizeInput
+                    bind:value={backgroundPositionX}
+                    bind:unit={positionUnitX}
+                    convert={(val, from, to) => convertBackgroundPositionSync(val, from, to, 'x')}
+                    on:change={(e: CustomEvent<{ value: string; unit: 'px' | '%' }>) => {
+                        const { value, unit } = e.detail
+                        backgroundPositionX = value
+                        positionUnitX = unit
+                        updateBackgroundStyles()
+                    }}
+                />
+            </PropertyRow>
 
-            <div class="background-item">
-                <label for="background-position-y">垂直位置</label>
-                <input id="background-position-y" type="number" step={positionUnitY === '%' ? 0.1 : 1} min="-9999" max="9999" bind:value={backgroundPositionY} oninput={updateBackgroundStyles} placeholder="垂直位置..." />
-                <button class="unit-toggle" onclick={togglePositionUnitY}>
-                    {positionUnitY}
-                </button>
-            </div>
+            <PropertyRow label="垂直位置">
+                <SizeInput
+                    bind:value={backgroundPositionY}
+                    bind:unit={positionUnitY}
+                    convert={(val, from, to) => convertBackgroundPositionSync(val, from, to, 'y')}
+                    on:change={(e: CustomEvent<{ value: string; unit: 'px' | '%' }>) => {
+                        const { value, unit } = e.detail
+                        backgroundPositionY = value
+                        positionUnitY = unit
+                        updateBackgroundStyles()
+                    }}
+                />
+            </PropertyRow>
 
             <!-- 平铺方式 -->
-            <div class="background-item">
-                <label for="background-repeat">平铺方式</label>
-                <select id="background-repeat" bind:value={backgroundRepeat} onchange={updateBackgroundStyles}>
-                    {#each repeatOptions as option}
-                        <option value={option.value}>{option.label}</option>
-                    {/each}
-                </select>
-                <span class="unit-placeholder"></span>
-            </div>
+            <PropertyRow label="平铺方式">
+                <PropertySelect
+                    bind:value={backgroundRepeat}
+                    options={repeatOptions}
+                    change={(v) => {
+                        backgroundRepeat = v
+                        updateBackgroundStyles()
+                    }}
+                />
+            </PropertyRow>
 
             <!-- 背景颜色 -->
             <div class="background-item">
