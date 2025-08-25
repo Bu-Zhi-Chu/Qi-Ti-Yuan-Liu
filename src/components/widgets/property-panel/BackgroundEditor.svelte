@@ -1159,17 +1159,6 @@
         font-size: calc(14px * var(--scale-ratio, 1));
     }
 
-    /* 隐藏原生 number 输入框的上下箭头 */
-    input[type='number']::-webkit-inner-spin-button,
-    input[type='number']::-webkit-outer-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
-    }
-    input[type='number'] {
-        -moz-appearance: textfield;
-        appearance: textfield;
-    }
-
     /* 按钮样式 - 与输入框保持一致 */
     .input-style {
         flex: 1;

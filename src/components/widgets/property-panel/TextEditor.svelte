@@ -30,6 +30,9 @@
     import ColorPicker from '../ColorPicker.svelte'
     import ResponsiveSlider from '../ResponsiveSlider.svelte'
     import { getScaleRatio } from '../../../services/utils/get-scale-ratio.util'
+    import PropertyRow from './PropertyRow.svelte'
+    import PropertySelect from './PropertySelect.svelte'
+    import SizeInput from './SizeInput.svelte'
 
     interface Props {
         selectedId: string | null
@@ -419,70 +422,21 @@
             <!-- 文本内容输入 - 放在第一个位置 -->
             <div class="text-item">
                 <label for="text-content">文本内容</label>
-                <textarea id="text-content" rows="3" bind:value={textContent} oninput={updateTextStyles} placeholder="输入文本内容..." style="resize: vertical; min-height: calc(60px * var(--scale-ratio, 1));"></textarea>
+                <textarea id="text-content" rows="3" bind:value={textContent} oninput={(e) => { textContent = (e.target as HTMLTextAreaElement).value; updateTextStyles(); }} placeholder="输入文本内容..." style="resize: vertical; min-height: calc(60px * var(--scale-ratio, 1));"></textarea>
                 <span class="unit-placeholder"></span>
             </div>
 
-            <div class="text-item">
-                <label for="font-family">文本字体</label>
-                <div class="select-wrapper">
-                    <select id="font-family" bind:value={fontFamily} onchange={updateTextStyles}>
-                        {#each fontFamilyOptions as family}
-                            <option value={family.value}>{family.label}</option>
-                        {/each}
-                    </select>
-                </div>
-                <span class="unit-placeholder"></span>
-            </div>
+            <PropertyRow label="文本字体">
+                <PropertySelect bind:value={fontFamily} options={fontFamilyOptions} change={(v)=>{fontFamily=v;updateTextStyles()}} />
+            </PropertyRow>
 
-            <div class="text-item">
-                <label for="font-size">字体大小</label>
-                <input
-                    id="font-size"
-                    type="number"
-                    min="8"
-                    max="200"
-                    step="1"
-                    bind:value={fontSize}
-                    oninput={(e) => {
-                        updateTextStyles()
-                    }}
-                    onwheel={(e) => {
-                        e.preventDefault()
-                        const val = parseInt(fontSize) || 16
-                        fontSize = val + (e.deltaY < 0 ? 1 : -1) + ''
-                        updateTextStyles()
-                    }}
-                    onkeydown={(e) => {
-                        if (e.key === 'ArrowUp') {
-                            e.preventDefault()
-                            const val = parseInt(fontSize) || 16
-                            fontSize = val + 1 + ''
-                            updateTextStyles()
-                        }
-                        if (e.key === 'ArrowDown') {
-                            e.preventDefault()
-                            const val = parseInt(fontSize) || 16
-                            fontSize = val - 1 + ''
-                            updateTextStyles()
-                        }
-                    }}
-                    placeholder="字体大小..."
-                />
-                <button class="unit-toggle" disabled>px</button>
-            </div>
+            <PropertyRow label="字体大小">
+                <SizeInput bind:value={fontSize} unitOptions={['px']} convert={(v)=>v} on:change={({ detail }) => { fontSize = detail.value; updateTextStyles(); }} placeholder="字体大小..." />
+            </PropertyRow>
 
-            <div class="text-item">
-                <label for="font-weight">文本宽度</label>
-                <div class="select-wrapper">
-                    <select id="font-weight" bind:value={fontWeight} onchange={updateTextStyles}>
-                        {#each fontWeightOptions as weight}
-                            <option value={weight.value}>{weight.label}</option>
-                        {/each}
-                    </select>
-                </div>
-                <span class="unit-placeholder"></span>
-            </div>
+            <PropertyRow label="文本宽度">
+                <PropertySelect bind:value={fontWeight} options={fontWeightOptions} change={(v)=>{fontWeight=v;updateTextStyles()}} />
+            </PropertyRow>
 
             <div class="text-item">
                 <label for="font-color">文本颜色</label>
@@ -502,165 +456,34 @@
                 <span class="unit-placeholder"></span>
             </div>
 
-            <div class="text-item">
-                <label for="line-height">文本行高</label>
-                <input
-                    id="line-height"
-                    type="number"
-                    min="8"
-                    max="80"
-                    step="1"
-                    bind:value={lineHeight}
-                    oninput={(e) => {
-                        updateTextStyles()
-                    }}
-                    onwheel={(e) => {
-                        e.preventDefault()
-                        const val = parseInt(lineHeight) || 24
-                        lineHeight = (val + (e.deltaY < 0 ? 1 : -1)).toString()
-                        updateTextStyles()
-                    }}
-                    onkeydown={(e) => {
-                        if (e.key === 'ArrowUp') {
-                            e.preventDefault()
-                            const val = parseInt(lineHeight) || 24
-                            lineHeight = (val + 1).toString()
-                            updateTextStyles()
-                        }
-                        if (e.key === 'ArrowDown') {
-                            e.preventDefault()
-                            const val = parseInt(lineHeight) || 24
-                            lineHeight = (val - 1).toString()
-                            updateTextStyles()
-                        }
-                    }}
-                    placeholder="行高(px)..."
-                />
-                <button class="unit-toggle" disabled>px</button>
-            </div>
+            <PropertyRow label="文本行高">
+                <SizeInput bind:value={lineHeight} unitOptions={['px']} convert={(v)=>v} on:change={({ detail }) => { lineHeight = detail.value; updateTextStyles(); }} placeholder="行高(px)..." />
+            </PropertyRow>
 
-            <div class="text-item">
-                <label for="text-align">对齐方式</label>
-                <div class="select-wrapper">
-                    <select id="text-align" bind:value={textAlign} onchange={updateTextStyles}>
-                        {#each textAlignOptions as option}
-                            <option value={option.value}>{option.label}</option>
-                        {/each}
-                    </select>
-                </div>
-                <span class="unit-placeholder"></span>
-            </div>
+            <PropertyRow label="对齐方式">
+                <PropertySelect bind:value={textAlign} options={textAlignOptions} change={(v)=>{textAlign=v;updateTextStyles()}} />
+            </PropertyRow>
 
-            <div class="text-item">
-                <label for="text-decoration">文字装饰</label>
-                <div class="select-wrapper">
-                    <select id="text-decoration" bind:value={textDecoration} onchange={updateTextStyles}>
-                        {#each textDecorationOptions as option}
-                            <option value={option.value}>{option.label}</option>
-                        {/each}
-                    </select>
-                </div>
-                <span class="unit-placeholder"></span>
-            </div>
+            <PropertyRow label="文字装饰">
+                <PropertySelect bind:value={textDecoration} options={textDecorationOptions} change={(v)=>{textDecoration=v;updateTextStyles()}} />
+            </PropertyRow>
 
-            <div class="text-item">
-                <label for="font-style">字体样式</label>
-                <div class="select-wrapper">
-                    <select id="font-style" bind:value={fontStyle} onchange={updateTextStyles}>
-                        {#each fontStyleOptions as option}
-                            <option value={option.value}>{option.label}</option>
-                        {/each}
-                    </select>
-                </div>
-                <span class="unit-placeholder"></span>
-            </div>
+            <PropertyRow label="字体样式">
+                <PropertySelect bind:value={fontStyle} options={fontStyleOptions} change={(v)=>{fontStyle=v;updateTextStyles()}} />
+            </PropertyRow>
 
-            <div class="text-item">
-                <label for="letter-spacing">字母间距</label>
-                <input
-                    id="letter-spacing"
-                    type="number"
-                    min="-5"
-                    max="10"
-                    step="0.1"
-                    bind:value={letterSpacing}
-                    oninput={(e) => {
-                        updateTextStyles()
-                    }}
-                    onwheel={(e) => {
-                        e.preventDefault()
-                        const val = parseFloat(letterSpacing) || 0
-                        letterSpacing = (val + (e.deltaY < 0 ? 0.1 : -0.1)).toFixed(1)
-                        updateTextStyles()
-                    }}
-                    onkeydown={(e) => {
-                        if (e.key === 'ArrowUp') {
-                            e.preventDefault()
-                            const val = parseFloat(letterSpacing) || 0
-                            letterSpacing = (val + 0.1).toFixed(1)
-                            updateTextStyles()
-                        }
-                        if (e.key === 'ArrowDown') {
-                            e.preventDefault()
-                            const val = parseFloat(letterSpacing) || 0
-                            letterSpacing = (val - 0.1).toFixed(1)
-                            updateTextStyles()
-                        }
-                    }}
-                    placeholder="字母间距..."
-                />
-                <button class="unit-toggle" disabled>px</button>
-            </div>
+            <PropertyRow label="字母间距">
+                <SizeInput bind:value={letterSpacing} unitOptions={['px']} convert={(v)=>v} on:change={({ detail }) => { letterSpacing = detail.value; updateTextStyles(); }} placeholder="字母间距..." />
+            </PropertyRow>
 
-            <div class="text-item">
-                <label for="word-spacing">单词间距</label>
-                <input
-                    id="word-spacing"
-                    type="number"
-                    min="-5"
-                    max="10"
-                    step="0.1"
-                    bind:value={wordSpacing}
-                    oninput={(e) => {
-                        updateTextStyles()
-                    }}
-                    onwheel={(e) => {
-                        e.preventDefault()
-                        const val = parseFloat(wordSpacing) || 0
-                        wordSpacing = (val + (e.deltaY < 0 ? 0.1 : -0.1)).toFixed(1)
-                        updateTextStyles()
-                    }}
-                    onkeydown={(e) => {
-                        if (e.key === 'ArrowUp') {
-                            e.preventDefault()
-                            const val = parseFloat(wordSpacing) || 0
-                            wordSpacing = (val + 0.1).toFixed(1)
-                            updateTextStyles()
-                        }
-                        if (e.key === 'ArrowDown') {
-                            e.preventDefault()
-                            const val = parseFloat(wordSpacing) || 0
-                            wordSpacing = (val - 0.1).toFixed(1)
-                            updateTextStyles()
-                        }
-                    }}
-                    placeholder="单词间距..."
-                />
-                <button class="unit-toggle" disabled>px</button>
-            </div>
+            <PropertyRow label="单词间距">
+                <SizeInput bind:value={wordSpacing} unitOptions={['px']} convert={(v)=>v} on:change={({ detail }) => { wordSpacing = detail.value; updateTextStyles(); }} placeholder="单词间距..." />
+            </PropertyRow>
 
             <!-- 文本换行 -->
-            <div class="text-item">
-                <label for="text-wrap">文本换行</label>
-                <div class="select-wrapper">
-                    <select id="text-wrap" bind:value={textWrapStyle} onchange={updateTextStyles}>
-                        {#each textWrapOptions as option}
-                            <option value={option.value}>{option.label}</option>
-                        {/each}
-                    </select>
-                </div>
-                <span class="unit-placeholder"></span>
-            </div>
+            <PropertyRow label="文本换行">
+                <PropertySelect bind:value={textWrapStyle} options={textWrapOptions} change={(v)=>{textWrapStyle=v;updateTextStyles()}} />
+            </PropertyRow>
         </div>
     {:else}
         <p class="placeholder">请选择一个节点来编辑文字样式</p>
@@ -700,8 +523,6 @@
         font-weight: 500;
         color: #94a3b8;
     }
-    input,
-    select,
     textarea {
         flex: 1;
         padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
@@ -714,45 +535,21 @@
         appearance: none;
     }
 
-    /* 单位切换按钮样式 */
-    .unit-toggle {
-        width: calc(40px * var(--scale-ratio, 1));
-        padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
-        border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.2);
-        border-radius: calc(6px * var(--scale-ratio, 1));
-        font-size: calc(13px * var(--scale-ratio, 1));
-        background: rgba(255, 255, 255, 0.1);
-        color: #e2e8f0;
-        text-align: center;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-    .unit-toggle:hover {
-        background: rgba(255, 255, 255, 0.15);
-    }
-    .unit-toggle:disabled {
-        cursor: not-allowed;
-        color: #64748b;
-        opacity: 0.5;
-    }
+
+
+
 
     .unit-placeholder {
         width: calc(40px * var(--scale-ratio, 1));
     }
 
-    select:focus,
-    input:focus,
     textarea:focus {
         outline: none;
         border-color: #cbd5e1;
         background: rgba(255, 255, 255, 0.15);
         box-shadow: 0 0 0 calc(3px * var(--scale-ratio, 1)) rgba(255, 255, 255, 0.1);
     }
-    select option {
-        background: #1e293b;
-        color: #e2e8f0;
-    }
-    input::placeholder,
+
     textarea::placeholder {
         color: #9ca3af;
     }
@@ -766,37 +563,7 @@
         min-height: calc(80px * var(--scale-ratio, 1));
     }
 
-    /* 下拉框包装器和下拉图标 */
-    .select-wrapper {
-        position: relative;
-        flex: 1;
-    }
-    .select-wrapper::after {
-        content: '';
-        position: absolute;
-        right: calc(12px * var(--scale-ratio, 1));
-        top: 50%;
-        transform: translateY(-50%);
-        width: 0;
-        height: 0;
-        border-left: calc(4px * var(--scale-ratio, 1)) solid transparent;
-        border-right: calc(4px * var(--scale-ratio, 1)) solid transparent;
-        border-top: calc(6px * var(--scale-ratio, 1)) solid #94a3b8;
-        pointer-events: none;
-    }
-    .select-wrapper select {
-        width: 100%;
-        padding-right: calc(30px * var(--scale-ratio, 1));
-    }
 
-    /* 隐藏原生 number 输入框的上下箭头 */
-    input[type='number']::-webkit-inner-spin-button,
-    input[type='number']::-webkit-outer-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
-    }
-    input[type='number'] {
-        appearance: textfield;
-        -moz-appearance: textfield;
-    }
+
+
 </style>
