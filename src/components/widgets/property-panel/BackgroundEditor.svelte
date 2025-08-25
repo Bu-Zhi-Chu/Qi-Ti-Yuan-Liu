@@ -904,24 +904,21 @@
         <h3>背景样式</h3>
         <div class="background-list">
             <!-- 背景图片上传 -->
-            <div class="background-item">
-                <label for="background-image-input">背景图片</label>
+            <PropertyRow label="背景图片">
                 {#if !hasBackgroundImage}
                     <button id="background-image-input" class="input-style" onclick={() => fileInput.click()} ondragover={handleDragOver} ondrop={handleDrop} title="点击上传或拖拽图片到此处">上传图片</button>
                 {:else}
                     <button class="input-style" onclick={clearBackgroundImage} title="移除图片" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">移除</button>
                 {/if}
-                <span class="unit-placeholder"></span>
-            </div>
+            </PropertyRow>
 
             {#if isUploading}
-                <div class="background-item">
-                    <label for="upload-progress">上传进度</label>
+                <PropertyRow label="上传进度">
                     <div id="upload-progress" style="flex: 1; position: relative; height: calc(4px * var(--scale-ratio, 1)); background: rgba(255, 255, 255, 0.1); border-radius: calc(2px * var(--scale-ratio, 1));">
                         <div style="height: 100%; background: linear-gradient(90deg, #6366f1, #7c3aed); border-radius: calc(2px * var(--scale-ratio, 1)); transition: width 0.3s ease; width: {uploadProgress}%"></div>
                     </div>
                     <span style="font-size: calc(12px * var(--scale-ratio, 1)); color: rgba(255, 255, 255, 0.7);">{uploadProgress}%</span>
-                </div>
+                </PropertyRow>
             {/if}
 
             <!-- 背景尺寸 -->
@@ -995,8 +992,7 @@
             </PropertyRow>
 
             <!-- 背景颜色 -->
-            <div class="background-item">
-                <label for="color-picker-background">背景颜色</label>
+            <PropertyRow label="背景颜色">
                 <ColorPicker
                     value={hexToRgba(backgroundColor, backgroundOpacity)}
                     projectId={projectId()}
@@ -1009,31 +1005,26 @@
                     }}
                 />
                 <button class="unit-toggle" onclick={addGradientColor} title="添加渐变颜色" style="background: rgba(34, 197, 94, 0.2); color: #4ade80;" disabled={gradientColors.length >= 2}>+</button>
-            </div>
+            </PropertyRow>
 
             <!-- 渐变颜色选择器 -->
             {#if gradientColors.length > 0}
                 <!-- 背景裁剪为文字形状开关 -->
-                <div class="background-item">
-                    <label for="background-clip-toggle">背景裁剪</label>
+                <PropertyRow label="背景裁剪">
                     <ToggleSwitch id="background-clip-toggle" bind:checked={backgroundClipToText} on:change={updateBackgroundStyles} />
-                    <span class="unit-placeholder"></span>
-                </div>
+                </PropertyRow>
                 <!-- 渐变方向 -->
-                <div class="background-item">
-                    <label for="gradient-direction">渐变方向</label>
+                <PropertyRow label="渐变方向">
                     <select id="gradient-direction" bind:value={gradientDirection} onchange={updateBackgroundStyles}>
                         {#each gradientDirectionOptions as option}
                             <option value={option.value}>{option.label}</option>
                         {/each}
                     </select>
-                    <span class="unit-placeholder"></span>
-                </div>
+                </PropertyRow>
 
                 <!-- 渐变颜色 -->
                 {#if gradientColors.length > 0}
-                    <div class="background-item">
-                        <label for="{selectedId || 'default'}-gradient-1">渐变颜色</label>
+                    <PropertyRow label="渐变颜色">
                         <ColorPicker
                             value={hexToRgba(gradientColors[1]?.color || '#ffffff', gradientColors[1]?.opacity || 1)}
                             projectId={projectId()}
@@ -1046,18 +1037,17 @@
                             }}
                         />
                         <button class="unit-toggle" onclick={removeGradientColor} title="移除渐变" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">−</button>
-                    </div>
+                    </PropertyRow>
                 {/if}
 
                 <!-- 渐变比例 -->
                 {#if gradientColors.length >= 2}
-                    <div class="background-item">
-                        <label for="gradient-ratio">渐变比例</label>
+                    <PropertyRow label="渐变比例">
                         <ResponsiveSlider bind:value={gradientRatio} min={0} max={100} step={1} oninput={updateBackgroundStyles} />
                         <span style="min-width: calc(40px * var(--scale-ratio, 1)); text-align: center; font-size: calc(12px * var(--scale-ratio, 1)); color: #94a3b8;">
                             {gradientRatio}%
                         </span>
-                    </div>
+                    </PropertyRow>
                 {/if}
             {/if}
         </div>
@@ -1082,17 +1072,7 @@
         flex-direction: column;
         gap: calc(12px * var(--scale-ratio, 1));
     }
-    .background-item {
-        display: flex;
-        align-items: center;
-        gap: calc(10px * var(--scale-ratio, 1));
-    }
-    label {
-        min-width: calc(30px * var(--scale-ratio, 1));
-        font-size: calc(13px * var(--scale-ratio, 1));
-        font-weight: 500;
-        color: #94a3b8;
-    }
+
     input,
     select {
         flex: 1;
@@ -1106,15 +1086,16 @@
         appearance: none;
     }
 
-    :global(.background-item .color-picker-container) {
+    /* 背景编辑器行样式沿用 PropertyRow 默认样式，移除 background-item */
+    .background-list :global(.color-picker-container) {
         flex: 1;
     }
 
-    .unit-placeholder {
-        width: calc(40px * var(--scale-ratio, 1));
+    /* 移除 unit-placeholder 选择器 */
+    .background-list :global(.color-picker-container) {
+        flex: 1;
     }
 
-    /* 单位切换按钮样式 - 与AttrEditor和PositionEditor保持一致 */
     .unit-toggle {
         width: calc(40px * var(--scale-ratio, 1));
         padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
