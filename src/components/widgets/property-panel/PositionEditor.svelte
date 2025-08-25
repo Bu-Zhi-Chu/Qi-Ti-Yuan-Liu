@@ -176,6 +176,31 @@
         return { value, unit }
     }
 
+    // 智能转换函数：将静态定位的 margin 值转换为绝对定位的位置值，保持原有单位
+    function smartConvertToPosition(value: string, unit: 'px' | '%', prop: 'marginTop' | 'marginRight' | 'marginBottom' | 'marginLeft', parentWidth: number, parentHeight: number): { value: string; unit: 'px' | '%' } {
+        if (!value) return { value: '', unit }
+
+        const numericValue = parseFloat(value) || 0
+        const sr = getScaleRatio()
+
+        if (unit === 'px') {
+            // px 单位保持不变
+            return { value: Math.round(numericValue * 100) / 100 + '', unit: 'px' }
+        } else if (unit === '%') {
+            if (prop === 'marginTop' || prop === 'marginBottom') {
+                // 垂直方向：margin 的百分比基于父宽度，需要转换为基于父高度的百分比
+                if (parentWidth > 0 && parentHeight > 0) {
+                    const widthBasedPx = (numericValue / 100) * parentWidth // 转为像素
+                    const heightBasedPercent = (widthBasedPx / parentHeight) * 100
+                    return { value: Math.round(heightBasedPercent * 10) / 10 + '', unit: '%' }
+                }
+            }
+            // 水平方向保持不变
+        }
+
+        return { value, unit }
+    }
+
     // 处理定位类型变更
     function handlePositionChange(val: string) {
         if (!selectedId || isRoot) return
@@ -217,8 +242,48 @@
                 currentMarginLeftUnit = currentLeftUnit // 保持原有单位
                 handleMarginPropChange('marginLeft', converted.value, currentLeftUnit)
             }
+
+            // 清空定位属性，确保与外边距互斥
+            currentTop = ''
+            currentRight = ''
+            currentBottom = ''
+            currentLeft = ''
+            updateNodeProps(selectedId, {
+                styles: {
+                    top: '',
+                    right: '',
+                    bottom: '',
+                    left: ''
+                }
+            })
         } else {
-            // 当从静态定位切换到非静态定位时，清空margin值
+            // 当从静态定位切换到非静态定位时，将外边距转换为定位属性，保持视觉位置一致
+            if (currentMarginTop) {
+                const converted = smartConvertToPosition(currentMarginTop, currentMarginTopUnit, 'marginTop', parentWidth, parentHeight)
+                currentTop = converted.value
+                currentTopUnit = converted.unit
+                handlePositionPropChange('top', converted.value, converted.unit)
+            }
+            if (currentMarginRight) {
+                const converted = smartConvertToPosition(currentMarginRight, currentMarginRightUnit, 'marginRight', parentWidth, parentHeight)
+                currentRight = converted.value
+                currentRightUnit = converted.unit
+                handlePositionPropChange('right', converted.value, converted.unit)
+            }
+            if (currentMarginBottom) {
+                const converted = smartConvertToPosition(currentMarginBottom, currentMarginBottomUnit, 'marginBottom', parentWidth, parentHeight)
+                currentBottom = converted.value
+                currentBottomUnit = converted.unit
+                handlePositionPropChange('bottom', converted.value, converted.unit)
+            }
+            if (currentMarginLeft) {
+                const converted = smartConvertToPosition(currentMarginLeft, currentMarginLeftUnit, 'marginLeft', parentWidth, parentHeight)
+                currentLeft = converted.value
+                currentLeftUnit = converted.unit
+                handlePositionPropChange('left', converted.value, converted.unit)
+            }
+
+            // 清空margin值，确保与定位属性互斥
             currentMarginTop = ''
             currentMarginRight = ''
             currentMarginBottom = ''
@@ -281,75 +346,6 @@
         }
     }
 
-    /*
-    // 切换单位 - 位置属性
-    function toggleUnit(prop: 'top' | 'right' | 'bottom' | 'left') {
-        if (!selectedId || isRoot) return
-
-        let currentValue = ''
-        let currentUnit: 'px' | '%' = 'px'
-        let nextUnit: 'px' | '%' = 'px'
-
-        // 从DOM获取最新值，避免状态同步延迟
-        let inputElement: HTMLInputElement | null = null
-        switch (prop) {
-            case 'top':
-                inputElement = document.getElementById('node-top') as HTMLInputElement
-                currentUnit = currentTopUnit
-                nextUnit = currentUnit === 'px' ? '%' : 'px'
-                break
-            case 'right':
-                inputElement = document.getElementById('node-right') as HTMLInputElement
-                currentUnit = currentRightUnit
-                nextUnit = currentUnit === 'px' ? '%' : 'px'
-                break
-            case 'bottom':
-                inputElement = document.getElementById('node-bottom') as HTMLInputElement
-                currentUnit = currentBottomUnit
-                nextUnit = currentUnit === 'px' ? '%' : 'px'
-                break
-            case 'left':
-                inputElement = document.getElementById('node-left') as HTMLInputElement
-                currentUnit = currentLeftUnit
-                nextUnit = currentUnit === 'px' ? '%' : 'px'
-                break
-        }
-
-        // 获取输入框中的最新值
-        currentValue = inputElement?.value || ''
-
-        // 如果有值，则进行单位转换
-        if (currentValue) {
-            const numericVal = parseFloat(currentValue) || 0
-            const converted = convertPosition(numericVal, currentUnit, nextUnit, prop)
-            const roundedValue = String(nextUnit === '%' ? Math.round(converted * 10) / 10 : Math.round(converted * 100) / 100)
-
-            // 更新UI状态和节点属性
-            switch (prop) {
-                case 'top':
-                    currentTop = roundedValue
-                    currentTopUnit = nextUnit
-                    break
-                case 'right':
-                    currentRight = roundedValue
-                    currentRightUnit = nextUnit
-                    break
-                case 'bottom':
-                    currentBottom = roundedValue
-                    currentBottomUnit = nextUnit
-                    break
-                case 'left':
-                    currentLeft = roundedValue
-                    currentLeftUnit = nextUnit
-                    break
-            }
-
-            handlePositionPropChange(prop, roundedValue, nextUnit)
-        }
-    }
-
-    */
-
     // 将外边距属性从一个单位转换到另一个单位
     function convertMargin(val: number, from: '%' | 'px', to: '%' | 'px', prop: 'marginTop' | 'marginRight' | 'marginBottom' | 'marginLeft'): number {
         if (from === to) return val
@@ -371,74 +367,6 @@
             return ((val / 100) * parentSize) / sr
         }
     }
-
-    /*
-    // 切换单位 - 外边距属性
-    function toggleMarginUnit(prop: 'marginTop' | 'marginRight' | 'marginBottom' | 'marginLeft') {
-        if (!selectedId || isRoot) return
-
-        let currentValue = ''
-        let currentUnit: 'px' | '%' = 'px'
-        let nextUnit: 'px' | '%' = 'px'
-
-        // 从DOM获取最新值，避免状态同步延迟
-        let inputElement: HTMLInputElement | null = null
-        switch (prop) {
-            case 'marginTop':
-                inputElement = document.getElementById('node-margin-top') as HTMLInputElement
-                currentUnit = currentMarginTopUnit
-                nextUnit = currentUnit === 'px' ? '%' : 'px'
-                break
-            case 'marginRight':
-                inputElement = document.getElementById('node-margin-right') as HTMLInputElement
-                currentUnit = currentMarginRightUnit
-                nextUnit = currentUnit === 'px' ? '%' : 'px'
-                break
-            case 'marginBottom':
-                inputElement = document.getElementById('node-margin-bottom') as HTMLInputElement
-                currentUnit = currentMarginBottomUnit
-                nextUnit = currentUnit === 'px' ? '%' : 'px'
-                break
-            case 'marginLeft':
-                inputElement = document.getElementById('node-margin-left') as HTMLInputElement
-                currentUnit = currentMarginLeftUnit
-                nextUnit = currentUnit === 'px' ? '%' : 'px'
-                break
-        }
-
-        // 获取输入框中的最新值
-        currentValue = inputElement?.value || ''
-
-        // 如果有值，则进行单位转换
-        if (currentValue) {
-            const numericVal = parseFloat(currentValue) || 0
-            const converted = convertMargin(numericVal, currentUnit, nextUnit, prop)
-            const roundedValue = String(nextUnit === '%' ? Math.round(converted * 10) / 10 : Math.round(converted * 100) / 100)
-
-            // 更新UI状态和节点属性
-            switch (prop) {
-                case 'marginTop':
-                    currentMarginTop = roundedValue
-                    currentMarginTopUnit = nextUnit
-                    break
-                case 'marginRight':
-                    currentMarginRight = roundedValue
-                    currentMarginRightUnit = nextUnit
-                    break
-                case 'marginBottom':
-                    currentMarginBottom = roundedValue
-                    currentMarginBottomUnit = nextUnit
-                    break
-                case 'marginLeft':
-                    currentMarginLeft = roundedValue
-                    currentMarginLeftUnit = nextUnit
-                    break
-            }
-
-            handleMarginPropChange(prop, roundedValue, nextUnit)
-        }
-    }
-*/
 </script>
 
 <div class="position-editor">
