@@ -6,8 +6,12 @@
 -->
 <script lang="ts">
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { getNodePropsStore, getNodeProps as _getNodeProps, updateNodeProps } from '../../../services/property-panel/property-panel.service'
+    import { getNodePropsStore, getNodeProps as _getNodeProps, updateNodeProps } from '../../../services/property-panel/property-panel.service'
     import ColorPicker from '../ColorPicker.svelte'
+    import PropertyRow from './PropertyRow.svelte'
+    import SizeInput from './SizeInput.svelte'
+    import PropertySelect from './PropertySelect.svelte'
+    import ToggleSwitch from '../ToggleSwitch.svelte'
     import { onMount } from 'svelte'
 
     interface Props {
@@ -16,10 +20,10 @@ import { getNodePropsStore, getNodeProps as _getNodeProps, updateNodeProps } fro
 
     let { selectedId }: Props = $props()
 
-// 当前节点 props 快照类型
-let propsSnapshot: ReturnType<typeof _getNodeProps> | null = null
-// 订阅函数
-let unsubscribe = () => {};
+    // 当前节点 props 快照类型
+    let propsSnapshot: ReturnType<typeof _getNodeProps> | null = null
+    // 订阅函数
+    let unsubscribe = () => {}
 
     // 统一控制开关
     let unifiedControl = $state(true)
@@ -71,101 +75,53 @@ let unsubscribe = () => {};
         { value: 'outset', label: '外嵌' }
     ]
 
-    // 当选中节点变化时，同步所有边框属性
-    /* deprecated: snapshot fetch via getNodeProps */
-/*
-$effect(() => {
+    // 新版：通过 getNodePropsStore 订阅实时变化
+    $effect(() => {
+        unsubscribe()
         if (selectedId) {
-            isRoot = selectedId === 'root'
-            const props = getNodeProps(selectedId)
+            const store = getNodePropsStore(selectedId)
+            unsubscribe = store.subscribe((props) => {
+                propsSnapshot = props
+                if (!props) return
+                const getStringValue = (value: string | Blob | undefined): string => (typeof value === 'string' ? value : '')
 
-            // 安全获取字符串值的工具函数
-            const getStringValue = (value: string | Blob | undefined): string => {
-                return typeof value === 'string' ? value : ''
-            }
+                // 读取统一边框属性
+                borderWidth = parsePxValue(getStringValue(props.styles?.borderWidth)) || ''
+                borderColor = getStringValue(props.styles?.borderColor) || '#000000'
+                borderStyle = getStringValue(props.styles?.borderStyle) || 'solid'
+                ;[borderRadius, borderRadiusUnit] = parseBorderRadius(getStringValue(props.styles?.borderRadius))
 
-            // 读取统一边框属性
-            borderWidth = parsePxValue(getStringValue(props?.styles?.borderWidth)) || ''
-            borderColor = getStringValue(props?.styles?.borderColor) || '#000000'
-            borderStyle = getStringValue(props?.styles?.borderStyle) || 'solid'
-            ;[borderRadius, borderRadiusUnit] = parseBorderRadius(getStringValue(props?.styles?.borderRadius))
+                // 读取四边独立属性
+                borderTopWidth = parsePxValue(getStringValue(props.styles?.borderTopWidth)) || ''
+                borderTopColor = getStringValue(props.styles?.borderTopColor) || '#000000'
+                borderTopStyle = getStringValue(props.styles?.borderTopStyle) || 'solid'
+                borderRightWidth = parsePxValue(getStringValue(props.styles?.borderRightWidth)) || ''
+                borderRightColor = getStringValue(props.styles?.borderRightColor) || '#000000'
+                borderRightStyle = getStringValue(props.styles?.borderRightStyle) || 'solid'
+                borderBottomWidth = parsePxValue(getStringValue(props.styles?.borderBottomWidth)) || ''
+                borderBottomColor = getStringValue(props.styles?.borderBottomColor) || '#000000'
+                borderBottomStyle = getStringValue(props.styles?.borderBottomStyle) || 'solid'
+                borderLeftWidth = parsePxValue(getStringValue(props.styles?.borderLeftWidth)) || ''
+                borderLeftColor = getStringValue(props.styles?.borderLeftColor) || '#000000'
+                borderLeftStyle = getStringValue(props.styles?.borderLeftStyle) || 'solid'
 
-            // 读取四边独立属性
-            borderTopWidth = parsePxValue(getStringValue(props?.styles?.borderTopWidth)) || ''
-            borderTopColor = getStringValue(props?.styles?.borderTopColor) || '#000000'
-            borderTopStyle = getStringValue(props?.styles?.borderTopStyle) || 'solid'
-            borderRightWidth = parsePxValue(getStringValue(props?.styles?.borderRightWidth)) || ''
-            borderRightColor = getStringValue(props?.styles?.borderRightColor) || '#000000'
-            borderRightStyle = getStringValue(props?.styles?.borderRightStyle) || 'solid'
-            borderBottomWidth = parsePxValue(getStringValue(props?.styles?.borderBottomWidth)) || ''
-            borderBottomColor = getStringValue(props?.styles?.borderBottomColor) || '#000000'
-            borderBottomStyle = getStringValue(props?.styles?.borderBottomStyle) || 'solid'
-            borderLeftWidth = parsePxValue(getStringValue(props?.styles?.borderLeftWidth)) || ''
-            borderLeftColor = getStringValue(props?.styles?.borderLeftColor) || '#000000'
-            borderLeftStyle = getStringValue(props?.styles?.borderLeftStyle) || 'solid'
+                // 读取四个独立圆角属性
+                ;[borderTopLeftRadius, borderTopLeftRadiusUnit] = parseBorderRadius(getStringValue(props.styles?.borderTopLeftRadius))
+                ;[borderTopRightRadius, borderTopRightRadiusUnit] = parseBorderRadius(getStringValue(props.styles?.borderTopRightRadius))
+                ;[borderBottomLeftRadius, borderBottomLeftRadiusUnit] = parseBorderRadius(getStringValue(props.styles?.borderBottomLeftRadius))
+                ;[borderBottomRightRadius, borderBottomRightRadiusUnit] = parseBorderRadius(getStringValue(props.styles?.borderBottomRightRadius))
 
-            // 读取四个独立圆角属性
-            ;[borderTopLeftRadius, borderTopLeftRadiusUnit] = parseBorderRadius(getStringValue(props?.styles?.borderTopLeftRadius))
-            ;[borderTopRightRadius, borderTopRightRadiusUnit] = parseBorderRadius(getStringValue(props?.styles?.borderTopRightRadius))
-            ;[borderBottomLeftRadius, borderBottomLeftRadiusUnit] = parseBorderRadius(getStringValue(props?.styles?.borderBottomLeftRadius))
-            ;[borderBottomRightRadius, borderBottomRightRadiusUnit] = parseBorderRadius(getStringValue(props?.styles?.borderBottomRightRadius))
-
-            // 判断是否使用统一控制
-            unifiedControl = !(getStringValue(props?.styles?.borderTopWidth) || getStringValue(props?.styles?.borderRightWidth) || getStringValue(props?.styles?.borderBottomWidth) || getStringValue(props?.styles?.borderLeftWidth))
+                // 判断是否使用统一控制
+                unifiedControl = !(getStringValue(props.styles?.borderTopWidth) || getStringValue(props.styles?.borderRightWidth) || getStringValue(props.styles?.borderBottomWidth) || getStringValue(props.styles?.borderLeftWidth))
+            })
         } else {
-            // 清空所有属性
             resetAllProperties()
         }
+        return () => {
+            unsubscribe()
+            unsubscribe = () => {}
+        }
     })
-*/
-
-// 新版：通过 getNodePropsStore 订阅实时变化
-$effect(() => {
-    unsubscribe();
-    if (selectedId) {
-        const store = getNodePropsStore(selectedId);
-        unsubscribe = store.subscribe((props) => {
-            propsSnapshot = props;
-            if (!props) return;
-            const getStringValue = (value: string | Blob | undefined): string => (typeof value === 'string' ? value : '');
-
-            // 读取统一边框属性
-            borderWidth = parsePxValue(getStringValue(props.styles?.borderWidth)) || '';
-            borderColor = getStringValue(props.styles?.borderColor) || '#000000';
-            borderStyle = getStringValue(props.styles?.borderStyle) || 'solid';
-            [borderRadius, borderRadiusUnit] = parseBorderRadius(getStringValue(props.styles?.borderRadius));
-
-            // 读取四边独立属性
-            borderTopWidth = parsePxValue(getStringValue(props.styles?.borderTopWidth)) || '';
-            borderTopColor = getStringValue(props.styles?.borderTopColor) || '#000000';
-            borderTopStyle = getStringValue(props.styles?.borderTopStyle) || 'solid';
-            borderRightWidth = parsePxValue(getStringValue(props.styles?.borderRightWidth)) || '';
-            borderRightColor = getStringValue(props.styles?.borderRightColor) || '#000000';
-            borderRightStyle = getStringValue(props.styles?.borderRightStyle) || 'solid';
-            borderBottomWidth = parsePxValue(getStringValue(props.styles?.borderBottomWidth)) || '';
-            borderBottomColor = getStringValue(props.styles?.borderBottomColor) || '#000000';
-            borderBottomStyle = getStringValue(props.styles?.borderBottomStyle) || 'solid';
-            borderLeftWidth = parsePxValue(getStringValue(props.styles?.borderLeftWidth)) || '';
-            borderLeftColor = getStringValue(props.styles?.borderLeftColor) || '#000000';
-            borderLeftStyle = getStringValue(props.styles?.borderLeftStyle) || 'solid';
-
-            // 读取四个独立圆角属性
-            [borderTopLeftRadius, borderTopLeftRadiusUnit] = parseBorderRadius(getStringValue(props.styles?.borderTopLeftRadius));
-            [borderTopRightRadius, borderTopRightRadiusUnit] = parseBorderRadius(getStringValue(props.styles?.borderTopRightRadius));
-            [borderBottomLeftRadius, borderBottomLeftRadiusUnit] = parseBorderRadius(getStringValue(props.styles?.borderBottomLeftRadius));
-            [borderBottomRightRadius, borderBottomRightRadiusUnit] = parseBorderRadius(getStringValue(props.styles?.borderBottomRightRadius));
-
-            // 判断是否使用统一控制
-            unifiedControl = !(getStringValue(props.styles?.borderTopWidth) || getStringValue(props.styles?.borderRightWidth) || getStringValue(props.styles?.borderBottomWidth) || getStringValue(props.styles?.borderLeftWidth));
-        });
-    } else {
-        resetAllProperties();
-    }
-    return () => {
-        unsubscribe();
-        unsubscribe = () => {};
-    };
-});
 
     // 解析 px 值
     function parsePxValue(value: string | undefined): string {
@@ -394,16 +350,9 @@ $effect(() => {
         <!-- 统一控制开关 -->
         <div class="border-section">
             <div class="attr-list">
-                <div class="attr-item">
-                    <label for="unified-control">统一控制</label>
-                    <div class="switch-wrapper">
-                        <label class="switch">
-                            <input type="checkbox" bind:checked={unifiedControl} disabled={isRoot} />
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <span class="unit-placeholder"></span>
-                </div>
+                <PropertyRow label="统一控制">
+                    <ToggleSwitch id="unified-control" bind:checked={unifiedControl} disabled={isRoot} />
+                </PropertyRow>
             </div>
         </div>
 
@@ -411,362 +360,250 @@ $effect(() => {
             <!-- 统一边框样式 -->
             <div class="border-section">
                 <div class="attr-list">
-                    <div class="attr-item">
-                        <label for="border-width">边框宽度</label>
-                        <input
-                            id="border-width"
-                            type="number"
-                            min="0"
+                    <PropertyRow label="边框宽度">
+                        <SizeInput
                             bind:value={borderWidth}
-                            oninput={(e) => {
-                                borderWidth = e.currentTarget.value
+                            unit="px"
+                            unitOptions={['px']}
+                            disabled={isRoot}
+                            convert={(val) => val}
+                            on:change={(e) => {
+                                borderWidth = e.detail.value
                                 updateUnifiedBorder()
                             }}
-                            onkeydown={(e) =>
-                                handleNumberKeydown(e, borderWidth, (v) => {
-                                    borderWidth = v
-                                    updateUnifiedBorder()
-                                })}
-                            placeholder="宽度值..."
-                            disabled={isRoot}
-                            class:disabled-input={isRoot}
                         />
-                        <button class="unit-toggle" disabled>px</button>
-                    </div>
+                    </PropertyRow>
 
-                    <div class="attr-item">
-                        <label for="border-color">边框颜色</label>
-                        <div class="color-picker-wrapper">
-                            <ColorPicker
-                                value={borderColor}
-                                onchange={(color: string) => {
-                                    borderColor = color
-                                    updateUnifiedBorder()
-                                }}
-                                disabled={isRoot}
-                            />
-                        </div>
-                        <span class="unit-placeholder"></span>
-                    </div>
+                    <PropertyRow label="边框颜色">
+                        <ColorPicker
+                            value={borderColor}
+                            onchange={(color: string) => {
+                                borderColor = color
+                                updateUnifiedBorder()
+                            }}
+                            disabled={isRoot}
+                        />
+                    </PropertyRow>
 
-                    <div class="attr-item">
-                        <label for="border-style">边框样式</label>
-                        <div class="select-wrapper">
-                            <select id="border-style" bind:value={borderStyle} onchange={updateUnifiedBorder} disabled={isRoot}>
-                                {#each borderStyleOptions as option}
-                                    <option value={option.value}>{option.label}</option>
-                                {/each}
-                            </select>
-                        </div>
-                        <span class="unit-placeholder"></span>
-                    </div>
+                    <PropertyRow label="边框样式">
+                        <PropertySelect
+                            bind:value={borderStyle}
+                            options={borderStyleOptions}
+                            disabled={isRoot}
+                            change={(val: string) => {
+                                borderStyle = val
+                                updateUnifiedBorder()
+                            }}
+                        />
+                    </PropertyRow>
 
-                    <div class="attr-item">
-                        <label for="border-radius">边框圆角</label>
-                        <input
-                            id="border-radius"
-                            type="number"
-                            min="0"
+                    <PropertyRow label="边框圆角">
+                        <SizeInput
                             bind:value={borderRadius}
-                            oninput={(e) => {
-                                borderRadius = e.currentTarget.value
+                            bind:unit={borderRadiusUnit}
+                            disabled={isRoot}
+                            convert={(val) => val}
+                            on:change={(e) => {
+                                borderRadius = e.detail.value
+                                borderRadiusUnit = e.detail.unit
                                 updateUnifiedBorder()
                             }}
-                            onkeydown={(e) =>
-                                handleNumberKeydown(e, borderRadius, (v) => {
-                                    borderRadius = v
-                                    updateUnifiedBorder()
-                                })}
-                            placeholder="圆角值..."
-                            disabled={isRoot}
-                            class:disabled-input={isRoot}
                         />
-                        <button class="unit-toggle" onclick={toggleBorderRadiusUnit} disabled={isRoot} class:disabled-input={isRoot}>
-                            {borderRadiusUnit}
-                        </button>
-                    </div>
+                    </PropertyRow>
                 </div>
             </div>
         {:else}
             <!-- 四边独立边框样式 -->
             <div class="border-section">
                 <div class="attr-list">
-                    <div class="attr-item">
-                        <label for="border-top-width">上边宽度</label>
-                        <input
-                            id="border-top-width"
-                            type="number"
-                            min="0"
+                    <PropertyRow label="上边宽度">
+                        <SizeInput
                             bind:value={borderTopWidth}
-                            oninput={(e) => updateIndividualBorder('Top', 'Width', e.currentTarget.value)}
-                            onkeydown={(e) =>
-                                handleNumberKeydown(e, borderTopWidth, (v) => {
-                                    borderTopWidth = v
-                                    updateIndividualBorder('Top', 'Width', v)
-                                })}
-                            placeholder="宽度值..."
+                            unit="px"
                             disabled={isRoot}
-                            class:disabled-input={isRoot}
+                            convert={(val) => val}
+                            on:change={(e) => {
+                                borderTopWidth = e.detail.value
+                                updateIndividualBorder('Top', 'Width', e.detail.value)
+                            }}
                         />
-                        <button class="unit-toggle" disabled>px</button>
-                    </div>
+                    </PropertyRow>
 
-                    <div class="attr-item">
-                        <label for="border-top-color">上边颜色</label>
-                        <div class="color-picker-wrapper">
-                            <ColorPicker value={borderTopColor} onchange={(color: string) => updateIndividualBorder('Top', 'Color', color)} disabled={isRoot} />
-                        </div>
-                        <span class="unit-placeholder"></span>
-                    </div>
+                    <PropertyRow label="上边颜色">
+                        <ColorPicker value={borderTopColor} onchange={(color: string) => updateIndividualBorder('Top', 'Color', color)} disabled={isRoot} />
+                    </PropertyRow>
 
-                    <div class="attr-item">
-                        <label for="border-top-style">上边样式</label>
-                        <div class="select-wrapper">
-                            <select id="border-top-style" bind:value={borderTopStyle} onchange={() => updateIndividualBorder('Top', 'Style', borderTopStyle)} disabled={isRoot}>
-                                {#each borderStyleOptions as option}
-                                    <option value={option.value}>{option.label}</option>
-                                {/each}
-                            </select>
-                        </div>
-                        <span class="unit-placeholder"></span>
-                    </div>
+                    <PropertyRow label="上边样式">
+                        <PropertySelect
+                            bind:value={borderTopStyle}
+                            options={borderStyleOptions}
+                            disabled={isRoot}
+                            change={(val: string) => {
+                                borderTopStyle = val
+                                updateIndividualBorder('Top', 'Style', val)
+                            }}
+                        />
+                    </PropertyRow>
                 </div>
             </div>
 
             <div class="border-section">
                 <div class="attr-list">
-                    <div class="attr-item">
-                        <label for="border-right-width">右边宽度</label>
-                        <input
-                            id="border-right-width"
-                            type="number"
-                            min="0"
+                    <PropertyRow label="右边宽度">
+                        <SizeInput
                             bind:value={borderRightWidth}
-                            oninput={(e) => updateIndividualBorder('Right', 'Width', e.currentTarget.value)}
-                            onkeydown={(e) =>
-                                handleNumberKeydown(e, borderRightWidth, (v) => {
-                                    borderRightWidth = v
-                                    updateIndividualBorder('Right', 'Width', v)
-                                })}
-                            placeholder="宽度值..."
+                            unit="px"
                             disabled={isRoot}
-                            class:disabled-input={isRoot}
+                            convert={(val) => val}
+                            on:change={(e) => {
+                                borderRightWidth = e.detail.value
+                                updateIndividualBorder('Right', 'Width', e.detail.value)
+                            }}
                         />
-                        <button class="unit-toggle" disabled>px</button>
-                    </div>
+                    </PropertyRow>
 
-                    <div class="attr-item">
-                        <label for="border-right-color">右边颜色</label>
-                        <div class="color-picker-wrapper">
-                            <ColorPicker value={borderRightColor} onchange={(color: string) => updateIndividualBorder('Right', 'Color', color)} disabled={isRoot} />
-                        </div>
-                        <span class="unit-placeholder"></span>
-                    </div>
+                    <PropertyRow label="右边颜色">
+                        <ColorPicker value={borderRightColor} onchange={(color: string) => updateIndividualBorder('Right', 'Color', color)} disabled={isRoot} />
+                    </PropertyRow>
 
-                    <div class="attr-item">
-                        <label for="border-right-style">右边样式</label>
-                        <div class="select-wrapper">
-                            <select id="border-right-style" bind:value={borderRightStyle} onchange={() => updateIndividualBorder('Right', 'Style', borderRightStyle)} disabled={isRoot}>
-                                {#each borderStyleOptions as option}
-                                    <option value={option.value}>{option.label}</option>
-                                {/each}
-                            </select>
-                        </div>
-                        <span class="unit-placeholder"></span>
-                    </div>
+                    <PropertyRow label="右边样式">
+                        <PropertySelect
+                            bind:value={borderRightStyle}
+                            options={borderStyleOptions}
+                            disabled={isRoot}
+                            change={(val: string) => {
+                                borderRightStyle = val
+                                updateIndividualBorder('Right', 'Style', val)
+                            }}
+                        />
+                    </PropertyRow>
                 </div>
             </div>
 
             <div class="border-section">
                 <div class="attr-list">
-                    <div class="attr-item">
-                        <label for="border-bottom-width">下边宽度</label>
-                        <input
-                            id="border-bottom-width"
-                            type="number"
-                            min="0"
+                    <PropertyRow label="下边宽度">
+                        <SizeInput
                             bind:value={borderBottomWidth}
-                            oninput={(e) => updateIndividualBorder('Bottom', 'Width', e.currentTarget.value)}
-                            onkeydown={(e) =>
-                                handleNumberKeydown(e, borderBottomWidth, (v) => {
-                                    borderBottomWidth = v
-                                    updateIndividualBorder('Bottom', 'Width', v)
-                                })}
-                            placeholder="宽度值..."
+                            unit="px"
                             disabled={isRoot}
-                            class:disabled-input={isRoot}
+                            convert={(val) => val}
+                            on:change={(e) => {
+                                borderBottomWidth = e.detail.value
+                                updateIndividualBorder('Bottom', 'Width', e.detail.value)
+                            }}
                         />
-                        <button class="unit-toggle" disabled>px</button>
-                    </div>
+                    </PropertyRow>
 
-                    <div class="attr-item">
-                        <label for="border-bottom-color">下边颜色</label>
-                        <div class="color-picker-wrapper">
-                            <ColorPicker value={borderBottomColor} onchange={(color: string) => updateIndividualBorder('Bottom', 'Color', color)} disabled={isRoot} />
-                        </div>
-                        <span class="unit-placeholder"></span>
-                    </div>
+                    <PropertyRow label="下边颜色">
+                        <ColorPicker value={borderBottomColor} onchange={(color: string) => updateIndividualBorder('Bottom', 'Color', color)} disabled={isRoot} />
+                    </PropertyRow>
 
-                    <div class="attr-item">
-                        <label for="border-bottom-style">下边样式</label>
-                        <div class="select-wrapper">
-                            <select id="border-bottom-style" bind:value={borderBottomStyle} onchange={() => updateIndividualBorder('Bottom', 'Style', borderBottomStyle)} disabled={isRoot}>
-                                {#each borderStyleOptions as option}
-                                    <option value={option.value}>{option.label}</option>
-                                {/each}
-                            </select>
-                        </div>
-                        <span class="unit-placeholder"></span>
-                    </div>
+                    <PropertyRow label="下边样式">
+                        <PropertySelect
+                            bind:value={borderBottomStyle}
+                            options={borderStyleOptions}
+                            disabled={isRoot}
+                            change={(val: string) => {
+                                borderBottomStyle = val
+                                updateIndividualBorder('Bottom', 'Style', val)
+                            }}
+                        />
+                    </PropertyRow>
                 </div>
             </div>
 
             <div class="border-section">
                 <div class="attr-list">
-                    <div class="attr-item">
-                        <label for="border-left-width">左边宽度</label>
-                        <input
-                            id="border-left-width"
-                            type="number"
-                            min="0"
+                    <PropertyRow label="左边宽度">
+                        <SizeInput
                             bind:value={borderLeftWidth}
-                            oninput={(e) => updateIndividualBorder('Left', 'Width', e.currentTarget.value)}
-                            onkeydown={(e) =>
-                                handleNumberKeydown(e, borderLeftWidth, (v) => {
-                                    borderLeftWidth = v
-                                    updateIndividualBorder('Left', 'Width', v)
-                                })}
-                            placeholder="宽度值..."
+                            unit="px"
                             disabled={isRoot}
-                            class:disabled-input={isRoot}
+                            convert={(val) => val}
+                            on:change={(e) => {
+                                borderLeftWidth = e.detail.value
+                                updateIndividualBorder('Left', 'Width', e.detail.value)
+                            }}
                         />
-                        <button class="unit-toggle" disabled>px</button>
-                    </div>
+                    </PropertyRow>
 
-                    <div class="attr-item">
-                        <label for="border-left-color">左边颜色</label>
-                        <div class="color-picker-wrapper">
-                            <ColorPicker value={borderLeftColor} onchange={(color: string) => updateIndividualBorder('Left', 'Color', color)} disabled={isRoot} />
-                        </div>
-                        <span class="unit-placeholder"></span>
-                    </div>
+                    <PropertyRow label="左边颜色">
+                        <ColorPicker value={borderLeftColor} onchange={(color: string) => updateIndividualBorder('Left', 'Color', color)} disabled={isRoot} />
+                    </PropertyRow>
 
-                    <div class="attr-item">
-                        <label for="border-left-style">左边样式</label>
-                        <div class="select-wrapper">
-                            <select id="border-left-style" bind:value={borderLeftStyle} onchange={() => updateIndividualBorder('Left', 'Style', borderLeftStyle)} disabled={isRoot}>
-                                {#each borderStyleOptions as option}
-                                    <option value={option.value}>{option.label}</option>
-                                {/each}
-                            </select>
-                        </div>
-                        <span class="unit-placeholder"></span>
-                    </div>
+                    <PropertyRow label="左边样式">
+                        <PropertySelect
+                            bind:value={borderLeftStyle}
+                            options={borderStyleOptions}
+                            disabled={isRoot}
+                            change={(val: string) => {
+                                borderLeftStyle = val
+                                updateIndividualBorder('Left', 'Style', val)
+                            }}
+                        />
+                    </PropertyRow>
                 </div>
             </div>
 
             <!-- 四个独立圆角设置 -->
             <div class="border-section">
                 <div class="attr-list">
-                    <div class="attr-item">
-                        <label for="border-top-left-radius">上左圆角</label>
-                        <input
-                            id="border-top-left-radius"
-                            type="number"
-                            min="0"
+                    <PropertyRow label="上左圆角">
+                        <SizeInput
                             bind:value={borderTopLeftRadius}
-                            oninput={(e) => updateIndividualBorder('TopLeft', 'Radius', e.currentTarget.value)}
-                            onkeydown={(e) => {
-                                e.stopPropagation()
-                                handleNumberKeydown(e, borderTopLeftRadius, (v) => {
-                                    borderTopLeftRadius = v
-                                    updateIndividualBorder('TopLeft', 'Radius', v)
-                                })
-                            }}
-                            onwheel={(e) => e.stopPropagation()}
-                            placeholder="圆角值..."
+                            bind:unit={borderTopLeftRadiusUnit}
                             disabled={isRoot}
-                            class:disabled-input={isRoot}
+                            convert={(val) => val}
+                            on:change={(e) => {
+                                borderTopLeftRadius = e.detail.value
+                                borderTopLeftRadiusUnit = e.detail.unit
+                                updateIndividualBorder('TopLeft', 'Radius', e.detail.value)
+                            }}
                         />
-                        <button class="unit-toggle" onclick={() => toggleIndividualRadiusUnit('TopLeft')} disabled={isRoot}>
-                            {borderTopLeftRadiusUnit}
-                        </button>
-                    </div>
+                    </PropertyRow>
 
-                    <div class="attr-item">
-                        <label for="border-top-right-radius">上右圆角</label>
-                        <input
-                            id="border-top-right-radius"
-                            type="number"
-                            min="0"
+                    <PropertyRow label="上右圆角">
+                        <SizeInput
                             bind:value={borderTopRightRadius}
-                            oninput={(e) => updateIndividualBorder('TopRight', 'Radius', e.currentTarget.value)}
-                            onkeydown={(e) => {
-                                e.stopPropagation()
-                                handleNumberKeydown(e, borderTopRightRadius, (v) => {
-                                    borderTopRightRadius = v
-                                    updateIndividualBorder('TopRight', 'Radius', v)
-                                })
-                            }}
-                            onwheel={(e) => e.stopPropagation()}
-                            placeholder="圆角值..."
+                            bind:unit={borderTopRightRadiusUnit}
                             disabled={isRoot}
-                            class:disabled-input={isRoot}
+                            convert={(val) => val}
+                            on:change={(e) => {
+                                borderTopRightRadius = e.detail.value
+                                borderTopRightRadiusUnit = e.detail.unit
+                                updateIndividualBorder('TopRight', 'Radius', e.detail.value)
+                            }}
                         />
-                        <button class="unit-toggle" onclick={() => toggleIndividualRadiusUnit('TopRight')} disabled={isRoot}>
-                            {borderTopRightRadiusUnit}
-                        </button>
-                    </div>
+                    </PropertyRow>
 
-                    <div class="attr-item">
-                        <label for="border-bottom-left-radius">下左圆角</label>
-                        <input
-                            id="border-bottom-left-radius"
-                            type="number"
-                            min="0"
+                    <PropertyRow label="下左圆角">
+                        <SizeInput
                             bind:value={borderBottomLeftRadius}
-                            oninput={(e) => updateIndividualBorder('BottomLeft', 'Radius', e.currentTarget.value)}
-                            onkeydown={(e) => {
-                                e.stopPropagation()
-                                handleNumberKeydown(e, borderBottomLeftRadius, (v) => {
-                                    borderBottomLeftRadius = v
-                                    updateIndividualBorder('BottomLeft', 'Radius', v)
-                                })
-                            }}
-                            onwheel={(e) => e.stopPropagation()}
-                            placeholder="圆角值..."
+                            bind:unit={borderBottomLeftRadiusUnit}
                             disabled={isRoot}
-                            class:disabled-input={isRoot}
+                            convert={(val) => val}
+                            on:change={(e) => {
+                                borderBottomLeftRadius = e.detail.value
+                                borderBottomLeftRadiusUnit = e.detail.unit
+                                updateIndividualBorder('BottomLeft', 'Radius', e.detail.value)
+                            }}
                         />
-                        <button class="unit-toggle" onclick={() => toggleIndividualRadiusUnit('BottomLeft')} disabled={isRoot}>
-                            {borderBottomLeftRadiusUnit}
-                        </button>
-                    </div>
+                    </PropertyRow>
 
-                    <div class="attr-item">
-                        <label for="border-bottom-right-radius">下右圆角</label>
-                        <input
-                            id="border-bottom-right-radius"
-                            type="number"
-                            min="0"
+                    <PropertyRow label="下右圆角">
+                        <SizeInput
                             bind:value={borderBottomRightRadius}
-                            oninput={(e) => updateIndividualBorder('BottomRight', 'Radius', e.currentTarget.value)}
-                            onkeydown={(e) => {
-                                e.stopPropagation()
-                                handleNumberKeydown(e, borderBottomRightRadius, (v) => {
-                                    borderBottomRightRadius = v
-                                    updateIndividualBorder('BottomRight', 'Radius', v)
-                                })
-                            }}
-                            onwheel={(e) => e.stopPropagation()}
-                            placeholder="圆角值..."
+                            bind:unit={borderBottomRightRadiusUnit}
                             disabled={isRoot}
-                            class:disabled-input={isRoot}
+                            convert={(val) => val}
+                            on:change={(e) => {
+                                borderBottomRightRadius = e.detail.value
+                                borderBottomRightRadiusUnit = e.detail.unit
+                                updateIndividualBorder('BottomRight', 'Radius', e.detail.value)
+                            }}
                         />
-                        <button class="unit-toggle" onclick={() => toggleIndividualRadiusUnit('BottomRight')} disabled={isRoot}>
-                            {borderBottomRightRadiusUnit}
-                        </button>
-                    </div>
+                    </PropertyRow>
                 </div>
             </div>
         {/if}
@@ -801,163 +638,16 @@ $effect(() => {
         gap: calc(12px * var(--scale-ratio, 1));
     }
 
-    .attr-item {
-        display: flex;
-        align-items: center;
-        gap: calc(10px * var(--scale-ratio, 1));
-    }
-    label {
-        min-width: calc(30px * var(--scale-ratio, 1));
-        font-size: calc(13px * var(--scale-ratio, 1));
-        font-weight: 500;
-        color: #94a3b8;
-    }
-    input,
-    select {
-        flex: 1;
-        padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
-        border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.2);
-        border-radius: calc(6px * var(--scale-ratio, 1));
-        font-size: calc(13px * var(--scale-ratio, 1));
-        background: rgba(255, 255, 255, 0.1);
-        color: #e2e8f0;
-        transition: all 0.3s ease;
-        appearance: none;
-    }
-    input:focus,
-    select:focus {
-        outline: none;
-        border-color: #cbd5e1;
-        background: rgba(255, 255, 255, 0.15);
-        box-shadow: 0 0 0 calc(3px * var(--scale-ratio, 1)) rgba(255, 255, 255, 0.1);
-    }
-    .unit-toggle {
-        width: calc(40px * var(--scale-ratio, 1));
-        padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
-        border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.2);
-        border-radius: calc(6px * var(--scale-ratio, 1));
-        font-size: calc(13px * var(--scale-ratio, 1));
-        background: rgba(255, 255, 255, 0.1);
-        color: #e2e8f0;
-        text-align: center;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-    .unit-toggle:hover {
-        background: rgba(255, 255, 255, 0.15);
-    }
-    .unit-toggle:disabled,
-    input:disabled {
-        cursor: not-allowed;
-        opacity: 0.5;
-    }
-    .disabled-input {
-        color: #64748b !important;
-    }
-    .unit-placeholder {
-        width: calc(40px * var(--scale-ratio, 1));
-    }
-    .select-wrapper {
-        position: relative;
+    /* 让 ColorPicker 在 BorderEditor 的 PropertyRow 内占满可用空间 */
+    .border-section :global(.color-picker-container) {
         flex: 1;
     }
-    .color-picker-wrapper {
-        flex: 1;
-    }
-    .select-wrapper::after {
-        content: '';
-        position: absolute;
-        right: calc(12px * var(--scale-ratio, 1));
-        top: 50%;
-        transform: translateY(-50%);
-        width: 0;
-        height: 0;
-        border-left: calc(4px * var(--scale-ratio, 1)) solid transparent;
-        border-right: calc(4px * var(--scale-ratio, 1)) solid transparent;
-        border-top: calc(4px * var(--scale-ratio, 1)) solid #94a3b8;
-        pointer-events: none;
-    }
-    .select-wrapper select {
-        width: 100%;
-        padding-right: calc(30px * var(--scale-ratio, 1));
-    }
-    select option {
-        background: #1e293b;
-        color: #e2e8f0;
-        padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
-    }
-    select option:hover,
-    select option:focus,
-    select option:checked {
-        color: #e2e8f0;
-    }
-    input::placeholder {
-        color: #9ca3af;
-    }
+
     .placeholder {
         color: #64748b;
         font-style: italic;
         text-align: center;
         margin-top: calc(40px * var(--scale-ratio, 1));
         font-size: calc(14px * var(--scale-ratio, 1));
-    }
-
-    /* 开关组件样式 */
-    .switch-wrapper {
-        flex: 1;
-    }
-    .switch {
-        position: relative;
-        display: inline-block;
-        width: calc(44px * var(--scale-ratio, 1));
-        height: calc(24px * var(--scale-ratio, 1));
-    }
-    .switch input {
-        opacity: 0;
-        width: 0;
-        height: 0;
-    }
-    .slider {
-        position: absolute;
-        cursor: pointer;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: rgba(255, 255, 255, 0.1);
-        transition: 0.3s;
-        border-radius: calc(12px * var(--scale-ratio, 1));
-    }
-    .slider:before {
-        position: absolute;
-        content: '';
-        height: calc(18px * var(--scale-ratio, 1));
-        width: calc(18px * var(--scale-ratio, 1));
-        left: calc(3px * var(--scale-ratio, 1));
-        bottom: calc(3px * var(--scale-ratio, 1));
-        background-color: white;
-        transition: 0.3s;
-        border-radius: 50%;
-    }
-    input:checked + .slider {
-        background-color: rgba(99, 102, 241, 0.8);
-    }
-    input:checked + .slider:before {
-        transform: translateX(calc(20px * var(--scale-ratio, 1)));
-    }
-    input:disabled + .slider {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    /* 隐藏原生 number 输入框的上下箭头 */
-    input[type='number']::-webkit-inner-spin-button,
-    input[type='number']::-webkit-outer-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
-    }
-    input[type='number'] {
-        appearance: textfield;
-        -moz-appearance: textfield;
     }
 </style>
