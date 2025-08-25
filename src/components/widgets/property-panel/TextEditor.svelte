@@ -420,26 +420,56 @@
         <h3>文字样式</h3>
         <div class="text-list">
             <!-- 文本内容输入 - 放在第一个位置 -->
-            <div class="text-item">
-                <label for="text-content">文本内容</label>
-                <textarea id="text-content" rows="3" bind:value={textContent} oninput={(e) => { textContent = (e.target as HTMLTextAreaElement).value; updateTextStyles(); }} placeholder="输入文本内容..." style="resize: vertical; min-height: calc(60px * var(--scale-ratio, 1));"></textarea>
-                <span class="unit-placeholder"></span>
-            </div>
+            <PropertyRow label="文本内容">
+                <textarea
+                    id="text-content"
+                    rows="3"
+                    bind:value={textContent}
+                    oninput={(e) => {
+                        textContent = (e.target as HTMLTextAreaElement).value
+                        updateTextStyles()
+                    }}
+                    placeholder="输入文本内容..."
+                    style="resize: vertical; min-height: calc(60px * var(--scale-ratio, 1));"
+                ></textarea>
+            </PropertyRow>
 
             <PropertyRow label="文本字体">
-                <PropertySelect bind:value={fontFamily} options={fontFamilyOptions} change={(v)=>{fontFamily=v;updateTextStyles()}} />
+                <PropertySelect
+                    bind:value={fontFamily}
+                    options={fontFamilyOptions}
+                    change={(v) => {
+                        fontFamily = v
+                        updateTextStyles()
+                    }}
+                />
             </PropertyRow>
 
             <PropertyRow label="字体大小">
-                <SizeInput bind:value={fontSize} unitOptions={['px']} convert={(v)=>v} on:change={({ detail }) => { fontSize = detail.value; updateTextStyles(); }} placeholder="字体大小..." />
+                <SizeInput
+                    bind:value={fontSize}
+                    unitOptions={['px']}
+                    convert={(v) => v}
+                    on:change={({ detail }) => {
+                        fontSize = detail.value
+                        updateTextStyles()
+                    }}
+                    placeholder="字体大小..."
+                />
             </PropertyRow>
 
             <PropertyRow label="文本宽度">
-                <PropertySelect bind:value={fontWeight} options={fontWeightOptions} change={(v)=>{fontWeight=v;updateTextStyles()}} />
+                <PropertySelect
+                    bind:value={fontWeight}
+                    options={fontWeightOptions}
+                    change={(v) => {
+                        fontWeight = v
+                        updateTextStyles()
+                    }}
+                />
             </PropertyRow>
 
-            <div class="text-item">
-                <label for="font-color">文本颜色</label>
+            <PropertyRow label="文本颜色">
                 <ColorPicker
                     value={hexToRgba(fontColor, fontOpacity)}
                     onchange={(rgba: string) => {
@@ -453,36 +483,90 @@
                     projectId={projectId()}
                     componentId={selectedId || 'default'}
                 />
-                <span class="unit-placeholder"></span>
-            </div>
+            </PropertyRow>
 
             <PropertyRow label="文本行高">
-                <SizeInput bind:value={lineHeight} unitOptions={['px']} convert={(v)=>v} on:change={({ detail }) => { lineHeight = detail.value; updateTextStyles(); }} placeholder="行高(px)..." />
+                <SizeInput
+                    bind:value={lineHeight}
+                    unitOptions={['px']}
+                    convert={(v) => v}
+                    on:change={({ detail }) => {
+                        lineHeight = detail.value
+                        updateTextStyles()
+                    }}
+                    placeholder="行高(px)..."
+                />
             </PropertyRow>
 
             <PropertyRow label="对齐方式">
-                <PropertySelect bind:value={textAlign} options={textAlignOptions} change={(v)=>{textAlign=v;updateTextStyles()}} />
+                <PropertySelect
+                    bind:value={textAlign}
+                    options={textAlignOptions}
+                    change={(v) => {
+                        textAlign = v
+                        updateTextStyles()
+                    }}
+                />
             </PropertyRow>
 
             <PropertyRow label="文字装饰">
-                <PropertySelect bind:value={textDecoration} options={textDecorationOptions} change={(v)=>{textDecoration=v;updateTextStyles()}} />
+                <PropertySelect
+                    bind:value={textDecoration}
+                    options={textDecorationOptions}
+                    change={(v) => {
+                        textDecoration = v
+                        updateTextStyles()
+                    }}
+                />
             </PropertyRow>
 
             <PropertyRow label="字体样式">
-                <PropertySelect bind:value={fontStyle} options={fontStyleOptions} change={(v)=>{fontStyle=v;updateTextStyles()}} />
+                <PropertySelect
+                    bind:value={fontStyle}
+                    options={fontStyleOptions}
+                    change={(v) => {
+                        fontStyle = v
+                        updateTextStyles()
+                    }}
+                />
             </PropertyRow>
 
             <PropertyRow label="字母间距">
-                <SizeInput bind:value={letterSpacing} unitOptions={['px']} convert={(v)=>v} on:change={({ detail }) => { letterSpacing = detail.value; updateTextStyles(); }} placeholder="字母间距..." />
+                <SizeInput
+                    bind:value={letterSpacing}
+                    unitOptions={['px']}
+                    convert={(v) => v}
+                    on:change={({ detail }) => {
+                        letterSpacing = detail.value
+                        updateTextStyles()
+                    }}
+                    placeholder="字母间距..."
+                />
             </PropertyRow>
 
             <PropertyRow label="单词间距">
-                <SizeInput bind:value={wordSpacing} unitOptions={['px']} convert={(v)=>v} on:change={({ detail }) => { wordSpacing = detail.value; updateTextStyles(); }} placeholder="单词间距..." />
+                <SizeInput
+                    bind:value={wordSpacing}
+                    unitOptions={['px']}
+                    convert={(v) => v}
+                    on:change={({ detail }) => {
+                        wordSpacing = detail.value
+                        updateTextStyles()
+                    }}
+                    placeholder="单词间距..."
+                />
             </PropertyRow>
 
             <!-- 文本换行 -->
             <PropertyRow label="文本换行">
-                <PropertySelect bind:value={textWrapStyle} options={textWrapOptions} change={(v)=>{textWrapStyle=v;updateTextStyles()}} />
+                <PropertySelect
+                    bind:value={textWrapStyle}
+                    options={textWrapOptions}
+                    change={(v) => {
+                        textWrapStyle = v
+                        updateTextStyles()
+                    }}
+                />
             </PropertyRow>
         </div>
     {:else}
@@ -506,23 +590,13 @@
         flex-direction: column;
         gap: calc(12px * var(--scale-ratio, 1));
     }
-    .text-item {
-        display: flex;
-        align-items: center;
-        gap: calc(10px * var(--scale-ratio, 1));
-    }
 
     /* 确保ColorPicker组件宽度一致 */
-    .text-item :global(.color-picker-container) {
+    .text-list :global(.color-picker-container) {
         flex: 1;
         min-width: 0;
     }
-    label {
-        min-width: calc(30px * var(--scale-ratio, 1));
-        font-size: calc(13px * var(--scale-ratio, 1));
-        font-weight: 500;
-        color: #94a3b8;
-    }
+
     textarea {
         flex: 1;
         padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
@@ -533,14 +607,6 @@
         color: #e2e8f0;
         transition: all 0.3s ease;
         appearance: none;
-    }
-
-
-
-
-
-    .unit-placeholder {
-        width: calc(40px * var(--scale-ratio, 1));
     }
 
     textarea:focus {
@@ -562,8 +628,4 @@
     textarea {
         min-height: calc(80px * var(--scale-ratio, 1));
     }
-
-
-
-
 </style>
