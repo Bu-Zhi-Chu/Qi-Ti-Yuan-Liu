@@ -2,7 +2,11 @@
 <script lang="ts">
     import { createEventDispatcher } from 'svelte'
     // 组件属性定义
-    let { id = '', checked = $bindable(false), disabled = false } = $props<{
+    let {
+        id = '',
+        checked = $bindable(false),
+        disabled = false
+    } = $props<{
         id?: string
         checked?: boolean
         disabled?: boolean
@@ -18,7 +22,7 @@
 </script>
 
 <label class="switch">
-    <input id={id} type="checkbox" bind:checked disabled={disabled} onchange={handleChange} />
+    <input {id} type="checkbox" bind:checked {disabled} onchange={handleChange} />
     <span class="slider"></span>
 </label>
 
@@ -48,7 +52,7 @@
     }
     .slider:before {
         position: absolute;
-        content: "";
+        content: '';
         height: calc(18px * var(--scale-ratio, 1));
         width: calc(18px * var(--scale-ratio, 1));
         left: calc(6px * var(--scale-ratio, 1));
