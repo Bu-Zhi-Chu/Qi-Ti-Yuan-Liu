@@ -264,6 +264,11 @@
                 // 根据数据库中的模式设置工作区显示状态
                 showWorkspace = project.mode === 'editing'
                 console.log(`项目模式已初始化为: ${project.mode}`)
+
+                // 设置网页标题为项目名称，若未定义则保持默认
+                if (project.name) {
+                    document.title = project.name as string
+                }
             } else {
                 // 如果没有模式字段，默认为正常模式
                 showWorkspace = false
