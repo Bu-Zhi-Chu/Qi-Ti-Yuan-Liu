@@ -1025,11 +1025,15 @@
                 </PropertyRow>
                 <!-- 渐变方向 -->
                 <PropertyRow label="渐变方向">
-                    <select id="gradient-direction" bind:value={gradientDirection} onchange={updateBackgroundStyles}>
-                        {#each gradientDirectionOptions as option}
-                            <option value={option.value}>{option.label}</option>
-                        {/each}
-                    </select>
+                    <PropertySelect
+                        id="gradient-direction"
+                        bind:value={gradientDirection}
+                        options={gradientDirectionOptions}
+                        change={(v) => {
+                            gradientDirection = v
+                            updateBackgroundStyles()
+                        }}
+                    />
                 </PropertyRow>
 
                 <!-- 渐变颜色 -->
@@ -1083,8 +1087,7 @@
         gap: calc(12px * var(--scale-ratio, 1));
     }
 
-    input,
-    select {
+    input {
         flex: 1;
         padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
         border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.2);
@@ -1128,17 +1131,13 @@
         background: rgba(255, 255, 255, 0.15);
     }
 
-    select:focus,
     input:focus {
         outline: none;
         border-color: #cbd5e1;
         background: rgba(255, 255, 255, 0.15);
         box-shadow: 0 0 0 calc(3px * var(--scale-ratio, 1)) rgba(255, 255, 255, 0.1);
     }
-    select option {
-        background: #1e293b;
-        color: #e2e8f0;
-    }
+
     input::placeholder {
         color: #9ca3af;
     }
