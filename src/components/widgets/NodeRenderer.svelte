@@ -205,14 +205,14 @@
 {#if nodeKey === 'root'}
     <div id={nodeKey} data-name={dataNameAttr} style={finalStyle} {...restAttrs} onclick={handleClick}>
         {node.textContent || ''}
-        {#each node.children ?? [] as child}
+        {#each node.children ?? [] as child (child.id)}
             <NodeRenderer node={child} {selectedId} {editing} {select} />
         {/each}
     </div>
 {:else}
     <DynamicComponent type={componentType} id={nodeKey} data-name={dataNameAttr} style={finalStyle} {...componentProps} onclick={handleClick}>
         {node.textContent || ''}
-        {#each node.children ?? [] as child}
+        {#each node.children ?? [] as child (child.id)}
             <NodeRenderer node={child} {selectedId} {editing} {select} />
         {/each}
     </DynamicComponent>
