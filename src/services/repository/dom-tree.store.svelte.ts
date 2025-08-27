@@ -157,7 +157,7 @@ async function loadDomNodesFromDomsTable(projectId: string): Promise<DomNode | n
       const attributes = nodeData.attributes || {};
 
       const node: DomNode = {
-        id: nodeData.id, // 唯一标识符
+        id: nodeData.id,
         componentType: nodeData.type,
         styles: nodeData.style || {},
         attributes: attributes,
@@ -165,7 +165,8 @@ async function loadDomNodesFromDomsTable(projectId: string): Promise<DomNode | n
         expanded: nodeData.attributes?.expanded !== false,
         hidden: nodeData.attributes?.hidden || false,
         children: []
-      };
+      } as DomNode & { order?: number };
+      (node as any).order = nodeData.order ?? 0;
       nodeMap.set(nodeData.id, node);
     }
 
@@ -183,6 +184,8 @@ async function loadDomNodesFromDomsTable(projectId: string): Promise<DomNode | n
         if (parent) {
           if (!parent.children) parent.children = [];
           parent.children.push(node);
+          // 根据order字段排序，确保兄弟节点顺序正确
+          parent.children.sort((a: any, b: any) => (a.order ?? 0) - (b.order ?? 0));
         }
       }
     }
@@ -266,7 +269,7 @@ async function saveDomNodesToDomsTable(projectId: string, domTree: DomNode): Pro
     await db.table('doms').where({ projectId }).delete();
 
     // 递归保存所有节点到doms表
-    const saveNode = async (node: DomNode, parentId: string | null) => {
+    const saveNode = async (node: DomNode, parentId: string | null, order: number) => {
       // 确保数据是可序列化的
       const safeAttributes = node.attributes ? JSON.parse(JSON.stringify(node.attributes)) : {};
 
@@ -295,19 +298,21 @@ async function saveDomNodesToDomsTable(projectId: string, domTree: DomNode): Pro
           ...safeAttributes
         },
         style: safeStyles,
-        textContent: node.textContent || ''
+        textContent: node.textContent || '',
+        order
       });
 
       // 递归保存子节点
       if (node.children) {
-        for (const child of node.children) {
-          await saveNode(child, node.id);
+        for (let i = 0; i < node.children.length; i++) {
+          const child = node.children[i];
+          await saveNode(child, node.id, i);
         }
       }
     };
 
     // 从根节点开始保存
-    await saveNode(domTree, null);
+    await saveNode(domTree, null, 0);
     console.log('【数据库交互】所有DOM节点已保存到doms表');
   } catch (error) {
     console.error('【数据库交互】保存DOM节点到doms表失败:', error);
