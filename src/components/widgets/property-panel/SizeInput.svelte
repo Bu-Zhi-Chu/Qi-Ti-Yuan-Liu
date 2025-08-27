@@ -61,7 +61,44 @@
         dispatch('change', { value, unit })
     }
 
-    // 计算步长
+    // 计算步长与加速逻辑
+
+    /**
+     * 根据方向与是否按下 Ctrl 调整数值
+     * @param direction 1 表示增加，-1 表示减少
+     * @param useCtrl   是否按下 Ctrl，按下则步进 ×10
+     */
+    function adjustValue(direction: 1 | -1, useCtrl = false) {
+        if (disabled) return
+        const base = step != null ? step : unit === '%' ? 0.1 : 1
+        const increment = base * (useCtrl ? 10 : 1)
+        const num = parseFloat(value) || 0
+        let updated = num + direction * increment
+        updated = unit === '%' ? Math.round(updated * 10) / 10 : Math.round(updated)
+        value = String(updated)
+        dispatch('change', { value, unit })
+    }
+
+    // 滚轮事件：支持 Ctrl ×10 步进
+    function handleWheel(e: WheelEvent) {
+        if (disabled) return
+        e.preventDefault()
+        e.stopPropagation()
+        const direction: 1 | -1 = e.deltaY < 0 ? 1 : -1
+        adjustValue(direction, e.ctrlKey)
+    }
+
+    // 键盘事件：Ctrl + ↑/↓ ×10 步进
+    function handleKeydown(e: KeyboardEvent) {
+        if (disabled) return
+        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+            if (e.ctrlKey) {
+                e.preventDefault()
+                const direction: 1 | -1 = e.key === 'ArrowUp' ? 1 : -1
+                adjustValue(direction, true)
+            }
+        }
+    }
 
     // 计算步长
     let calcStep = $derived(step != null ? step : unit === '%' ? 0.1 : 1)
@@ -69,7 +106,7 @@
 
 <!-- 使用 wrapper，按钮绝对定位叠加，保证输入框宽度 -->
 <div class="size-input-wrapper">
-    <input type="number" step={calcStep} bind:value oninput={handleInput} {placeholder} {disabled} class:disabled-input={disabled} />
+    <input type="number" step={calcStep} bind:value oninput={handleInput} onwheel={handleWheel} onkeydown={handleKeydown} {placeholder} {disabled} class:disabled-input={disabled} />
 </div>
 <button class="unit-toggle" class:disabled-input={disabled || unitOptions.length < 2} onclick={toggleUnit} disabled={disabled || unitOptions.length < 2}>
     {unit}
