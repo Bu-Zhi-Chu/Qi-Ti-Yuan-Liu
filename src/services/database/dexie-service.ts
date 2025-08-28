@@ -7,7 +7,6 @@
  */
 
 import Dexie from 'dexie'
-import { DatabaseLogger } from '../utils/color-logger'
 
 export default class DexieService {
     /**
@@ -24,16 +23,16 @@ export default class DexieService {
             return DexieService.dbExistenceCache.get(dbName) as boolean
         }
 
-        DatabaseLogger.checkingDatabase(dbName)
+        // DatabaseLogger.checkingDatabase(dbName)
         try {
             const dbs = await indexedDB.databases()
             const exists = dbs.some(db => db.name === dbName)
             // 写入缓存
             DexieService.dbExistenceCache.set(dbName, exists)
-            DatabaseLogger.databaseExists(dbName, exists)
+            // DatabaseLogger.databaseExists(dbName, exists)
             return exists
         } catch (error) {
-            DatabaseLogger.operationError(`检查数据库是否存在: ${dbName}`, error)
+            // DatabaseLogger.operationError(`检查数据库是否存在: ${dbName}`, error)
             return false
         }
     }
@@ -44,7 +43,7 @@ export default class DexieService {
      * @param isLiteMode 是否为精简模式，默认为false。在精简模式下不会添加默认模板数据
      */
     static async createDatabase(dbName: string, isLiteMode: boolean = false): Promise<void> {
-        DatabaseLogger.creatingDatabase(dbName)
+        // DatabaseLogger.creatingDatabase(dbName)
         const db = new Dexie(dbName)
 
         // 开发环境无需修改版本号
@@ -63,7 +62,7 @@ export default class DexieService {
         await db.open()
         // 打开成功后写入缓存，避免后续重复检查
         DexieService.dbExistenceCache.set(dbName, true)
-        DatabaseLogger.databaseCreated(dbName)
+        // DatabaseLogger.databaseCreated(dbName)
 
         // 精简模式下不插入默认模板
         if (isLiteMode) {
@@ -124,11 +123,11 @@ export default class DexieService {
      * 查询表数据
      */
     static async queryRecords<T>(dbName: string, tableName: string): Promise<T[]> {
-        DatabaseLogger.queryingRecords(dbName, tableName)
+        // // // // // DatabaseLogger.queryingRecords(dbName, tableName)
         const db = new Dexie(dbName)
         await db.open()
         const result = await db.table(tableName).toArray()
-        DatabaseLogger.queryResults(result.length)
+        // // // // // DatabaseLogger.queryResults(result.length)
         return result
     }
 
@@ -136,11 +135,9 @@ export default class DexieService {
      * 获取表中的所有记录
      */
     static async getAllRecords<T>(dbName: string, tableName: string): Promise<T[]> {
-        DatabaseLogger.queryingRecords(dbName, tableName)
         const db = new Dexie(dbName)
         await db.open()
         const result = await db.table(tableName).toArray()
-        DatabaseLogger.queryResults(result.length)
         return result
     }
 
@@ -148,14 +145,14 @@ export default class DexieService {
      * 获取指定主键的记录
      */
     static async getRecord<T>(dbName: string, tableName: string, key: any): Promise<T | undefined> {
-        DatabaseLogger.gettingRecord(dbName, tableName, key)
+        // DatabaseLogger.gettingRecord(dbName, tableName, key)
         const db = await DexieService.getDatabase(dbName)
         if (!db) {
-            DatabaseLogger.operationError(`获取数据库实例失败: ${dbName}`, new Error('db is null'))
+            // DatabaseLogger.operationError(`获取数据库实例失败: ${dbName}`, new Error('db is null'))
             return undefined
         }
         const result = await db.table(tableName).get(key)
-        DatabaseLogger.recordFound(!!result)
+        // DatabaseLogger.recordFound(!!result)
         return result
     }
 
@@ -167,29 +164,29 @@ export default class DexieService {
      * @returns 删除是否成功
      */
     static async deleteRecord(dbName: string, tableName: string, key: any): Promise<boolean> {
-        DatabaseLogger.deletingRecord(dbName, tableName, key)
+        // DatabaseLogger.deletingRecord(dbName, tableName, key)
         try {
             const db = new Dexie(dbName)
             await db.open()
             await db.table(tableName).delete(key)
-            DatabaseLogger.recordDeleted(true)
+            // DatabaseLogger.recordDeleted(true)
             return true
         } catch (error) {
-            DatabaseLogger.operationError(`删除记录: ${tableName}.${key}`, error)
+            // DatabaseLogger.operationError(`删除记录: ${tableName}.${key}`, error)
             return false
         }
     }
 
     static async addRecord<T>(dbName: string, tableName: string, data: T): Promise<any> {
-        DatabaseLogger.addingRecord(dbName, tableName)
+        // DatabaseLogger.addingRecord(dbName, tableName)
         try {
             const db = new Dexie(dbName)
             await db.open()
             const id = await db.table(tableName).add(data as any)
-            DatabaseLogger.recordAdded(id)
+            // DatabaseLogger.recordAdded(id)
             return id
         } catch (error) {
-            DatabaseLogger.operationError(`添加记录: ${tableName}`, error)
+            // DatabaseLogger.operationError(`添加记录: ${tableName}`, error)
             throw error
         }
     }
@@ -203,35 +200,16 @@ export default class DexieService {
      * @returns 更新是否成功
      */
     static async updateRecord<T>(dbName: string, tableName: string, key: any, data: Partial<T>): Promise<boolean> {
-        DatabaseLogger.updatingRecord(dbName, tableName, key)
         try {
             const db = new Dexie(dbName)
             await db.open()
             await db.table(tableName).update(key, data as any)
-            DatabaseLogger.recordUpdated(true)
             return true
         } catch (error) {
-            DatabaseLogger.operationError(`更新记录: ${tableName}.${key}`, error)
             return false
         }
     }
 
-    /**
-     * 颜色卡相关 API 已废弃（改用 doms 表统计颜色）
-     * 兼容旧逻辑，保留方法签名但不做任何数据库操作
-     */
-    static async saveColorPalette(..._args: any[]): Promise<void> {
-        console.warn('DexieService.saveColorPalette 已废弃');
-    }
-
-    static async queryColorPalette(..._args: any[]): Promise<any[]> {
-        console.warn('DexieService.queryColorPalette 已废弃');
-        return [];
-    }
-
-    static async clearColorPalette(..._args: any[]): Promise<void> {
-        console.warn('DexieService.clearColorPalette 已废弃');
-    }
 
     /**
      * 数据库实例缓存，避免重复创建实例
@@ -250,23 +228,22 @@ export default class DexieService {
 
             // 创建新的数据库实例
             const db = new Dexie(dbName)
-            
+
             // 定义表结构（与createDatabase保持一致）
             const stores: Record<string, string> = {
                 projects: 'id, name, templateId, createdAt, updatedAt, canvasState, mode, exportTime',
                 doms: '[projectId+id], projectId, parentId, type, attributes, style, textContent',
                 templates: '++id, name, desc, cover, tag, thumbnailUrl, domStructure'
             }
-            
+
             db.version(1).stores(stores)
             await db.open()
-            
+
             // 缓存实例
             DexieService.dbInstanceCache.set(dbName, db)
-            
+
             return db
         } catch (error) {
-            DatabaseLogger.operationError(`获取数据库实例: ${dbName}`, error)
             return null
         }
     }
