@@ -141,6 +141,38 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
     initialLeftUnit = (initialLeft.match(unitRegex) ?? ['px'])[0]
     initialTopUnit = (initialTop.match(unitRegex) ?? ['px'])[0]
 
+    // 计算对应单位的转换值，便于调试观察（公式同 PositionEditor）
+    const parentEl = targetEl.parentElement as HTMLElement | null
+    const parentWidth = parentEl?.offsetWidth || 1
+    const parentHeight = parentEl?.offsetHeight || 1
+    const sr = scaleAccessor() || 1
+    // 提取数值，兼容 calc(123px * var(--scale-ratio, 1)) 形式
+    const extractNumeric = (val: string): number => {
+      if (!val) return 0
+      const calcMatch = val.match(/calc\([^\d]*([\d.]+)px/i)
+      if (calcMatch && calcMatch[1]) {
+        return parseFloat(calcMatch[1]) || 0
+      }
+      const num = parseFloat(val)
+      return isNaN(num) ? 0 : num
+    }
+
+    const initialLeftValueNum = extractNumeric(initialLeft)
+    const initialTopValueNum = extractNumeric(initialTop)
+
+    // % → 设计px (需除全局缩放比)
+    const percentToPx = (percent: number, base: number) => ((percent / 100) * base) / sr
+    // 设计px → % (需乘全局缩放比)
+    const pxToPercent = (px: number, base: number) => ((px * sr) / base) * 100
+
+    const initialLeftPx = initialLeftUnit === '%' ? percentToPx(initialLeftValueNum, parentWidth) : initialLeftValueNum
+    const initialTopPx = initialTopUnit === '%' ? percentToPx(initialTopValueNum, parentHeight) : initialTopValueNum
+    const initialLeftPercent = initialLeftUnit === '%' ? initialLeftValueNum : pxToPercent(initialLeftValueNum, parentWidth)
+    const initialTopPercent = initialTopUnit === '%' ? initialTopValueNum : pxToPercent(initialTopValueNum, parentHeight)
+
+    const convertedLeft = initialLeftUnit === '%' ? `${Math.round(initialLeftPx)}px` : `${Math.round(initialLeftPercent * 10) / 10}%`
+    const convertedTop = initialTopUnit === '%' ? `${Math.round(initialTopPx)}px` : `${Math.round(initialTopPercent * 10) / 10}%`
+
     // 记录起始位置
     startX = e.clientX
     startY = e.clientY
@@ -149,7 +181,17 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
     startAdjusting({ x: e.clientX, y: e.clientY }, selectedId)
     node.style.cursor = 'move'
     // 标记操作来源为拖动，便于属性面板区分
-
+    console.log('[AdjustMode] start drag', {
+      nodeId: selectedId,
+      initialLeft,
+      initialLeftUnit,
+      convertedLeft,
+      initialTop,
+      initialTopUnit,
+      convertedTop,
+      startX,
+      startY
+    })
   }
 
   /**
@@ -170,9 +212,18 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
     const dx = (e.clientX - startX) / scale
     const dy = (e.clientY - startY) / scale
 
+    // 提取数值工具函数，兼容 calc(...) 形式
+    const extractNumeric = (val: string): number => {
+      if (!val) return 0
+      const calcMatch = val.match(/calc\([^\d]*([\d.]+)px/i)
+      if (calcMatch && calcMatch[1]) return parseFloat(calcMatch[1]) || 0
+      const num = parseFloat(val)
+      return isNaN(num) ? 0 : num
+    }
+
     // 解析初始位置
-    let initialLeftValue = parseFloat(initialLeft) || 0
-    let initialTopValue = parseFloat(initialTop) || 0
+    let initialLeftValue = extractNumeric(initialLeft)
+    let initialTopValue = extractNumeric(initialTop)
 
     // 若初始单位为百分比，则在拖拽前转换为像素，拖拽过程中统一使用像素单位
     const parentEl = targetEl.parentElement as HTMLElement | null
@@ -195,12 +246,12 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
     if (initialLeftUnit === '%') {
       newLeft = `${(newLeftPx / parentWidth) * 100}%`
     } else {
-      newLeft = `${newLeftPx}px`
+      newLeft = `calc(${Math.round(newLeftPx)}px * var(--scale-ratio, 1))`
     }
     if (initialTopUnit === '%') {
       newTop = `${(newTopPx / parentHeight) * 100}%`
     } else {
-      newTop = `${newTopPx}px`
+      newTop = `calc(${Math.round(newTopPx)}px * var(--scale-ratio, 1))`
     }
 
     // 更新样式
