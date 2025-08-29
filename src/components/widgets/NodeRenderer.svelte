@@ -174,7 +174,7 @@
         // 根据 hidden 属性控制显示/隐藏
         const hiddenStyle = node.hidden ? 'display:none !important;' : ''
 
-        const defaultStyles = `transition: all 0.2s ease !important; ${outlineStyles}; ${hiddenStyle}`
+        const defaultStyles = `${outlineStyles}; ${hiddenStyle}`
         const result = styleStr ? `${styleStr}; ${defaultStyles}` : defaultStyles
 
         return result

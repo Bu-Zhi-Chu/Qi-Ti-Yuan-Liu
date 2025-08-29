@@ -29,6 +29,7 @@
     import useWheelZoom from '../../services/actions/use-wheel-zoom.action'
     import { getScaleRatio } from '../../services/utils/get-scale-ratio.util'
     import drawModeAction from '../../services/actions/draw-mode.action'
+    import useAdjustMode from '../../services/actions/adjust-mode.action'
     import DrawModeOverlay from './DrawModeOverlay.svelte'
     import { isDrawMode } from '../../services/repository/draw-mode.store.svelte'
     import DexieService from '../../services/database/dexie-service'
@@ -317,6 +318,14 @@
     use:drawModeAction={{
         editingAccessor: () => editing,
         scaleAccessor: () => (editing ? scale * 0.5 : scale)
+    }}
+    use:useAdjustMode={{
+        key: 'KeyV',
+        editingAccessor: () => editing,
+        scaleAccessor: () => (editing ? scale * 0.5 : scale),
+        selectedNodeAccessor: () => selectedId(),
+        isRootNodeAccessor: (nodeId) => nodeId === 'root',
+        onAdjust: (payload) => console.log('节点调整:', payload)
     }}
     role="application"
     onpointerdown={() => (isDragging = true)}
