@@ -37,6 +37,15 @@ import { getScaleRatio } from '../utils/get-scale-ratio.util'
 import { getElementByNodeId } from '../utils/dom-geometry.util'
 
 
+// 提取数值工具函数，兼容 calc(...) 表达式，文件级复用
+function extractNumeric(val: string): number {
+  if (!val) return 0
+  const calcMatch = val.match(/calc\([^\d]*([\d.]+)px/i)
+  if (calcMatch && calcMatch[1]) return parseFloat(calcMatch[1]) || 0
+  const num = parseFloat(val)
+  return isNaN(num) ? 0 : num
+}
+
 export interface AdjustModeOptions {
   /** 触发键，默认为 KeyV */
   key?: string
@@ -81,8 +90,135 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
   // 缓存目标元素引用，避免在 mousemove 中重复查询
   let targetElRef: HTMLElement | null = null
   let updateNodePropsFn: ((id: string, props: any) => void) | null = null
+  // V 键按下时为目标元素生成的 8 个手柄引用
+  let handleEls: HTMLElement[] = []
+
+  // ===== 尺寸调整相关状态 =====
+  let isResizing = false
+  let resizeDir: 'e' | 's' | null = null
+  let initialWidth = ''
+  let initialHeight = ''
+  let initialWidthUnit: string = 'px'
+  let initialHeightUnit: string = 'px'
+  // 标记初始尺寸是否来自计算样式（computedStyle），若是则需除以全局缩放比 sr
+  let initialWidthFromComputed = false
+  let initialHeightFromComputed = false
 
 
+
+  // 开始尺寸调整
+  function startResize(dir: 'e' | 's', ev: MouseEvent) {
+    if (!keyPressed) return
+    ev.stopPropagation()
+    ev.preventDefault()
+    const selectedId = selectedNodeAccessor()
+    if (!selectedId || isRootNodeAccessor(selectedId)) return
+    const el = getElementByNodeId(selectedId)
+    if (!el) return
+    targetElRef = el
+    isResizing = true
+    resizeDir = dir
+    startX = ev.clientX
+    startY = ev.clientY
+    // 若行内样式为 calc(...)，说明已切换至 px 模式；此时优先使用计算样式的纯像素值，避免再次解析失败
+    const inlineWidth = el.style.width
+    const inlineHeight = el.style.height
+    const computedStyle = window.getComputedStyle(el)
+    initialWidth = inlineWidth && !inlineWidth.includes('calc(') ? inlineWidth : computedStyle.width
+    initialHeight = inlineHeight && !inlineHeight.includes('calc(') ? inlineHeight : computedStyle.height
+    const unitRegex = /[%a-z]+$/i
+    initialWidthUnit = (initialWidth.match(unitRegex) ?? ['px'])[0]
+    initialHeightUnit = (initialHeight.match(unitRegex) ?? ['px'])[0]
+    if (initialWidthUnit === 'auto') initialWidthUnit = 'px'
+    if (initialHeightUnit === 'auto') initialHeightUnit = 'px'
+    // 记录是否取自计算样式（当行内样式为空或为 calc(...) 时）
+    initialWidthFromComputed = !inlineWidth || inlineWidth.includes('calc(')
+    initialHeightFromComputed = !inlineHeight || inlineHeight.includes('calc(')
+    startAdjusting({ x: ev.clientX, y: ev.clientY }, selectedId)
+  }
+
+  // 生成 8 个操作手柄
+  function addHandles(targetEl: HTMLElement) {
+    removeHandles()
+    const positions = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'] as const
+    positions.forEach((pos) => {
+      const h = document.createElement('div')
+      h.className = `adjust-handle handle-${pos}`
+      Object.assign(h.style, {
+        position: 'absolute',
+        width: 'calc(25px * var(--scale-ratio, 1))',
+        height: 'calc(25px * var(--scale-ratio, 1))',
+        background: '#409eff',
+        border: 'calc(1px * var(--scale-ratio, 1)) solid #fff',
+        boxSizing: 'border-box',
+        pointerEvents: 'auto',
+        // 移除默认 transform，后续按方向单独设置
+        zIndex: '9999'
+      } as CSSStyleDeclaration)
+      switch (pos) {
+        case 'n':
+          h.style.top = 'calc(0px * var(--scale-ratio, 1))'
+          h.style.left = '50%'
+          h.style.transform = 'translate(-50%, 0)'
+          h.style.cursor = 'ns-resize'
+          break
+        case 's':
+          h.style.bottom = 'calc(0px * var(--scale-ratio, 1))'
+          h.style.left = '50%'
+          h.style.transform = 'translate(-50%, 0)'
+          h.style.cursor = 'ns-resize'
+          break
+        case 'e':
+          h.style.right = 'calc(0px * var(--scale-ratio, 1))'
+          h.style.top = '50%'
+          h.style.transform = 'translate(0, -50%)'
+          h.style.cursor = 'ew-resize'
+          h.addEventListener('mousedown', (ev) => startResize('e', ev))
+          break
+        case 'w':
+          h.style.left = 'calc(0px * var(--scale-ratio, 1))'
+          h.style.top = '50%'
+          h.style.transform = 'translate(0, -50%)'
+          h.style.cursor = 'ew-resize'
+          break
+        case 'nw':
+          h.style.left = 'calc(0px * var(--scale-ratio, 1))'
+          h.style.top = 'calc(0px * var(--scale-ratio, 1))'
+          h.style.cursor = 'nwse-resize'
+          // 角落不设置 transform，保持方块贴边
+          break
+        case 'ne':
+          h.style.right = 'calc(0px * var(--scale-ratio, 1))'
+          h.style.top = 'calc(0px * var(--scale-ratio, 1))'
+          h.style.cursor = 'nesw-resize'
+          break
+        case 'se':
+          h.style.right = 'calc(0px * var(--scale-ratio, 1))'
+          h.style.bottom = 'calc(0px * var(--scale-ratio, 1))'
+          h.style.cursor = 'nwse-resize'
+          break
+        case 'sw':
+          h.style.left = 'calc(0px * var(--scale-ratio, 1))'
+          h.style.bottom = 'calc(0px * var(--scale-ratio, 1))'
+          h.style.cursor = 'nesw-resize'
+          break
+      }
+      targetEl.appendChild(h)
+      handleEls.push(h)
+    })
+  }
+
+  // 移除全部手柄
+  function removeHandles() {
+    handleEls.forEach((el) => el.remove())
+    handleEls = []
+  }
+
+  // 在调整模式下阻止点击选中
+  function preventClick(e: MouseEvent) {
+    e.stopPropagation()
+    e.preventDefault()
+  }
 
   /**
    * 键盘按下处理
@@ -100,6 +236,13 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
       enterAdjustMode()
       node.classList.add('adjust-mode')
       node.style.cursor = 'move'
+      // 阻止点击事件
+      document.addEventListener('click', preventClick, true)
+      // 为当前选中节点添加 8 个操作手柄
+      const targetEl = getElementByNodeId(selectedId)
+      if (targetEl) {
+        addHandles(targetEl)
+      }
     }
   }
 
@@ -114,6 +257,10 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
       exitAdjustMode()
       node.classList.remove('adjust-mode')
       node.style.cursor = ''
+        +        // 解除点击事件阻止
+        +        document.removeEventListener('click', preventClick, true)
+      // 清理手柄
+      removeHandles()
     }
   }
 
@@ -121,6 +268,11 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
    * 鼠标按下处理
    */
   function handleMouseDown(e: MouseEvent) {
+    // 若点在调整手柄本身，忽略整体移动逻辑
+    const clickedEl = e.target as HTMLElement | null
+    if (clickedEl && clickedEl.classList.contains('adjust-handle')) {
+      return
+    }
     if (!keyPressed) return
     if (!editingAccessor()) return
 
@@ -135,9 +287,9 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
     // 获取元素定位类型，静态布局需使用 margin 进行偏移
     const computedStyle = window.getComputedStyle(targetEl)
     const position = computedStyle.position
-     const isStaticLayout = position === 'static'
-     // 缓存供 move / up 使用
-     isStaticLayoutRef = isStaticLayout
+    const isStaticLayout = position === 'static'
+    // 缓存供 move / up 使用
+    isStaticLayoutRef = isStaticLayout
 
     // 获取初始位置（优先行内样式，保持原单位；若未设置则退回计算样式）
     let inlineLeft = ''
@@ -166,17 +318,6 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
     const parentWidth = parentEl?.offsetWidth || 1
     const parentHeight = parentEl?.offsetHeight || 1
     const sr = scaleAccessor() || 1
-    // 提取数值，兼容 calc(123px * var(--scale-ratio, 1)) 形式
-    const extractNumeric = (val: string): number => {
-      if (!val) return 0
-      const calcMatch = val.match(/calc\([^\d]*([\d.]+)px/i)
-      if (calcMatch && calcMatch[1]) {
-        return parseFloat(calcMatch[1]) || 0
-      }
-      const num = parseFloat(val)
-      return isNaN(num) ? 0 : num
-    }
-
     const initialLeftValueNum = extractNumeric(initialLeft)
     const initialTopValueNum = extractNumeric(initialTop)
 
@@ -229,19 +370,61 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
 
     // 计算位移
     const scale = scaleAccessor()
-    // 鼠标位移（屏幕像素）转设计像素：
     const sr = getScaleRatio() || 1
+
+    if (isResizing && resizeDir && targetEl) {
+      const parentEl = targetEl.parentElement as HTMLElement | null
+      const parentWidth = parentEl?.offsetWidth || 1
+      const parentHeight = parentEl?.offsetHeight || 1
+      if (resizeDir === 'e') {
+        const dx = (e.clientX - startX) / (initialWidthUnit === '%' ? scale : scale * sr)
+        const initVal = extractNumeric(initialWidth)
+        const initPx = initialWidthUnit === '%' ? (initVal / 100) * parentWidth : (initialWidthFromComputed ? initVal / sr : initVal)
+        const newPx = initPx + dx
+        let newWidth: string
+        if (initialWidthUnit === '%') {
+          newWidth = `${(newPx / parentWidth) * 100}%`
+        } else {
+          newWidth = `calc(${Math.round(newPx)}px * var(--scale-ratio, 1))`
+        }
+        targetEl.style.width = newWidth
+        onAdjustRef?.({ nodeId, x: newPx, y: 0 })
+        if (!updateNodePropsFn) {
+          import('../../services/property-panel/property-panel.service').then(({ updateNodeProps }) => {
+            updateNodePropsFn = updateNodeProps
+            updateNodePropsFn(nodeId, { styles: { width: newWidth } })
+          })
+        } else {
+          updateNodePropsFn(nodeId, { styles: { width: newWidth } })
+        }
+      } else if (resizeDir === 's') {
+        const dy = (e.clientY - startY) / (initialHeightUnit === '%' ? scale : scale * sr)
+        const initVal = extractNumeric(initialHeight)
+        const initPx = initialHeightUnit === '%' ? (initVal / 100) * parentHeight : (initialHeightFromComputed ? initVal / sr : initVal)
+        const newPx = initPx + dy
+        let newHeight: string
+        if (initialHeightUnit === '%') {
+          newHeight = `${(newPx / parentHeight) * 100}%`
+        } else {
+          newHeight = `calc(${Math.round(newPx)}px * var(--scale-ratio, 1))`
+        }
+        targetEl.style.height = newHeight
+        onAdjustRef?.({ nodeId, x: 0, y: newPx })
+        if (!updateNodePropsFn) {
+          import('../../services/property-panel/property-panel.service').then(({ updateNodeProps }) => {
+            updateNodePropsFn = updateNodeProps
+            updateNodePropsFn(nodeId, { styles: { height: newHeight } })
+          })
+        } else {
+          updateNodePropsFn(nodeId, { styles: { height: newHeight } })
+        }
+      }
+      return
+    }
+
+    // 鼠标位移（屏幕像素）转设计像素：
     const dx = (e.clientX - startX) / (initialLeftUnit === '%' ? scale : scale * sr)
     const dy = (e.clientY - startY) / (initialTopUnit === '%' ? scale : scale * sr)
-
-    // 提取数值工具函数，兼容 calc(...) 形式
-    const extractNumeric = (val: string): number => {
-      if (!val) return 0
-      const calcMatch = val.match(/calc\([^\d]*([\d.]+)px/i)
-      if (calcMatch && calcMatch[1]) return parseFloat(calcMatch[1]) || 0
-      const num = parseFloat(val)
-      return isNaN(num) ? 0 : num
-    }
 
     // 解析初始位置
     let initialLeftValue = extractNumeric(initialLeft)
@@ -278,8 +461,8 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
 
     // 更新样式
     if (isStaticLayoutRef) {
-      ;(targetEl.style as any).marginLeft = newLeft;
-      ;(targetEl.style as any).marginTop = newTop;
+      ; (targetEl.style as any).marginLeft = newLeft;
+      ; (targetEl.style as any).marginTop = newTop;
     } else {
       targetEl.style.left = newLeft
       targetEl.style.top = newTop
@@ -324,7 +507,48 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
    * 鼠标释放处理
    */
   function handleMouseUp() {
-    if (!isAdjustingGetter()) return
+    if (isResizing) {
+      const nodeId = targetNodeIdGetter()
+      if (nodeId && targetElRef) {
+        const computed = window.getComputedStyle(targetElRef)
+        const parentEl = targetElRef.parentElement as HTMLElement | null
+        const parentWidth = parentEl?.offsetWidth || 1
+        const parentHeight = parentEl?.offsetHeight || 1
+
+        const toUnitValue = (valPx: number, initUnit: string, base: number): string => {
+          if (initUnit === '%') {
+            const percent = (valPx / base) * 100
+            return `${Math.round(percent * 10) / 10}%`
+          }
+          // px 单位统一使用 calc 与 --scale-ratio 保持缩放一致
+          return `calc(${Math.round(valPx)}px * var(--scale-ratio, 1))`
+        }
+
+        const rawWidthPx = parseFloat(computed.width) || 0
+        const rawHeightPx = parseFloat(computed.height) || 0
+        const sr = getScaleRatio() || 1
+        const finalWidthPx = initialWidthFromComputed ? rawWidthPx / sr : rawWidthPx
+        const finalHeightPx = initialHeightFromComputed ? rawHeightPx / sr : rawHeightPx
+
+        const styles: Record<string, string> = {
+          width: toUnitValue(finalWidthPx, initialWidthUnit, parentWidth),
+          height: toUnitValue(finalHeightPx, initialHeightUnit, parentHeight)
+        }
+        if (!updateNodePropsFn) {
+          import('../../services/property-panel/property-panel.service').then(({ updateNodeProps }) => {
+            updateNodePropsFn = updateNodeProps
+            updateNodePropsFn(nodeId, { styles })
+          })
+        } else {
+          updateNodePropsFn(nodeId, { styles })
+        }
+      }
+      isResizing = false
+      resizeDir = null
+      resetAdjustState()
+      node.style.cursor = keyPressed ? 'move' : ''
+      return
+    }
 
     const nodeId = targetNodeIdGetter()
     if (!nodeId) return
@@ -363,8 +587,8 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
         // 保留1位小数
         result = `${Math.round(percent * 10) / 10}%`
       } else {
-        // 默认保持 px
-        result = `${Math.round(valPx)}px`
+        // px 单位统一使用 calc 与 --scale-ratio 保持缩放一致
+        result = `calc(${Math.round(valPx)}px * var(--scale-ratio, 1))`
       }
       // console.log('[AdjustMode] toUnitValue', { valPx, initUnit, base, result })
       return result
