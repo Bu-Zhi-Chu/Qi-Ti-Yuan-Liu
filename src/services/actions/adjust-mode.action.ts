@@ -167,6 +167,8 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
           h.style.left = '50%'
           h.style.transform = 'translate(-50%, 0)'
           h.style.cursor = 'ns-resize'
+          // 绑定鼠标按下事件，启用垂直方向尺寸调整
+          h.addEventListener('mousedown', (ev) => startResize('s', ev))
           break
         case 'e':
           h.style.right = 'calc(0px * var(--scale-ratio, 1))'
