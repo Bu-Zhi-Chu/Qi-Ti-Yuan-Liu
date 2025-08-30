@@ -76,6 +76,8 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
   // 记录初始单位，拖拽结束时用于保持单位不变
   let initialLeftUnit: string = 'px'
   let initialTopUnit: string = 'px'
+  // 记录是否为静态布局（position: static）
+  let isStaticLayoutRef = false
   // 缓存目标元素引用，避免在 mousemove 中重复查询
   let targetElRef: HTMLElement | null = null
   let updateNodePropsFn: ((id: string, props: any) => void) | null = null
@@ -130,17 +132,34 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
     if (!targetEl) return
     targetElRef = targetEl
 
-    // 获取初始位置（优先行内样式，保持原单位；若未设置则退回计算样式）
-    const inlineLeft = targetEl.style.left
-    const inlineTop = targetEl.style.top
+    // 获取元素定位类型，静态布局需使用 margin 进行偏移
     const computedStyle = window.getComputedStyle(targetEl)
-    initialLeft = inlineLeft || computedStyle.left
-    initialTop = inlineTop || computedStyle.top
+    const position = computedStyle.position
+     const isStaticLayout = position === 'static'
+     // 缓存供 move / up 使用
+     isStaticLayoutRef = isStaticLayout
 
-    // 记录初始单位（% 或 px）
+    // 获取初始位置（优先行内样式，保持原单位；若未设置则退回计算样式）
+    let inlineLeft = ''
+    let inlineTop = ''
+    if (isStaticLayout) {
+      inlineLeft = (targetEl.style as any).marginLeft
+      inlineTop = (targetEl.style as any).marginTop
+      initialLeft = inlineLeft || computedStyle.marginLeft
+      initialTop = inlineTop || computedStyle.marginTop
+    } else {
+      inlineLeft = targetEl.style.left
+      inlineTop = targetEl.style.top
+      initialLeft = inlineLeft || computedStyle.left
+      initialTop = inlineTop || computedStyle.top
+    }
+
+    // 记录初始单位（% 或 px），将 auto 视为 0px
     const unitRegex = /[%a-z]+$/i
     initialLeftUnit = (initialLeft.match(unitRegex) ?? ['px'])[0]
     initialTopUnit = (initialTop.match(unitRegex) ?? ['px'])[0]
+    if (initialLeftUnit === 'auto') initialLeftUnit = 'px'
+    if (initialTopUnit === 'auto') initialTopUnit = 'px'
 
     // 计算对应单位的转换值，便于调试观察（公式同 PositionEditor）
     const parentEl = targetEl.parentElement as HTMLElement | null
@@ -258,8 +277,13 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
     }
 
     // 更新样式
-    targetEl.style.left = newLeft
-    targetEl.style.top = newTop
+    if (isStaticLayoutRef) {
+      ;(targetEl.style as any).marginLeft = newLeft;
+      ;(targetEl.style as any).marginTop = newTop;
+    } else {
+      targetEl.style.left = newLeft
+      targetEl.style.top = newTop
+    }
 
     // 实时回调
     onAdjustRef?.({ nodeId, x: newLeftPx, y: newTopPx })
@@ -311,8 +335,8 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
 
     // 读取最终位置样式
     const computedStyle = window.getComputedStyle(targetEl)
-    const newLeft = computedStyle.left
-    const newTop = computedStyle.top
+    const newLeft = isStaticLayoutRef ? computedStyle.marginLeft : computedStyle.left
+    const newTop = isStaticLayoutRef ? computedStyle.marginTop : computedStyle.top
 
     // 判断节点当前定位类型
     const position = computedStyle.position
