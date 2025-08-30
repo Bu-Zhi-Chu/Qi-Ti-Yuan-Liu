@@ -53,12 +53,13 @@ input[type='search']::-moz-search-clear-button {
 * {
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+    outline: calc(1px * var(--scale-ratio, 1)) solid transparent;
 }
 
 /* Webkit浏览器滚动条样式 */
 ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: calc(8px * var(--scale-ratio, 1));
+    height: calc(8px * var(--scale-ratio, 1));
 }
 
 ::-webkit-scrollbar-track {
