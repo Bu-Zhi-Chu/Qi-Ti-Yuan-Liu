@@ -365,9 +365,36 @@ V 键调整模式功能通过自定义的 Svelte Action `useAdjustMode`实现，
 -   应用位移到选中节点的位置属性
 -   使用状态标志防止与属性面板的循环更新
 
-### 4.2 代码流程
+### 4.2 代码流程（最新实现）
 
-1. **初始化**：在`DomCanvas.svelte`中，通过`use:useAdjustMode`指令将 Action 应用到画布容器
+1. **初始化**：在 `DomCanvas.svelte` 将 Action 挂载到画布容器，参数与旧版相同，但 `scaleAccessor` 直接返回当前缩放值，无 `× 0.5` 逻辑。
+
+2. **状态管理**：依旧使用 `repository/adjust-mode.store.svelte` 导出的 `isAdjustMode`、`isAdjusting`、`adjustStart` 等 Runes，不再位于 `adjust-mode.store.svelte.ts` 根目录。
+
+3. **事件监听**：
+   - `document.addEventListener('keydown', keydownHandler)` / `keyup` 进入、退出模式。
+   - `registerMouseLeftPressRelease(handleMouseDown, handleMouseUp)` 封装 `mousedown／mouseup`；无需手动解绑按键。
+   - `window.addEventListener('mousemove', handleMouseMove)` 在拖拽中持续监听。
+
+4. **拖拽流程**：
+   1. *按键检测*：按下 **V** 并选中非根节点后，为画布容器添加 `adjust-mode` 类并将 `cursor` 设为 `move`。
+   2. *MouseDown*：
+      - 缓存目标元素 `targetElRef`，解析行内/计算样式获得 `initialLeft/Top` 与单位（`%` 或 `px`）。
+      - 使用 `extractNumeric` 支持 `calc(123px * var(--scale-ratio,1))` 取数。
+      - 记录 `startX/Y` 并调用 `startAdjusting`，同时将 `operationSource` 设为 `'drag'`。
+   3. *MouseMove*：
+      - 计算 `dx/dy = (client - start) / scale`。
+      - 若初始单位为 `%`，先将百分比转换为像素后再累加位移，统一以像素计算。
+      - 生成新样式：
+        - `px` 单位写入 `calc(${Math.round(px)}px * var(--scale-ratio, 1))`；
+        - `%` 单位写入 `${percent}%`。
+      - 判断元素当前定位类型：`static` 写 `marginLeft/Top`，否则写 `left/top`。
+      - 调用 `updateNodeProps(nodeId,{styles})` **实时** 写入数据库，无防抖处理。
+   4. *MouseUp*：
+      - 读取最终 `left/top` 计算像素值，再按初始单位转换后生成持久化样式，同样区分 `static` 与否。
+      - 调用 `resetAdjustState()` 清理，并根据 `keyPressed` 恢复光标样式。
+
+
 
 ```svelte
 <div
@@ -421,9 +448,20 @@ V 键调整模式功能通过自定义的 Svelte Action `useAdjustMode`实现，
     }
     ```
 
-### 4.3 防止循环更新
+### 4.3 数据同步与循环更新
 
-为了避免拖动改变属性和属性栏改变属性之间的循环更新，实现了以下机制：
+- **操作来源标志**：仍使用 `operationSource` Rune；仅在两处设置：
+  1. 拖拽 `MouseDown` → `'drag'`
+  2. 属性面板输入时 → `'panel'`
+  拖拽结束/属性写入完成后立即重置为 `null`。
+
+- **实时写库**：`handleMouseMove` 内直接调用 `updateNodeProps`，因此不再使用防抖函数，也不会等待 `MouseUp`。
+
+- **属性面板监听**：当 `operationSource !== 'drag'` 时才同步面板输入，确保拖拽过程中不会被面板反向覆盖。
+
+- **循环更新避免**：由于拖拽持续写库但面板端在 `'drag'` 状态下停止监听，可避免两端互相触发；属性面板输入流亦通过 `'panel'` 标记避免影响正在拖拽的逻辑。
+
+
 
 1. **操作来源标志**：使用`operationSourceState`标记当前操作的来源（'drag'或'panel'）
 
@@ -488,6 +526,14 @@ V 键调整模式功能通过自定义的 Svelte Action `useAdjustMode`实现，
     ```
 
 这种方法通过操作来源标志和防抖机制，有效防止了拖动操作和属性面板输入之间的循环更新，同时减少了与数据库的频繁交互。
+
+### 4.4 单位切换与属性面板联动兼容修复
+
+- **像素与百分比互转**：拖拽时实时将像素值/百分比值互转，保持与 `PositionEditor.svelte` 中 `convertPosition`、`formatSize` 一致。
+- **统一像素写入格式**：拖拽产生的像素值写入样式使用 `calc(${value}px * var(--scale-ratio, 1))`，确保与缩放系数叠加，避免首次从百分比切到像素后出现位移偏差。
+- **数值解析增强**：新增 `extractNumeric` 方法，可从 `calc()` 或纯数字字符串中提取数值，保证拖拽初始值准确。
+- **首次位移问题修复**：解决了「百分比→像素」首次拖拽位移异常以及「像素→百分比」回切位移问题。
+- **属性栏即时同步**：通过 `operationSourceState` 标记来源，拖拽结束后属性栏立即反映最新位置，且切换单位或再次拖拽不会触发循环更新。
 
 ## 总结
 

@@ -33,6 +33,7 @@ import {
   setOperationSource
 } from '../repository/adjust-mode.store.svelte'
 import { registerMouseLeftPressRelease } from '../interactions/shortcut.service'
+import { getScaleRatio } from '../utils/get-scale-ratio.util'
 import { getElementByNodeId } from '../utils/dom-geometry.util'
 
 
@@ -209,8 +210,10 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
 
     // 计算位移
     const scale = scaleAccessor()
-    const dx = (e.clientX - startX) / scale
-    const dy = (e.clientY - startY) / scale
+    // 鼠标位移（屏幕像素）转设计像素：
+    const sr = getScaleRatio() || 1
+    const dx = (e.clientX - startX) / (initialLeftUnit === '%' ? scale : scale * sr)
+    const dy = (e.clientY - startY) / (initialTopUnit === '%' ? scale : scale * sr)
 
     // 提取数值工具函数，兼容 calc(...) 形式
     const extractNumeric = (val: string): number => {
