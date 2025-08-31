@@ -47,6 +47,20 @@ function extractNumeric(val: string): number {
   return isNaN(num) ? 0 : num
 }
 
+// 提取单位正则，供全文件复用
+const UNIT_REGEX = /[%a-z]+$/i
+
+// 将像素值转为指定单位
+const toUnitValue = (valPx: number, initUnit: string, base: number): string => {
+  if (initUnit === '%') {
+    const percent = (valPx / base) * 100
+    return `${Math.round(percent * 10) / 10}%`
+  }
+  // px 单位统一使用 calc 与 --scale-ratio 保持缩放一致
+  return `calc(${Math.round(valPx)}px * var(--scale-ratio, 1))`
+}
+
+
 export interface AdjustModeOptions {
   /** 触发键，默认为 KeyV */
   key?: string
@@ -129,9 +143,8 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
     const computedStyle = window.getComputedStyle(el)
     initialWidth = inlineWidth && !inlineWidth.includes('calc(') ? inlineWidth : computedStyle.width
     initialHeight = inlineHeight && !inlineHeight.includes('calc(') ? inlineHeight : computedStyle.height
-    const unitRegex = /[%a-z]+$/i
-    initialWidthUnit = (initialWidth.match(unitRegex) ?? ['px'])[0]
-    initialHeightUnit = (initialHeight.match(unitRegex) ?? ['px'])[0]
+    initialWidthUnit = (initialWidth.match(UNIT_REGEX) ?? ['px'])[0]
+    initialHeightUnit = (initialHeight.match(UNIT_REGEX) ?? ['px'])[0]
     if (initialWidthUnit === 'auto') initialWidthUnit = 'px'
     if (initialHeightUnit === 'auto') initialHeightUnit = 'px'
     // 记录是否取自计算样式（当行内样式为空或为 calc(...) 时）
@@ -139,19 +152,18 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
     initialHeightFromComputed = !inlineHeight || inlineHeight.includes('calc(')
     // 捕获初始 left / top，用于 w/n 及其组合方向补偿
     if (dir.includes('w') || dir.includes('n')) {
-      const unitRegex = /[%a-z]+$/i
       const computedPosStyle = window.getComputedStyle(el)
       isStaticLayoutRef = computedPosStyle.position === 'static'
       if (dir.includes('w')) {
         const inlineLeftVal = el.style.left
         initialLeft = inlineLeftVal || computedPosStyle.left
-        initialLeftUnit = (initialLeft.match(unitRegex) ?? ['px'])[0]
+        initialLeftUnit = (initialLeft.match(UNIT_REGEX) ?? ['px'])[0]
         if (initialLeftUnit === 'auto') initialLeftUnit = 'px'
       }
       if (dir.includes('n')) {
         const inlineTopVal = el.style.top
         initialTop = inlineTopVal || computedPosStyle.top
-        initialTopUnit = (initialTop.match(unitRegex) ?? ['px'])[0]
+        initialTopUnit = (initialTop.match(UNIT_REGEX) ?? ['px'])[0]
         if (initialTopUnit === 'auto') initialTopUnit = 'px'
       }
     }
@@ -373,9 +385,8 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
     }
 
     // 记录初始单位（% 或 px），将 auto 视为 0px
-    const unitRegex = /[%a-z]+$/i
-    initialLeftUnit = (initialLeft.match(unitRegex) ?? ['px'])[0]
-    initialTopUnit = (initialTop.match(unitRegex) ?? ['px'])[0]
+    initialLeftUnit = (initialLeft.match(UNIT_REGEX) ?? ['px'])[0]
+    initialTopUnit = (initialTop.match(UNIT_REGEX) ?? ['px'])[0]
     if (initialLeftUnit === 'auto') initialLeftUnit = 'px'
     if (initialTopUnit === 'auto') initialTopUnit = 'px'
 
@@ -830,14 +841,7 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
         const parentWidth = parentEl?.offsetWidth || 1
         const parentHeight = parentEl?.offsetHeight || 1
 
-        const toUnitValue = (valPx: number, initUnit: string, base: number): string => {
-          if (initUnit === '%') {
-            const percent = (valPx / base) * 100
-            return `${Math.round(percent * 10) / 10}%`
-          }
-          // px 单位统一使用 calc 与 --scale-ratio 保持缩放一致
-          return `calc(${Math.round(valPx)}px * var(--scale-ratio, 1))`
-        }
+
 
         const rawWidthPx = parseFloat(computed.width) || 0
         const rawHeightPx = parseFloat(computed.height) || 0
@@ -895,19 +899,7 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
     const parentWidth = parentEl?.offsetWidth || 1
     const parentHeight = parentEl?.offsetHeight || 1
 
-    const toUnitValue = (valPx: number, initUnit: string, base: number): string => {
-      let result: string
-      if (initUnit === '%') {
-        const percent = (valPx / base) * 100
-        // 保留1位小数
-        result = `${Math.round(percent * 10) / 10}%`
-      } else {
-        // px 单位统一使用 calc 与 --scale-ratio 保持缩放一致
-        result = `calc(${Math.round(valPx)}px * var(--scale-ratio, 1))`
-      }
-      // console.log('[AdjustMode] toUnitValue', { valPx, initUnit, base, result })
-      return result
-    }
+
 
     const styles: Record<string, string> = {}
     if (isStatic) {
