@@ -36,6 +36,14 @@ export class LiteExportService {
         try {
             console.log(`开始导出项目 ${projectId} 的精简数据（含Blob数据）...`);
 
+            // 在导出前更新项目的 exportTime，方便后续导入时比较时间戳
+            await DexieService.updateRecord(
+                'qi-qiao-ban',
+                'projects',
+                projectId,
+                { exportTime: new Date().toISOString() }
+            );
+
             // 使用 dexie-export-import 直接导出完整数据库
             const exportBlob = await this.exportTablesWithDexie(['projects', 'doms'], projectId);
 

@@ -10,6 +10,7 @@ import type { DomNode } from '../../types/dom-node.types';
 import DexieService from '../database/dexie-service';
 import Dexie from 'dexie';
 import { writable } from 'svelte/store';
+import { isLiteMode } from '../env/environment.service'
 
 // 初始 domTree 数据结构
 const domTreeData = $state<DomNode>({
@@ -77,6 +78,10 @@ function getRouteProjectId(): string | null {
  * 验证当前项目ID是否与路由一致
  */
 function validateProjectIdConsistency(): boolean {
+  // Lite 模式无需路由校验，始终认为一致
+  if (isLiteMode()) {
+    return true;
+  }
   const routeProjectId = getRouteProjectId();
   if (!routeProjectId) {
     console.warn('无法从路由获取项目ID');

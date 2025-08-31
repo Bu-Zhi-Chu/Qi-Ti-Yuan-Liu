@@ -7,6 +7,7 @@
 <script lang="ts">
     import type { Component, Snippet } from 'svelte'
     import { onMount } from 'svelte'
+    import { loadComponent } from '../../services/utils/manifest-loader'
 
     let blocksConfig: any = null
     let componentMap: Record<string, () => Promise<{ default: Component }>> = {}
@@ -21,7 +22,7 @@
         // 根据 JSON 配置直接生成组件映射（动态 import）
         // 使用 /* @vite-ignore */ 提示 Vite 允许基于变量路径的动态加载
         for (const item of blocksConfig) {
-            componentMap[item.type] = () => import(/* @vite-ignore */ item.path)
+            componentMap[item.type] = () => loadComponent(item.path)
         }
 
         // 更新 mapReady 以触发响应式 effect 重新执行

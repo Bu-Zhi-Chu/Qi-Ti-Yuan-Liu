@@ -21,6 +21,7 @@ let app: ReturnType<typeof mount> | undefined // 提前声明，供导出使用
                     // 导入项目数据
                     const response = await fetch('./data/project-data.json')
                     const projectData = await response.json()
+                    console.log('【数据库交互】projectData对象', projectData)
 
                     // 检查数据库是否存在，不存在则创建
                     const dbExists = await DexieService.databaseExists('qi-qiao-ban')
@@ -45,13 +46,31 @@ let app: ReturnType<typeof mount> | undefined // 提前声明，供导出使用
 
                         // 对于dexie-export-import格式，尝试从元数据中获取导出时间
                         let jsonExportTime = projectData.exportTime
-                        if (!jsonExportTime && projectData.data && Array.isArray(projectData.data)) {
+                        // 兼容 projectData.rows 结构提取 exportTime
+                        // 兼容 projectData.rows 直接包含数据的结构
+                        if (!jsonExportTime && Array.isArray((projectData as any).rows)) {
+                            jsonExportTime = (projectData as any).rows[0]?.exportTime
+                        }
+                        // 兼容不同导出结构，获取 tables 数组
+                        let tablesArray: any[] | undefined
+                        if (projectData.data) {
+                            if (Array.isArray(projectData.data)) {
+                                tablesArray = projectData.data
+                            } else if (Array.isArray((projectData.data as any).data)) {
+                                tablesArray = (projectData.data as any).data
+                            }
+                        }
+                        if (!jsonExportTime && tablesArray) {
                             // 查找projects表中是否有exportTime字段
-                            const projectsTable = projectData.data.find((item: any) => item.tableName === 'projects')
+                            const projectsTable = tablesArray.find((item: any) => item.tableName === 'projects')
+                            console.log('【数据库交互】projectsTable', projectsTable)
                             if (projectsTable && projectsTable.rows && projectsTable.rows.length > 0) {
                                 jsonExportTime = projectsTable.rows[0].exportTime
                             }
                         }
+
+                        // 打印两侧时间戳以便调试
+                        console.log(`【数据库交互】时间对比 - JSON时间: ${jsonExportTime || '未提供'}, 数据库时间: ${dbExportTime || '无'}`)
 
                         // 比较导出时间，决定是否导入
                         const shouldImport = existingProjectCount === 0 ||
