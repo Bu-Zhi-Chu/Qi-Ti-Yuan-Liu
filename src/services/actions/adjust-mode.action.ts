@@ -34,6 +34,7 @@ import {
 } from '../repository/adjust-mode.store.svelte'
 import { registerMouseLeftPressRelease } from '../interactions/shortcut.service'
 import { getScaleRatio } from '../utils/get-scale-ratio.util'
+import { moveDomByOffset } from '../utils/move-dom.util'
 import { getElementByNodeId } from '../utils/dom-geometry.util'
 
 
@@ -92,10 +93,12 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
   let updateNodePropsFn: ((id: string, props: any) => void) | null = null
   // V 键按下时为目标元素生成的 8 个手柄引用
   let handleEls: HTMLElement[] = []
+  // 新增覆盖层引用
+  let overlayEl: HTMLElement | null = null
 
   // ===== 尺寸调整相关状态 =====
   let isResizing = false
-  let resizeDir: 'e' | 's' | null = null
+  let resizeDir: 'e' | 's' | 'se' | 'w' | 'n' | 'nw' | 'ne' | 'sw' | null = null
   let initialWidth = ''
   let initialHeight = ''
   let initialWidthUnit: string = 'px'
@@ -107,7 +110,7 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
 
 
   // 开始尺寸调整
-  function startResize(dir: 'e' | 's', ev: MouseEvent) {
+  function startResize(dir: 'e' | 's' | 'se' | 'w' | 'n' | 'nw' | 'ne' | 'sw', ev: MouseEvent) {
     if (!keyPressed) return
     ev.stopPropagation()
     ev.preventDefault()
@@ -134,6 +137,24 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
     // 记录是否取自计算样式（当行内样式为空或为 calc(...) 时）
     initialWidthFromComputed = !inlineWidth || inlineWidth.includes('calc(')
     initialHeightFromComputed = !inlineHeight || inlineHeight.includes('calc(')
+    // 捕获初始 left / top，用于 w/n 及其组合方向补偿
+    if (dir.includes('w') || dir.includes('n')) {
+      const unitRegex = /[%a-z]+$/i
+      const computedPosStyle = window.getComputedStyle(el)
+      isStaticLayoutRef = computedPosStyle.position === 'static'
+      if (dir.includes('w')) {
+        const inlineLeftVal = el.style.left
+        initialLeft = inlineLeftVal || computedPosStyle.left
+        initialLeftUnit = (initialLeft.match(unitRegex) ?? ['px'])[0]
+        if (initialLeftUnit === 'auto') initialLeftUnit = 'px'
+      }
+      if (dir.includes('n')) {
+        const inlineTopVal = el.style.top
+        initialTop = inlineTopVal || computedPosStyle.top
+        initialTopUnit = (initialTop.match(unitRegex) ?? ['px'])[0]
+        if (initialTopUnit === 'auto') initialTopUnit = 'px'
+      }
+    }
     startAdjusting({ x: ev.clientX, y: ev.clientY }, selectedId)
   }
 
@@ -161,6 +182,7 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
           h.style.left = '50%'
           h.style.transform = 'translate(-50%, 0)'
           h.style.cursor = 'ns-resize'
+          h.addEventListener('mousedown', (ev) => startResize('n', ev))
           break
         case 's':
           h.style.bottom = 'calc(0px * var(--scale-ratio, 1))'
@@ -182,27 +204,32 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
           h.style.top = '50%'
           h.style.transform = 'translate(0, -50%)'
           h.style.cursor = 'ew-resize'
+          h.addEventListener('mousedown', (ev) => startResize('w', ev))
           break
         case 'nw':
           h.style.left = 'calc(0px * var(--scale-ratio, 1))'
           h.style.top = 'calc(0px * var(--scale-ratio, 1))'
           h.style.cursor = 'nwse-resize'
           // 角落不设置 transform，保持方块贴边
+          h.addEventListener('mousedown', (ev) => startResize('nw', ev))
           break
         case 'ne':
           h.style.right = 'calc(0px * var(--scale-ratio, 1))'
           h.style.top = 'calc(0px * var(--scale-ratio, 1))'
           h.style.cursor = 'nesw-resize'
+          h.addEventListener('mousedown', (ev) => startResize('ne', ev))
           break
         case 'se':
           h.style.right = 'calc(0px * var(--scale-ratio, 1))'
           h.style.bottom = 'calc(0px * var(--scale-ratio, 1))'
           h.style.cursor = 'nwse-resize'
+          h.addEventListener('mousedown', (ev) => startResize('se', ev))
           break
         case 'sw':
           h.style.left = 'calc(0px * var(--scale-ratio, 1))'
           h.style.bottom = 'calc(0px * var(--scale-ratio, 1))'
           h.style.cursor = 'nesw-resize'
+          h.addEventListener('mousedown', (ev) => startResize('sw', ev))
           break
       }
       targetEl.appendChild(h)
@@ -214,6 +241,41 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
   function removeHandles() {
     handleEls.forEach((el) => el.remove())
     handleEls = []
+  }
+
+  // 创建覆盖层并添加手柄
+  function addOverlayWithHandles(targetEl: HTMLElement) {
+    // 保证仅存在一个覆盖层
+    removeOverlay()
+
+    const overlay = document.createElement('div')
+    overlay.className = 'adjust-overlay'
+    Object.assign(overlay.style, {
+      position: 'relative',
+      top: 'calc(0px * var(--scale-ratio, 1))',
+      left: 'calc(0px * var(--scale-ratio, 1))',
+      width: '100%',
+      height: '100%',
+      pointerEvents: 'auto',
+      boxSizing: 'border-box',
+      background: 'transparent',
+      zIndex: '9998'
+    } as CSSStyleDeclaration)
+
+    targetEl.appendChild(overlay)
+    overlayEl = overlay
+
+    // 在覆盖层内部挂载操作手柄
+    addHandles(overlay)
+  }
+
+  // 移除覆盖层及其内部手柄
+  function removeOverlay() {
+    if (overlayEl) {
+      removeHandles()
+      overlayEl.remove()
+      overlayEl = null
+    }
   }
 
   // 在调整模式下阻止点击选中
@@ -243,7 +305,7 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
       // 为当前选中节点添加 8 个操作手柄
       const targetEl = getElementByNodeId(selectedId)
       if (targetEl) {
-        addHandles(targetEl)
+        addOverlayWithHandles(targetEl)
       }
     }
   }
@@ -259,10 +321,12 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
       exitAdjustMode()
       node.classList.remove('adjust-mode')
       node.style.cursor = ''
-        +        // 解除点击事件阻止
-        +        document.removeEventListener('click', preventClick, true)
+      // 解除点击事件阻止
+      document.removeEventListener('click', preventClick, true)
       // 清理手柄
       removeHandles()
+      // 清理覆盖层
+      removeOverlay()
     }
   }
 
@@ -390,14 +454,303 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
           newWidth = `calc(${Math.round(newPx)}px * var(--scale-ratio, 1))`
         }
         targetEl.style.width = newWidth
+        const stylesToUpdate: any = { width: newWidth }
         onAdjustRef?.({ nodeId, x: newPx, y: 0 })
         if (!updateNodePropsFn) {
           import('../../services/property-panel/property-panel.service').then(({ updateNodeProps }) => {
             updateNodePropsFn = updateNodeProps
-            updateNodePropsFn(nodeId, { styles: { width: newWidth } })
+            updateNodePropsFn(nodeId, { styles: stylesToUpdate })
           })
         } else {
-          updateNodePropsFn(nodeId, { styles: { width: newWidth } })
+          updateNodePropsFn(nodeId, { styles: stylesToUpdate })
+        }
+      } else if (resizeDir === 'se') {
+        const dx = (e.clientX - startX) / (initialWidthUnit === '%' ? scale : scale * sr)
+        const dy = (e.clientY - startY) / (initialHeightUnit === '%' ? scale : scale * sr)
+
+        const initWVal = extractNumeric(initialWidth)
+        const initHPx = extractNumeric(initialHeight)
+
+        const initWxPx = initialWidthUnit === '%' ? (initWVal / 100) * parentWidth : (initialWidthFromComputed ? initWVal / sr : initWVal)
+        const initHyPx = initialHeightUnit === '%' ? (initHPx / 100) * parentHeight : (initialHeightFromComputed ? initHPx / sr : initHPx)
+
+        const newWxPx = initWxPx + dx
+        const newHyPx = initHyPx + dy
+
+        let newWidth: string
+        let newHeight: string
+        if (initialWidthUnit === '%') {
+          newWidth = `${(newWxPx / parentWidth) * 100}%`
+        } else {
+          newWidth = `calc(${Math.round(newWxPx)}px * var(--scale-ratio, 1))`
+        }
+        if (initialHeightUnit === '%') {
+          newHeight = `${(newHyPx / parentHeight) * 100}%`
+        } else {
+          newHeight = `calc(${Math.round(newHyPx)}px * var(--scale-ratio, 1))`
+        }
+        targetEl.style.width = newWidth
+        targetEl.style.height = newHeight
+        const stylesToUpdate: any = { width: newWidth, height: newHeight }
+        onAdjustRef?.({ nodeId, x: newWxPx, y: newHyPx })
+        if (!updateNodePropsFn) {
+          import('../../services/property-panel/property-panel.service').then(({ updateNodeProps }) => {
+            updateNodePropsFn = updateNodeProps
+            updateNodePropsFn(nodeId, { styles: stylesToUpdate })
+          })
+        } else {
+          updateNodePropsFn(nodeId, { styles: stylesToUpdate })
+        }
+      } else if (resizeDir === 'nw') {
+        const dxDesign = (e.clientX - startX) / (initialWidthUnit === '%' ? scale : scale * sr);
+        const dyDesign = (e.clientY - startY) / (initialHeightUnit === '%' ? scale : scale * sr);
+        const parentEl = targetEl.parentElement as HTMLElement | null;
+        const parentWidth = parentEl?.offsetWidth || 1;
+        const parentHeight = parentEl?.offsetHeight || 1;
+        const handleMoveAndResize = () => {
+          moveDomByOffset({
+            targetEl,
+            nodeId,
+            dxScreen: e.clientX - startX,
+            dyScreen: e.clientY - startY,
+            scale,
+            initialLeft,
+            initialTop,
+            initialLeftUnit,
+            initialTopUnit,
+            isStaticLayout: isStaticLayoutRef,
+            updateNodeProps: updateNodePropsFn!,
+            onAdjust: undefined
+          });
+          const initWVal = extractNumeric(initialWidth);
+          const initHVal = extractNumeric(initialHeight);
+          const initWxPx = initialWidthUnit === '%' ? (initWVal / 100) * parentWidth : (initialWidthFromComputed ? initWVal / sr : initWVal);
+          const initHyPx = initialHeightUnit === '%' ? (initHVal / 100) * parentHeight : (initialHeightFromComputed ? initHVal / sr : initHVal);
+          const newWxPx = initWxPx - dxDesign;
+          const newHyPx = initHyPx - dyDesign;
+          const newWidth = initialWidthUnit === '%' ? `${(newWxPx / parentWidth) * 100}%` : `calc(${Math.round(newWxPx)}px * var(--scale-ratio, 1))`;
+          const newHeight = initialHeightUnit === '%' ? `${(newHyPx / parentHeight) * 100}%` : `calc(${Math.round(newHyPx)}px * var(--scale-ratio, 1))`;
+          targetEl.style.width = newWidth;
+          targetEl.style.height = newHeight;
+          updateNodePropsFn!(nodeId, { styles: { width: newWidth, height: newHeight } });
+          onAdjustRef?.({ nodeId, x: newWxPx, y: newHyPx });
+        };
+        if (!updateNodePropsFn) {
+          import('../../services/property-panel/property-panel.service').then(({ updateNodeProps }) => {
+            updateNodePropsFn = updateNodeProps;
+            handleMoveAndResize();
+          });
+        } else {
+          handleMoveAndResize();
+        }
+      } else if (resizeDir === 'ne') {
+        const dxDesign = (e.clientX - startX) / (initialWidthUnit === '%' ? scale : scale * sr);
+        const dyDesign = (e.clientY - startY) / (initialHeightUnit === '%' ? scale : scale * sr);
+        const parentEl = targetEl.parentElement as HTMLElement | null;
+        const parentWidth = parentEl?.offsetWidth || 1;
+        const parentHeight = parentEl?.offsetHeight || 1;
+        const handleMoveAndResize = () => {
+          // 仅补偿顶部
+          moveDomByOffset({
+            targetEl,
+            nodeId,
+            dxScreen: 0,
+            dyScreen: e.clientY - startY,
+            scale,
+            initialLeft,
+            initialTop,
+            initialLeftUnit,
+            initialTopUnit,
+            isStaticLayout: isStaticLayoutRef,
+            updateNodeProps: updateNodePropsFn!,
+            onAdjust: undefined
+          });
+          const initWVal = extractNumeric(initialWidth);
+          const initHVal = extractNumeric(initialHeight);
+          const initWxPx = initialWidthUnit === '%' ? (initWVal / 100) * parentWidth : (initialWidthFromComputed ? initWVal / sr : initWVal);
+          const initHyPx = initialHeightUnit === '%' ? (initHVal / 100) * parentHeight : (initialHeightFromComputed ? initHVal / sr : initHVal);
+          const newWxPx = initWxPx + dxDesign;
+          const newHyPx = initHyPx - dyDesign;
+          const newWidth = initialWidthUnit === '%' ? `${(newWxPx / parentWidth) * 100}%` : `calc(${Math.round(newWxPx)}px * var(--scale-ratio, 1))`;
+          const newHeight = initialHeightUnit === '%' ? `${(newHyPx / parentHeight) * 100}%` : `calc(${Math.round(newHyPx)}px * var(--scale-ratio, 1))`;
+          targetEl.style.width = newWidth;
+          targetEl.style.height = newHeight;
+          updateNodePropsFn!(nodeId, { styles: { width: newWidth, height: newHeight } });
+          onAdjustRef?.({ nodeId, x: newWxPx, y: newHyPx });
+        };
+        if (!updateNodePropsFn) {
+          import('../../services/property-panel/property-panel.service').then(({ updateNodeProps }) => {
+            updateNodePropsFn = updateNodeProps;
+            handleMoveAndResize();
+          });
+        } else {
+          handleMoveAndResize();
+        }
+      } else if (resizeDir === 'sw') {
+        const dxDesign = (e.clientX - startX) / (initialWidthUnit === '%' ? scale : scale * sr);
+        const dyDesign = (e.clientY - startY) / (initialHeightUnit === '%' ? scale : scale * sr);
+        const parentEl = targetEl.parentElement as HTMLElement | null;
+        const parentWidth = parentEl?.offsetWidth || 1;
+        const parentHeight = parentEl?.offsetHeight || 1;
+        const handleMoveAndResize = () => {
+          // 仅补偿左侧
+          moveDomByOffset({
+            targetEl,
+            nodeId,
+            dxScreen: e.clientX - startX,
+            dyScreen: 0,
+            scale,
+            initialLeft,
+            initialTop,
+            initialLeftUnit,
+            initialTopUnit,
+            isStaticLayout: isStaticLayoutRef,
+            updateNodeProps: updateNodePropsFn!,
+            onAdjust: undefined
+          });
+          const initWVal = extractNumeric(initialWidth);
+          const initHVal = extractNumeric(initialHeight);
+          const initWxPx = initialWidthUnit === '%' ? (initWVal / 100) * parentWidth : (initialWidthFromComputed ? initWVal / sr : initWVal);
+          const initHyPx = initialHeightUnit === '%' ? (initHVal / 100) * parentHeight : (initialHeightFromComputed ? initHVal / sr : initHVal);
+          const newWxPx = initWxPx - dxDesign;
+          const newHyPx = initHyPx + dyDesign;
+          const newWidth = initialWidthUnit === '%' ? `${(newWxPx / parentWidth) * 100}%` : `calc(${Math.round(newWxPx)}px * var(--scale-ratio, 1))`;
+          const newHeight = initialHeightUnit === '%' ? `${(newHyPx / parentHeight) * 100}%` : `calc(${Math.round(newHyPx)}px * var(--scale-ratio, 1))`;
+          targetEl.style.width = newWidth;
+          targetEl.style.height = newHeight;
+          updateNodePropsFn!(nodeId, { styles: { width: newWidth, height: newHeight } });
+          onAdjustRef?.({ nodeId, x: newWxPx, y: newHyPx });
+        };
+        if (!updateNodePropsFn) {
+          import('../../services/property-panel/property-panel.service').then(({ updateNodeProps }) => {
+            updateNodePropsFn = updateNodeProps;
+            handleMoveAndResize();
+          });
+        } else {
+          handleMoveAndResize();
+        }
+      } else if (resizeDir === 'w') {
+        // 以设计像素为基准的横向位移（不受单位差异影响）
+        const dxDesign = (e.clientX - startX) / (initialWidthUnit === '%' ? scale : scale * sr);
+        const parentEl = targetEl.parentElement as HTMLElement | null;
+        const parentWidth = parentEl?.offsetWidth || 1;
+
+        // 1. 先利用 moveDomByOffset 处理左侧定位补偿
+        if (!updateNodePropsFn) {
+          import('../../services/property-panel/property-panel.service').then(({ updateNodeProps }) => {
+            updateNodePropsFn = updateNodeProps;
+
+            // 仅处理水平方向移动，垂直方向不变
+            moveDomByOffset({
+              targetEl,
+              nodeId,
+              dxScreen: e.clientX - startX,
+              dyScreen: 0, // 垂直方向不变
+              scale,
+              initialLeft,
+              initialTop,
+              initialLeftUnit,
+              initialTopUnit,
+              isStaticLayout: isStaticLayoutRef,
+              updateNodeProps: updateNodePropsFn,
+              // 暂不触发回调，等宽度一起处理
+              onAdjust: undefined
+            });
+
+            // 2. 单独处理宽度变化
+            const initWidthVal = extractNumeric(initialWidth);
+            const initWidthPx = initialWidthUnit === '%' ? (initWidthVal / 100) * parentWidth : (initialWidthFromComputed ? initWidthVal / sr : initWidthVal);
+            const newWidthPx = initWidthPx - dxDesign;
+
+            // 按原始单位回写宽度
+            const newWidth = initialWidthUnit === '%' ? `${(newWidthPx / parentWidth) * 100}%` : `calc(${Math.round(newWidthPx)}px * var(--scale-ratio, 1))`;
+            targetEl.style.width = newWidth;
+
+            // 更新宽度
+            updateNodePropsFn(nodeId, { styles: { width: newWidth } });
+
+            // 回调
+            onAdjustRef?.({ nodeId, x: newWidthPx, y: 0 });
+          });
+        } else {
+          // 仅处理水平方向移动，垂直方向不变
+          moveDomByOffset({
+            targetEl,
+            nodeId,
+            dxScreen: e.clientX - startX,
+            dyScreen: 0, // 垂直方向不变
+            scale,
+            initialLeft,
+            initialTop,
+            initialLeftUnit,
+            initialTopUnit,
+            isStaticLayout: isStaticLayoutRef,
+            updateNodeProps: updateNodePropsFn,
+            // 暂不触发回调，等宽度一起处理
+            onAdjust: undefined
+          });
+
+          // 2. 单独处理宽度变化
+          const initWidthVal = extractNumeric(initialWidth);
+          const initWidthPx = initialWidthUnit === '%' ? (initWidthVal / 100) * parentWidth : (initialWidthFromComputed ? initWidthVal / sr : initWidthVal);
+          const newWidthPx = initWidthPx - dxDesign;
+
+          // 按原始单位回写宽度
+          const newWidth = initialWidthUnit === '%' ? `${(newWidthPx / parentWidth) * 100}%` : `calc(${Math.round(newWidthPx)}px * var(--scale-ratio, 1))`;
+          targetEl.style.width = newWidth;
+
+          // 更新宽度
+          updateNodePropsFn(nodeId, { styles: { width: newWidth } });
+
+          // 回调
+          onAdjustRef?.({ nodeId, x: newWidthPx, y: 0 });
+        }
+      } else if (resizeDir === 'n') {
+        // 以设计像素为基准的纵向位移
+        const dyDesign = (e.clientY - startY) / (initialHeightUnit === '%' ? scale : scale * sr);
+        const parentEl = targetEl.parentElement as HTMLElement | null;
+        const parentHeight = parentEl?.offsetHeight || 1;
+
+        // 1. 先利用 moveDomByOffset 处理上侧定位补偿
+        const handleMoveAndHeight = () => {
+          // 仅处理垂直方向移动，水平方向不变
+          moveDomByOffset({
+            targetEl,
+            nodeId,
+            dxScreen: 0,
+            dyScreen: e.clientY - startY,
+            scale,
+            initialLeft,
+            initialTop,
+            initialLeftUnit,
+            initialTopUnit,
+            isStaticLayout: isStaticLayoutRef,
+            updateNodeProps: updateNodePropsFn!,
+            onAdjust: undefined
+          });
+
+          // 2. 单独处理高度变化
+          const initHeightVal = extractNumeric(initialHeight);
+          const initHeightPx = initialHeightUnit === '%' ? (initHeightVal / 100) * parentHeight : (initialHeightFromComputed ? initHeightVal / sr : initHeightVal);
+          const newHeightPx = initHeightPx - dyDesign;
+
+          const newHeight = initialHeightUnit === '%' ? `${(newHeightPx / parentHeight) * 100}%` : `calc(${Math.round(newHeightPx)}px * var(--scale-ratio, 1))`;
+          targetEl.style.height = newHeight;
+
+          // 更新高度
+          updateNodePropsFn!(nodeId, { styles: { height: newHeight } });
+
+          // 回调
+          onAdjustRef?.({ nodeId, x: 0, y: newHeightPx });
+        };
+
+        if (!updateNodePropsFn) {
+          import('../../services/property-panel/property-panel.service').then(({ updateNodeProps }) => {
+            updateNodePropsFn = updateNodeProps;
+            handleMoveAndHeight();
+          });
+        } else {
+          handleMoveAndHeight();
         }
       } else if (resizeDir === 's') {
         const dy = (e.clientY - startY) / (initialHeightUnit === '%' ? scale : scale * sr)
@@ -425,83 +778,43 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
     }
 
     // 鼠标位移（屏幕像素）转设计像素：
-    const dx = (e.clientX - startX) / (initialLeftUnit === '%' ? scale : scale * sr)
-    const dy = (e.clientY - startY) / (initialTopUnit === '%' ? scale : scale * sr)
-
-    // 解析初始位置
-    let initialLeftValue = extractNumeric(initialLeft)
-    let initialTopValue = extractNumeric(initialTop)
-
-    // 若初始单位为百分比，则在拖拽前转换为像素，拖拽过程中统一使用像素单位
-    const parentEl = targetEl.parentElement as HTMLElement | null
-    const parentWidth = parentEl?.offsetWidth || 1
-    const parentHeight = parentEl?.offsetHeight || 1
-    if (initialLeftUnit === '%') {
-      initialLeftValue = (initialLeftValue / 100) * parentWidth
-    }
-    if (initialTopUnit === '%') {
-      initialTopValue = (initialTopValue / 100) * parentHeight
-    }
-
-    // 计算新位置（像素值）
-    const newLeftPx = initialLeftValue + dx
-    const newTopPx = initialTopValue + dy
-
-    // 根据初始单位生成对应格式的字符串
-    let newLeft: string
-    let newTop: string
-    if (initialLeftUnit === '%') {
-      newLeft = `${(newLeftPx / parentWidth) * 100}%`
-    } else {
-      newLeft = `calc(${Math.round(newLeftPx)}px * var(--scale-ratio, 1))`
-    }
-    if (initialTopUnit === '%') {
-      newTop = `${(newTopPx / parentHeight) * 100}%`
-    } else {
-      newTop = `calc(${Math.round(newTopPx)}px * var(--scale-ratio, 1))`
-    }
-
-    // 更新样式
-    if (isStaticLayoutRef) {
-      ; (targetEl.style as any).marginLeft = newLeft;
-      ; (targetEl.style as any).marginTop = newTop;
-    } else {
-      targetEl.style.left = newLeft
-      targetEl.style.top = newTop
-    }
-
-    // 实时回调
-    onAdjustRef?.({ nodeId, x: newLeftPx, y: newTopPx })
-
-    // 实时写入数据库
+    // 使用 moveDomByOffset 封装逻辑
     if (!updateNodePropsFn) {
       import('../../services/property-panel/property-panel.service').then(({ updateNodeProps }) => {
         updateNodePropsFn = updateNodeProps
-        const position = window.getComputedStyle(targetEl).position
-        const isStatic = position === 'static'
-        const styles: Record<string, string> = {}
-        if (isStatic) {
-          styles.marginLeft = newLeft
-          styles.marginTop = newTop
-        } else {
-          styles.left = newLeft
-          styles.top = newTop
-        }
-        updateNodePropsFn(nodeId, { styles })
+        moveDomByOffset({
+          targetEl,
+          nodeId,
+          dxScreen: e.clientX - startX,
+          dyScreen: e.clientY - startY,
+          scale,
+          initialLeft,
+          initialTop,
+          initialLeftUnit,
+          initialTopUnit,
+          isStaticLayout: isStaticLayoutRef,
+          updateNodeProps: updateNodePropsFn,
+          onAdjust: onAdjustRef
+        })
       })
     } else {
-      const position = window.getComputedStyle(targetEl).position
-      const isStatic = position === 'static'
-      const styles: Record<string, string> = {}
-      if (isStatic) {
-        styles.marginLeft = newLeft
-        styles.marginTop = newTop
-      } else {
-        styles.left = newLeft
-        styles.top = newTop
-      }
-      updateNodePropsFn(nodeId, { styles })
+      moveDomByOffset({
+        targetEl,
+        nodeId,
+        dxScreen: e.clientX - startX,
+        dyScreen: e.clientY - startY,
+        scale,
+        initialLeft,
+        initialTop,
+        initialLeftUnit,
+        initialTopUnit,
+        isStaticLayout: isStaticLayoutRef,
+        updateNodeProps: updateNodePropsFn,
+        onAdjust: onAdjustRef
+      })
     }
+    return
+
 
   }
 
@@ -626,7 +939,8 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
       document.removeEventListener('keyup', keyupHandler)
       unregisterMouseEvents()
       window.removeEventListener('mousemove', handleMouseMove)
-
+      // 移除覆盖层及手柄
+      removeOverlay()
     }
   }
 }
