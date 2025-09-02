@@ -88,6 +88,19 @@
         adjustValue(direction, e.ctrlKey)
     }
 
+    // 自定义 action：非 passive 滚轮监听，避免使用 on: 指令
+    function wheelListener(node: HTMLElement) {
+        function listener(e: WheelEvent) {
+            handleWheel(e)
+        }
+        node.addEventListener('wheel', listener, { passive: false })
+        return {
+            destroy() {
+                node.removeEventListener('wheel', listener)
+            }
+        }
+    }
+
     // 键盘事件：Ctrl + ↑/↓ ×10 步进
     function handleKeydown(e: KeyboardEvent) {
         if (disabled) return
@@ -106,7 +119,7 @@
 
 <!-- 使用 wrapper，按钮绝对定位叠加，保证输入框宽度 -->
 <div class="size-input-wrapper">
-    <input type="number" step={calcStep} bind:value oninput={handleInput} onwheel={handleWheel} onkeydown={handleKeydown} {placeholder} {disabled} class:disabled-input={disabled} />
+    <input type="number" step={calcStep} bind:value oninput={handleInput} use:wheelListener onkeydown={handleKeydown} {placeholder} {disabled} class:disabled-input={disabled} />
 </div>
 <button class="unit-toggle" class:disabled-input={disabled || unitOptions.length < 2} onclick={toggleUnit} disabled={disabled || unitOptions.length < 2}>
     {unit}
