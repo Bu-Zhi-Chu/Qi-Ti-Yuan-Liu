@@ -50,7 +50,7 @@ export default class DexieService {
         const stores: Record<string, string> = {
             projects: 'id, name, templateId, createdAt, updatedAt, canvasState, mode, exportTime',
             doms: '[projectId+id], projectId, parentId, type, attributes, style, textContent',
-            config: 'showLogs'
+            config: '++id, showLogs'
         }
 
         // 精简模式下不创建templates表
@@ -241,7 +241,7 @@ export default class DexieService {
                 projects: 'id, name, templateId, createdAt, updatedAt, canvasState, mode, exportTime',
                 doms: '[projectId+id], projectId, parentId, type, attributes, style, textContent',
                 templates: '++id, name, desc, cover, tag, thumbnailUrl, domStructure',
-                config: 'key'
+                config: '++id, showLogs'
             }
 
             db.version(1).stores(stores)

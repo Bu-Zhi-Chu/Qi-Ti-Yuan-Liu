@@ -6,6 +6,10 @@ import { screenDetector } from './services/screen/screen-detector.service'
 import DexieService from './services/database/dexie-service'
 import { isLiteMode } from './services/env/environment.service'
 import { importInto } from 'dexie-export-import'
+import { applyLogConfig } from './services/utils/log-switch'
+
+// 初始关闭日志（待数据库配置决定是否开启）
+applyLogConfig(false)
 
 // 控制台日志始终开启，便于调试和监控
 
@@ -48,8 +52,8 @@ let app: ReturnType<typeof mount> | undefined // 提前声明，供导出使用
                         // 读取并应用日志配置
                         try {
                             const cfgRecord = (await db.table('config').toArray())[0]
-                             applyLogConfig(cfgRecord?.showLogs === true)
-                        } catch {}
+                            applyLogConfig(cfgRecord?.showLogs === true)
+                        } catch { }
                         // 获取数据库中最新项目的导出时间
                         let dbExportTime: string | null = null
                         let existingProjectCount = 0
@@ -168,7 +172,7 @@ let app: ReturnType<typeof mount> | undefined // 提前声明，供导出使用
                         const cfgRecord = (await db.table('config').toArray())[0]
                         applyLogConfig(cfgRecord?.showLogs === true)
                     }
-                } catch {}
+                } catch { }
             }
 
             // 挂载 Svelte 应用 - 精简模式也启用PWA功能
@@ -185,11 +189,3 @@ let app: ReturnType<typeof mount> | undefined // 提前声明，供导出使用
     })()
 
 export default app
-
-// ========= 日志开关 =========
-const __originLog = console.log.bind(console)
-console.log = () => {}
-function applyLogConfig(enable: boolean) {
-  console.log = enable ? __originLog : () => {}
-}
-// ============================

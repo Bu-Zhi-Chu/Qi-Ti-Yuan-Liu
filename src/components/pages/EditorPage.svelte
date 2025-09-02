@@ -22,6 +22,7 @@
     import DomTreeList from '../widgets/DomTreeList.svelte'
     import PropertyPanel from '../widgets/property-panel/PropertyPanel.svelte'
     import Icon from '../widgets/Icon.svelte'
+    import { applyLogConfig } from '../../services/utils/log-switch'
 
     // 引入 DOM 树集中式状态管理
     import { domTree, selectedId, removeNodeById } from '../../services/repository/dom-tree.store.svelte'
@@ -299,6 +300,16 @@
             console.error('更新项目模式失败:', error)
         }
     }
+    let showLogsEnabled = $state<boolean | null>(null)
+    onMount(async () => {
+        try {
+            const db = await DexieService.getDatabase('qi-qiao-ban')
+            if (db) {
+                const cfgRecord = (await db.table('config').toArray())[0]
+                showLogsEnabled = (cfgRecord?.showLogs ?? cfgRecord?.value) === true
+            }
+        } catch {}
+    })
 </script>
 
 <!-- 背景 -->
@@ -399,6 +410,43 @@
                     style="padding: calc(4px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));background: none;border: none;color: white;cursor: pointer;font-size: calc(12px * var(--scale-ratio, 1));"
                 >
                     精简构建
+                </button>
+
+                <!-- 日志开关按钮 -->
+                <button
+                    onclick={async (event) => {
+                        const button = event.target as HTMLButtonElement
+                        try {
+                            // 获取数据库实例
+                            const db = await DexieService.getDatabase('qi-qiao-ban')
+                            if (!db) throw new Error('无法获取数据库')
+
+                            // 读取现有配置（取首条记录）
+                            const cfgRecord = (await db.table('config').toArray())[0] || { showLogs: false }
+                            const newVal = !cfgRecord.showLogs
+
+                            // 更新数据库配置（清空后写入，因主键为 showLogs）
+                            await db.table('config').clear()
+                            try {
+                                await db.table('config').put({ showLogs: newVal })
+                            } catch (err) {
+                                // 兼容旧版本 config 表主键为 key 的情况
+                                await db.table('config').put({ key: 'showLogs', value: newVal })
+                            }
+
+                            // 立即应用配置
+
+                            applyLogConfig(newVal)
+
+                            // 更新按钮文本
+                            button.textContent = newVal ? '关闭日志' : '开启日志'
+                        } catch (e) {
+                            console.error('切换日志开关失败', e)
+                        }
+                    }}
+                    style="padding: calc(4px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));background: none;border: none;color: white;cursor: pointer;font-size: calc(12px * var(--scale-ratio, 1));"
+                >
+                    {showLogsEnabled === null ? '加载中...' : showLogsEnabled ? '关闭日志' : '开启日志'}
                 </button>
             {/if}
         </div>
