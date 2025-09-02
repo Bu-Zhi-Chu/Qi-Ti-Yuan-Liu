@@ -48,7 +48,7 @@
     const scaleRatio = $derived(containerWidth > 0 ? Math.min(containerWidth / baseWidth, 1.2) : 1)
 
     // 使用$derived缓存style转换结果，只在style或scaleRatio变化时重新计算
-    const finalStyle = $derived(style.trim() ? style.replace(/(\d+(?:\.\d+)?)px/g, (_, v) => `calc(${parseFloat(v)}px * var(--scale-ratio, ${scaleRatio}))`) : '')
+    const finalStyle = $derived(style.trim() ? style.replace(/(\d+(?:\.\d+)?)px(?!\s*\*\s*var\(--scale-ratio)/g, (_, v) => `calc(${parseFloat(v)}px * var(--scale-ratio, ${scaleRatio}))`) : '')
 
     // 使用$effect自动管理ResizeObserver生命周期和副作用清理
     $effect(() => {

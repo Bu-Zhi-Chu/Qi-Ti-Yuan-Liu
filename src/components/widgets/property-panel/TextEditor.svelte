@@ -335,9 +335,13 @@
     // 解析尺寸值
     function parseSize(size: string | undefined): [string, 'px'] {
         if (!size) return ['16', 'px']
-        const calcMatch = size.match(/^calc\(\s*(\d+(?:\.\d+)?)\s*px\b.*\)$/i)
-        if (calcMatch) {
-            return [calcMatch[1], 'px']
+
+        // 能匹配嵌套或单层 calc 表达式中的像素值，例如：
+        // calc(23px * var(--scale-ratio, 0.1))
+        // calc(calc(23px * var(--scale-ratio, 0.1)) * var(--scale-ratio, 1))
+        const nestedMatch = size.match(/(\d+(?:\.\d+)?)\s*px/i)
+        if (nestedMatch) {
+            return [nestedMatch[1], 'px']
         }
 
         // 处理旧的倍数格式（如1.5）转换为px
@@ -352,6 +356,11 @@
 
     // 统一格式化尺寸
     function formatSize(val: string, unit: 'px'): string {
+        // 若已包含 calc(...)，说明已格式化，直接返回避免嵌套
+        if (val.trim().startsWith('calc(')) {
+            return val
+        }
+        if (val === '' || isNaN(parseFloat(val))) return ''
         return `calc(${val}px * var(--scale-ratio, 1))`
     }
 
