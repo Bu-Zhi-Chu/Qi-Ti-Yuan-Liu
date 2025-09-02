@@ -411,44 +411,43 @@
                 >
                     精简构建
                 </button>
-
-                <!-- 日志开关按钮 -->
-                <button
-                    onclick={async (event) => {
-                        const button = event.target as HTMLButtonElement
-                        try {
-                            // 获取数据库实例
-                            const db = await DexieService.getDatabase('qi-qiao-ban')
-                            if (!db) throw new Error('无法获取数据库')
-
-                            // 读取现有配置（取首条记录）
-                            const cfgRecord = (await db.table('config').toArray())[0] || { showLogs: false }
-                            const newVal = !cfgRecord.showLogs
-
-                            // 更新数据库配置（清空后写入，因主键为 showLogs）
-                            await db.table('config').clear()
-                            try {
-                                await db.table('config').put({ showLogs: newVal })
-                            } catch (err) {
-                                // 兼容旧版本 config 表主键为 key 的情况
-                                await db.table('config').put({ key: 'showLogs', value: newVal })
-                            }
-
-                            // 立即应用配置
-
-                            applyLogConfig(newVal)
-
-                            // 更新按钮文本
-                            button.textContent = newVal ? '关闭日志' : '开启日志'
-                        } catch (e) {
-                            console.error('切换日志开关失败', e)
-                        }
-                    }}
-                    style="padding: calc(4px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));background: none;border: none;color: white;cursor: pointer;font-size: calc(12px * var(--scale-ratio, 1));"
-                >
-                    {showLogsEnabled === null ? '加载中...' : showLogsEnabled ? '关闭日志' : '开启日志'}
-                </button>
             {/if}
+
+            <!-- 日志开关按钮（所有模式均可见） -->
+            <button
+                onclick={async (event) => {
+                    const button = event.target as HTMLButtonElement
+                    try {
+                        // 获取数据库实例
+                        const db = await DexieService.getDatabase('qi-qiao-ban')
+                        if (!db) throw new Error('无法获取数据库')
+
+                        // 读取现有配置（取首条记录）
+                        const cfgRecord = (await db.table('config').toArray())[0] || { showLogs: false }
+                        const newVal = !cfgRecord.showLogs
+
+                        // 更新数据库配置（清空后写入，因主键为 showLogs）
+                        await db.table('config').clear()
+                        try {
+                            await db.table('config').put({ showLogs: newVal })
+                        } catch {
+                            // 兼容旧版本 config 表主键为 key 的情况
+                            await db.table('config').put({ key: 'showLogs', value: newVal })
+                        }
+
+                        // 立即应用配置
+                        applyLogConfig(newVal)
+
+                        // 更新按钮文本
+                        button.textContent = newVal ? '关闭日志' : '开启日志'
+                    } catch (e) {
+                        console.error('切换日志开关失败', e)
+                    }
+                }}
+                style="padding: calc(4px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));background: none;border: none;color: white;cursor: pointer;font-size: calc(12px * var(--scale-ratio, 1));"
+            >
+                {showLogsEnabled === null ? '加载中...' : showLogsEnabled ? '关闭日志' : '开启日志'}
+            </button>
         </div>
 
         <div style="display: flex;justify-content: space-between;width: 100%;height: 94%;">
