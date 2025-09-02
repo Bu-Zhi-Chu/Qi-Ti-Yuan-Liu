@@ -403,6 +403,30 @@
         }
     }
 
+    // 新增：将上传图片转换为 WebP Blob（默认质量 0.85）
+    async function convertToWebp(file: File, quality = 0.85): Promise<Blob> {
+        const bitmap = await createImageBitmap(file)
+        const canvas = document.createElement('canvas')
+        canvas.width = bitmap.width
+        canvas.height = bitmap.height
+        const ctx = canvas.getContext('2d')
+        if (!ctx) throw new Error('无法获取 Canvas 2D 上下文')
+        ctx.drawImage(bitmap, 0, 0)
+        return new Promise((resolve, reject) => {
+            canvas.toBlob(
+                (blob) => {
+                    if (blob) {
+                        resolve(blob)
+                    } else {
+                        reject(new Error('WebP 转换失败'))
+                    }
+                },
+                'image/webp',
+                quality
+            )
+        })
+    }
+
     // 处理图片上传
     async function handleImageUpload(event: Event) {
         // 如果已存在渐变颜色，上传图片前应先移除渐变
@@ -431,7 +455,16 @@
 
         try {
             // 直接存储 Blob 对象以实现跨会话持久化
-            backgroundImage = file
+            let finalBlob: Blob = file
+            try {
+                const webpBlob = await convertToWebp(file, 0.85)
+                if (webpBlob.size < file.size) {
+                    finalBlob = webpBlob // 使用更小的 WebP 版本
+                }
+            } catch (e) {
+                console.warn('WebP 转换失败，使用原始文件', e)
+            }
+            backgroundImage = finalBlob
             await updateBackgroundStyles()
             isUploading = false
             uploadProgress = 100
