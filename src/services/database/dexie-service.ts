@@ -49,7 +49,8 @@ export default class DexieService {
         // 开发环境无需修改版本号
         const stores: Record<string, string> = {
             projects: 'id, name, templateId, createdAt, updatedAt, canvasState, mode, exportTime',
-            doms: '[projectId+id], projectId, parentId, type, attributes, style, textContent'
+            doms: '[projectId+id], projectId, parentId, type, attributes, style, textContent',
+            config: 'showLogs'
         }
 
         // 精简模式下不创建templates表
@@ -62,6 +63,12 @@ export default class DexieService {
         await db.open()
         // 打开成功后写入缓存，避免后续重复检查
         DexieService.dbExistenceCache.set(dbName, true)
+
+        // 插入默认配置（首次创建时）
+        const cfgCount = await db.table('config').count()
+        if (cfgCount === 0) {
+            await db.table('config').put({ showLogs: false })
+        }
         // DatabaseLogger.databaseCreated(dbName)
 
         // 精简模式下不插入默认模板
@@ -233,7 +240,8 @@ export default class DexieService {
             const stores: Record<string, string> = {
                 projects: 'id, name, templateId, createdAt, updatedAt, canvasState, mode, exportTime',
                 doms: '[projectId+id], projectId, parentId, type, attributes, style, textContent',
-                templates: '++id, name, desc, cover, tag, thumbnailUrl, domStructure'
+                templates: '++id, name, desc, cover, tag, thumbnailUrl, domStructure',
+                config: 'key'
             }
 
             db.version(1).stores(stores)

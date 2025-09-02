@@ -45,6 +45,11 @@ let app: ReturnType<typeof mount> | undefined // 提前声明，供导出使用
 
                     const db = await DexieService.getDatabase('qi-qiao-ban')
                     if (db) {
+                        // 读取并应用日志配置
+                        try {
+                            const cfgRecord = (await db.table('config').toArray())[0]
+                             applyLogConfig(cfgRecord?.showLogs === true)
+                        } catch {}
                         // 获取数据库中最新项目的导出时间
                         let dbExportTime: string | null = null
                         let existingProjectCount = 0
@@ -151,13 +156,19 @@ let app: ReturnType<typeof mount> | undefined // 提前声明，供导出使用
                     console.warn('【数据库交互】精简模式：数据库导入失败，应用将以无数据状态运行')
                 }
             } else {
-                console.log('【数据库交互】应用启动时检查数据库')
                 if (!(await DexieService.databaseExists('qi-qiao-ban'))) {
-                    console.log('【数据库交互】数据库不存在，创建数据库')
                     await DexieService.createDatabase('qi-qiao-ban', false)
                 } else {
-                    console.log('【数据库交互】数据库已存在')
                 }
+
+                // 再次读取并应用日志配置（数据库已存在场景）
+                try {
+                    const db = await DexieService.getDatabase('qi-qiao-ban')
+                    if (db) {
+                        const cfgRecord = (await db.table('config').toArray())[0]
+                        applyLogConfig(cfgRecord?.showLogs === true)
+                    }
+                } catch {}
             }
 
             // 挂载 Svelte 应用 - 精简模式也启用PWA功能
@@ -174,3 +185,11 @@ let app: ReturnType<typeof mount> | undefined // 提前声明，供导出使用
     })()
 
 export default app
+
+// ========= 日志开关 =========
+const __originLog = console.log.bind(console)
+console.log = () => {}
+function applyLogConfig(enable: boolean) {
+  console.log = enable ? __originLog : () => {}
+}
+// ============================
