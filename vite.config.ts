@@ -17,7 +17,22 @@ export default defineConfig({
             workbox: {
                 globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
                 globIgnores: ['study/**/*'],
-                navigateFallback: null // 禁用导航回退，避免子目录问题
+                navigateFallback: null, // 禁用导航回退，避免子目录问题
+                // 新增：将动态生成的 JSON 与 Worker 产物显式加入缓存
+                additionalManifestEntries: [{ url: './data/project-data.json', revision: null }],
+                runtimeCaching: [
+                    {
+                        urlPattern: ({ url }: { url: URL }) => url.pathname.endsWith('.js') && url.pathname.includes('assets'),
+                        handler: 'CacheFirst',
+                        options: {
+                            cacheName: 'worker-js',
+                            expiration: {
+                                maxEntries: 20,
+                                maxAgeSeconds: 60 * 60 * 24 * 30
+                            }
+                        }
+                    }
+                ]
             },
             manifest: {
                 name: '七巧板 - Qi Qiao Ban',
