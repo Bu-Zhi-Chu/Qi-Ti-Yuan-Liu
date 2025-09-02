@@ -18,9 +18,18 @@ export default defineConfig({
                 globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
                 globIgnores: ['study/**/*'],
                 navigateFallback: null, // 禁用导航回退，避免子目录问题
-                // 新增：将动态生成的 JSON 与 Worker 产物显式加入缓存
-                additionalManifestEntries: [{ url: './data/project-data.json', revision: null }],
+                skipWaiting: true,
+                clientsClaim: true,
                 runtimeCaching: [
+                    {
+                        urlPattern: /\/data\/project-data\.json$/,
+                        handler: 'NetworkFirst',
+                        options: {
+                            cacheName: 'project-data',
+                            networkTimeoutSeconds: 10,
+                            expiration: { maxEntries: 1, maxAgeSeconds: 24 * 60 * 60 }
+                        }
+                    },
                     {
                         urlPattern: ({ url }: { url: URL }) => url.pathname.endsWith('.js') && url.pathname.includes('assets'),
                         handler: 'CacheFirst',
@@ -33,6 +42,7 @@ export default defineConfig({
                         }
                     }
                 ]
+
             },
             manifest: {
                 name: '七巧板 - Qi Qiao Ban',
