@@ -2,6 +2,7 @@ import type { Plugin } from 'vite'
 import { build as viteBuild } from 'vite';
 import { resolve } from 'path';
 import { writeFileSync, existsSync, mkdirSync } from 'fs';
+import formidable from 'formidable';
 import { createServer, Server } from 'http';
 import { parse } from 'url';
 import { readFile } from 'fs/promises';
@@ -33,6 +34,47 @@ export function viteBuildPlugin(): Plugin {
           return next();
         }
 
+        const contentType = req.headers['content-type'] || '';
+
+        // multipart/form-data 解析路径（Blob 二进制链路）
+        if (contentType.includes('multipart/form-data')) {
+          const form = formidable({ multiples: false });
+          form.parse(req, async (err: any, fields: any, files: any) => {
+            try {
+              if (err) throw err;
+
+              console.log('[vite-build-plugin] /api/build multipart 接收字段', Object.keys(fields));
+
+              const rawMode = (fields.mode as string) || 'production';
+              const mode: 'development' | 'production' = rawMode === 'development' ? 'development' : 'production';
+              const outputDir = (fields.outputDir as string) || 'dist-lite';
+              const uploadFile = files.projectBlob as any;
+              if (!uploadFile || !uploadFile.filepath) throw new Error('缺少 projectBlob 文件');
+
+              const tempBlobPath = uploadFile.filepath; // 先记录临时路径，构建后再拷贝
+
+              const buildRequest: BuildRequest = { mode, liteData: null, outputDir };
+              const result = await performRealBuild(buildRequest);
+
+              // 构建完成后，再写入 data/project-data.json，避免被 Vite 覆盖
+              const dataDir = resolve(process.cwd(), outputDir, 'data');
+              if (!existsSync(dataDir)) mkdirSync(dataDir, { recursive: true });
+              const targetPath = resolve(dataDir, 'project-data.json');
+              writeFileSync(targetPath, await readFile(tempBlobPath));
+              console.log('[vite-build-plugin] 构建后已写入上传Blob ->', targetPath);
+
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify(result));
+            } catch (error) {
+              console.error('[vite-build-plugin] multipart 构建错误:', error);
+              res.statusCode = 500;
+              res.end(JSON.stringify({ success: false, message: error instanceof Error ? error.message : '构建失败' }));
+            }
+          });
+          return; // 已处理
+        }
+
+        // 旧 JSON 流程
         let body = '';
         req.on('data', chunk => {
           body += chunk.toString();

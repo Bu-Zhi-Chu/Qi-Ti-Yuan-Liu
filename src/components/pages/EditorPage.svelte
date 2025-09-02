@@ -362,13 +362,13 @@
                                 minify: true
                             }
 
-                            const projectData = await liteExportService.exportLiteJson(projectId)
-                            console.log('导出的项目数据长度:', projectData.length)
+                            const projectBlob = await liteExportService.exportLiteData(projectId)
+                            console.log('导出的项目Blob大小:', projectBlob.size)
                             buildOptions.liteData = {
-                                projectData,
-                                filename: 'project-data.json' // 使用固定文件名
+                                projectBlob,
+                                filename: 'project-data.json'
                             }
-                            console.log('项目数据导出完成')
+                            console.log('项目数据导出完成 (Blob)')
 
                             // 执行构建和预览
                             const result = await buildService.buildAndPreview(buildOptions)

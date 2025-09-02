@@ -37,9 +37,10 @@ export interface BuildOptions {
   mode?: 'production' | 'development';
   sourcemap?: boolean;
   minify?: boolean;
-  // 精简模式数据
+  // 精简模式数据，兼容旧JSON字符串和新Blob格式
   liteData?: {
-    projectData: string;
+    projectBlob?: Blob; // 新增：二进制Blob
+    projectData?: string; // 旧：JSON字符串
     filename?: string;
   };
 }
@@ -164,31 +165,31 @@ export class BuildService {
    * 一键完成构建和预览
    */
   async buildAndPreview(options: BuildOptions = {}): Promise<{
-        build: BuildResult;
-        preview: PreviewResult;
-    }> {
-        console.log('🚀 开始构建并启动4174端口预览...')
-        
-        const buildResult = await this.buildProject(options);
+    build: BuildResult;
+    preview: PreviewResult;
+  }> {
+    console.log('🚀 开始构建并启动4174端口预览...')
 
-        if (!buildResult.success) {
-            throw new Error(buildResult.message);
-        }
+    const buildResult = await this.buildProject(options);
 
-        const previewResult = await this.startPreview();
-        
-        // 确保使用4174端口并准备预览数据
-        if (previewResult.success) {
-            console.log('✅ 构建完成，4174端口预览服务器已启动:', previewResult.url)
-            // 返回预览URL供前端处理，不再自动打开浏览器
-            // 这样可以避免Node.js环境下的弹窗拦截问题
-        }
-
-        return {
-            build: buildResult,
-            preview: previewResult
-        };
+    if (!buildResult.success) {
+      throw new Error(buildResult.message);
     }
+
+    const previewResult = await this.startPreview();
+
+    // 确保使用4174端口并准备预览数据
+    if (previewResult.success) {
+      console.log('✅ 构建完成，4174端口预览服务器已启动:', previewResult.url)
+      // 返回预览URL供前端处理，不再自动打开浏览器
+      // 这样可以避免Node.js环境下的弹窗拦截问题
+    }
+
+    return {
+      build: buildResult,
+      preview: previewResult
+    };
+  }
 
   /**
    * 执行真实的Vite构建
@@ -201,14 +202,30 @@ export class BuildService {
       try {
         console.log(`🔧 触发真实的Vite构建... (尝试 ${attempt}/${maxRetries})`);
 
-        // 构建请求参数
-        const buildRequest = {
-          mode: options.mode || 'production',
-          liteData: options.liteData?.projectData,
-          outputDir: 'dist-lite'
+        let requestBody: BodyInit;
+        let headers: Record<string, string> | undefined;
+
+        if (options.liteData?.projectBlob) {
+          // 使用FormData发送Blob，保持二进制链路
+          const fd = new FormData();
+          fd.append('mode', options.mode || 'production');
+          fd.append('outputDir', 'dist-lite');
+          fd.append('projectBlob', options.liteData.projectBlob, options.liteData.filename || 'project-data.json');
+          requestBody = fd;
+          headers = undefined; // 让浏览器自动设置 multipart 边界
+          console.log('准备发送构建请求，使用multipart/form-data，Blob大小:', options.liteData.projectBlob.size);
+        } else {
+          // 兼容旧流程：发送JSON字符串
+          const buildRequest = {
+            mode: options.mode || 'production',
+            liteData: options.liteData?.projectData,
+            outputDir: 'dist-lite'
+          };
+          requestBody = JSON.stringify(buildRequest);
+          headers = { 'Content-Type': 'application/json' };
+          console.log('准备发送构建请求，liteData长度:', buildRequest.liteData ? buildRequest.liteData.length : 0);
         }
-        console.log('准备发送构建请求，liteData长度:', buildRequest.liteData ? buildRequest.liteData.length : 0)
-        
+
         // 增加超时时间到30秒
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 30000);
@@ -216,10 +233,8 @@ export class BuildService {
         // 调用后端API执行构建
         const response = await fetch('/api/build', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(buildRequest),
+          headers,
+          body: requestBody,
           signal: controller.signal
         });
 
@@ -243,7 +258,7 @@ export class BuildService {
       } catch (error) {
         lastError = error as Error;
         console.error(`Vite构建失败 (尝试 ${attempt}/${maxRetries}):`, error);
-        
+
         // 如果不是最后一次尝试，等待2秒后重试
         if (attempt < maxRetries) {
           console.log(`等待2秒后重试...`);
@@ -284,17 +299,19 @@ export class BuildService {
   /**
    * 处理精简模式数据
    */
-  private async handleLiteData(liteData: { projectData: string; filename?: string }): Promise<void> {
+  private async handleLiteData(liteData: { projectBlob?: Blob; projectData?: string; filename?: string }): Promise<void> {
     try {
       const filename = liteData.filename || 'project-data.json';
       const outputPath = 'dist-lite';
-
-      // 在浏览器环境中，我们使用File System Access API来实际写入文件
-      // 或者创建可下载的Blob
       console.log(`保存精简数据到: ${outputPath}/${filename}`);
 
-      // 实际写入JSON文件到dist-lite目录
-      await this.writeJsonToBuildOutput(outputPath, filename, liteData.projectData);
+      if (liteData.projectBlob) {
+        await this.writeBlobToBuildOutput(outputPath, filename, liteData.projectBlob);
+      } else if (liteData.projectData) {
+        await this.writeJsonToBuildOutput(outputPath, filename, liteData.projectData);
+      } else {
+        throw new Error('liteData 缺少 projectBlob 或 projectData');
+      }
 
     } catch (error) {
       console.error('处理精简数据失败:', error);
@@ -352,6 +369,57 @@ export class BuildService {
     } catch (error) {
       console.error('写入JSON文件失败:', error);
       throw new Error(`无法保存构建输出文件: ${error}`);
+    }
+  }
+
+  /**
+   * 将Blob数据写入构建输出目录
+   */
+  private async writeBlobToBuildOutput(outputPath: string, filename: string, blob: Blob): Promise<void> {
+    try {
+      // 方法1: File System Access API
+      if ('showDirectoryPicker' in window) {
+        try {
+          const dirHandle = await (window as any).showDirectoryPicker({ startIn: 'downloads', id: 'qi-qiao-ban-build' });
+          const outputDirHandle = await dirHandle.getDirectoryHandle(outputPath, { create: true });
+          const fileHandle = await outputDirHandle.getFileHandle(filename, { create: true });
+          const writable = await fileHandle.createWritable();
+          await writable.write(blob);
+          await writable.close();
+          console.log(`Blob已通过File System Access API保存: ${outputPath}/${filename}`);
+          return;
+        } catch (e) {
+          console.warn('File System Access API(blob)失败，使用备用方法:', e);
+        }
+      }
+
+      // 方法2: 触发浏览器下载
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${outputPath}/${filename}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      console.log(`Blob已创建为下载: ${outputPath}/${filename}`);
+
+      // 方法3: localStorage缓存（不推荐大文件，但作为降级）
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const base64Data = reader.result as string;
+          const key = `build-cache-${outputPath}-${filename}`;
+          localStorage.setItem(key, base64Data);
+          console.log(`Blob已缓存到localStorage: ${key}`);
+        } catch (err) {
+          console.warn('localStorage缓存Blob失败:', err);
+        }
+      };
+      reader.readAsDataURL(blob);
+    } catch (error) {
+      console.error('写入Blob文件失败:', error);
+      throw new Error(`无法保存Blob构建输出文件: ${error}`);
     }
   }
 

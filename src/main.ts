@@ -20,7 +20,21 @@ let app: ReturnType<typeof mount> | undefined // 提前声明，供导出使用
                 try {
                     // 导入项目数据
                     const response = await fetch('./data/project-data.json')
-                    const projectData = await response.json()
+                    let projectData: any
+                    try {
+                        const ct = response.headers.get('content-type') || ''
+                        if (ct.includes('application/json')) {
+                            projectData = await response.json()
+                        } else {
+                            const blob = await response.blob()
+                            const text = await blob.text()
+                            projectData = JSON.parse(text)
+                        }
+                    } catch (parseErr) {
+                        const blob = await response.blob()
+                        const text = await blob.text()
+                        projectData = JSON.parse(text)
+                    }
                     console.log('【数据库交互】projectData对象', projectData)
 
                     // 检查数据库是否存在，不存在则创建

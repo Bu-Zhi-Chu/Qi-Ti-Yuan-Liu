@@ -35,6 +35,7 @@
         "@types/uuid": "^10.0.0",
         "dexie": "^4.0.11",
         "dexie-export-import": "^4.1.4",
+        "formidable": "^2.1.2",
         "svelte-dnd-action": "^0.9.64",
         "svelte-splitpanes": "^8.0.9",
         "uuid": "^11.1.0"
