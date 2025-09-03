@@ -11,7 +11,6 @@
  * - 背景渐变：linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)
  * - 使用 ResponsiveBox 统一布局，方便后续自适应缩放处理。
  -->
-
 <script lang="ts">
     import { onMount, onDestroy } from 'svelte'
     import { registerShortcut } from '../../services/interactions/shortcut.service'
@@ -227,69 +226,52 @@
     }
 
     // 初始化项目模式
-    async function initializeProjectMode() {
-        let projectId: string | undefined
-
-        // 精简模式下从数据库获取唯一的项目ID
+    // 更新项目模式
+    import DexieService from '../../services/database/dexie-service'
+    // 缓存项目ID，避免重复查询
+    let cachedProjectId: string | undefined
+    async function getProjectId(): Promise<string | undefined> {
+        if (cachedProjectId !== undefined) return cachedProjectId
         if (isLiteMode()) {
             try {
-                console.log('精简模式：从数据库获取项目ID')
-
-                // 从数据库获取所有项目
                 const projects = await DexieService.getAllRecords('qi-qiao-ban', 'projects')
-
-                if (projects && projects.length > 0) {
-                    // 获取第一个项目的ID
-                    projectId = (projects[0] as any).id
-                    console.log('精简模式：获取到项目ID:', projectId)
-                } else {
-                    console.warn('精简模式：数据库中没有项目')
-                    return
-                }
-            } catch (error) {
-                console.error('精简模式：获取项目ID失败', error)
-                return
+                cachedProjectId = (projects?.[0] as any)?.id as string | undefined
+            } catch (e) {
+                console.warn('获取项目ID失败', e)
             }
         } else {
-            // 非精简模式从URL获取项目ID
-            projectId = window.location.hash.split('/').pop()
-            if (!projectId) {
-                console.warn('非精简模式：无法从URL获取项目ID')
-                return
-            }
+            cachedProjectId = window.location.hash.split('/').pop()
         }
+        return cachedProjectId
+    }
 
+    async function initializeProjectMode() {
+        const projectId = await getProjectId()
+        if (!projectId) {
+            console.warn('无法获取项目ID')
+            return
+        }
         try {
             const project = await DexieService.getRecord<any>('qi-qiao-ban', 'projects', projectId)
             if (project && project.mode) {
-                // 根据数据库中的模式设置工作区显示状态
                 showWorkspace = project.mode === 'editing'
                 console.log(`项目模式已初始化为: ${project.mode}`)
-
-                // 设置网页标题为项目名称，若未定义则保持默认
                 if (project.name) {
                     document.title = project.name as string
                 }
             } else {
-                // 如果没有模式字段，默认为正常模式
                 showWorkspace = false
                 console.log('项目模式已初始化为: normal (默认模式)')
             }
         } catch (error) {
             console.error('初始化项目模式失败:', error)
-            // 出错时默认为正常模式
             showWorkspace = false
         }
     }
 
-    // 更新项目模式
-    import DexieService from '../../services/database/dexie-service'
-
     async function updateProjectMode() {
-        // 从URL获取项目ID
-        const projectId = window.location.hash.split('/').pop()
+        const projectId = await getProjectId()
         if (!projectId) return
-
         const newMode = showWorkspace ? 'editing' : 'normal'
         try {
             const success = await DexieService.updateRecord('qi-qiao-ban', 'projects', projectId, { mode: newMode })
@@ -312,6 +294,9 @@
     })
 </script>
 
+<svelte:head>
+    <title></title>
+</svelte:head>
 <!-- 背景 -->
 <div style="width: 100%;height: 100%;position: absolute;background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);z-index: 0;overflow: hidden;">
     <!-- 画布包裹元素，承担缩放与定位 -->
@@ -347,7 +332,8 @@
                             button.disabled = true
 
                             // 获取项目ID
-                            const projectId = window.location.hash.split('/').pop()
+
+                            const projectId = await getProjectId()
                             if (!projectId) {
                                 throw new Error('无法获取项目ID')
                             }
