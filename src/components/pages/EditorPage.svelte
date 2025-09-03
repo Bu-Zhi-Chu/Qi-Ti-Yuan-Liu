@@ -297,6 +297,7 @@
 <svelte:head>
     <title></title>
 </svelte:head>
+
 <!-- 背景 -->
 <div style="width: 100%;height: 100%;position: absolute;background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);z-index: 0;overflow: hidden;">
     <!-- 画布包裹元素，承担缩放与定位 -->
