@@ -18,6 +18,6 @@
         padding-left: calc(8px * var(--scale-ratio, 1));
         font-size: calc(12px * var(--scale-ratio, 1));
         color: #fff;
-        background: rgba(30, 41, 59, 0.95);
+        background: rgb(15, 20, 29);
     }
 </style>

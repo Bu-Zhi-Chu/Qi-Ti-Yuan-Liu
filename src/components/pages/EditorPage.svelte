@@ -310,7 +310,7 @@
 {#if showWorkspace}
     <div class="workspace" style="position: absolute;width: 100%;height: 100%;z-index: 10;pointer-events: none;">
         <!-- 顶部导航区 -->
-        <div style="display: flex;align-items: center;justify-content: flex-start;gap: 10px;padding: 0 10px;width: 100%;height: 4%;background: rgba(30, 41, 59, 0.95);pointer-events: auto;">
+        <div style="display: flex;align-items: center;justify-content: flex-start;gap: 10px;padding: 0 10px;width: 100%;height: 4%;background: rgba(15, 20, 29);pointer-events: auto;">
             {#if !isLiteMode()}
                 <button onclick={() => (window.location.href = '/')} style="padding: calc(4px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));background: none;border: none;color: white;cursor: pointer;font-size: calc(12px * var(--scale-ratio, 1));">首页</button>
             {/if}
@@ -448,7 +448,7 @@
             <!-- 左侧 -->
             <div style=" display: flex;width: 22.5%;height: 100%;">
                 <!-- 工具栏 -->
-                <div style="width: 12%; height: 100%;background: rgba(30, 41, 59, 0.95);"></div>
+                <div style="width: 12%; height: 100%;background: rgba(15, 20, 29);"></div>
                 <!-- dom树列表 -->
                 <div style="width: 88%;height: 100%;background: rgba(30, 41, 59, 0.8);pointer-events: auto">
                     <!-- @ts-ignore: props typing still WIP -->
@@ -464,10 +464,7 @@
                     <PropertyPanel showToolbar={false} {activeTab} onTabChange={setTab} />
                 </div>
                 <!-- 标签切换按钮栏 -->
-                <div
-                    class="prop-tabbar"
-                    style="width: 12%;height: 100%;display: flex;flex-direction: column;align-items: center;justify-content: flex-start;padding-top: calc(12px * var(--scale-ratio, 1));gap: calc(8px * var(--scale-ratio, 1));pointer-events: auto;background: rgba(30, 41, 59, 0.95);"
-                >
+                <div class="prop-tabbar" style="width: 12%;height: 100%;display: flex;flex-direction: column;align-items: center;justify-content: flex-start;padding-top: calc(12px * var(--scale-ratio, 1));gap: calc(8px * var(--scale-ratio, 1));pointer-events: auto;background: rgba(15, 20, 29);">
                     {#each tabs as t}
                         <button class:active={activeTab === t.key} onclick={() => setTab(t.key)} title={t.title}>
                             <Icon name={t.icon} size={16} style="width: calc(16px * var(--scale-ratio, 1)); height: calc(16px * var(--scale-ratio, 1))" />
