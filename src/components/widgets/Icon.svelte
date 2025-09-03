@@ -30,6 +30,7 @@
         Copy: () => import('@lucide/svelte/icons/copy'),
         Move: () => import('@lucide/svelte/icons/move'),
         LocateFixed: () => import('@lucide/svelte/icons/locate-fixed'),
+        Ratio: () => import('@lucide/svelte/icons/ratio'),
         Rotate: () => import('@lucide/svelte/icons/rotate-cw'),
         ZoomIn: () => import('@lucide/svelte/icons/zoom-in'),
         ZoomOut: () => import('@lucide/svelte/icons/zoom-out'),

@@ -28,6 +28,7 @@
     import PropertyRow from './PropertyRow.svelte'
     import PropertySelect from './PropertySelect.svelte'
     import SizeInput from './SizeInput.svelte'
+    import Icon from '../Icon.svelte'
 
     // 工具函数：安全获取字符串值
     function getStringValue(value: string | Blob | undefined): string {
@@ -105,6 +106,20 @@
 
         const nodeProps = _getNodeProps(selectedId)
         const styles = nodeProps?.styles || {}
+        // 读取节点 attributes 中缓存的图片原始尺寸，刷新后恢复 imageSize
+        const attrs = (nodeProps?.attributes || {}) as Record<string, string>
+        const attrWidth = parseInt(attrs['data-img-width'] || '')
+        const attrHeight = parseInt(attrs['data-img-height'] || '')
+
+        if (!isNaN(attrWidth) && !isNaN(attrHeight) && attrWidth > 0 && attrHeight > 0) {
+            if (!imageSize || imageSize.width !== attrWidth || imageSize.height !== attrHeight) {
+                imageSize = { width: attrWidth, height: attrHeight }
+            }
+        } else if (imageSize) {
+            imageSize = null
+        }
+        // 根据恢复的尺寸立即更新按钮禁用状态
+        updateDimensionMatch()
 
         // 先从 styles.backgroundColor 读取背景颜色（与其他属性一致）
         const bgColorStyle = getStringValue(styles.backgroundColor)
@@ -561,7 +576,18 @@
             styles.color = ''
         }
 
-        updateNodeProps(selectedId, { styles })
+        // 新增：将图片原始尺寸存入 attributes
+        const attributes: Record<string, any> = {}
+        if (imageSize) {
+            attributes['data-img-width'] = imageSize.width.toString()
+            attributes['data-img-height'] = imageSize.height.toString()
+        } else {
+            // 清除已有尺寸
+            attributes['data-img-width'] = undefined
+            attributes['data-img-height'] = undefined
+        }
+
+        updateNodeProps(selectedId, { styles, attributes })
 
         // 如果是根节点，仅当背景图片状态发生变化时才处理缩略图
         if (selectedId === 'root') {
@@ -933,14 +959,16 @@
     function applyImageDimensions() {
         if (!selectedId || !imageSize) return
         const { width, height } = imageSize
+        // 计算设计尺寸对应的自适应 CSS 值
+        const widthStr = `calc(${width}px * var(--scale-ratio, 1))`
+        const heightStr = `calc(${height}px * var(--scale-ratio, 1))`
         updateNodeProps(selectedId, {
             styles: {
-                width: `calc(${width}px * var(--scale-ratio, 1))`,
-                height: `calc(${height}px * var(--scale-ratio, 1))`
+                width: widthStr,
+                height: heightStr
             }
         })
     }
-
     $effect(() => {
         ;(async () => {
             const size = await getBackgroundDisplaySize()
@@ -969,6 +997,46 @@
             }
         }
     }
+
+    // 新增：图片与节点尺寸一致性标记
+    let isDimensionMatched = $state(true)
+
+    function updateDimensionMatch() {
+        if (!selectedId || !imageSize) {
+            isDimensionMatched = true
+            return
+        }
+        const el = getElementByNodeId(selectedId)
+        if (!el) {
+            isDimensionMatched = true
+            return
+        }
+        const sr = getScaleRatio()
+        const widthDesign = el.offsetWidth / sr
+        const heightDesign = el.offsetHeight / sr
+        isDimensionMatched = Math.abs(widthDesign - imageSize.width) < 0.5 && Math.abs(heightDesign - imageSize.height) < 0.5
+    }
+
+    let resizeObserver: ResizeObserver | null = null
+    $effect(() => {
+        if (!selectedId) return
+        const el = getElementByNodeId(selectedId)
+        if (!el) return
+        if (resizeObserver) resizeObserver.disconnect()
+        resizeObserver = new ResizeObserver(() => updateDimensionMatch())
+        resizeObserver.observe(el)
+        updateDimensionMatch()
+        return () => {
+            if (resizeObserver) resizeObserver.disconnect()
+        }
+    })
+    // 当 imageSize 或节点变化时，主动更新匹配状态，避免初始化循环
+    $effect(() => {
+        updateDimensionMatch()
+    })
+    $effect(() => {
+        hasBackgroundImage = !!(backgroundImage && (backgroundImage instanceof Blob || (typeof backgroundImage === 'string' && backgroundImage.trim() && !backgroundImage.includes('gradient'))))
+    })
 </script>
 
 <div class="background-editor">
@@ -984,7 +1052,9 @@
                 {:else}
                     <div style="display: flex; gap: calc(4px * var(--scale-ratio, 1)); flex: 1;">
                         <button class="input-style" onclick={clearBackgroundImage} title="移除图片" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">移除</button>
-                        <button class="input-style" onclick={applyImageDimensions} title="按图片尺寸调整" disabled={!imageSize}>套用尺寸</button>
+                        <button class="unit-toggle" onclick={applyImageDimensions} title="按图片尺寸调整" disabled={!imageSize || selectedId === 'root' || isDimensionMatched}>
+                            <Icon name="Ratio" size={16} />
+                        </button>
                     </div>
                 {/if}
             </PropertyRow>
