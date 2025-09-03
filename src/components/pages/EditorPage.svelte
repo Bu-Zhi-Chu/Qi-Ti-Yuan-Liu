@@ -25,7 +25,8 @@
 
     // 引入 DOM 树集中式状态管理
     import { domTree, selectedId, removeNodeById } from '../../services/repository/dom-tree.store.svelte'
-
+    import DexieService from '../../services/database/dexie-service'
+    import StatusBar from '../widgets/StatusBar.svelte'
     // 是否显示工作区，默认显示工作区
     let showWorkspace = $state(true)
 
@@ -227,7 +228,7 @@
 
     // 初始化项目模式
     // 更新项目模式
-    import DexieService from '../../services/database/dexie-service'
+
     // 缓存项目ID，避免重复查询
     let cachedProjectId: string | undefined
     async function getProjectId(): Promise<string | undefined> {
@@ -309,7 +310,7 @@
 {#if showWorkspace}
     <div class="workspace" style="position: absolute;width: 100%;height: 100%;z-index: 10;pointer-events: none;">
         <!-- 顶部导航区 -->
-        <div style="display: flex;align-items: center;justify-content: flex-start;gap: 10px;padding: 0 10px;width: 100%;height: 4%;background: rgba(1, 255, 255, 0.3);pointer-events: auto;">
+        <div style="display: flex;align-items: center;justify-content: flex-start;gap: 10px;padding: 0 10px;width: 100%;height: 4%;background: rgba(30, 41, 59, 0.95);pointer-events: auto;">
             {#if !isLiteMode()}
                 <button onclick={() => (window.location.href = '/')} style="padding: calc(4px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));background: none;border: none;color: white;cursor: pointer;font-size: calc(12px * var(--scale-ratio, 1));">首页</button>
             {/if}
@@ -447,7 +448,7 @@
             <!-- 左侧 -->
             <div style=" display: flex;width: 22.5%;height: 100%;">
                 <!-- 工具栏 -->
-                <div style="width: 12%; height: 100%;background: rgba(255, 1, 255, 0.3);"></div>
+                <div style="width: 12%; height: 100%;background: rgba(30, 41, 59, 0.95);"></div>
                 <!-- dom树列表 -->
                 <div style="width: 88%;height: 100%;background: rgba(30, 41, 59, 0.8);pointer-events: auto">
                     <!-- @ts-ignore: props typing still WIP -->
@@ -477,7 +478,7 @@
         </div>
 
         <!-- 底部状态栏 -->
-        <div style="width: 100%; height: 2%;background: rgba(1, 255, 255, 0.3);"></div>
+        <div style="width: 100%; height: 2%;"><StatusBar /></div>
     </div>
 {/if}
 

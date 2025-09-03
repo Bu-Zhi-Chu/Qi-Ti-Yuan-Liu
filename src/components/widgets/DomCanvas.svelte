@@ -33,6 +33,7 @@
     import DrawModeOverlay from './DrawModeOverlay.svelte'
     import { isDrawMode } from '../../services/repository/draw-mode.store.svelte'
     import DexieService from '../../services/database/dexie-service'
+    import { canvasScale } from '../../services/repository/canvas-state.store'
 </script>
 
 <script lang="ts">
@@ -264,6 +265,7 @@
         offsetX = x
         offsetY = y
         scale = newScale
+        canvasScale.set(editing ? scale * 0.5 : scale)
     }
 
     /**
@@ -287,6 +289,11 @@
     $effect(() => {
         // 仅记录状态变化，不再重置画布位置
         wasEditing = editing
+    })
+
+    // 同步全局缩放到状态栏
+    $effect(() => {
+        canvasScale.set(editing ? scale * 0.5 : scale)
     })
 </script>
 
