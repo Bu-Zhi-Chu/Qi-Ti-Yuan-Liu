@@ -331,6 +331,12 @@
                             button.textContent = '精简构建中...'
                             button.disabled = true
 
+                            // 若当前处于编辑模式，先切回正常模式并保存
+                            if (showWorkspace) {
+                                showWorkspace = false
+                                await updateProjectMode()
+                            }
+
                             // 获取项目ID
 
                             const projectId = await getProjectId()
