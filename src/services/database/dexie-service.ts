@@ -48,7 +48,7 @@ export default class DexieService {
 
         // 开发环境无需修改版本号
         const stores: Record<string, string> = {
-            projects: 'id, name, templateId, createdAt, updatedAt, canvasState, mode, exportTime',
+            projects: 'id, name, templateId, createdAt, updatedAt, canvasState, mode, exportTime, designWidth, designHeight',
             doms: '[projectId+id], projectId, parentId, type, attributes, style, textContent',
             config: '++id, showLogs'
         }
@@ -238,7 +238,7 @@ export default class DexieService {
 
             // 定义表结构（与createDatabase保持一致）
             const stores: Record<string, string> = {
-                projects: 'id, name, templateId, createdAt, updatedAt, canvasState, mode, exportTime',
+                projects: 'id, name, templateId, createdAt, updatedAt, canvasState, mode, exportTime, designWidth, designHeight',
                 doms: '[projectId+id], projectId, parentId, type, attributes, style, textContent',
                 templates: '++id, name, desc, cover, tag, thumbnailUrl, domStructure',
                 config: '++id, showLogs'

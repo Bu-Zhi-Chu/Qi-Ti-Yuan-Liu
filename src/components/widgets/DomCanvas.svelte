@@ -34,6 +34,7 @@
     import { isDrawMode } from '../../services/repository/draw-mode.store.svelte'
     import DexieService from '../../services/database/dexie-service'
     import { canvasScale } from '../../services/repository/canvas-state.store'
+    import { screenDetector } from '../../services/screen/screen-detector.service'
 </script>
 
 <script lang="ts">
@@ -160,6 +161,12 @@
             console.log('加载到的项目数据:', project)
 
             // 恢复上次选中的节点ID
+            // 恢复上次选中的节点ID
+            // 根据项目设计尺寸设置 ScreenDetector
+            if (project && project.designWidth && project.designHeight) {
+                screenDetector.setDesignSize(project.designWidth, project.designHeight)
+            }
+
             if (project && project.selectedNodeId) {
                 await setSelectedId(project.selectedNodeId)
                 console.log('已恢复选中节点:', project.selectedNodeId)

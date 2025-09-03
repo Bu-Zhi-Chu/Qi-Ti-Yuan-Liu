@@ -16,7 +16,7 @@
 
     // Props定义
     interface Props {
-        onConfirm?: (name: string, templateId: string) => void
+        onConfirm?: (name: string, templateId: string, width: number, height: number) => void
         onCancel?: () => void
     }
     let { onConfirm, onCancel }: Props = $props()
@@ -35,6 +35,9 @@
     let templates = $state<TemplateInfo[]>([])
     let selected = $state('')
     let projectName = $state('')
+    // 新增设计尺寸
+    let designWidth = $state('1912')
+    let designHeight = $state('1000')
     let isLoading = $state(true)
     const inputId: string = 'project-name-' + Math.random().toString(36).slice(2)
 
@@ -68,7 +71,13 @@
             Toast.warning('请输入项目名称')
             return
         }
-        onConfirm?.(name, selected)
+        const w = Number(designWidth)
+        const h = Number(designHeight)
+        if (!w || !h) {
+            Toast.warning('请输入有效的设计宽高')
+            return
+        }
+        onConfirm?.(name, selected, w, h)
     }
 
     const cancel = () => onCancel?.()
@@ -76,14 +85,37 @@
 
 <ResponsiveBox style="display:flex; flex-direction:column; height:100%; width:100%; padding:16px; box-sizing:border-box;">
     <!-- 项目名称输入 -->
-    <label for={inputId} style="font-size:calc(14px*var(--scale-ratio,1)); color:#cbd5e1; margin-bottom:calc(8px*var(--scale-ratio,1));">项目名称</label>
-    <input
-        id={inputId}
-        bind:value={projectName}
-        placeholder="请输入项目名称"
-        style="height:calc(36px*var(--scale-ratio,1)); font-size:calc(14px*var(--scale-ratio,1)); padding:0 calc(12px*var(--scale-ratio,1)); border-radius:calc(8px*var(--scale-ratio,1)); border:calc(1px*var(--scale-ratio,1)) solid rgba(148,163,184,0.3); background:rgba(15,23,42,0.4); color:#f1f5f9; outline:none;"
-        autocomplete="off"
-    />
+
+    <!-- 项目名称输入 -->
+    <span style="font-size:calc(14px*var(--scale-ratio,1)); color:#cbd5e1; margin:calc(16px*var(--scale-ratio,1)) 0 calc(8px*var(--scale-ratio,1));">项目名称</span>
+    <div style="display:flex; gap:calc(12px*var(--scale-ratio,1));">
+        <input
+            id={inputId}
+            bind:value={projectName}
+            placeholder="请输入项目名称"
+            style="flex:1; height:calc(36px*var(--scale-ratio,1)); font-size:calc(14px*var(--scale-ratio,1)); padding:0 calc(12px*var(--scale-ratio,1)); border-radius:calc(8px*var(--scale-ratio,1)); border:calc(1px*var(--scale-ratio,1)) solid rgba(148,163,184,0.3); background:rgba(15,23,42,0.4); color:#f1f5f9; outline:none;"
+            autocomplete="off"
+        />
+    </div>
+
+    <!-- 设计尺寸输入 -->
+    <span style="font-size:calc(14px*var(--scale-ratio,1)); color:#cbd5e1; margin:calc(16px*var(--scale-ratio,1)) 0 calc(8px*var(--scale-ratio,1));">设计尺寸</span>
+    <div style="display:flex; gap:calc(12px*var(--scale-ratio,1));">
+        <input
+            type="number"
+            bind:value={designWidth}
+            min="1"
+            placeholder="宽度(px)"
+            style="flex:1; height:calc(36px*var(--scale-ratio,1)); font-size:calc(14px*var(--scale-ratio,1)); padding:0 calc(12px*var(--scale-ratio,1)); border-radius:calc(8px*var(--scale-ratio,1)); border:calc(1px*var(--scale-ratio,1)) solid rgba(148,163,184,0.3); background:rgba(15,23,42,0.4); color:#f1f5f9; outline:none;"
+        />
+        <input
+            type="number"
+            bind:value={designHeight}
+            min="1"
+            placeholder="高度(px)"
+            style="flex:1; height:calc(36px*var(--scale-ratio,1)); font-size:calc(14px*var(--scale-ratio,1)); padding:0 calc(12px*var(--scale-ratio,1)); border-radius:calc(8px*var(--scale-ratio,1)); border:calc(1px*var(--scale-ratio,1)) solid rgba(148,163,184,0.3); background:rgba(15,23,42,0.4); color:#f1f5f9; outline:none;"
+        />
+    </div>
 
     <!-- 模板选择 -->
     <span style="font-size:calc(14px*var(--scale-ratio,1)); color:#cbd5e1; margin:calc(16px*var(--scale-ratio,1)) 0 calc(8px*var(--scale-ratio,1));">选择模板</span>

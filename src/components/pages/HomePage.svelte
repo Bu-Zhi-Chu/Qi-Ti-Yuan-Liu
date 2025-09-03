@@ -84,7 +84,7 @@
         }
     }
 
-    async function confirmNewProject(name: string, templateId: string = 'blank') {
+    async function confirmNewProject(name: string, templateId: string = 'blank', width: number = 1920, height: number = 1080) {
         // 清理内存中的旧项目数据
         clearMemoryState()
 
@@ -97,12 +97,13 @@
             name,
             templateId,
             data: {},
+            designWidth: width,
+            designHeight: height,
             createdAt: now,
             updatedAt: now,
             canvasState: { x: 0, y: 0, scale: 1 },
             mode: 'normal' // 默认模式为正常模式，用户进入编辑器时隐藏工作区
         })
-
         // 根据模板加载DOM结构
         try {
             const db = await DexieService.getDatabase('qi-qiao-ban')
@@ -258,7 +259,7 @@
     </ResponsiveBox>
 </ResponsiveBox>
 {#if showWindow}
-    <WindowBox title="新建项目" width={800} height={600} onClose={() => (showWindow = false)} showMaximize={false}>
-        <NewProjectDialog onConfirm={confirmNewProject} onCancel={() => (showWindow = false)} />
+    <WindowBox title="新建项目" width={800} height={700} onClose={() => (showWindow = false)} showMaximize={false}>
+        <NewProjectDialog onConfirm={(name, templateId, width, height) => confirmNewProject(name, templateId, width, height)} onCancel={() => (showWindow = false)} />
     </WindowBox>
 {/if}

@@ -465,6 +465,22 @@
                 console.warn('WebP 转换失败，使用原始文件', e)
             }
             backgroundImage = finalBlob
+
+            // 新增：读取图片自然尺寸
+            try {
+                const { width, height } = await new Promise<{ width: number; height: number }>((resolve, reject) => {
+                    const img = new Image()
+                    img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight })
+                    img.onerror = reject
+                    img.src = URL.createObjectURL(finalBlob)
+                })
+                imageSize = { width, height }
+            } catch (e) {
+                console.warn('获取图片尺寸失败', e)
+                imageSize = null
+            }
+
+            // 拖拽上传处理
             await updateBackgroundStyles()
             isUploading = false
             uploadProgress = 100
@@ -910,6 +926,21 @@
     let hasBackgroundImage = $state(false)
     // 缓存背景图片在元素中的显示尺寸，供同步换算使用
     let displaySizeCache = $state<{ width: number; height: number }>({ width: 0, height: 0 })
+    // 新增：记录原始图片自然尺寸，用于快速设置节点尺寸
+    let imageSize = $state<{ width: number; height: number } | null>(null)
+
+    // 根据当前图片自然尺寸设置节点宽高
+    function applyImageDimensions() {
+        if (!selectedId || !imageSize) return
+        const { width, height } = imageSize
+        updateNodeProps(selectedId, {
+            styles: {
+                width: `calc(${width}px * var(--scale-ratio, 1))`,
+                height: `calc(${height}px * var(--scale-ratio, 1))`
+            }
+        })
+    }
+
     $effect(() => {
         ;(async () => {
             const size = await getBackgroundDisplaySize()
@@ -951,7 +982,10 @@
                 {#if !hasBackgroundImage}
                     <button id="background-image-input" class="input-style" onclick={() => fileInput.click()} ondragover={handleDragOver} ondrop={handleDrop} title="点击上传或拖拽图片到此处">上传图片</button>
                 {:else}
-                    <button class="input-style" onclick={clearBackgroundImage} title="移除图片" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">移除</button>
+                    <div style="display: flex; gap: calc(4px * var(--scale-ratio, 1)); flex: 1;">
+                        <button class="input-style" onclick={clearBackgroundImage} title="移除图片" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">移除</button>
+                        <button class="input-style" onclick={applyImageDimensions} title="按图片尺寸调整" disabled={!imageSize}>套用尺寸</button>
+                    </div>
                 {/if}
             </PropertyRow>
 
