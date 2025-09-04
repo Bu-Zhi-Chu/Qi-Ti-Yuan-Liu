@@ -104,7 +104,7 @@
 
                 // 需要对比的新值
                 const nextName = node?.attributes?.['data-name'] ?? ''
-                const nextType = node?.componentType || componentOptions[0]?.type || ''
+                const nextType = node?.componentType || (node?.attributes as any)?.type || componentOptions[0]?.type || ''
                 const nextRemark = snapshot?.attributes?.['data-remark'] ?? ''
                 const [nextWidthValue, nextWidthUnit] = parseSize(snapshot?.styles?.width)
                 const [nextHeightValue, nextHeightUnit] = parseSize(snapshot?.styles?.height)

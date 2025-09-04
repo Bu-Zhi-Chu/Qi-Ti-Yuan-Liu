@@ -6,10 +6,6 @@
 export interface DomNode {
   /** 唯一标识符，用于节点选中、查找和同步 */
   id: string
-  /** 节点类型（属性面板中的类型），可选 */
-  type?: string
-
-
   /** 组件类型，使用 DynamicComponent 中注册的组件名 */
   componentType?: string
   /** 传递给组件的属性 */

@@ -51,7 +51,7 @@
     let showTextContent = $derived.by(() => {
         if (!selectedId) return false
         const node = getFullNode(selectedId)
-        const type = node?.componentType || node?.type
+        const type = node?.componentType || (node?.attributes as any)?.type
         return isTextContentVisible(type)
     })
 

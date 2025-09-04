@@ -125,7 +125,7 @@
         const padding = 16
         const nodeKey = node.id
         const isSelected = nodeKey === currentSelectedId
-        const displayName = level === 0 ? '画布' : node.attributes?.['data-name'] || node.type || '元素'
+        const displayName = level === 0 ? '画布' : node.attributes?.['data-name'] || node.componentType || (node.attributes as any)?.type || '元素'
         const hasChildren = node.children && node.children.length
 
         const childrenHtml = hasChildren && node.expanded ? node.children!.map((child: DomNode) => renderNode(child, level + 1, currentSelectedId)).join('') : ''

@@ -12,7 +12,7 @@
         if (!selectedId) return null
         const node = getFullNode(selectedId)
         if (!node) return null
-        const type = (node.componentType || (node as any).type) as string | undefined
+        const type = (node.componentType || (node.attributes as any)?.type) as string | undefined
         if (!type) return null
         return (blocksConfig as any[]).find((c) => c.type === type)?.featureProps ?? null
     })

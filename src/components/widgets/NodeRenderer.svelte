@@ -193,7 +193,7 @@
     })
 
     /** 计算展示名称，供 data-name 使用，保持与 DomTreeList 显示逻辑一致 */
-    const dataNameAttr = $derived.by(() => (nodeKey === 'root' ? '画布' : ((restAttrs as Record<string, any>)?.['data-name'] ?? node.type ?? '元素')))
+    const dataNameAttr = $derived.by(() => (nodeKey === 'root' ? '画布' : ((restAttrs as Record<string, any>)?.['data-name'] ?? node.componentType ?? (node.attributes as any)?.type ?? '元素')))
 
     /** 获取组件类型，默认为 SimpleBox */
     const componentType = $derived.by(() => node.componentType ?? 'SimpleBox')
