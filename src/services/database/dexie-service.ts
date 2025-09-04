@@ -49,7 +49,7 @@ export default class DexieService {
         // 开发环境无需修改版本号
         const stores: Record<string, string> = {
             projects: 'id, name, templateId, createdAt, updatedAt, canvasState, mode, exportTime, designWidth, designHeight',
-            doms: '[projectId+id], projectId, parentId, type, attributes, style, textContent',
+            doms: '[projectId+id], projectId, parentId, attributes, style',
             config: '++id, showLogs'
         }
 
@@ -105,8 +105,9 @@ export default class DexieService {
                             projectId: 'template-blank',
                             id: 'root',
                             parentId: null,
-                            type: 'SimpleBox',
                             attributes: {
+                                type: 'SimpleBox',
+                                textContent: '',
                                 expanded: true,
                                 hidden: undefined
                             },
@@ -117,8 +118,7 @@ export default class DexieService {
                                 pointerEvents: 'auto',
                                 width: '100%',
                                 boxSizing: 'border-box'
-                            },
-                            textContent: ''
+                            }
                         }
                     ]
                 }
@@ -239,7 +239,7 @@ export default class DexieService {
             // 定义表结构（与createDatabase保持一致）
             const stores: Record<string, string> = {
                 projects: 'id, name, templateId, createdAt, updatedAt, canvasState, mode, exportTime, designWidth, designHeight',
-                doms: '[projectId+id], projectId, parentId, type, attributes, style, textContent',
+                doms: '[projectId+id], projectId, parentId, attributes, style',
                 templates: '++id, name, desc, cover, tag, thumbnailUrl, domStructure',
                 config: '++id, showLogs'
             }

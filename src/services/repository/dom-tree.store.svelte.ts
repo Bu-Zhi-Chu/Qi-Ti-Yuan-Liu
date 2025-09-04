@@ -160,13 +160,17 @@ async function loadDomNodesFromDomsTable(projectId: string): Promise<DomNode | n
     // 创建所有节点
     for (const nodeData of nodes) {
       const attributes = nodeData.attributes || {};
+      const componentType = attributes.type ?? nodeData.componentType ?? 'SimpleBox';
+      const textContent = attributes.textContent ?? nodeData.textContent ?? '';
+      delete attributes.type;
+      delete attributes.textContent;
 
       const node: DomNode = {
         id: nodeData.id,
-        componentType: nodeData.type,
+        componentType: componentType,
         styles: nodeData.style || {},
         attributes: attributes,
-        textContent: nodeData.textContent,
+        textContent: textContent,
         expanded: nodeData.attributes?.expanded !== false,
         hidden: nodeData.attributes?.hidden || false,
         children: []
@@ -296,14 +300,14 @@ async function saveDomNodesToDomsTable(projectId: string, domTree: DomNode): Pro
         projectId,
         id: node.id, // 不变的节点UUID
         parentId,
-        type: node.componentType,
         attributes: {
           expanded: node.expanded,
           hidden: node.hidden,
-          ...safeAttributes
+          ...safeAttributes,
+          type: node.componentType,
+          textContent: node.textContent || ''
         },
         style: safeStyles,
-        textContent: node.textContent || '',
         order
       });
 

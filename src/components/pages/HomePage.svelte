@@ -125,6 +125,7 @@
                         id: 'root',
                         projectId: id,
                         componentType: 'SimpleBox',
+                        attributes: { type: 'SimpleBox' },
                         props: {},
                         style: {
                             width: '100%',
@@ -151,6 +152,7 @@
                 id: 'root',
                 projectId: id,
                 componentType: 'SimpleBox',
+                attributes: { type: 'SimpleBox' },
                 props: {},
                 style: {
                     width: '100%',
