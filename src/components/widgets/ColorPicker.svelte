@@ -516,11 +516,7 @@
         if (typeof bgImage === 'string' && bgImage.includes('gradient')) {
             const gradientColors = bgImage.match(/(rgba?\([^\)]+\)|#(?:[\da-fA-F]{3}){1,2}|#[\da-fA-F]{8})/g)
             if (gradientColors) {
-                acc.push(
-                    ...gradientColors.filter(
-                        (c) => c && c !== 'transparent' && c !== 'rgba(0, 0, 0, 0)'
-                    )
-                )
+                acc.push(...gradientColors.filter((c) => c && c !== 'transparent' && c !== 'rgba(0, 0, 0, 0)'))
             }
         }
 
