@@ -2,11 +2,13 @@
     {
         "type": "SimpleBox",
         "nameZh": "简单盒子",
-        "path": "../Core/SimpleBox.svelte"
+        "path": "../Core/SimpleBox.svelte",
+        "showFeatureTab": false
     },
     {
         "type": "RealTimeClock",
         "nameZh": "实时时间",
-        "path": "../blocks/RealTimeClock.svelte"
+        "path": "../blocks/RealTimeClock.svelte",
+        "showFeatureTab": true
     }
 ]

@@ -21,6 +21,7 @@
     import DomTreeList from '../widgets/DomTreeList.svelte'
     import PropertyPanel from '../widgets/property-panel/PropertyPanel.svelte'
     import Icon from '../widgets/Icon.svelte'
+    import blocksConfig from '../blocks/blocks.config.json' assert { type: 'json' }
     import { applyLogConfig } from '../../services/utils/log-switch'
 
     // 引入 DOM 树集中式状态管理
@@ -41,6 +42,38 @@
         { key: 'border', icon: 'SquareDashed', title: '边框样式' },
         { key: 'event', icon: 'Workflow', title: '事件处理' }
     ] as const
+
+    // 根据组件类型判断是否展示特性页签
+    const blocksMap = new Map(blocksConfig.map((b: any) => [b.type, b]))
+
+    function isFeatureTabEnabledForType(type?: string) {
+        if (!type) return false
+        const cfg = blocksMap.get(type)
+        return cfg?.showFeatureTab === true
+    }
+
+    // 根据当前选中节点类型，决定是否展示特性页签
+    let showFeatureTab = $derived.by(() => {
+        const currentSelectedId = selectedId()
+        if (!currentSelectedId) return false
+
+        const findNode = (node: any): any => {
+            if (node.id === currentSelectedId) return node
+            if (node.children) {
+                for (const child of node.children) {
+                    const found = findNode(child)
+                    if (found) return found
+                }
+            }
+            return null
+        }
+        const selectedNode = findNode(domTree)
+        const type = (selectedNode?.componentType) || (selectedNode?.type)
+        return isFeatureTabEnabledForType(type)
+    })
+
+    // 可见标签数组
+    let visibleTabs = $derived.by(() => tabs.filter((t) => t.key !== 'feature' || showFeatureTab))
 
     // 根据选中节点的 activePropertyTab 动态设置 activeTab
     let activeTab: 'attr' | 'feature' | 'position' | 'layout' | 'background' | 'text' | 'border' | 'event' = $derived.by(() => {
@@ -469,7 +502,7 @@
                     class="prop-tabbar"
                     style="width: 12%;height: 100%;display: flex;flex-direction: column;align-items: center;justify-content: flex-start;padding-top: calc(12px * var(--scale-ratio, 1));gap: calc(8px * var(--scale-ratio, 1));pointer-events: auto;background: rgba(30, 41, 59, 0.95);"
                 >
-                    {#each tabs as t}
+                    {#each visibleTabs as t}
                         <button class:active={activeTab === t.key} onclick={() => setTab(t.key)} title={t.title}>
                             <Icon name={t.icon} size={16} style="width: calc(16px * var(--scale-ratio, 1)); height: calc(16px * var(--scale-ratio, 1))" />
                         </button>
