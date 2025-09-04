@@ -33,6 +33,7 @@
     // 属性面板标签控制
     const tabs = [
         { key: 'attr', icon: 'Sliders', title: '主要属性' },
+        { key: 'feature', icon: 'Puzzle', title: '特性设置' },
         { key: 'position', icon: 'Move', title: '定位样式' },
         { key: 'layout', icon: 'Layout', title: '布局样式' },
         { key: 'background', icon: 'Image', title: '背景样式' },
@@ -42,7 +43,7 @@
     ] as const
 
     // 根据选中节点的 activePropertyTab 动态设置 activeTab
-    let activeTab: 'attr' | 'position' | 'layout' | 'background' | 'text' | 'border' | 'event' = $derived.by(() => {
+    let activeTab: 'attr' | 'feature' | 'position' | 'layout' | 'background' | 'text' | 'border' | 'event' = $derived.by(() => {
         const currentSelectedId = selectedId()
 
         if (!currentSelectedId) return 'attr'
@@ -67,7 +68,7 @@
             const tabValue = selectedNode.attributes.activePropertyTab
             if (tabValue === 'style') return 'position'
             if (tabs.some((t) => t.key === tabValue)) {
-                return tabValue as 'attr' | 'position' | 'background' | 'border' | 'event'
+                return tabValue as 'attr' | 'feature' | 'position' | 'background' | 'border' | 'event'
             }
         }
         return 'attr'
@@ -513,4 +514,3 @@
         background: rgba(255, 255, 255, 0.28);
     }
 </style>
-

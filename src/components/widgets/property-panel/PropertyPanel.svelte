@@ -14,6 +14,7 @@
     import TextEditor from './TextEditor.svelte'
     import LayoutEditor from './LayoutEditor.svelte'
     import EventEditor from './EventEditor.svelte'
+    import FeatureEditor from './FeatureEditor.svelte'
     import { selectedId as getSelectedId } from '../../../services/repository/dom-tree.store.svelte'
 
     // Runes props - 使用 $props 代替 export let
@@ -23,9 +24,9 @@
         showToolbar = true,
         onTabChange
     } = $props<{
-        activeTab?: 'attr' | 'position' | 'background' | 'border' | 'text' | 'layout' | 'event'
+        activeTab?: 'attr' | 'feature' | 'position' | 'background' | 'border' | 'text' | 'layout' | 'event'
         showToolbar?: boolean
-        onTabChange?: (tab: 'attr' | 'position' | 'background' | 'border' | 'text' | 'layout' | 'event') => void
+        onTabChange?: (tab: 'attr' | 'feature' | 'position' | 'background' | 'border' | 'text' | 'layout' | 'event') => void
     }>()
 
     // 当前选中节点 id，响应式刷新
@@ -37,6 +38,8 @@
     <div class="body">
         {#if activeTab === 'attr'}
             <AttrEditor selectedId={currentId} />
+        {:else if activeTab === 'feature'}
+            <FeatureEditor selectedId={currentId} />
         {:else if activeTab === 'position'}
             <PositionEditor selectedId={currentId} />
         {:else if activeTab === 'layout'}

@@ -110,6 +110,7 @@
         GalleryHorizontal: () => import('@lucide/svelte/icons/gallery-horizontal'),
         Layout: () => import('@lucide/svelte/icons/layout'),
         Type: () => import('@lucide/svelte/icons/type'),
+        Puzzle: () => import('@lucide/svelte/icons/puzzle'),
         Workflow: () => import('@lucide/svelte/icons/workflow')
     }
 
