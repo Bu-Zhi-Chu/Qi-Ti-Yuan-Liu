@@ -68,7 +68,7 @@
             return null
         }
         const selectedNode = findNode(domTree)
-        const type = (selectedNode?.componentType) || (selectedNode?.type)
+        const type = selectedNode?.componentType || selectedNode?.type
         return isFeatureTabEnabledForType(type)
     })
 

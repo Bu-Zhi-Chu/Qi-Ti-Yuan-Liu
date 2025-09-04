@@ -32,14 +32,13 @@
     import { SvelteDate } from 'svelte/reactivity'
 
     interface Props {
-        format?: 'datetime' | 'datetime-weekday'
-        displayMode?: 'single-line' | 'multi-line'
+        displayType?: 'datetime' | 'date' | 'time' | 'weekday' | 'year' | 'month' | 'day'
         style?: string
         'data-id'?: string
         [key: string]: any // 支持任意属性和事件处理器的传递
     }
 
-    let { format = 'datetime', displayMode = 'single-line', style = '', 'data-id': dataId = '', ...restProps }: Props = $props()
+    let { displayType = 'datetime', style = '', 'data-id': dataId = '', ...restProps }: Props = $props()
 
     // 使用 Svelte 5 的响应式日期对象
     let currentTime = new SvelteDate()
@@ -48,17 +47,11 @@
     const weekdays = ['日', '一', '二', '三', '四', '五', '六']
 
     // 格式化日期部分
-    const formatDatePart = (date: Date, formatType: string): string => {
+    const formatDatePart = (date: Date): string => {
         const year = date.getFullYear()
         const month = String(date.getMonth() + 1).padStart(2, '0')
         const day = String(date.getDate()).padStart(2, '0')
-
-        if (formatType === 'datetime-weekday') {
-            const weekday = weekdays[date.getDay()]
-            return `${year}-${month}-${day} 星期${weekday}`
-        } else {
-            return `${year}-${month}-${day}`
-        }
+        return `${year}-${month}-${day}`
     }
 
     // 格式化时间部分
@@ -70,9 +63,24 @@
     }
 
     // 派生计算格式化后的时间
-    let datePart = $derived(formatDatePart(currentTime, format))
-    let timePart = $derived(formatTimePart(currentTime))
-    let singleLineTime = $derived(`${datePart} ${timePart}`)
+    let displayValue = $derived(() => {
+        switch (displayType) {
+            case 'date':
+                return formatDatePart(currentTime)
+            case 'time':
+                return formatTimePart(currentTime)
+            case 'weekday':
+                return `星期${weekdays[currentTime.getDay()]}`
+            case 'year':
+                return String(currentTime.getFullYear())
+            case 'month':
+                return String(currentTime.getMonth() + 1).padStart(2, '0')
+            case 'day':
+                return String(currentTime.getDate()).padStart(2, '0')
+            default:
+                return `${formatDatePart(currentTime)} ${formatTimePart(currentTime)}`
+        }
+    })
 
     // 使用 SvelteDate 的响应式特性，定时更新
     $effect(() => {
@@ -88,11 +96,8 @@
 </script>
 
 <ResponsiveBox {style} data-id={dataId} {...restProps}>
-    {#if displayMode === 'single-line'}
-        {singleLineTime}
-    {:else}
-        {datePart}
-        <br />
-        {timePart}
-    {/if}
+    <!-- 绝对定位全尺寸包裹，确保时间文本居中且不受 ResponsiveBox 内部 padding 影响 -->
+    <div style="position:absolute;inset:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;pointer-events:none;">
+        {displayValue()}
+    </div>
 </ResponsiveBox>
