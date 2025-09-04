@@ -32,7 +32,7 @@
     import { SvelteDate } from 'svelte/reactivity'
 
     interface Props {
-        displayType?: 'datetime' | 'date' | 'time' | 'weekday' | 'year' | 'month' | 'day'
+        displayType?: 'datetime' | 'date' | 'time' | 'year' | 'month' | 'weekday' | 'day'
         style?: string
         'data-id'?: string
         [key: string]: any // 支持任意属性和事件处理器的传递
