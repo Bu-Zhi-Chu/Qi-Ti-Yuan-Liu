@@ -505,6 +505,12 @@
 
         acc.push(...borderColors)
 
+        // 收集文字颜色
+        const textColor = styles.color
+        if (textColor && textColor !== 'transparent' && textColor !== 'rgba(0, 0, 0, 0)') {
+            acc.push(textColor)
+        }
+
         if (Array.isArray(node?.children)) {
             for (const child of node.children) {
                 getColorsFromDomTree(child, acc)
@@ -701,21 +707,6 @@
                                     title={color}
                                     aria-label={`选择颜色 ${color}`}
                                 ></button>
-                                <button
-                                    type="button"
-                                    class="delete-color-btn"
-                                    onclick={async (e) => {
-                                        e.stopPropagation()
-                                        if (projectId) {
-                                            await ColorPaletteService.deleteColor(projectId, color)
-                                            loadColorPalette()
-                                        }
-                                    }}
-                                    title={`删除颜色 ${color}`}
-                                    aria-label={`删除颜色 ${color}`}
-                                >
-                                    <Icon name="X" size={12} />
-                                </button>
                             </div>
                         {/each}
                     </div>
@@ -1007,33 +998,5 @@
 
     .palette-color:active {
         transform: scale(0.9);
-    }
-
-    .delete-color-btn {
-        position: absolute;
-        top: calc(-6px * var(--scale-ratio, 1));
-        right: calc(-6px * var(--scale-ratio, 1));
-        width: calc(16px * var(--scale-ratio, 1));
-        height: calc(16px * var(--scale-ratio, 1));
-        background: #ef4444;
-        color: white;
-        border: none;
-        border-radius: 50%;
-        cursor: pointer;
-        opacity: 0;
-        transition: all 0.2s ease;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 10;
-    }
-
-    .palette-color-wrapper:hover .delete-color-btn {
-        opacity: 1;
-    }
-
-    .delete-color-btn:hover {
-        background: #dc2626;
-        transform: scale(1.2);
     }
 </style>
