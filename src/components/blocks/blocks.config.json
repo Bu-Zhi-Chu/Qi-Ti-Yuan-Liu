@@ -10,6 +10,7 @@
         "nameZh": "实时时间",
         "path": "../blocks/RealTimeClock.svelte",
         "showFeatureTab": true,
+        "hideTextContent": true,
         "featureProps": {
             "displayType": {
                 "label": "显示模式",

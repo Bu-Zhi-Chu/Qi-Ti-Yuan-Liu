@@ -33,12 +33,27 @@
     import PropertyRow from './PropertyRow.svelte'
     import PropertySelect from './PropertySelect.svelte'
     import SizeInput from './SizeInput.svelte'
+    import blocksConfig from '../../blocks/blocks.config.json' assert { type: 'json' }
 
     interface Props {
         selectedId: string | null
     }
 
     let { selectedId }: Props = $props()
+
+    // 解析 blocksConfig，用于判断是否隐藏文本内容
+    const blocksMap = new Map((blocksConfig as any[]).map((b: any) => [b.type, b]))
+    function isTextContentVisible(type?: string) {
+        if (!type) return true
+        const cfg = blocksMap.get(type)
+        return cfg?.hideTextContent !== true
+    }
+    let showTextContent = $derived.by(() => {
+        if (!selectedId) return false
+        const node = getFullNode(selectedId)
+        const type = node?.componentType || node?.type
+        return isTextContentVisible(type)
+    })
 
     // 文字样式状态
     let textContent = $state('')
@@ -430,6 +445,7 @@
         <h3>文字样式</h3>
         <div class="text-list">
             <!-- 文本内容输入 - 放在第一个位置 -->
+            {#if showTextContent}
             <PropertyRow label="文本内容">
                 <textarea
                     id="text-content"
@@ -443,6 +459,7 @@
                     style="resize: vertical; min-height: calc(60px * var(--scale-ratio, 1));"
                 ></textarea>
             </PropertyRow>
+            {/if}
 
             <PropertyRow label="文本字体">
                 <PropertySelect

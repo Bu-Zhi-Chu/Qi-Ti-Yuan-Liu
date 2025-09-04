@@ -63,6 +63,26 @@
             updateNodeProps(selectedId, { attributes: { [key]: value } })
         }
     }
+
+    // 当选中节点切换或 propEntries 更新时，若某些特性属性未设置，则赋默认值（取 options 第一个值）
+    $effect(() => {
+        if (!selectedId) return
+        const entries = propEntries()
+        if (!entries.length) return
+        const updates: Record<string, any> = {}
+        for (const p of entries) {
+            if ((currentValues as any)[p.key] === undefined) {
+                if (p.type === 'select' && p.options?.length) {
+                    updates[p.key] = p.options[0].value
+                }
+                // 未来可在此扩展其他类型默认值
+            }
+        }
+        if (Object.keys(updates).length) {
+            currentValues = { ...currentValues, ...updates }
+            updateNodeProps(selectedId, { attributes: updates })
+        }
+    })
 </script>
 
 {#if propEntries().length}
