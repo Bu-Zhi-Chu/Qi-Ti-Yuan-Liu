@@ -154,10 +154,6 @@ export default class DexieService {
     static async getRecord<T>(dbName: string, tableName: string, key: any): Promise<T | undefined> {
         // DatabaseLogger.gettingRecord(dbName, tableName, key)
         const db = await DexieService.getDatabase(dbName)
-        if (!db) {
-            // DatabaseLogger.operationError(`获取数据库实例失败: ${dbName}`, new Error('db is null'))
-            return undefined
-        }
         const result = await db.table(tableName).get(key)
         // DatabaseLogger.recordFound(!!result)
         return result
@@ -225,34 +221,18 @@ export default class DexieService {
 
     /**
      * 获取数据库实例（单例模式）
+     * 注意：使用此方法前必须确保数据库已创建
      */
-    static async getDatabase(dbName: string): Promise<Dexie | null> {
-        try {
-            // 如果已缓存，直接返回
-            if (DexieService.dbInstanceCache.has(dbName)) {
-                return DexieService.dbInstanceCache.get(dbName)!
-            }
-
-            // 创建新的数据库实例
+    static async getDatabase(dbName: string): Promise<Dexie> {
+        if (DexieService.dbInstanceCache.has(dbName)) {
+            // 有缓存，直接返回
+            return DexieService.dbInstanceCache.get(dbName)!
+        } else {
+            // 无缓存，创建并缓存后返回
             const db = new Dexie(dbName)
-
-            // 定义表结构（与createDatabase保持一致）
-            const stores: Record<string, string> = {
-                projects: 'id, name, templateId, createdAt, updatedAt, canvasState, mode, exportTime, designWidth, designHeight',
-                doms: '[projectId+id], projectId, parentId, attributes, style',
-                templates: '++id, name, desc, cover, tag, thumbnailUrl, domStructure',
-                config: '++id, showLogs'
-            }
-
-            db.version(1).stores(stores)
             await db.open()
-
-            // 缓存实例
             DexieService.dbInstanceCache.set(dbName, db)
-
             return db
-        } catch (error) {
-            return null
         }
     }
 }
