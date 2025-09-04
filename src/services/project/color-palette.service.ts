@@ -46,53 +46,9 @@ export default class ColorPaletteService {
         }
     }
 
-    /**
-     * 兼容旧逻辑获取颜色卡（已废弃，改用 getComponentColors）
-     * 为防止外部遗留调用，这里直接调用 getComponentColors 返回去重结果。
-     */
-    static async getColorPalette(projectId: string): Promise<ColorPaletteItem[]> {
-        const colors = await ColorPaletteService.getComponentColors(projectId)
-        return colors.map(c => ({ projectId, componentId: '', color: c, updatedAt: new Date() }))
-    }
 
-    /**
-     * 获取指定项目的所有颜色历史（用于ColorPicker的颜色卡）
-     * 查询时只用项目ID，查出多少个记录就是多少个色卡
-     */
-    // 从 doms 表中统计项目的所有背景颜色并去重，替代原 colorPalette 表。
-    static async getComponentColors(projectId: string, forceRefresh = false): Promise<string[]> {
-        // 优先返回缓存结果，保持与写入频率一致
-        if (!forceRefresh && ColorPaletteService.componentColorCache.has(projectId)) {
-            return ColorPaletteService.componentColorCache.get(projectId)!
-        }
-        console.log(`【数据库交互】获取项目全部色卡值: 项目ID=${projectId}`)
-        try {
-            // 检查数据库是否存在
-            const dbExists = await DexieService.databaseExists(DEFAULT_DB_NAME)
-            if (!dbExists) {
-                console.warn('【数据库交互】数据库不存在，无法获取颜色卡')
-                return []
-            }
 
-            const db = await DexieService.getDatabase(DEFAULT_DB_NAME)
-            if (!db) return []
 
-            const nodes = await db.table('doms')
-                .where('projectId')
-                .equals(projectId)
-                .toArray()
-
-            // 提取背景色，过滤透明色与空值
-            const colors = nodes
-                .map((n: any) => n.styles?.backgroundColor as string)
-                .filter((c: string) => !!c && c !== 'rgba(0, 0, 0, 0)' && c !== 'transparent')
-            ColorPaletteService.componentColorCache.set(projectId, colors)
-            return colors
-        } catch (error) {
-            console.error('【数据库交互】获取项目颜色卡失败:', error)
-            return []
-        }
-    }
 
     /**
      * 从doms表获取指定节点的当前颜色值

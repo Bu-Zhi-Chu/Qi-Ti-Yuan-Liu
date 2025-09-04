@@ -511,6 +511,19 @@
             acc.push(textColor)
         }
 
+        // 收集背景渐变颜色
+        const bgImage = styles.backgroundImage
+        if (typeof bgImage === 'string' && bgImage.includes('gradient')) {
+            const gradientColors = bgImage.match(/(rgba?\([^\)]+\)|#(?:[\da-fA-F]{3}){1,2}|#[\da-fA-F]{8})/g)
+            if (gradientColors) {
+                acc.push(
+                    ...gradientColors.filter(
+                        (c) => c && c !== 'transparent' && c !== 'rgba(0, 0, 0, 0)'
+                    )
+                )
+            }
+        }
+
         if (Array.isArray(node?.children)) {
             for (const child of node.children) {
                 getColorsFromDomTree(child, acc)
