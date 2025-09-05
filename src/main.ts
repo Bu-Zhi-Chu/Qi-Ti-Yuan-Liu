@@ -111,20 +111,6 @@ let app: ReturnType<typeof mount> | undefined // 提前声明，供导出使用
                             await db.table('projects').clear()
                             await db.table('doms').clear()
 
-                            // 清理localStorage和sessionStorage中的相关数据
-                            const keysToRemove = [
-                                'qi-qiao-ban-data',
-                                'qi-qiao-ban-cache',
-                                'pwa-cache',
-                                'offline-data'
-                            ]
-                            keysToRemove.forEach(key => {
-                                localStorage.removeItem(key)
-                                sessionStorage.removeItem(key)
-                            })
-                            console.log('【缓存清理】本地存储数据已清理')
-
-                            // 使用dexie-export-import的importInto导入标准格式数据
                             console.log('【数据库交互】使用dexie-export-import导入数据')
 
                             // 将JSON数据转换为Blob，然后使用importInto导入
@@ -132,32 +118,31 @@ let app: ReturnType<typeof mount> | undefined // 提前声明，供导出使用
                             const blob = new Blob([jsonString], { type: 'application/json' })
                             await importInto(db, blob, { overwriteValues: true })
 
-                            // 导入完成后，按照当前环境写入日志配置，确保精简模式需默认遵循环境规则
-                            await db.table('config').clear()
-                            // 新增：数据库无日志配置时写入默认关闭并立即应用
-                            // 强制写入日志关闭并立即应用
-                            await db.table('config').put({ showLogs: false })
-                            applyLogConfig(false)
 
                             console.log('【数据库交互】dexie-export-import导入完成')
                         } else {
                             console.log(`【数据库交互】跳过导入 - JSON时间: ${jsonExportTime}, 数据库时间: ${dbExportTime || '无'}`)
-                            // 新增：数据库无日志配置时写入默认关闭并立即应用
-                            if ((await db.table('config').count()) === 0) {
-                                await db.table('config').put({ showLogs: false })
-                                applyLogConfig(false)
-                            }
+
                         }
+
+
+                        // 导入完成后，按照当前环境写入日志配置，确保精简模式需默认遵循环境规则
+                        await db.table('config').clear()
+                        // 新增：数据库无日志配置时写入默认关闭并立即应用
+                        // 强制写入日志关闭并立即应用
+                        await db.table('config').put({ showLogs: false })
+                        applyLogConfig(false)
+
 
                         // 验证导入的数据
                         const finalProjectCount = await db.table('projects').count()
                         const finalDomCount = await db.table('doms').count()
-                        console.log(`【数据库交互】精简模式：导入完成 - 项目: ${finalProjectCount}个, DOM节点: ${finalDomCount}个`)
+                        console.log(`【数据库交互】精简模式：验证完成 - 项目: ${finalProjectCount}个, DOM节点: ${finalDomCount}个`)
                     } else {
                         throw new Error('无法获取数据库实例')
                     }
 
-                    console.log('【数据库交互】精简模式：数据库导入成功')
+
                 } catch (error) {
                     console.error('【数据库交互】精简模式：数据库导入失败', error)
                     // 导入失败时不创建空数据库，让应用继续运行
