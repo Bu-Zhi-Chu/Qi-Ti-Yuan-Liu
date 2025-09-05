@@ -8,8 +8,8 @@ import { isLiteMode } from './services/env/environment.service'
 import { importInto } from 'dexie-export-import'
 import { applyLogConfig } from './services/utils/log-switch'
 
-// 初始关闭日志（待数据库配置决定是否开启）
-applyLogConfig(false)
+// 根据环境初始化日志：开发环境默认开启，其余环境默认关闭
+applyLogConfig(import.meta.env.DEV === true)
 
 // 控制台日志始终开启，便于调试和监控
 
@@ -54,7 +54,7 @@ let app: ReturnType<typeof mount> | undefined // 提前声明，供导出使用
                         // 读取并应用日志配置
                         try {
                             const cfgRecord = (await db.table('config').toArray())[0]
-                            applyLogConfig(cfgRecord?.showLogs === true)
+                            applyLogConfig(cfgRecord ? (cfgRecord.showLogs ?? cfgRecord.value) === true : import.meta.env.DEV === true)
                         } catch { }
                         // 获取数据库中最新项目的导出时间
                         let dbExportTime: string | null = null
@@ -172,7 +172,7 @@ let app: ReturnType<typeof mount> | undefined // 提前声明，供导出使用
                     const db = await DexieService.getDatabase('qi-qiao-ban')
                     if (db) {
                         const cfgRecord = (await db.table('config').toArray())[0]
-                        applyLogConfig(cfgRecord?.showLogs === true)
+                        applyLogConfig(cfgRecord ? (cfgRecord.showLogs ?? cfgRecord.value) === true : import.meta.env.DEV === true)
                     }
                 } catch { }
             }

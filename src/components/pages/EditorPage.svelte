@@ -331,9 +331,11 @@
 
 <!-- 背景 -->
 <div style="width: 100%;height: 100%;position: absolute;background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);z-index: 0;overflow: hidden;">
-    <!-- 画布包裹元素，承担缩放与定位 -->
-    <!-- @ts-ignore: props typing still WIP -->
-    <DomCanvas editing={showWorkspace} />
+    {#if $projectId}
+        <!-- 画布包裹元素，承担缩放与定位 -->
+        <!-- @ts-ignore: props typing still WIP -->
+        <DomCanvas editing={showWorkspace} />
+    {/if}
 </div>
 
 <!-- 工作区 -->
