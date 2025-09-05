@@ -25,7 +25,7 @@
     import { applyLogConfig } from '../../services/utils/log-switch'
 
     // 引入 DOM 树集中式状态管理
-    import { domTree, selectedId, removeNodeById, setProjectId } from '../../services/repository/dom-tree.store.svelte'
+    import { domTree, selectedId, removeNodeById, projectId } from '../../services/repository/dom-tree.store.svelte'
     import DexieService from '../../services/database/dexie-service'
     import StatusBar from '../widgets/StatusBar.svelte'
     // 是否显示工作区，默认显示工作区
@@ -130,6 +130,20 @@
     let unregisterDelKey: () => void = () => {}
 
     onMount(async () => {
+        // 初始化项目ID（兼容精简/路由两种场景）
+        if (isLiteMode()) {
+            try {
+                const projects = await DexieService.getAllRecords('qi-qiao-ban', 'projects')
+                const id = (projects?.[0] as any)?.id as string | undefined
+                if (id) projectId.set(id)
+            } catch (e) {
+                console.warn('获取项目ID失败', e)
+            }
+        } else {
+            const id = window.location.hash.split('/').pop()
+            if (id) projectId.set(id)
+        }
+
         // 初始化项目模式
         await initializeProjectMode()
 
@@ -263,35 +277,16 @@
     // 初始化项目模式
     // 更新项目模式
 
-    // 缓存项目ID，避免重复查询
-    let cachedProjectId: string | undefined
-    async function getProjectId(): Promise<string | undefined> {
-        if (cachedProjectId !== undefined) return cachedProjectId
-        if (isLiteMode()) {
-            try {
-                const projects = await DexieService.getAllRecords('qi-qiao-ban', 'projects')
-                cachedProjectId = (projects?.[0] as any)?.id as string | undefined
-            } catch (e) {
-                console.warn('获取项目ID失败', e)
-            }
-        } else {
-            cachedProjectId = window.location.hash.split('/').pop()
-        }
-        // 将准确的项目ID设置到全局store，供其他组件使用
-        if (cachedProjectId) {
-            setProjectId(cachedProjectId)
-        }
-        return cachedProjectId
-    }
+    // 计算当前项目ID（同步读取 store）
+    let currentProjectId = $derived($projectId)
 
     async function initializeProjectMode() {
-        const projectId = await getProjectId()
-        if (!projectId) {
+        if (!currentProjectId) {
             console.warn('无法获取项目ID')
             return
         }
         try {
-            const project = await DexieService.getRecord<any>('qi-qiao-ban', 'projects', projectId)
+            const project = await DexieService.getRecord<any>('qi-qiao-ban', 'projects', currentProjectId)
             if (project && project.mode) {
                 showWorkspace = project.mode === 'editing'
                 console.log(`项目模式已初始化为: ${project.mode}`)
@@ -309,11 +304,10 @@
     }
 
     async function updateProjectMode() {
-        const projectId = await getProjectId()
-        if (!projectId) return
+        if (!currentProjectId) return
         const newMode = showWorkspace ? 'editing' : 'normal'
         try {
-            const success = await DexieService.updateRecord('qi-qiao-ban', 'projects', projectId, { mode: newMode })
+            const success = await DexieService.updateRecord('qi-qiao-ban', 'projects', currentProjectId, { mode: newMode })
             if (success) {
                 console.log(`项目模式已更新为: ${newMode}`)
             }
@@ -379,8 +373,7 @@
 
                             // 获取项目ID
 
-                            const projectId = await getProjectId()
-                            if (!projectId) {
+                            if (!currentProjectId) {
                                 throw new Error('无法获取项目ID')
                             }
 
@@ -405,7 +398,7 @@
                                 minify: true
                             }
 
-                            const projectBlob = await liteExportService.exportLiteData(projectId)
+                            const projectBlob = await liteExportService.exportLiteData(currentProjectId)
                             console.log('导出的项目Blob大小:', projectBlob.size)
                             buildOptions.liteData = {
                                 projectBlob,
