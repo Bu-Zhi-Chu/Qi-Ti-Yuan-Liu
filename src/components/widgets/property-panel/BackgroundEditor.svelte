@@ -15,6 +15,7 @@
 -->
 <script lang="ts">
     import { onDestroy } from 'svelte'
+    import { get } from 'svelte/store'
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     import { getNodePropsStore, getNodeProps as _getNodeProps, updateNodeProps, getFullNode } from '../../../services/property-panel/property-panel.service'
     import { getElementByNodeId } from '../../../services/utils/dom-geometry.util'
@@ -563,10 +564,10 @@
                 await syncBackgroundToThumbnail()
             } else if (!currIsRealImage && prevIsRealImage) {
                 // 图片被清空，恢复默认缩略图
-                const projectId = getRouteProjectId()
-                if (projectId) {
-                    await ProjectThumbnailService.createDefaultThumbnail(projectId)
-                }
+            const currentProjectId = get(projectId)
+            if (currentProjectId) {
+                await ProjectThumbnailService.createDefaultThumbnail(currentProjectId)
+            }
             }
         }
 
@@ -578,35 +579,25 @@
     async function syncBackgroundToThumbnail() {
         try {
             // 获取当前项目ID
-            const projectId = getRouteProjectId()
-            if (!projectId) {
-                console.warn('无法获取项目ID，无法同步缩略图')
-                return
-            }
+    const currentProjectId = get(projectId)
+    if (!currentProjectId) {
+        console.warn('无法获取项目ID，无法同步缩略图')
+        return
+    }
 
             // 同步背景图片到项目缩略图
             if (backgroundImage) {
-                await ProjectThumbnailService.syncBackgroundToThumbnail(projectId, backgroundImage)
+                await ProjectThumbnailService.syncBackgroundToThumbnail(currentProjectId, backgroundImage)
             } else {
                 // 没有背景图片时重置为默认缩略图
-                await ProjectThumbnailService.createDefaultThumbnail(projectId)
+                await ProjectThumbnailService.createDefaultThumbnail(currentProjectId)
             }
         } catch (error) {
             console.error('同步项目缩略图失败:', error)
         }
     }
 
-    // 从路由获取项目ID
-    function getRouteProjectId(): string | null {
-        let match = window.location.hash.match(/\/editor\/([^\/]+)/)
-        if (!match) {
-            match = window.location.pathname.match(/\/editor\/([^\/]+)/)
-        }
-        if (!match) {
-            match = window.location.pathname.match(/\/search\/editor\/([^\/]+)/)
-        }
-        return match ? match[1] : null
-    }
+
 
     // 清除背景图片
     async function clearBackgroundImage() {
@@ -992,7 +983,7 @@
             <PropertyRow label="背景颜色">
                 <ColorPicker
                     value={hexToRgba(backgroundColor, backgroundOpacity)}
-                    projectId={projectId()}
+                    projectId={$projectId}
                     componentId={selectedId || 'default'}
                     onchange={(rgba: string) => {
                         const parsed = parseRgba(rgba)
@@ -1028,7 +1019,7 @@
                     <PropertyRow label="渐变颜色">
                         <ColorPicker
                             value={hexToRgba(gradientColors[1]?.color || '#ffffff', gradientColors[1]?.opacity || 1)}
-                            projectId={projectId()}
+                            projectId={$projectId}
                             componentId={`${selectedId || 'default'}-gradient-1`}
                             onchange={(rgba: string) => {
                                 const parsed = parseRgba(rgba)

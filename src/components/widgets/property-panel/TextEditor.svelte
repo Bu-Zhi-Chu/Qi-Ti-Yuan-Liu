@@ -446,19 +446,19 @@
         <div class="text-list">
             <!-- 文本内容输入 - 放在第一个位置 -->
             {#if showTextContent}
-            <PropertyRow label="文本内容">
-                <textarea
-                    id="text-content"
-                    rows="3"
-                    bind:value={textContent}
-                    oninput={(e) => {
-                        textContent = (e.target as HTMLTextAreaElement).value
-                        updateTextStyles()
-                    }}
-                    placeholder="输入文本内容..."
-                    style="resize: vertical; min-height: calc(60px * var(--scale-ratio, 1));"
-                ></textarea>
-            </PropertyRow>
+                <PropertyRow label="文本内容">
+                    <textarea
+                        id="text-content"
+                        rows="3"
+                        bind:value={textContent}
+                        oninput={(e) => {
+                            textContent = (e.target as HTMLTextAreaElement).value
+                            updateTextStyles()
+                        }}
+                        placeholder="输入文本内容..."
+                        style="resize: vertical; min-height: calc(60px * var(--scale-ratio, 1));"
+                    ></textarea>
+                </PropertyRow>
             {/if}
 
             <PropertyRow label="文本字体">
@@ -507,7 +507,7 @@
                             updateTextStyles()
                         }
                     }}
-                    projectId={projectId()}
+                    projectId={$projectId}
                     componentId={selectedId || 'default'}
                 />
             </PropertyRow>

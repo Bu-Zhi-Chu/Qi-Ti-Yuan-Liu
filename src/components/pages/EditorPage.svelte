@@ -25,7 +25,7 @@
     import { applyLogConfig } from '../../services/utils/log-switch'
 
     // 引入 DOM 树集中式状态管理
-    import { domTree, selectedId, removeNodeById } from '../../services/repository/dom-tree.store.svelte'
+    import { domTree, selectedId, removeNodeById, setProjectId } from '../../services/repository/dom-tree.store.svelte'
     import DexieService from '../../services/database/dexie-service'
     import StatusBar from '../widgets/StatusBar.svelte'
     // 是否显示工作区，默认显示工作区
@@ -276,6 +276,10 @@
             }
         } else {
             cachedProjectId = window.location.hash.split('/').pop()
+        }
+        // 将准确的项目ID设置到全局store，供其他组件使用
+        if (cachedProjectId) {
+            setProjectId(cachedProjectId)
         }
         return cachedProjectId
     }

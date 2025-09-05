@@ -42,7 +42,7 @@
     let { editing = false } = $props<{ editing?: boolean }>()
 
     import { onMount } from 'svelte'
-    import { domTree, selectedId, setSelectedId, setProjectId, loadDomTreeFromDatabase } from '../../services/repository/dom-tree.store.svelte'
+    import { domTree, selectedId, setSelectedId, setProjectId, loadDomTreeFromDatabase, projectId } from '../../services/repository/dom-tree.store.svelte'
     import Dexie from 'dexie'
     import { isLiteMode } from '../../services/env/environment.service'
     // 顶部容器引用，用于渲染画布内容
@@ -57,11 +57,10 @@
     // 拖动状态
     let isDragging = $state(false)
 
-    // 项目ID - 从路由参数获取或默认
-    let projectId = $state('')
+    // 项目ID - 从store获取
+    let localProjectId = $state('')
     let isLoading = $state(true)
 
-    // 从URL获取项目ID或设置默认值
     onMount(() => {
         console.log('当前URL:', window.location.href)
         console.log('当前hash:', window.location.hash)
@@ -71,74 +70,35 @@
         // 立即执行加载逻辑
         loadProjectData()
 
-        // 监听路由变化（仅在非精简模式下）
-        const handleRouteChange = () => {
-            if (isLiteMode()) return
-
-            let newMatch = window.location.hash.match(/\/editor\/([^\/]+)/)
-            if (!newMatch) {
-                newMatch = window.location.pathname.match(/\/editor\/([^\/]+)/)
-            }
-            if (!newMatch) {
-                newMatch = window.location.pathname.match(/\/search\/editor\/([^\/]+)/)
-            }
-
-            if (newMatch && newMatch[1] !== projectId) {
-                projectId = newMatch[1]
-                console.log('检测到项目切换，新项目ID:', projectId)
+        // 监听store中项目ID的变化
+        const unsubscribe = projectId.subscribe((newProjectId) => {
+            if (newProjectId && newProjectId !== localProjectId) {
+                localProjectId = newProjectId
+                console.log('store中项目ID变化，重新加载项目数据:', localProjectId)
                 loadCanvasState()
             }
-        }
-
-        window.addEventListener('hashchange', handleRouteChange)
-        window.addEventListener('popstate', handleRouteChange)
+        })
 
         return () => {
-            window.removeEventListener('hashchange', handleRouteChange)
-            window.removeEventListener('popstate', handleRouteChange)
+            unsubscribe?.()
         }
     })
 
-    // 分离的异步函数处理项目数据加载
+    // 使用store中的项目ID，不再自己解析路由
     async function loadProjectData() {
-        // 精简模式下从数据库获取项目ID
-        if (isLiteMode()) {
-            try {
-                console.log('精简模式：从数据库获取项目ID')
-                const projects = await DexieService.getAllRecords('qi-qiao-ban', 'projects')
-                if (projects && projects.length > 0) {
-                    projectId = (projects[0] as any).id
-                    console.log('精简模式：获取到项目ID:', projectId)
-                    loadCanvasState()
-                } else {
-                    console.warn('精简模式：数据库中没有项目')
-                }
-            } catch (error) {
-                console.error('精简模式：获取项目ID失败', error)
-            }
+        const currentProjectId = $projectId
+        if (currentProjectId) {
+            localProjectId = currentProjectId
+            console.log('从store获取项目ID:', localProjectId)
+            loadCanvasState()
         } else {
-            // 非精简模式从URL获取项目ID
-            let match = window.location.hash.match(/\/editor\/([^\/]+)/)
-            if (!match) {
-                match = window.location.pathname.match(/\/editor\/([^\/]+)/)
-            }
-            if (!match) {
-                match = window.location.pathname.match(/\/search\/editor\/([^\/]+)/)
-            }
-
-            if (match) {
-                projectId = match[1]
-                console.log('提取到项目ID:', projectId)
-                loadCanvasState()
-            } else {
-                console.warn('未从URL中提取到项目ID，当前URL:', window.location.href)
-            }
+            console.warn('store中项目ID为空，等待EditorPage初始化...')
         }
     }
 
     // 从项目数据加载canvas状态
     async function loadCanvasState() {
-        if (!projectId) {
+        if (!localProjectId) {
             console.warn('项目ID为空，无法加载canvas状态')
             return
         }
@@ -147,17 +107,17 @@
         isLoading = true
 
         // 设置新项目ID（避免多余的清空步骤，减少数据库调用）
-        setProjectId(projectId)
+        setProjectId(localProjectId)
 
         try {
-            console.log('开始加载项目:', projectId)
+            console.log('开始加载项目:', localProjectId)
 
             // 立即加载domTree数据，确保数据是最新的
-            await loadDomTreeFromDatabase(projectId)
+            await loadDomTreeFromDatabase(localProjectId)
 
             // 恢复上次选中的节点
-            console.log(`【数据库交互】加载项目数据: 项目ID=${projectId}`)
-            const project = await DexieService.getRecord<any>('qi-qiao-ban', 'projects', projectId)
+            console.log(`【数据库交互】加载项目数据: 项目ID=${localProjectId}`)
+            const project = await DexieService.getRecord<any>('qi-qiao-ban', 'projects', localProjectId)
             console.log('加载到的项目数据:', project)
 
             // 恢复上次选中的节点ID
@@ -198,7 +158,7 @@
 
             // 数据完全加载完成后隐藏加载状态
             isLoading = false
-            console.log('项目加载完成:', projectId)
+            console.log('项目加载完成:', localProjectId)
         } catch (error) {
             console.error('加载canvas状态失败:', error)
             isLoading = false
@@ -207,15 +167,15 @@
 
     // 保存canvas状态到项目数据
     async function saveCanvasState() {
-        if (!projectId) {
+        if (!localProjectId) {
             console.warn('项目ID为空，无法保存canvas状态')
             return
         }
         try {
             const canvasState = { x: offsetX, y: offsetY, scale: scale }
-            console.log('准备保存canvas状态:', canvasState, '到项目:', projectId)
-            console.log(`【数据库交互】保存画布状态: 项目ID=${projectId}, 状态=${JSON.stringify(canvasState)}`)
-            const success = await DexieService.updateRecord('qi-qiao-ban', 'projects', projectId, {
+            console.log('准备保存canvas状态:', canvasState, '到项目:', localProjectId)
+            console.log(`【数据库交互】保存画布状态: 项目ID=${localProjectId}, 状态=${JSON.stringify(canvasState)}`)
+            const success = await DexieService.updateRecord('qi-qiao-ban', 'projects', localProjectId, {
                 canvasState,
                 updatedAt: Date.now()
             })
@@ -238,7 +198,7 @@
         const currentState = { x: offsetX, y: offsetY, scale: scale }
         const stateStr = JSON.stringify(currentState)
 
-        if (projectId && !isInitialLoad && stateStr !== lastSavedState) {
+        if ($projectId && !isInitialLoad && stateStr !== lastSavedState) {
             // 防抖保存，避免频繁更新
             const timeout = setTimeout(() => {
                 saveCanvasState()
@@ -250,7 +210,7 @@
 
     // 在项目加载完成后重置isInitialLoad标志
     $effect(() => {
-        if (isLoading === false && projectId) {
+        if (isLoading === false && $projectId) {
             // 延迟重置，确保所有初始状态都已应用
             const timeout = setTimeout(() => {
                 isInitialLoad = false
