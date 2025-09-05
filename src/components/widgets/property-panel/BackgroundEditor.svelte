@@ -29,6 +29,7 @@
     import PropertySelect from './PropertySelect.svelte'
     import SizeInput from './SizeInput.svelte'
     import Icon from '../Icon.svelte'
+    import { processImageUpload } from '../../../services/image/upload-image.service'
 
     // 工具函数：安全获取字符串值
     function getStringValue(value: string | Blob | undefined): string {
@@ -287,8 +288,6 @@
         // 渐变比例已经在前面处理过了
     }
 
-    // 旧 $: 块已由 $effect 订阅替换，避免重复初始化
-
     // RGB转十六进制
     function rgbToHex(r: number, g: number, b: number): string {
         return (
@@ -418,30 +417,6 @@
         }
     }
 
-    // 新增：将上传图片转换为 WebP Blob（默认质量 0.85）
-    async function convertToWebp(file: File, quality = 0.85): Promise<Blob> {
-        const bitmap = await createImageBitmap(file)
-        const canvas = document.createElement('canvas')
-        canvas.width = bitmap.width
-        canvas.height = bitmap.height
-        const ctx = canvas.getContext('2d')
-        if (!ctx) throw new Error('无法获取 Canvas 2D 上下文')
-        ctx.drawImage(bitmap, 0, 0)
-        return new Promise((resolve, reject) => {
-            canvas.toBlob(
-                (blob) => {
-                    if (blob) {
-                        resolve(blob)
-                    } else {
-                        reject(new Error('WebP 转换失败'))
-                    }
-                },
-                'image/webp',
-                quality
-            )
-        })
-    }
-
     // 处理图片上传
     async function handleImageUpload(event: Event) {
         // 如果已存在渐变颜色，上传图片前应先移除渐变
@@ -470,30 +445,11 @@
 
         try {
             // 直接存储 Blob 对象以实现跨会话持久化
-            let finalBlob: Blob = file
-            try {
-                const webpBlob = await convertToWebp(file, 0.85)
-                if (webpBlob.size < file.size) {
-                    finalBlob = webpBlob // 使用更小的 WebP 版本
-                }
-            } catch (e) {
-                console.warn('WebP 转换失败，使用原始文件', e)
-            }
-            backgroundImage = finalBlob
 
-            // 新增：读取图片自然尺寸
-            try {
-                const { width, height } = await new Promise<{ width: number; height: number }>((resolve, reject) => {
-                    const img = new Image()
-                    img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight })
-                    img.onerror = reject
-                    img.src = URL.createObjectURL(finalBlob)
-                })
-                imageSize = { width, height }
-            } catch (e) {
-                console.warn('获取图片尺寸失败', e)
-                imageSize = null
-            }
+            // 使用统一服务处理上传逻辑
+            const { blob: finalBlob, imageSize: size } = await processImageUpload(file, 0.85)
+            backgroundImage = finalBlob
+            imageSize = size
 
             // 拖拽上传处理
             await updateBackgroundStyles()
@@ -709,37 +665,6 @@
         return `rgba(0, 0, 0, ${opacity})`
     }
 
-    // 从DOM元素获取当前背景颜色值
-    function getCurrentBackgroundColor(): string {
-        if (!selectedId) {
-            return hexToRgba(backgroundColor, backgroundOpacity)
-        }
-
-        const el = getElementByNodeId(selectedId)
-        if (!el) {
-            return hexToRgba(backgroundColor, backgroundOpacity)
-        }
-
-        // 获取DOM元素的当前backgroundColor样式
-        const computedStyle = window.getComputedStyle(el)
-        const bgColor = computedStyle.backgroundColor
-
-        if (bgColor && bgColor !== 'rgba(0, 0, 0, 0)' && bgColor !== 'transparent') {
-            // 解析RGB/RGBA格式
-            const rgbaMatch = bgColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/i)
-            if (rgbaMatch) {
-                const r = parseInt(rgbaMatch[1])
-                const g = parseInt(rgbaMatch[2])
-                const b = parseInt(rgbaMatch[3])
-                const a = rgbaMatch[4] ? parseFloat(rgbaMatch[4]) : 1
-                return `rgba(${r}, ${g}, ${b}, ${a})`
-            }
-        }
-
-        // 如果没有有效的DOM颜色，使用状态变量
-        return hexToRgba(backgroundColor, backgroundOpacity)
-    }
-
     // 处理背景颜色变化
     function handleBackgroundColorChange(color: string, opacity: number) {
         backgroundColor = color
@@ -829,37 +754,6 @@
         }
     }
 
-    // 单位换算函数 - 背景位置
-    async function convertBackgroundPosition(val: number, from: 'px' | '%', to: 'px' | '%', axis: 'x' | 'y'): Promise<number> {
-        if (from === to) return val
-        if (!selectedId) return val
-
-        const el = getElementByNodeId(selectedId)
-        if (!el) return val
-
-        const elementSize = axis === 'x' ? el.offsetWidth : el.offsetHeight
-        if (elementSize === 0) return val
-
-        const displaySize = await getBackgroundDisplaySize()
-        const imageSize = axis === 'x' ? displaySize.width : displaySize.height
-
-        const sr = getScaleRatio()
-
-        if (from === 'px') {
-            // 设计px → % (需乘全局缩放比)
-            if (imageSize === 0) {
-                return ((val * sr) / elementSize) * 100
-            }
-            return ((val * sr) / (elementSize - imageSize)) * 100
-        } else {
-            // % → 设计px (需除全局缩放比)
-            if (imageSize === 0) {
-                return ((val / 100) * elementSize) / sr
-            }
-            return ((val / 100) * (elementSize - imageSize)) / sr
-        }
-    }
-
     // 同步版本 - 背景位置单位换算（供 SizeInput 使用）
     // 通过预先缓存的 displaySizeCache 达到与异步版本相同的精度
     function convertBackgroundPositionSync(val: number, from: 'px' | '%', to: 'px' | '%', axis: 'x' | 'y'): number {
@@ -898,47 +792,6 @@
         }
     }
 
-    // 单位切换函数 - 带数值换算
-    function toggleSizeUnitX() {
-        if (!selectedId) return
-        const numericVal = parseFloat(backgroundSizeX) || 0
-        const nextUnit: 'px' | '%' = sizeUnitX === '%' ? 'px' : '%'
-        const converted = convertBackgroundSize(numericVal, sizeUnitX, nextUnit, 'x')
-        backgroundSizeX = String(nextUnit === '%' ? Math.round(converted * 10) / 10 : Math.round(converted * 100) / 100)
-        sizeUnitX = nextUnit
-        updateBackgroundStyles()
-    }
-
-    function toggleSizeUnitY() {
-        if (!selectedId) return
-        const numericVal = parseFloat(backgroundSizeY) || 0
-        const nextUnit: 'px' | '%' = sizeUnitY === '%' ? 'px' : '%'
-        const converted = convertBackgroundSize(numericVal, sizeUnitY, nextUnit, 'y')
-        backgroundSizeY = String(nextUnit === '%' ? Math.round(converted * 10) / 10 : Math.round(converted * 100) / 100)
-        sizeUnitY = nextUnit
-        updateBackgroundStyles()
-    }
-
-    async function togglePositionUnitX() {
-        if (!selectedId) return
-        const numericVal = parseFloat(backgroundPositionX) || 0
-        const nextUnit: 'px' | '%' = positionUnitX === '%' ? 'px' : '%'
-        const converted = await convertBackgroundPosition(numericVal, positionUnitX, nextUnit, 'x')
-        backgroundPositionX = String(nextUnit === '%' ? Math.round(converted * 10) / 10 : Math.round(converted * 100) / 100)
-        positionUnitX = nextUnit
-        updateBackgroundStyles()
-    }
-
-    async function togglePositionUnitY() {
-        if (!selectedId) return
-        const numericVal = parseFloat(backgroundPositionY) || 0
-        const nextUnit: 'px' | '%' = positionUnitY === '%' ? 'px' : '%'
-        const converted = await convertBackgroundPosition(numericVal, positionUnitY, nextUnit, 'y')
-        backgroundPositionY = String(nextUnit === '%' ? Math.round(converted * 10) / 10 : Math.round(converted * 100) / 100)
-        positionUnitY = nextUnit
-        updateBackgroundStyles()
-    }
-
     // 清理Blob URL
     function cleanupBlobUrls() {
         if (!backgroundImage || typeof backgroundImage !== 'string') return
@@ -974,9 +827,6 @@
             const size = await getBackgroundDisplaySize()
             displaySizeCache = size
         })()
-    })
-    $effect(() => {
-        hasBackgroundImage = !!(backgroundImage && (backgroundImage instanceof Blob || (typeof backgroundImage === 'string' && backgroundImage.trim() && !backgroundImage.includes('gradient'))))
     })
 
     // 拖拽上传处理
