@@ -8,6 +8,7 @@ import { isLiteMode } from './services/env/environment.service'
 import { importInto } from 'dexie-export-import'
 import { applyLogConfig } from './services/utils/log-switch'
 
+(window as any).__WB_DISABLE_DEV_LOGS = true;
 // 根据环境初始化日志：开发环境默认开启，其余环境默认关闭
 applyLogConfig(import.meta.env.DEV === true)
 
@@ -133,11 +134,19 @@ let app: ReturnType<typeof mount> | undefined // 提前声明，供导出使用
 
                             // 导入完成后，按照当前环境写入日志配置，确保精简模式需默认遵循环境规则
                             await db.table('config').clear()
-                            await db.table('config').put({ showLogs: import.meta.env.DEV === true })
+                            // 新增：数据库无日志配置时写入默认关闭并立即应用
+                            // 强制写入日志关闭并立即应用
+                            await db.table('config').put({ showLogs: false })
+                            applyLogConfig(false)
 
                             console.log('【数据库交互】dexie-export-import导入完成')
                         } else {
                             console.log(`【数据库交互】跳过导入 - JSON时间: ${jsonExportTime}, 数据库时间: ${dbExportTime || '无'}`)
+                            // 新增：数据库无日志配置时写入默认关闭并立即应用
+                            if ((await db.table('config').count()) === 0) {
+                                await db.table('config').put({ showLogs: false })
+                                applyLogConfig(false)
+                            }
                         }
 
                         // 验证导入的数据
