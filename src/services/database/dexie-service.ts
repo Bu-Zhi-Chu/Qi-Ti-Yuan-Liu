@@ -67,7 +67,8 @@ export default class DexieService {
         // 插入默认配置（首次创建时）
         const cfgCount = await db.table('config').count()
         if (cfgCount === 0) {
-            await db.table('config').put({ showLogs: false })
+            // 根据环境决定日志默认值：开发环境默认开启，其他环境默认关闭
+            await db.table('config').put({ showLogs: import.meta.env.DEV === true })
         }
         // DatabaseLogger.databaseCreated(dbName)
 

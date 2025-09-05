@@ -41,7 +41,7 @@ let app: ReturnType<typeof mount> | undefined // 提前声明，供导出使用
                         const text = await blob.text()
                         projectData = JSON.parse(text)
                     }
-                    console.log('【数据库交互】projectData对象', projectData)
+
 
                     // 检查数据库是否存在，不存在则创建
                     const dbExists = await DexieService.databaseExists('qi-qiao-ban')
@@ -141,6 +141,10 @@ let app: ReturnType<typeof mount> | undefined // 提前声明，供导出使用
                             const jsonString = JSON.stringify(projectData)
                             const blob = new Blob([jsonString], { type: 'application/json' })
                             await importInto(db, blob, { overwriteValues: true })
+
+                            // 导入完成后，按照当前环境写入日志配置，确保精简模式需默认遵循环境规则
+                            await db.table('config').clear()
+                            await db.table('config').put({ showLogs: import.meta.env.DEV === true })
 
                             console.log('【数据库交互】dexie-export-import导入完成')
                         } else {
