@@ -202,8 +202,6 @@
         isVerifying = true
         konamiSequence = []
 
-        console.log('Konami Code序列:', KONAMI_CODE)
-
         // 设置15秒超时
         verificationTimeout = window.setTimeout(() => {
             console.log('Konami Code验证超时')

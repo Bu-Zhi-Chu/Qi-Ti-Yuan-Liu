@@ -110,17 +110,6 @@ let app: ReturnType<typeof mount> | undefined // 提前声明，供导出使用
                             await db.table('projects').clear()
                             await db.table('doms').clear()
 
-                            // 清理Service Worker缓存
-                            if ('caches' in window) {
-                                try {
-                                    const cacheNames = await caches.keys()
-                                    await Promise.all(cacheNames.map(name => caches.delete(name)))
-                                    console.log('【缓存清理】Service Worker缓存已清理')
-                                } catch (error) {
-                                    console.warn('【缓存清理】清理Service Worker缓存失败', error)
-                                }
-                            }
-
                             // 清理localStorage和sessionStorage中的相关数据
                             const keysToRemove = [
                                 'qi-qiao-ban-data',
