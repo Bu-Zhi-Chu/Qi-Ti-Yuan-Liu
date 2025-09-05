@@ -13,7 +13,7 @@
  * const dragService = new TreeDragDropService()
  */
 
-import { domTree, moveNode, insertNodeBefore, insertNodeAfter } from '../repository/dom-tree.store.svelte'
+import { domTree, moveNode, insertNodeBefore, insertNodeAfter, findNodeById, hasNodeWithId } from '../repository/dom-tree.store.svelte'
 
 export class TreeDragDropService {
   private draggingId: string | null = null
@@ -125,6 +125,13 @@ export class TreeDragDropService {
    */
   public async handlePointerUp(): Promise<void> {
     if (this.draggingId && this.hoverTargetId && this.hoverZone) {
+      // 如果目标节点是拖拽节点的子孙，则禁止此次操作
+      const draggingNode = findNodeById(domTree, this.draggingId)
+      if (draggingNode && hasNodeWithId(draggingNode, this.hoverTargetId)) {
+        console.warn('禁止将父节点拖拽到其子孙节点内部或相邻位置，操作已取消')
+        this.clearDragState()
+        return
+      }
       try {
         switch (this.hoverZone) {
           case 'inside':

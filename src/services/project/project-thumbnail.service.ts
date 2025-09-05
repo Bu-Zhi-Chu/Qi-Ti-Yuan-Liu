@@ -94,7 +94,7 @@ export class ProjectThumbnailService {
       const { addOrIncrement, getImage } = await import('../database/image-store.service')
       const existingThumb = await getImage(projectId, hash)
       if (!existingThumb) {
-      await addOrIncrement({ projectId, hash, blob: thumbnailBlob, name: 'thumbnail', width: 0, height: 0 }, 1)
+        await addOrIncrement({ projectId, hash, blob: thumbnailBlob, name: 'thumbnail', width: 0, height: 0 }, 1)
       }
 
       // 3. 更新项目记录为哈希字符串
