@@ -104,7 +104,6 @@ let app: ReturnType<typeof mount> | undefined // 提前声明，供导出使用
                             (jsonExportTime && new Date(jsonExportTime) > new Date(dbExportTime))
 
                         if (shouldImport) {
-                            console.log(`【数据库交互】需要导入数据 - JSON时间: ${jsonExportTime}, 数据库时间: ${dbExportTime || '无'}`)
 
                             // 清空旧数据，避免数据污染
                             console.log('【数据库交互】清空数据库旧数据')
@@ -122,22 +121,20 @@ let app: ReturnType<typeof mount> | undefined // 提前声明，供导出使用
                             console.log('【数据库交互】dexie-export-import导入完成')
                         } else {
                             console.log(`【数据库交互】跳过导入 - JSON时间: ${jsonExportTime}, 数据库时间: ${dbExportTime || '无'}`)
-
                         }
 
 
-                        // 导入完成后，按照当前环境写入日志配置，确保精简模式需默认遵循环境规则
                         await db.table('config').clear()
-                        // 新增：数据库无日志配置时写入默认关闭并立即应用
-                        // 强制写入日志关闭并立即应用
                         await db.table('config').put({ showLogs: false })
-                        applyLogConfig(false)
+
 
 
                         // 验证导入的数据
                         const finalProjectCount = await db.table('projects').count()
                         const finalDomCount = await db.table('doms').count()
                         console.log(`【数据库交互】精简模式：验证完成 - 项目: ${finalProjectCount}个, DOM节点: ${finalDomCount}个`)
+                        console.log(`【数据库交互】默认关闭日志打印`)
+                        applyLogConfig(false)
                     } else {
                         throw new Error('无法获取数据库实例')
                     }
