@@ -388,8 +388,8 @@ export async function insertNodeBefore(targetId: string, nodeId: string): Promis
   const movingNode = findNodeById(domTreeData, nodeId);
   if (!parent || !parent.children || !movingNode) return false;
   if (isDescendant(movingNode, targetId)) return false;
-  // 先从原位置移除
-  await removeNodeById(nodeId);
+  // 先从原位置移除（不影响计数）
+  await removeNodeByIdForMove(nodeId);
   const index = parent.children.findIndex(c => c.id === targetId);
   parent.children.splice(index, 0, movingNode);
   return true;
@@ -404,8 +404,8 @@ export async function insertNodeAfter(targetId: string, nodeId: string): Promise
   const movingNode = findNodeById(domTreeData, nodeId);
   if (!parent || !parent.children || !movingNode) return false;
   if (isDescendant(movingNode, targetId)) return false;
-  // 先从原位置移除
-  await removeNodeById(nodeId);
+  // 先从原位置移除（不影响计数）
+  await removeNodeByIdForMove(nodeId);
   const index = parent.children.findIndex(c => c.id === targetId);
   parent.children.splice(index + 1, 0, movingNode);
   return true;
@@ -492,63 +492,39 @@ export async function moveNode(nodeId: string, newParentId: string): Promise<boo
   if (nodeId === 'root' || nodeId === newParentId) return false;
   const node = findNodeById(domTreeData, nodeId);
   if (!node) return false;
-  const removed = await removeNodeById(nodeId);
+  const removed = await removeNodeByIdForMove(nodeId);
   if (!removed) return false;
   const added = addNodeToParent(newParentId, node);
-  if (added) {
-    // 自动保存到doms表（不影响projects表）
-    autoSaveToDomsTable();
-  }
+  if (added) autoSaveToDomsTable();
   return added;
 }
 
 /**
- * 从父节点移除指定节点
+ * 从父节点移除指定节点（拖拽移动专用，不释放图片引用计数）
  * @param nodeId 要移除的节点ID
  * @returns 是否移除成功
  */
 export async function removeNodeById(nodeId: string): Promise<boolean> {
-  if (nodeId === 'root') return false; // 禁止删除根节点
+  if (nodeId === 'root') return false;
+  const parent = findParentById(domTreeData, nodeId);
+  if (!parent || !parent.children) return false;
+  const targetNode = parent.children.find(c => c.id === nodeId);
+  if (targetNode) releaseNodeResources(targetNode);
+  if (selectedNodeId === nodeId) await setSelectedId('root');
+  parent.children = parent.children.filter(c => c.id !== nodeId);
+  autoSaveToDomsTable();
+  return true;
+}
 
-  // 递归查找节点的父节点
-  function findParentNode(node: DomNode, targetId: string): DomNode | null {
-    if (!node.children) return null;
-
-    for (const child of node.children) {
-      if (child.id === targetId) {
-        return node;
-      }
-
-      const found = findParentNode(child, targetId);
-      if (found) return found;
-    }
-
-    return null;
-  }
-
-  const parent = findParentNode(domTreeData, nodeId);
-  if (parent && parent.children) {
-    // 找到即将删除的节点本身
-    const targetNode = parent.children.find(child => child.id === nodeId)
-    if (targetNode) {
-      releaseNodeResources(targetNode)
-    }
-
-    // 如果删除的是当前选中的节点，则选中根节点
-    if (selectedNodeId === nodeId) {
-      await setSelectedId('root');
-    }
-
-    // 过滤掉要删除的节点并触发响应式更新
-    parent.children = parent.children.filter(child =>
-      child.id !== nodeId
-    );
-    // 自动保存到doms表（不影响projects表）
-    autoSaveToDomsTable();
-    return true;
-  }
-
-  return false;
+// 拖拽专用删除：不释放图片引用计数
+export async function removeNodeByIdForMove(nodeId: string): Promise<boolean> {
+  if (nodeId === 'root') return false;
+  const parent = findParentById(domTreeData, nodeId);
+  if (!parent || !parent.children) return false;
+  if (selectedNodeId === nodeId) await setSelectedId('root');
+  parent.children = parent.children.filter(c => c.id !== nodeId);
+  autoSaveToDomsTable();
+  return true;
 }
 
 /**
