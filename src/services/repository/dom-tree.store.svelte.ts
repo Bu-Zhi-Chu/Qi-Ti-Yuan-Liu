@@ -11,6 +11,8 @@ import DexieService from '../database/dexie-service';
 import Dexie from 'dexie';
 import { writable } from 'svelte/store';
 import { isLiteMode } from '../env/environment.service'
+import { get } from 'svelte/store'
+import { decrementOrDelete } from '../database/image-store.service'
 
 // 初始 domTree 数据结构
 const domTreeData = $state<DomNode>({
@@ -526,6 +528,12 @@ export async function removeNodeById(nodeId: string): Promise<boolean> {
 
   const parent = findParentNode(domTreeData, nodeId);
   if (parent && parent.children) {
+    // 找到即将删除的节点本身
+    const targetNode = parent.children.find(child => child.id === nodeId)
+    if (targetNode) {
+      releaseNodeResources(targetNode)
+    }
+
     // 如果删除的是当前选中的节点，则选中根节点
     if (selectedNodeId === nodeId) {
       await setSelectedId('root');
@@ -643,4 +651,20 @@ export function clearMemoryState(): void {
   currentProjectId = '';
   resetActivePropertyTab(); // 新增：重置 activePropertyTab
   console.log('内存状态已清理');
+}
+
+// 哈希检测正则，用于背景图等资源引用
+const hashRegex = /^[a-f0-9]{40,}$/
+
+
+// 递归释放节点资源：对子节点逐一扣减背景图引用计数
+function releaseNodeResources(node: DomNode) {
+  const bg = (node.styles as any)?.backgroundImage
+  if (typeof bg === 'string' && hashRegex.test(bg.trim())) {
+    const pid = get(projectId)
+    if (pid) decrementOrDelete(pid, bg.trim())
+  }
+  if (node.children && node.children.length) {
+    node.children.forEach((child) => releaseNodeResources(child))
+  }
 }

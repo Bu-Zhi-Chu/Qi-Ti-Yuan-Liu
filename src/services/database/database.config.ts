@@ -10,7 +10,6 @@
 export const DEFAULT_DB_NAME = 'qi-qiao-ban';
 
 /**
- * 数据库版本号
- * 当数据库结构变更时需要递增版本号
+ * 数据库版本号 开发环境永远是1 每次修改数据库清空缓存保证
  */
 export const DB_VERSION = 1

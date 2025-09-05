@@ -19,21 +19,87 @@
 
 <script lang="ts">
     import DynamicComponent from '../core/DynamicComponent.svelte'
-    // 递归自引入，替代 <svelte:self>（Svelte5 已弃用）
+
     import NodeRenderer from './NodeRenderer.svelte'
-    import { onDestroy } from 'svelte'
+    import { onMount, onDestroy } from 'svelte'
+    import { get } from 'svelte/store'
+    import { projectId } from '../../services/repository/dom-tree.store.svelte'
+    import { getImage } from '../../services/database/image-store.service'
+    import { decrementOrDelete } from '../../services/database/image-store.service'
+    import { LRUMap } from 'lru_map'
+    import { registerBlobUrl } from '../../services/utils/blob-url-manager'
 
-    // Blob → URL 缓存，避免重复生成
-    const blobUrlMap = new WeakMap<Blob, string>()
-    // 记录所有已创建的临时 URL，便于销毁时统一释放
-    const blobUrlSet = new Set<string>()
+    // 40+位十六进制哈希
+    const hashRegex = /^[a-f0-9]{40,}$/
 
-    // 组件卸载时释放所有创建的 Object URL
-    onDestroy(() => {
-        for (const url of blobUrlSet) {
-            URL.revokeObjectURL(url)
+    /** 递归收集节点及其子节点的背景图哈希 */
+    function collectHashes(node: any, set: Set<string> = new Set()): Set<string> {
+        const bg = (node.styles as any)?.backgroundImage
+        if (typeof bg === 'string' && hashRegex.test(bg.trim())) {
+            set.add(bg.trim())
         }
-        blobUrlSet.clear()
+        for (const child of node.children ?? []) {
+            collectHashes(child, set)
+        }
+        return set
+    }
+
+    /** 批量预取背景图哈希对应的 URL */
+    function prefetchBackgroundImgs(root: any) {
+        const hashes = collectHashes(root)
+        hashes.forEach(async (h) => {
+            await getUrlByHash(h)
+        })
+    }
+
+    // 哈希→URL 全局 LRU 缓存，容量 128
+    const urlCache = new LRUMap<string, string>(128)
+    let urlCacheVersion = $state(0)
+
+    // 当条目被淘汰时自动 revoke
+    const originalShift = urlCache.shift.bind(urlCache)
+    urlCache.shift = function () {
+        const result = originalShift()
+        if (result) {
+            const [k, v] = result
+            if (v) URL.revokeObjectURL(v)
+        }
+        return result
+    }
+
+    async function getUrlByHash(hash: string): Promise<string> {
+        let url = urlCache.get(hash)
+        if (url) return url
+
+        const pid = get(projectId)
+        if (!pid) return ''
+        const record = await getImage(pid, hash)
+        if (!record) return ''
+        url = URL.createObjectURL(record.blob)
+        registerBlobUrl(url)
+        urlCache.set(hash, url)
+        return url
+    }
+
+    // 组件卸载时释放所有创建的 Object URL（背景图引用计数由 dom-tree.store 统一管理）
+
+    // 首次挂载预取背景图哈希
+    onMount(() => {
+        prefetchBackgroundImgs(node)
+    })
+
+    // 监听背景图片哈希变更，及时扣减引用
+    let prevBgHash: string | null = null
+    $effect(() => {
+        const currentBg = (node.styles as any)?.backgroundImage
+        const str = typeof currentBg === 'string' ? currentBg.trim() : ''
+        if (str !== prevBgHash) {
+            if (prevBgHash && hashRegex.test(prevBgHash)) {
+                const pid = get(projectId)
+                if (pid) decrementOrDelete(pid, prevBgHash)
+            }
+            prevBgHash = hashRegex.test(str) ? str : null
+        }
     })
 
     // Runes props - 保留 selectedId 响应式
@@ -81,6 +147,7 @@
 
     /** 派生最终内联样式，依赖 selectedId、node.styles、node.hidden 实时更新 */
     let finalStyle = $derived.by(() => {
+        const _v = urlCacheVersion // 保证依赖
         const styleEntries = Object.entries(node.styles ?? {})
         const styleStr = styleEntries
             .map(([k, v]) => {
@@ -89,36 +156,32 @@
 
                 // 处理背景图片 - 直接处理 Blob 对象或 URL 字符串
                 if (k === 'backgroundImage') {
-                    if (v instanceof Blob) {
-                        let url = blobUrlMap.get(v)
-                        if (!url) {
-                            url = URL.createObjectURL(v)
-                            blobUrlMap.set(v, url)
-                            blobUrlSet.add(url)
-                        }
-                        value = `url(${url})`
-                    } else if (typeof v === 'string') {
+                    if (typeof v === 'string') {
                         const str = v.trim()
-                        // 保留已有 url()、线性/径向渐变字符串
-                        if (str.startsWith('url(') || str.startsWith('linear-gradient(') || str.startsWith('radial-gradient(')) {
+                        // 使用全局 hashRegex
+                        if (hashRegex.test(str)) {
+                            // 哈希值：同步查询缓存，异步解码
+                            let url = urlCache.get(str)
+                            if (!url) {
+                                // 先返回占位，异步更新
+                                getUrlByHash(str).then((u) => {
+                                    if (u) {
+                                        urlCache.set(str, u)
+                                        urlCacheVersion = urlCacheVersion + 1
+                                    }
+                                })
+                            } else {
+                                value = `url(${url})`
+                            }
+                        } else if (str.startsWith('url(') || str.startsWith('linear-gradient(') || str.startsWith('radial-gradient(')) {
                             value = str
                         } else if (str) {
-                            // 处理普通路径
                             value = `url(${str})`
                         }
                     } else if (v) {
                         // 其他情况直接使用原值
                         value = v
                     }
-                } else if (value instanceof Blob) {
-                    // 处理其他 Blob 类型样式
-                    let url = blobUrlMap.get(value)
-                    if (!url) {
-                        url = URL.createObjectURL(value)
-                        blobUrlMap.set(value, url)
-                        blobUrlSet.add(url)
-                    }
-                    value = `url(${url})`
                 }
 
                 return `${kebab}:${value}`

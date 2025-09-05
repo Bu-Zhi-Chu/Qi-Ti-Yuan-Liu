@@ -16,7 +16,7 @@
 <script lang="ts">
     import { onDestroy } from 'svelte'
     import { get } from 'svelte/store'
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
     import { getNodePropsStore, getNodeProps as _getNodeProps, updateNodeProps, getFullNode } from '../../../services/property-panel/property-panel.service'
     import { getElementByNodeId } from '../../../services/utils/dom-geometry.util'
     import { getScaleRatio } from '../../../services/utils/get-scale-ratio.util'
@@ -30,7 +30,10 @@
     import PropertySelect from './PropertySelect.svelte'
     import SizeInput from './SizeInput.svelte'
     import Icon from '../Icon.svelte'
+    import { hashBlob, convertTo, canDecode } from '../../../services/image/image-utils'
+    import { getImage, addOrIncrement } from '../../../services/database/image-store.service'
     import { processImageUpload } from '../../../services/image/upload-image.service'
+    import { useLQIP } from '../../../services/utils/use-lqip'
 
     // 工具函数：安全获取字符串值
     function getStringValue(value: string | Blob | undefined): string {
@@ -101,6 +104,8 @@
     let fileInput: HTMLInputElement
     let isUploading = $state(false)
     let uploadProgress = $state(0)
+    // LQIP 订阅释放函数占位，避免未定义错误
+    let unsubscribeLqip: () => void = () => {}
 
     // 从样式对象初始化背景属性
     async function initBackgroundProps() {
@@ -386,15 +391,26 @@
 
         if (!file || !selectedId) return
 
+        // 0. 生成 LQIP 占位，优先渲染提升体验
+        const lqipStore = useLQIP(file)
+        unsubscribeLqip = lqipStore.subscribe((url) => {
+            if (url) {
+                backgroundImage = url
+                updateBackgroundStyles()
+            }
+        })
+
         // 验证文件类型
         if (!file.type.startsWith('image/')) {
             alert('请选择图片文件')
+            unsubscribeLqip()
             return
         }
 
         // 验证文件大小（限制10MB）
         if (file.size > 10 * 1024 * 1024) {
             alert('图片文件不能超过10MB')
+            unsubscribeLqip()
             return
         }
 
@@ -402,14 +418,87 @@
         uploadProgress = 0
 
         try {
-            // 直接存储 Blob 对象以实现跨会话持久化
+            // 1. 计算哈希
+            const hash = await hashBlob(file)
+            uploadProgress = 20
+            const currentProjectId = get(projectId)
+            if (!currentProjectId) throw new Error('无法获取项目ID')
 
-            // 使用统一服务处理上传逻辑
-            const { blob: finalBlob, imageSize: size } = await processImageUpload(file, 0.85)
-            backgroundImage = finalBlob
-            imageSize = size
+            // 2. 查库是否已存在
+            const existing = await getImage(currentProjectId, hash)
+            let finalBlob: Blob
+            let width = 0
+            let height = 0
 
-            // 拖拽上传处理
+            if (existing) {
+                // 已存在，直接引用计数 +1
+                await addOrIncrement(
+                    {
+                        projectId: currentProjectId,
+                        hash,
+                        blob: existing.blob,
+                        name: existing.name,
+                        width: existing.width,
+                        height: existing.height
+                    },
+                    1
+                )
+                uploadProgress = 60
+                finalBlob = existing.blob
+                width = existing.width
+                height = existing.height
+            } else {
+                // 3. 压缩 / 转换
+                const supportAvif = await canDecode('image/avif')
+                const supportWebp = await canDecode('image/webp')
+                let candidate: Blob = file
+
+                if (supportAvif) {
+                    const avifBlob = await convertTo(file, 'avif', 0.85)
+                    if (avifBlob && avifBlob.size < candidate.size) candidate = avifBlob
+                } else if (supportWebp) {
+                    const webpBlob = await convertTo(file, 'webp', 0.85)
+                    if (webpBlob && webpBlob.size < candidate.size) candidate = webpBlob
+                }
+
+                finalBlob = candidate
+
+                // 4. 读取尺寸
+                const size = await new Promise<{ width: number; height: number }>((resolve) => {
+                    const img = new Image()
+                    const objUrl = URL.createObjectURL(finalBlob)
+                    img.onload = () => {
+                        URL.revokeObjectURL(objUrl)
+                        resolve({ width: img.naturalWidth, height: img.naturalHeight })
+                    }
+                    img.onerror = () => {
+                        URL.revokeObjectURL(objUrl)
+                        resolve({ width: 0, height: 0 })
+                    }
+                    img.src = objUrl
+                })
+                width = size.width
+                height = size.height
+
+                // 5. 入库并设置 refCount = 1
+                await addOrIncrement(
+                    {
+                        projectId: currentProjectId,
+                        hash,
+                        blob: finalBlob,
+                        name: file.name,
+                        width,
+                        height
+                    },
+                    1
+                )
+            }
+
+            // 6. 写入样式：先用 LQIP 占位，随后替换为哈希
+            imageSize = width && height ? { width, height } : null
+            unsubscribeLqip()
+            backgroundImage = hash
+
             await updateBackgroundStyles()
             isUploading = false
             uploadProgress = 100
@@ -419,7 +508,7 @@
             alert('图片上传失败，请重试')
             isUploading = false
             uploadProgress = 0
-            // 重置文件输入
+            unsubscribeLqip()
             if (fileInput) {
                 fileInput.value = ''
             }
@@ -557,14 +646,6 @@
     // 清除背景图片
     async function clearBackgroundImage() {
         if (!selectedId) return
-
-        // 释放Blob URL内存
-        if (typeof backgroundImage === 'string') {
-            const match = backgroundImage.match(/url\(([^)]+)\)/)
-            if (match && match[1] && match[1].startsWith('blob:')) {
-                URL.revokeObjectURL(match[1])
-            }
-        }
 
         // 清除本地状态
         backgroundImage = ''
@@ -738,14 +819,8 @@
         }
     }
 
-    // 清理Blob URL
-    function cleanupBlobUrls() {
-        if (!backgroundImage || typeof backgroundImage !== 'string') return
-        const match = backgroundImage.match(/url\(([^)]+)\)/)
-        if (match && match[1] && match[1].startsWith('blob:')) {
-            URL.revokeObjectURL(match[1])
-        }
-    }
+    // 当前实现不再生成 blob: URL，占位空函数
+    function cleanupBlobUrls() {}
 
     // 当有背景图片时（包括Blob对象和URL字符串）
     let hasBackgroundImage = $state(false)
@@ -848,7 +923,7 @@
                 {:else}
                     <div style="display: flex; gap: calc(4px * var(--scale-ratio, 1)); flex: 1;">
                         <button class="input-style" onclick={clearBackgroundImage} title="移除图片" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">移除</button>
-                        <button class="unit-toggle" onclick={applyImageDimensions} title="按图片尺寸调整" disabled={!imageSize || selectedId === 'root' || isDimensionMatched}>
+                        <button class="unit-toggle" onclick={applyImageDimensions} title="一键匹配原尺寸" disabled={!imageSize || selectedId === 'root' || isDimensionMatched}>
                             <Icon name="Ratio" size={16} />
                         </button>
                     </div>

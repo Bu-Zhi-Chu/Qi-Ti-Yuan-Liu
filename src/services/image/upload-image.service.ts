@@ -27,9 +27,16 @@ export async function convertToWebp(file: File, quality = 0.85): Promise<Blob> {
 export async function getImageSize(blob: Blob): Promise<{ width: number; height: number }> {
     return new Promise<{ width: number; height: number }>((resolve, reject) => {
         const img = new Image()
-        img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight })
-        img.onerror = reject
-        img.src = URL.createObjectURL(blob)
+        const objUrl = URL.createObjectURL(blob)
+        img.onload = () => {
+            URL.revokeObjectURL(objUrl)
+            resolve({ width: img.naturalWidth, height: img.naturalHeight })
+        }
+        img.onerror = (e) => {
+            URL.revokeObjectURL(objUrl)
+            reject(e)
+        }
+        img.src = objUrl
     })
 }
 

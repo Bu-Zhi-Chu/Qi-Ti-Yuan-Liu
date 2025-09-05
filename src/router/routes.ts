@@ -1,4 +1,5 @@
 import type { Route } from '@dvcol/svelte-simple-router/models'
+import { cleanupBlobUrls } from '../services/utils/blob-url-manager'
 
 // 页面组件导入
 import HomePage from '../components/pages/HomePage.svelte'
@@ -89,6 +90,8 @@ let navigationCount = 0
 
 export const globalHooks = {
     pre: async (route: any) => {
+        // 路由切换前清理所有临时 Blob URL，防止内存泄漏
+        cleanupBlobUrls()
         navigationCount++
         if (navigationCount % 2 === 1) {
         } else {

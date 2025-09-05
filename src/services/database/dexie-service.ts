@@ -7,6 +7,7 @@
  */
 
 import Dexie from 'dexie'
+import { DB_VERSION } from './database.config'
 
 export default class DexieService {
     /**
@@ -46,11 +47,12 @@ export default class DexieService {
         // DatabaseLogger.creatingDatabase(dbName)
         const db = new Dexie(dbName)
 
-        // 开发环境无需修改版本号
+        // 使用全局版本号，结构变更需同步递增
         const stores: Record<string, string> = {
             projects: 'id, name, templateId, createdAt, updatedAt, canvasState, mode, exportTime, designWidth, designHeight',
             doms: '[projectId+id], projectId, parentId, attributes, style',
-            config: '++id, showLogs'
+            config: '++id, showLogs',
+            imageStore: 'hash, [projectId+hash], blob, name, width, height, refCount'
         }
 
         // 精简模式下不创建templates表
@@ -58,7 +60,7 @@ export default class DexieService {
             stores.templates = '++id, name, desc, cover, tag, thumbnailUrl, domStructure'
         }
 
-        db.version(1).stores(stores)
+        db.version(DB_VERSION).stores(stores)
 
         await db.open()
         // 打开成功后写入缓存，避免后续重复检查

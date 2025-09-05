@@ -17,7 +17,7 @@ export default defineConfig({
             strategies: 'generateSW',
             workbox: {
 
-                globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+                globPatterns: ['**/*.{js,css,html,ico,png,svg,avif,webp}'],
                 globIgnores: ['study/**/*'],
                 importScripts: ['no-wb-logs.js'],
                 navigateFallback: null, // 禁用导航回退，避免子目录问题
