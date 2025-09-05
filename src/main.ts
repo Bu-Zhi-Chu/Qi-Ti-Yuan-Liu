@@ -8,7 +8,7 @@ import { isLiteMode } from './services/env/environment.service'
 import { importInto } from 'dexie-export-import'
 import { applyLogConfig } from './services/utils/log-switch'
 
-(window as any).__WB_DISABLE_DEV_LOGS = true;
+
 // 根据环境初始化日志：开发环境默认开启，其余环境默认关闭
 applyLogConfig(import.meta.env.DEV === true)
 
