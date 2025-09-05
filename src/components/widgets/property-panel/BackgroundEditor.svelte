@@ -653,6 +653,14 @@
         // 清除本地状态
         backgroundImage = ''
         await updateBackgroundStyles()
+
+        // 若当前节点为根节点，重置项目缩略图为默认占位图
+        if (selectedId === 'root') {
+            const currentProjectId = get(projectId)
+            if (currentProjectId) {
+                await ProjectThumbnailService.createDefaultThumbnail(currentProjectId)
+            }
+        }
     }
 
     // 组件卸载时清理Blob URL

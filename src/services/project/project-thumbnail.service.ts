@@ -179,9 +179,9 @@ export class ProjectThumbnailService {
     }
 
     try {
-      // 若项目已存在缩略图（例如之前同步过背景图），无需再生成默认缩略图
+      // 若项目已存在 DataURL 形式的缩略图（默认或用户自定义），无需再生成
       const existing = await DexieService.getRecord<any>('qi-qiao-ban', 'projects', projectId)
-      if (existing?.thumbnail) {
+      if (existing?.thumbnail && existing.thumbnail.startsWith('data:')) {
         return
       }
 
