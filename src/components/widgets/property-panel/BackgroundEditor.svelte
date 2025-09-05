@@ -244,41 +244,17 @@
             }
         }
 
-        // 背景尺寸 - 优先使用新的存储格式，兼容旧格式
-        if (styles.backgroundSizeX !== undefined) {
-            backgroundSizeX = getStringValue(styles.backgroundSizeX) || '100'
-            backgroundSizeY = getStringValue(styles.backgroundSizeY) || '100'
-            sizeUnitX = (getStringValue(styles.backgroundSizeUnitX) || '%') as 'px' | '%'
-            sizeUnitY = (getStringValue(styles.backgroundSizeUnitY) || '%') as 'px' | '%'
-        } else {
-            // 兼容旧格式：从CSS表达式解析
-            const backgroundSize = getStringValue(styles.backgroundSize) || '100% 100%'
-            const [sizeX, sizeY] = backgroundSize.split(' ')
-            const [parsedSizeX, parsedUnitX] = parseSize(sizeX || '100%')
-            const [parsedSizeY, parsedUnitY] = parseSize(sizeY || '100%')
-            backgroundSizeX = parsedSizeX
-            backgroundSizeY = parsedSizeY
-            sizeUnitX = parsedUnitX
-            sizeUnitY = parsedUnitY
-        }
+        // 背景尺寸 - 使用结构化存储格式
+        backgroundSizeX = getStringValue(styles.backgroundSizeX) || '100'
+        backgroundSizeY = getStringValue(styles.backgroundSizeY) || '100'
+        sizeUnitX = (getStringValue(styles.backgroundSizeUnitX) || '%') as 'px' | '%'
+        sizeUnitY = (getStringValue(styles.backgroundSizeUnitY) || '%') as 'px' | '%'
 
-        // 背景位置 - 优先使用新的存储格式，兼容旧格式
-        if (styles.backgroundPositionX !== undefined) {
-            backgroundPositionX = getStringValue(styles.backgroundPositionX) || '50'
-            backgroundPositionY = getStringValue(styles.backgroundPositionY) || '50'
-            positionUnitX = (getStringValue(styles.backgroundPositionUnitX) || '%') as 'px' | '%'
-            positionUnitY = (getStringValue(styles.backgroundPositionUnitY) || '%') as 'px' | '%'
-        } else {
-            // 兼容旧格式：从CSS表达式解析
-            const backgroundPosition = getStringValue(styles.backgroundPosition) || '50% 50%'
-            const [posX, posY] = backgroundPosition.split(' ')
-            const [parsedPosX, parsedUnitX] = parseSize(posX || '50%')
-            const [parsedPosY, parsedUnitY] = parseSize(posY || '50%')
-            backgroundPositionX = parsedPosX
-            backgroundPositionY = parsedPosY
-            positionUnitX = parsedUnitX
-            positionUnitY = parsedUnitY
-        }
+        // 背景位置 - 使用结构化存储格式
+        backgroundPositionX = getStringValue(styles.backgroundPositionX) || '50'
+        backgroundPositionY = getStringValue(styles.backgroundPositionY) || '50'
+        positionUnitX = (getStringValue(styles.backgroundPositionUnitX) || '%') as 'px' | '%'
+        positionUnitY = (getStringValue(styles.backgroundPositionUnitY) || '%') as 'px' | '%'
 
         // 背景重复
         backgroundRepeat = getStringValue(styles.backgroundRepeat) || 'no-repeat'
@@ -300,25 +276,6 @@
                 })
                 .join('')
         )
-    }
-
-    // 解析尺寸值和单位
-    function parseSize(size: string): [string, 'px' | '%'] {
-        if (!size) return ['100', '%']
-
-        // 处理百分比
-        if (size.trim().endsWith('%')) {
-            const value = parseFloat(size.trim().replace('%', ''))
-            return [value ? Math.round(value * 10) / 10 + '' : '100', '%']
-        }
-
-        // 处理像素
-        if (size.trim().endsWith('px')) {
-            return [size.trim().replace('px', ''), 'px']
-        }
-
-        // 默认使用百分比
-        return [size.trim(), '%']
     }
 
     // 格式化尺寸，px单位使用calc结合--scale-ratio实现自适应缩放

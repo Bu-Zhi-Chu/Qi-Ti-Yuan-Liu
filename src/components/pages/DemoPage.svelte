@@ -158,7 +158,7 @@
                 buttons={moduleButtons()}
                 direction="row"
                 style="gap: 23px;"
-                onbuttonClick={(event: { name: string; index: number; button: any }) => {
+                onButtonClick={(event: { name: string; index: number; button: any }) => {
                     selectedModule = event.name
                     // 当模块变更时同步选中其首分类为左侧激活项
                     const firstCat = modulesData().find((m) => m.name === event.name)?.children[0]

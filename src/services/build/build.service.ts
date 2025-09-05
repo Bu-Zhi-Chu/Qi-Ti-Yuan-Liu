@@ -205,26 +205,18 @@ export class BuildService {
         let requestBody: BodyInit;
         let headers: Record<string, string> | undefined;
 
-        if (options.liteData?.projectBlob) {
-          // 使用FormData发送Blob，保持二进制链路
-          const fd = new FormData();
-          fd.append('mode', options.mode || 'production');
-          fd.append('outputDir', 'dist-lite');
-          fd.append('projectBlob', options.liteData.projectBlob, options.liteData.filename || 'project-data.json');
-          requestBody = fd;
-          headers = undefined; // 让浏览器自动设置 multipart 边界
-          console.log('准备发送构建请求，使用multipart/form-data，Blob大小:', options.liteData.projectBlob.size);
-        } else {
-          // 兼容旧流程：发送JSON字符串
-          const buildRequest = {
-            mode: options.mode || 'production',
-            liteData: options.liteData?.projectData,
-            outputDir: 'dist-lite'
-          };
-          requestBody = JSON.stringify(buildRequest);
-          headers = { 'Content-Type': 'application/json' };
-          console.log('准备发送构建请求，liteData长度:', buildRequest.liteData ? buildRequest.liteData.length : 0);
+        // 使用FormData发送Blob，保持二进制链路
+        const projectBlob = options.liteData?.projectBlob;
+        if (!projectBlob) {
+          throw new Error('缺少项目数据 Blob');
         }
+        const fd = new FormData();
+        fd.append('mode', options.mode || 'pr oduction');
+        fd.append('outputDir', 'dist-lite');
+        fd.append('projectBlob', projectBlob, options.liteData?.filename || 'project-data.json');
+        requestBody = fd;
+        headers = undefined; // 让浏览器自动设置 multipart 边界
+        console.log('准备发送构建请求，使用multipart/form-data，Blob大小:', projectBlob.size);
 
         // 增加超时时间到30秒
         const controller = new AbortController();

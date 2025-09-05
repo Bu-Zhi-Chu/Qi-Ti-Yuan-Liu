@@ -227,7 +227,7 @@
                 }
             ]}
             style="width: 160px; height: 56px;"
-            onbuttonClick={createNewProject}
+            onButtonClick={createNewProject}
         />
         <ActionButton
             buttons={[
@@ -238,7 +238,7 @@
                 }
             ]}
             style="width: 160px; height: 56px;"
-            onbuttonClick={() => (window.location.hash = '#/demo')}
+            onButtonClick={() => (window.location.hash = '#/demo')}
         />
     </ResponsiveBox>
 

@@ -57,31 +57,6 @@
         return typeof value === 'string' ? value : ''
     }
 
-    /* deprecated: snapshot fetch via getNodeProps */
-    /*
-$effect(() => {
-        if (selectedId) {
-            const props = getNodeProps(selectedId)
-            if (props) {
-                currentDisplay = typeof props.styles?.display === 'string' ? props.styles.display : 'block'
-
-                // 初始化flex属性
-                currentFlexDirection = getStringValue(props.styles?.flexDirection) || 'row'
-                currentJustifyContent = getStringValue(props.styles?.justifyContent) || 'flex-start'
-                currentAlignItems = getStringValue(props.styles?.alignItems) || 'stretch'
-                currentFlexWrap = getStringValue(props.styles?.flexWrap) || 'nowrap'
-
-                // 初始化grid属性
-                currentGridTemplateColumns = getStringValue(props.styles?.gridTemplateColumns)
-                currentGridTemplateRows = getStringValue(props.styles?.gridTemplateRows)
-                currentGridGap = getStringValue(props.styles?.gap || props.styles?.gridGap)
-                currentGridColumnGap = getStringValue(props.styles?.columnGap || props.styles?.gridColumnGap)
-                currentGridRowGap = getStringValue(props.styles?.rowGap || props.styles?.gridRowGap)
-            }
-        }
-    })
-*/
-
     // 新版：通过 getNodePropsStore 订阅实时变化
     $effect(() => {
         // 清理旧订阅

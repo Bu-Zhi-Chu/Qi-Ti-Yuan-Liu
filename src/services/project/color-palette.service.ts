@@ -165,12 +165,7 @@ export default class ColorPaletteService {
         }
     }
 
-    /**
-     * 兼容旧逻辑清空颜色卡（已废弃，无需操作）
-     */
-    static async clearColorPalette(_projectId: string): Promise<void> {
-        console.warn('ColorPaletteService.clearColorPalette 已废弃')
-    }
+
 
     /**
      * 删除指定颜色值从颜色卡
@@ -209,10 +204,5 @@ export default class ColorPaletteService {
         }
     }
 
-    /**
-     * 兼容旧逻辑的去重函数（已废弃，无需操作）
-     */
-    static async cleanupDuplicateColors(_projectId: string): Promise<void> {
-        console.warn('ColorPaletteService.cleanupDuplicateColors 已废弃')
-    }
+
 }

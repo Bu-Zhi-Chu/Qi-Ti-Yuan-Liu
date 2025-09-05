@@ -63,14 +63,12 @@
         buttons: ButtonConfig[]
         direction?: 'row' | 'column'
         dataId?: string
-        /** 新版事件回调 */
+        /** 事件回调 */
         onButtonClick?: (event: { name: string; index: number; button: ButtonConfig }) => void
-        /** 旧版事件名兼容，后续将废弃 */
-        onbuttonClick?: (event: { name: string; index: number; button: ButtonConfig }) => void
         [key: string]: any
     }
 
-    let { style = '', buttons = [], direction = 'row', dataId = '', onButtonClick, onbuttonClick, ...rest }: Props = $props()
+    let { style = '', buttons = [], direction = 'row', dataId = '', onButtonClick, ...rest }: Props = $props()
 
     // 计算按钮容器的样式
     const containerStyle = $derived(direction === 'row' ? `display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 8px; ${style}` : `display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; ${style}`)
@@ -115,8 +113,7 @@
 
         const eventData = { name: button.name, index, button }
 
-        // 优先使用直接的事件回调
-        const clickHandler = onButtonClick ?? onbuttonClick
+        const clickHandler = onButtonClick
         if (clickHandler) {
             clickHandler(eventData)
         } else {

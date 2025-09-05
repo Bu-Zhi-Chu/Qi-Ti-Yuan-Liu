@@ -97,9 +97,7 @@
         // 从根节点开始查找
         const selectedNode = findNode(domTree)
         if (selectedNode?.attributes?.activePropertyTab) {
-            // 处理旧数据兼容性问题（'style' -> 'position'）
             const tabValue = selectedNode.attributes.activePropertyTab
-            if (tabValue === 'style') return 'position'
             if (tabs.some((t) => t.key === tabValue)) {
                 return tabValue as 'attr' | 'feature' | 'position' | 'background' | 'border' | 'event'
             }
@@ -453,12 +451,7 @@
 
                         // 更新数据库配置（清空后写入，因主键为 showLogs）
                         await db.table('config').clear()
-                        try {
-                            await db.table('config').put({ showLogs: newVal })
-                        } catch {
-                            // 兼容旧版本 config 表主键为 key 的情况
-                            await db.table('config').put({ key: 'showLogs', value: newVal })
-                        }
+                        await db.table('config').put({ showLogs: newVal })
 
                         // 立即应用配置
                         applyLogConfig(newVal)
