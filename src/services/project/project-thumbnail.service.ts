@@ -47,7 +47,18 @@ export class ProjectThumbnailService {
         // 如果已经是 Blob，直接使用
         thumbnailBlob = backgroundImage
       } else if (typeof backgroundImage === 'string') {
-        if (backgroundImage.startsWith('data:')) {
+        const hashRegex = /^[a-f0-9]{40,}$/
+        if (hashRegex.test(backgroundImage.trim())) {
+          // 哈希字符串：从 imageStore 获取 Blob
+          const { getImage } = await import('../database/image-store.service')
+          const pid = projectId
+          const record = await getImage(pid, backgroundImage.trim())
+          if (!record) {
+            console.warn('未找到哈希对应的图片:', backgroundImage)
+            return
+          }
+          thumbnailBlob = record.blob
+        } else if (backgroundImage.startsWith('data:')) {
           // DataURL 转换为 Blob
           thumbnailBlob = await this.dataURLToBlob(backgroundImage)
         } else if (backgroundImage.startsWith('url(')) {
@@ -72,17 +83,27 @@ export class ProjectThumbnailService {
         return
       }
 
-      // 更新项目缩略图（存储为 Blob）
+      // 计算哈希并写入 imageStore，然后将哈希存入 projects 表
       console.log(`【数据库交互】保存项目缩略图: 项目ID=${projectId}, Blob大小=${thumbnailBlob.size}字节`)
+
+      // 1. 计算哈希
+      const { hashBlob } = await import('../image/image-utils')
+      const hash = await hashBlob(thumbnailBlob)
+
+      // 2. 写入 imageStore（引用计数 +1）
+      const { addOrIncrement } = await import('../database/image-store.service')
+      await addOrIncrement({ projectId, hash, blob: thumbnailBlob, name: 'thumbnail', width: 0, height: 0 }, 1)
+
+      // 3. 更新项目记录为哈希字符串
       const updateSuccess = await DexieService.updateRecord(
         'qi-qiao-ban',
         'projects',
         projectId,
-        { thumbnail: thumbnailBlob }
+        { thumbnail: hash }
       )
 
       if (updateSuccess) {
-        console.log('项目缩略图已更新为Blob:', projectId)
+        console.log('项目缩略图已更新为哈希:', projectId)
         // 背景图同步后，移除默认缩略图标记，允许后续再次创建默认缩略图
         ProjectThumbnailService.defaultThumbnailCreated.delete(projectId)
       } else {
@@ -179,18 +200,19 @@ export class ProjectThumbnailService {
       `.trim()
 
       // 将SVG转换为Blob
-      const svgBlob = new Blob([svgContent], { type: 'image/svg+xml' })
+      // 生成占位SVG的 DataURL 并保存
+      const svgBase64 = btoa(unescape(encodeURIComponent(svgContent)))
+      const dataUrl = `data:image/svg+xml;base64,${svgBase64}`
 
-      // 更新项目缩略图（存储为Blob）
       const updateSuccess = await DexieService.updateRecord(
         'qi-qiao-ban',
         'projects',
         projectId,
-        { thumbnail: svgBlob }
+        { thumbnail: dataUrl }
       )
 
       if (updateSuccess) {
-        console.log('默认项目缩略图已创建为Blob:', projectId)
+        console.log('默认项目缩略图已创建:', projectId)
         ProjectThumbnailService.defaultThumbnailCreated.add(projectId)
       } else {
         console.warn('创建默认项目缩略图失败:', projectId)

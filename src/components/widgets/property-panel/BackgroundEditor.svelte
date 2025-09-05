@@ -597,7 +597,10 @@
             const isRealImage = (image: any): boolean => {
                 if (!image) return false
                 if (typeof image === 'string') {
-                    return image.trim().startsWith('url(')
+                    const str = image.trim()
+                    if (str.startsWith('url(')) return true
+                    // 40位及以上十六进制字符串视为哈希引用图片
+                    return /^[a-f0-9]{40,}$/.test(str)
                 }
                 return image instanceof Blob
             }

@@ -31,29 +31,56 @@
 
     let { prop1, prop2, prop3, prop4, prop5, onClick, showDelete = false, selected = false, onDelete }: Props = $props()
 
+    import { getImage } from '../../services/database/image-store.service'
+    import { registerBlobUrl } from '../../services/utils/blob-url-manager'
+
+    const hashRegex = /^[a-f0-9]{40,}$/
+
     let imageSrc = $state<string | undefined>()
-    let objectUrls = $state<string[]>([])
+    let objectUrls: string[] = []
     let isHovered = $state(false)
 
-    $effect(() => {
-        if (prop4) {
-            if (prop4 instanceof Blob) {
-                const url = URL.createObjectURL(prop4)
-                imageSrc = url
-                objectUrls = [url]
-            } else {
-                imageSrc = prop4
-                objectUrls = []
-            }
-        } else {
-            imageSrc = undefined
-            objectUrls = []
+    /** 根据 prop4 更新 imageSrc，可解析 Blob、普通 URL、哈希 */
+    async function updateImage() {
+        // 先清理旧 URL
+        objectUrls.forEach((u) => URL.revokeObjectURL(u))
+        objectUrls = []
+        imageSrc = undefined
+
+        if (!prop4) return
+
+        if (prop4 instanceof Blob) {
+            const url = URL.createObjectURL(prop4)
+            objectUrls = [url]
+            imageSrc = url
+            return
         }
 
-        return () => {
-            objectUrls.forEach((url) => URL.revokeObjectURL(url))
-            objectUrls = []
+        if (typeof prop4 === 'string') {
+            const str = prop4.trim()
+            // 哈希路径：从 imageStore 查询
+            if (hashRegex.test(str)) {
+                if (typeof prop1 === 'string') {
+                    const record = await getImage(String(prop1), str)
+                    if (record) {
+                        const url = URL.createObjectURL(record.blob)
+                        registerBlobUrl(url)
+                        objectUrls = [url]
+                        imageSrc = url
+                        return
+                    }
+                }
+            }
+            // 其他直接作为 URL 使用
+            imageSrc = str
         }
+    }
+
+    // 初始及 prop4/prop1 变化时更新图片
+    $effect(() => {
+        void prop4
+        void prop1
+        updateImage()
     })
 
     onDestroy(() => {
@@ -66,9 +93,9 @@
 </script>
 
 <ResponsiveBox
-    style="position: relative; background: {selected ? 'rgba(30, 41, 59, 0.8)' : 'rgba(30, 41, 59, 0.5)'}; border-radius: 16px; padding: 20px; box-shadow: {selected ? '0 0 20px rgba(99, 102, 241, 0.6), 0 0 40px rgba(139, 92, 246, 0.4)' : '0 8px 32px rgba(0,0,0,0.3)'}; cursor: pointer; transition: all 0.3s ease; width: 100%; border: 1px solid {selected
-        ? 'rgba(99, 102, 241, 1)'
-        : 'rgba(99, 102, 241, 0.2)'}; backdrop-filter: blur(10px); transform: translateY(0px);"
+    style="position: relative; background: {selected ? 'rgba(30, 41, 59, 0.8)' : 'rgba(30, 41, 59, 0.5)'}; border-radius: 16px; padding: 20px; box-shadow: {selected
+        ? '0 0 20px rgba(99, 102, 241, 0.6), 0 0 40px rgba(139, 92, 246, 0.4)'
+        : '0 8px 32px rgba(0,0,0,0.3)'}; cursor: pointer; transition: all 0.3s ease; width: 100%; border: 1px solid {selected ? 'rgba(99, 102, 241, 1)' : 'rgba(99, 102, 241, 0.2)'}; backdrop-filter: blur(10px); transform: translateY(0px);"
     onclick={onClick}
     onmouseenter={(e: MouseEvent) => {
         isHovered = true
