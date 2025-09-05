@@ -564,10 +564,10 @@
                 await syncBackgroundToThumbnail()
             } else if (!currIsRealImage && prevIsRealImage) {
                 // 图片被清空，恢复默认缩略图
-            const currentProjectId = get(projectId)
-            if (currentProjectId) {
-                await ProjectThumbnailService.createDefaultThumbnail(currentProjectId)
-            }
+                const currentProjectId = get(projectId)
+                if (currentProjectId) {
+                    await ProjectThumbnailService.createDefaultThumbnail(currentProjectId)
+                }
             }
         }
 
@@ -579,11 +579,11 @@
     async function syncBackgroundToThumbnail() {
         try {
             // 获取当前项目ID
-    const currentProjectId = get(projectId)
-    if (!currentProjectId) {
-        console.warn('无法获取项目ID，无法同步缩略图')
-        return
-    }
+            const currentProjectId = get(projectId)
+            if (!currentProjectId) {
+                console.warn('无法获取项目ID，无法同步缩略图')
+                return
+            }
 
             // 同步背景图片到项目缩略图
             if (backgroundImage) {
@@ -596,8 +596,6 @@
             console.error('同步项目缩略图失败:', error)
         }
     }
-
-
 
     // 清除背景图片
     async function clearBackgroundImage() {
