@@ -418,11 +418,11 @@
         uploadProgress = 0
 
         try {
-            // 1. 计算哈希
-            const hash = await hashBlob(file)
-            uploadProgress = 20
             const currentProjectId = get(projectId)
             if (!currentProjectId) throw new Error('无法获取项目ID')
+            // 1. 计算哈希（加入项目ID区分跨项目同图）
+            const hash = await hashBlob(file, currentProjectId)
+            uploadProgress = 20
 
             // 2. 查库是否已存在
             const existing = await getImage(currentProjectId, hash)

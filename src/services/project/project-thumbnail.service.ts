@@ -88,11 +88,14 @@ export class ProjectThumbnailService {
 
       // 1. 计算哈希
       const { hashBlob } = await import('../image/image-utils')
-      const hash = await hashBlob(thumbnailBlob)
+      const hash = await hashBlob(thumbnailBlob, projectId)
 
-      // 2. 写入 imageStore（引用计数 +1）
-      const { addOrIncrement } = await import('../database/image-store.service')
+      // 2. 写入 imageStore（如不存在则插入，不递增已有计数）
+      const { addOrIncrement, getImage } = await import('../database/image-store.service')
+      const existingThumb = await getImage(projectId, hash)
+      if (!existingThumb) {
       await addOrIncrement({ projectId, hash, blob: thumbnailBlob, name: 'thumbnail', width: 0, height: 0 }, 1)
+      }
 
       // 3. 更新项目记录为哈希字符串
       const updateSuccess = await DexieService.updateRecord(

@@ -45,7 +45,7 @@ export class LiteExportService {
             );
 
             // 使用 dexie-export-import 直接导出完整数据库
-            const exportBlob = await this.exportTablesWithDexie(['projects', 'doms'], projectId);
+            const exportBlob = await this.exportTablesWithDexie(['projects', 'doms', 'imageStore'], projectId);
 
             console.log(`导出完成: Blob大小 ${exportBlob.size} 字节`);
             return exportBlob;
@@ -105,6 +105,9 @@ export class LiteExportService {
                             return value?.id === projectId;
                         case 'doms':
                             // doms表按projectId过滤
+                            return value?.projectId === projectId;
+                        case 'imageStore':
+                            // imageStore 表按 projectId 过滤
                             return value?.projectId === projectId;
                         default:
                             // 其他表默认包含

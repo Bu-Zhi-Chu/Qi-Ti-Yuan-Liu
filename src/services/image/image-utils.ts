@@ -1,18 +1,22 @@
 /**
  * 计算 Blob 的 SHA-1 哈希（40 位十六进制）。
  */
-export async function hashBlob(blob: Blob): Promise<string> {
+export async function hashBlob(blob: Blob, salt = ""): Promise<string> {
     const buffer = await blob.arrayBuffer()
     // Web Crypto API 在浏览器侧使用 SubtleCrypto，Node 环境回退至 crypto 包
     if (typeof crypto !== 'undefined' && crypto.subtle) {
-        const hashBuffer = await crypto.subtle.digest('SHA-1', buffer)
+        const saltBytes = new TextEncoder().encode(salt)
+        const combined = new Uint8Array(saltBytes.length + buffer.byteLength)
+        combined.set(saltBytes, 0)
+        combined.set(new Uint8Array(buffer), saltBytes.length)
+        const hashBuffer = await crypto.subtle.digest('SHA-1', combined)
         return Array.from(new Uint8Array(hashBuffer))
             .map((b) => b.toString(16).padStart(2, '0'))
             .join('')
     }
     // Node 环境（例如 SSR 或单测）
     const { createHash } = await import('crypto')
-    return createHash('sha1').update(Buffer.from(buffer)).digest('hex')
+    return createHash('sha1').update(salt).update(Buffer.from(buffer)).digest('hex')
 }
 
 /**
