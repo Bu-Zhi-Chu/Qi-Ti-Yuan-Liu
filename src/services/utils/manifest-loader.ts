@@ -8,7 +8,7 @@ import type { Component } from 'svelte'
 
 // 收集所有组件（Svelte/TS/JS），懒加载（非 eager）
 // 这里使用绝对相对路径：以当前文件为基准，上上级到 src，再到 components
-const modules = import.meta.glob('../../components/**/*.{svelte,ts,js}') as Record<string, () => Promise<{ default: Component }>>
+const modules = import.meta.glob('../../components/blocks/**/*.{svelte,ts,js}') as Record<string, () => Promise<{ default: Component }>>
 
 /**
  * 根据 blocks.config.json 中的 `item.path`（如 "../core/SimpleBox.svelte"）加载组件。
