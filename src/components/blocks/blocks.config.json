@@ -2,7 +2,7 @@
     {
         "type": "SimpleBox",
         "nameZh": "简单盒子",
-        "path": "../Core/SimpleBox.svelte",
+        "path": "../blocks/SimpleBox.svelte",
         "showFeatureTab": false
     },
     {
@@ -16,13 +16,34 @@
                 "label": "显示模式",
                 "type": "select",
                 "options": [
-                    { "value": "datetime", "label": "年月日 时分秒" },
-                    { "value": "date", "label": "年月日" },
-                    { "value": "time", "label": "时分秒" },
-                    { "value": "year", "label": "年份" },
-                    { "value": "month", "label": "月份" },
-                    { "value": "weekday", "label": "星期" },
-                    { "value": "day", "label": "日期" }
+                    {
+                        "value": "datetime",
+                        "label": "年月日 时分秒"
+                    },
+                    {
+                        "value": "date",
+                        "label": "年月日"
+                    },
+                    {
+                        "value": "time",
+                        "label": "时分秒"
+                    },
+                    {
+                        "value": "year",
+                        "label": "年份"
+                    },
+                    {
+                        "value": "month",
+                        "label": "月份"
+                    },
+                    {
+                        "value": "weekday",
+                        "label": "星期"
+                    },
+                    {
+                        "value": "day",
+                        "label": "日期"
+                    }
                 ]
             }
         }

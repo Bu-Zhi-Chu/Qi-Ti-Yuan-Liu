@@ -1,5 +1,5 @@
 <script lang="ts">
-    import SimpleBox from '../core/SimpleBox.svelte'
+    import SimpleBox from '../blocks/Simplebox.svelte'
     import ResponsiveBox from '../core/ResponsiveBox.svelte'
 </script>
 

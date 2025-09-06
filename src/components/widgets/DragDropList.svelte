@@ -50,7 +50,7 @@
     import { flip } from 'svelte/animate'
 
     import ResponsiveBox from '../core/ResponsiveBox.svelte'
-    import SimpleBox from '../core/SimpleBox.svelte'
+    import SimpleBox from '../blocks/Simplebox.svelte'
 
     // 使用泛型提升类型安全，T 至少需要 id 字段供拖拽与选中逻辑使用
     export interface Props {
