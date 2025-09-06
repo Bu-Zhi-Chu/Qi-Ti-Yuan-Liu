@@ -163,9 +163,10 @@
                 // 重置为默认状态
                 offsetX = 0
                 offsetY = 0
-                scale = 1
-                // 默认值也需要同步更新 canvasScale
-                canvasScale.set(editing ? scale * 0.5 : scale)
+                // 编辑模式下第一次进入默认缩放 0.5，其余情况保持 1
+                scale = editing ? 0.5 : 1
+                // 同步更新 canvasScale
+                canvasScale.set(scale)
             }
 
             // 数据完全加载完成后隐藏加载状态
