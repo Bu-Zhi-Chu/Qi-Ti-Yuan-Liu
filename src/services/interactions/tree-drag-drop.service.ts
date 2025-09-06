@@ -47,7 +47,8 @@ export class TreeDragDropService {
     this.indicatorBottom.style.width = `${width}px`
 
     this.indicatorTop.style.top = `${rect.top - containerRect.top}px`
-    this.indicatorBottom.style.top = `${rect.bottom - containerRect.top - 2}px`
+    // 使底部指示线紧贴节点底部
+    this.indicatorBottom.style.top = `${rect.bottom - containerRect.top}px`
 
     this.indicatorTop.style.display = zone === 'above' ? 'block' : 'none'
     this.indicatorBottom.style.display = zone === 'below' ? 'block' : 'none'
@@ -107,7 +108,10 @@ export class TreeDragDropService {
     const nodeEl = el.closest('.tree-node') as HTMLElement | null
     if (!nodeEl) return
 
-    const rect = nodeEl.getBoundingClientRect()
+
+    // 仅获取当前节点自身内容区域（不含子节点），避免指示线位于其子区域内
+    const contentEl = nodeEl.querySelector('.node-content') as HTMLElement | null
+    const rect = contentEl ? contentEl.getBoundingClientRect() : nodeEl.getBoundingClientRect()
     const offsetY = event.clientY - rect.top
 
     let zone: 'above' | 'inside' | 'below'
