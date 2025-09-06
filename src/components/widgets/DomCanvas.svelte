@@ -164,6 +164,8 @@
                 offsetX = 0
                 offsetY = 0
                 scale = 1
+                // 默认值也需要同步更新 canvasScale
+                canvasScale.set(editing ? scale * 0.5 : scale)
             }
 
             // 数据完全加载完成后隐藏加载状态
