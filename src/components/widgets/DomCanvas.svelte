@@ -54,6 +54,14 @@
     let offsetY = $state(0)
     // 缩放状态 - 从数据库加载
     let scale = $state(1)
+
+    // 响应全局 canvasScale 变化（例如状态栏点击切换）
+    $effect(() => {
+        const targetScale = editing ? $canvasScale / 0.5 : $canvasScale
+        if (scale !== targetScale) {
+            scale = targetScale
+        }
+    })
     // 拖动状态
     let isDragging = $state(false)
 
