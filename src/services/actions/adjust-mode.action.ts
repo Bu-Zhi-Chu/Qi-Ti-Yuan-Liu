@@ -36,6 +36,7 @@ import { registerMouseLeftPressRelease } from '../interactions/shortcut.service'
 import { getScaleRatio } from '../utils/get-scale-ratio.util'
 import { moveDomByOffset } from '../utils/move-dom.util'
 import { getElementByNodeId } from '../utils/dom-geometry.util'
+import { copySelectedNode, pasteNodeToSelectedParent } from '../repository/dom-tree.store.svelte'
 
 
 // 提取数值工具函数，兼容 calc(...) 表达式，文件级复用
@@ -93,6 +94,10 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
   const onAdjustRef = onAdjust
 
   let keyPressed = false
+  let shiftPressed = false
+  // Shift 锁轴状态: 'x' 表示锁定水平，仅水平位移；'y' 表示锁定垂直，仅垂直位移；null 表示未锁定
+  let axisLocked: 'x' | 'y' | null = null
+  let ctrlCopyPressed = false
   let startX = 0
   let startY = 0
   let initialLeft = ''
@@ -314,9 +319,9 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
       enterAdjustMode()
       node.classList.add('adjust-mode')
       node.style.cursor = 'move'
-      // 阻止点击事件
+      // 阻止点击/右键菜单事件
       document.addEventListener('click', preventClick, true)
-      // 为当前选中节点添加 8 个操作手柄
+      document.addEventListener('contextmenu', preventClick, true)
       const targetEl = getElementByNodeId(selectedId)
       if (targetEl) {
         addOverlayWithHandles(targetEl)
@@ -336,13 +341,43 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
       exitAdjustMode()
       node.classList.remove('adjust-mode')
       node.style.cursor = ''
-      // 解除点击事件阻止
+      // 解除点击/右键菜单阻止
       document.removeEventListener('click', preventClick, true)
+      document.removeEventListener('contextmenu', preventClick, true)
       // 清理手柄
       removeHandles()
       // 清理覆盖层
       removeOverlay()
     }
+  }
+
+  /**
+   * Ctrl 键按下处理（复制并切换为新节点）
+   */
+  function ctrlKeydownHandler(e: KeyboardEvent) {
+    if (!keyPressed) return
+    if (ctrlCopyPressed) return
+    if (e.key !== 'Control') return
+
+    ctrlCopyPressed = true
+    const copied = copySelectedNode()
+    if (!copied) return
+    pasteNodeToSelectedParent(true, true).then((newId) => {
+      if (!newId) return
+      const newEl = getElementByNodeId(newId)
+      if (newEl) {
+        removeOverlay()
+        addOverlayWithHandles(newEl)
+        targetElRef = newEl
+      }
+      // 复制粘贴后不立即进入拖动，等待用户再次按住 V 并拖动
+    })
+  }
+
+  function ctrlKeyupHandler(e: KeyboardEvent) {
+
+    if (e.key !== 'Control') return
+    ctrlCopyPressed = false
   }
 
   /**
@@ -792,6 +827,30 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
     }
 
     // 鼠标位移（屏幕像素）转设计像素：
+    const rawDx = e.clientX - startX
+    const rawDy = e.clientY - startY
+    let dxScreen = rawDx
+    let dyScreen = rawDy
+    if (shiftPressed) {
+      const threshold = 8 // 像素阈值，避免轻微抖动触发切换
+      // 首次按下 Shift 时，根据超过阈值的方向锁定轴向
+      if (!axisLocked) {
+        if (Math.abs(rawDx) > threshold || Math.abs(rawDy) > threshold) {
+          axisLocked = Math.abs(rawDx) > Math.abs(rawDy) ? 'x' : 'y'
+        }
+      }
+      if (!axisLocked) {
+        // 未锁定前 DOM 不移动
+        dxScreen = 0
+        dyScreen = 0
+      } else if (axisLocked === 'x') {
+        dyScreen = 0
+      } else if (axisLocked === 'y') {
+        dxScreen = 0
+      }
+    } else {
+      axisLocked = null
+    }
     // 使用 moveDomByOffset 封装逻辑
     if (!updateNodePropsFn) {
       import('../../services/property-panel/property-panel.service').then(({ updateNodeProps }) => {
@@ -799,8 +858,8 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
         moveDomByOffset({
           targetEl,
           nodeId,
-          dxScreen: e.clientX - startX,
-          dyScreen: e.clientY - startY,
+          dxScreen: dxScreen,
+          dyScreen: dyScreen,
           scale,
           initialLeft,
           initialTop,
@@ -815,8 +874,8 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
       moveDomByOffset({
         targetEl,
         nodeId,
-        dxScreen: e.clientX - startX,
-        dyScreen: e.clientY - startY,
+        dxScreen: dxScreen,
+        dyScreen: dyScreen,
         scale,
         initialLeft,
         initialTop,
@@ -836,6 +895,9 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
    * 鼠标释放处理
    */
   function handleMouseUp() {
+    // 鼠标释放后重置 Shift 状态，防止异常残留
+    shiftPressed = false
+    axisLocked = null
     if (isResizing) {
       const nodeId = targetNodeIdGetter()
       if (nodeId && targetElRef) {
@@ -925,6 +987,21 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
   // 注册事件监听
   document.addEventListener('keydown', keydownHandler)
   document.addEventListener('keyup', keyupHandler)
+  document.addEventListener('keydown', ctrlKeydownHandler)
+  document.addEventListener('keyup', ctrlKeyupHandler)
+
+  // Shift 锁轴键按下/释放
+  function shiftKeydownHandler(e: KeyboardEvent) {
+    if (e.key !== 'Shift') return
+    shiftPressed = true
+  }
+  function shiftKeyupHandler(e: KeyboardEvent) {
+    if (e.key !== 'Shift') return
+    shiftPressed = false
+    axisLocked = null
+  }
+  document.addEventListener('keydown', shiftKeydownHandler)
+  document.addEventListener('keyup', shiftKeyupHandler)
   const unregisterMouseEvents = registerMouseLeftPressRelease(handleMouseDown, handleMouseUp)
   window.addEventListener('mousemove', handleMouseMove)
 
@@ -932,6 +1009,10 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
     destroy() {
       document.removeEventListener('keydown', keydownHandler)
       document.removeEventListener('keyup', keyupHandler)
+      document.removeEventListener('keydown', ctrlKeydownHandler)
+      document.removeEventListener('keyup', ctrlKeyupHandler)
+      document.removeEventListener('keydown', shiftKeydownHandler)
+      document.removeEventListener('keyup', shiftKeyupHandler)
       unregisterMouseEvents()
       window.removeEventListener('mousemove', handleMouseMove)
       // 移除覆盖层及手柄

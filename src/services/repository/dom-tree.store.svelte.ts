@@ -667,6 +667,20 @@ export function copySelectedNode(): boolean {
 }
 
 /**
+ * 剪切当前选中节点：复制到剪贴板并删除原节点
+ */
+export async function cutSelectedNode(): Promise<boolean> {
+  if (!selectedNodeId || selectedNodeId === 'root') return false;
+  const node = findNodeById(domTreeData, selectedNodeId);
+  if (!node) return false;
+  const deleted = await removeNodeById(selectedNodeId);
+  if (!deleted) return false;
+  clipboardNode = deepCopyNode(node);
+  console.log('已剪切节点:', clipboardNode!.id);
+  return true;
+}
+
+/**
  * 递归克隆节点并为每一层生成新的 ID，同时收集背景图哈希
  */
 function cloneNodeWithNewIds(node: DomNode, hashes: string[] = []): DomNode {
@@ -686,15 +700,25 @@ function cloneNodeWithNewIds(node: DomNode, hashes: string[] = []): DomNode {
 /**
  * 将剪贴板中的节点粘贴到当前选中节点（作为其子节点）
  */
-export async function pasteNodeToSelectedParent(): Promise<boolean> {
+export async function pasteNodeToSelectedParent(toParent: boolean = false, selectAfterPaste: boolean = false): Promise<string | null> {
   if (!clipboardNode) {
     console.warn('剪贴板为空，无法粘贴');
-    return false;
+    return null;
   }
-  const targetParentId = selectedNodeId || 'root';
+  let targetParentId: string = selectedNodeId || 'root';
+  if (toParent) {
+    // 指定粘贴到父容器
+    if (selectedNodeId && selectedNodeId !== 'root') {
+      const parentNode = findParentById(domTreeData, selectedNodeId);
+      targetParentId = parentNode?.id ?? 'root';
+    }
+  }
   const hashes: string[] = [];
   const cloned = cloneNodeWithNewIds(clipboardNode, hashes);
   const added = addNodeToParent(targetParentId, cloned);
+  if (added && selectAfterPaste) {
+    await setSelectedId(cloned.id);
+  }
   if (added && currentProjectId) {
     for (const h of hashes) {
       const img = await getImage(currentProjectId, h);
@@ -702,5 +726,5 @@ export async function pasteNodeToSelectedParent(): Promise<boolean> {
     }
   }
   console.log('已粘贴节点到:', targetParentId);
-  return added;
+  return added ? cloned.id : null;
 }

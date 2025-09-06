@@ -15,7 +15,7 @@
     import { onMount, onDestroy } from 'svelte'
     import { registerShortcut } from '../../services/interactions/shortcut.service'
     import { isStandardProdMode, isDevMode, isLiteMode } from '../../services/env/environment.service'
-    import { copySelectedNode, pasteNodeToSelectedParent } from '../../services/repository/dom-tree.store.svelte'
+    import { copySelectedNode, pasteNodeToSelectedParent, cutSelectedNode } from '../../services/repository/dom-tree.store.svelte'
 
     /* 新增：Dom 区域与 Dom 树列表组件 */
     import DomCanvas from '../widgets/DomCanvas.svelte'
@@ -129,6 +129,7 @@
     let unregisterKonami: () => void = () => {}
     let unregisterDelKey: () => void = () => {}
     let unregisterCopy: () => void
+    let unregisterCut: () => void
     let unregisterPaste: () => void
 
     onMount(async () => {
@@ -176,8 +177,11 @@
         unregisterCopy = registerShortcut('Ctrl+C', () => {
             copySelectedNode()
         })
+        unregisterCut = registerShortcut('Ctrl+X', () => {
+            cutSelectedNode()
+        })
         unregisterPaste = registerShortcut('Ctrl+V', () => {
-            pasteNodeToSelectedParent()
+            pasteNodeToSelectedParent(false, false)
         })
     })
 
@@ -188,6 +192,7 @@
         stopKonamiVerification()
         unregisterDelKey && unregisterDelKey()
         unregisterCopy && unregisterCopy()
+        unregisterCut && unregisterCut()
         unregisterPaste && unregisterPaste()
     })
 
