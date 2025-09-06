@@ -80,6 +80,8 @@ export default function usePan(node: HTMLElement, opts: UsePanOptions = {}) {
   /** ----------------- 键盘监听 ---------------- */
   function handleKeyDown(e: KeyboardEvent) {
     if (e.code !== options.key) return;
+    // 避免 Ctrl+V 等组合键触发独立 V 功能
+    if (e.ctrlKey || e.metaKey) return;
     if (options.editingAccessor && !options.editingAccessor()) return;
     if (!state.keyPressed) {
       state.keyPressed = true;
@@ -90,6 +92,7 @@ export default function usePan(node: HTMLElement, opts: UsePanOptions = {}) {
   }
   function handleKeyUp(e: KeyboardEvent) {
     if (e.code !== options.key) return;
+    if (e.ctrlKey || e.metaKey) return;
     state.keyPressed = false;
     if (!state.panActive) {
       node.style.cursor = '';

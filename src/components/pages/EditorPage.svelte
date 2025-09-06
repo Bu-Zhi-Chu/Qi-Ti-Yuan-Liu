@@ -15,6 +15,7 @@
     import { onMount, onDestroy } from 'svelte'
     import { registerShortcut } from '../../services/interactions/shortcut.service'
     import { isStandardProdMode, isDevMode, isLiteMode } from '../../services/env/environment.service'
+    import { copySelectedNode, pasteNodeToSelectedParent } from '../../services/repository/dom-tree.store.svelte'
 
     /* 新增：Dom 区域与 Dom 树列表组件 */
     import DomCanvas from '../widgets/DomCanvas.svelte'
@@ -127,6 +128,8 @@
     let unregister: () => void
     let unregisterKonami: () => void = () => {}
     let unregisterDelKey: () => void = () => {}
+    let unregisterCopy: () => void
+    let unregisterPaste: () => void
 
     onMount(async () => {
         // 初始化项目ID（兼容精简/路由两种场景）
@@ -170,6 +173,12 @@
                 console.log('DEL键按下，但没有选中节点或选中的是根节点')
             }
         })
+        unregisterCopy = registerShortcut('Ctrl+C', () => {
+            copySelectedNode()
+        })
+        unregisterPaste = registerShortcut('Ctrl+V', () => {
+            pasteNodeToSelectedParent()
+        })
     })
 
     onDestroy(() => {
@@ -178,6 +187,8 @@
         unregister && unregister()
         stopKonamiVerification()
         unregisterDelKey && unregisterDelKey()
+        unregisterCopy && unregisterCopy()
+        unregisterPaste && unregisterPaste()
     })
 
     // Konami Code验证器相关函数

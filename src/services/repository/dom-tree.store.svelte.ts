@@ -12,6 +12,7 @@ import Dexie from 'dexie';
 import { writable } from 'svelte/store';
 import { isLiteMode } from '../env/environment.service'
 import { get } from 'svelte/store'
+import { getImage, addOrIncrement } from '../database/image-store.service'
 import { decrementOrDelete } from '../database/image-store.service'
 
 // 初始 domTree 数据结构
@@ -632,6 +633,11 @@ export function clearMemoryState(): void {
 // 哈希检测正则，用于背景图等资源引用
 const hashRegex = /^[a-f0-9]{40,}$/
 
+// 深拷贝工具：使用 JSON 序列化避免函数导致的 DataCloneError
+function deepCopyNode<T>(obj: T): T {
+  return JSON.parse(JSON.stringify(obj));
+}
+
 
 // 递归释放节点资源：对子节点逐一扣减背景图引用计数
 function releaseNodeResources(node: DomNode) {
@@ -643,4 +649,58 @@ function releaseNodeResources(node: DomNode) {
   if (node.children && node.children.length) {
     node.children.forEach((child) => releaseNodeResources(child))
   }
+}
+
+// 剪贴板临时存储
+let clipboardNode: DomNode | null = null;
+
+/**
+ * 复制当前选中节点及其子树到剪贴板
+ */
+export function copySelectedNode(): boolean {
+  if (!selectedNodeId || selectedNodeId === 'root') return false;
+  const node = findNodeById(domTreeData, selectedNodeId);
+  if (!node) return false;
+  clipboardNode = deepCopyNode(node);
+  console.log('已复制节点:', clipboardNode!.id);
+  return true;
+}
+
+/**
+ * 递归克隆节点并为每一层生成新的 ID，同时收集背景图哈希
+ */
+function cloneNodeWithNewIds(node: DomNode, hashes: string[] = []): DomNode {
+  const newId = globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+  const clonedOriginal = deepCopyNode(node);
+  const cloned: DomNode = { ...clonedOriginal, id: newId };
+  const bg = (cloned.styles as any)?.backgroundImage;
+  if (typeof bg === 'string' && hashRegex.test(bg.trim())) {
+    hashes.push(bg.trim());
+  }
+  if (cloned.children?.length) {
+    cloned.children = cloned.children.map((c) => cloneNodeWithNewIds(c, hashes));
+  }
+  return cloned;
+}
+
+/**
+ * 将剪贴板中的节点粘贴到当前选中节点（作为其子节点）
+ */
+export async function pasteNodeToSelectedParent(): Promise<boolean> {
+  if (!clipboardNode) {
+    console.warn('剪贴板为空，无法粘贴');
+    return false;
+  }
+  const targetParentId = selectedNodeId || 'root';
+  const hashes: string[] = [];
+  const cloned = cloneNodeWithNewIds(clipboardNode, hashes);
+  const added = addNodeToParent(targetParentId, cloned);
+  if (added && currentProjectId) {
+    for (const h of hashes) {
+      const img = await getImage(currentProjectId, h);
+      if (img) await addOrIncrement(img, 1);
+    }
+  }
+  console.log('已粘贴节点到:', targetParentId);
+  return added;
 }

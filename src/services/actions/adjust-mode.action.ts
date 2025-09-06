@@ -301,6 +301,8 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
    */
   function keydownHandler(e: KeyboardEvent) {
     if (e.code !== key) return
+    // 避免 Ctrl+V 等组合键触发独立 V 功能
+    if (e.ctrlKey || e.metaKey) return
     if (!editingAccessor()) return
 
     // 仅在选中非根节点时启用调整模式
@@ -327,6 +329,7 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
    */
   function keyupHandler(e: KeyboardEvent) {
     if (e.code !== key) return
+    if (e.ctrlKey || e.metaKey) return
 
     if (keyPressed) {
       keyPressed = false
