@@ -148,7 +148,9 @@
                 offsetX = project.canvasState.x || 0
                 offsetY = project.canvasState.y || 0
                 scale = project.canvasState.scale || 1
-                console.log('已应用canvas状态:', { offsetX, offsetY, scale })
+                // 立即同步全局 canvasScale，防止刷新后状态栏默认 100%
+                canvasScale.set(editing ? scale * 0.5 : scale)
+                 console.log('已应用canvas状态:', { offsetX, offsetY, scale })
 
                 // 强制刷新DOM状态
                 if (canvasContainerRef) {
