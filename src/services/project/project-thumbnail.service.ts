@@ -13,6 +13,8 @@
  */
 
 import DexieService from '../database/dexie-service'
+import { getImage, addOrIncrement } from '../database/image-store.service'
+import { hashBlob } from '../image/image-utils'
 
 interface DomNode {
   projectId: string
@@ -50,9 +52,7 @@ export class ProjectThumbnailService {
         const hashRegex = /^[a-f0-9]{40,}$/
         if (hashRegex.test(backgroundImage.trim())) {
           // 哈希字符串：从 imageStore 获取 Blob
-          const { getImage } = await import('../database/image-store.service')
-          const pid = projectId
-          const record = await getImage(pid, backgroundImage.trim())
+          const record = await getImage(projectId, backgroundImage.trim())
           if (!record) {
             console.warn('未找到哈希对应的图片:', backgroundImage)
             return
@@ -87,11 +87,9 @@ export class ProjectThumbnailService {
       console.log(`【数据库交互】保存项目缩略图: 项目ID=${projectId}, Blob大小=${thumbnailBlob.size}字节`)
 
       // 1. 计算哈希
-      const { hashBlob } = await import('../image/image-utils')
       const hash = await hashBlob(thumbnailBlob, projectId)
 
       // 2. 写入 imageStore（如不存在则插入，不递增已有计数）
-      const { addOrIncrement, getImage } = await import('../database/image-store.service')
       const existingThumb = await getImage(projectId, hash)
       if (!existingThumb) {
         await addOrIncrement({ projectId, hash, blob: thumbnailBlob, name: 'thumbnail', width: 0, height: 0 }, 1)

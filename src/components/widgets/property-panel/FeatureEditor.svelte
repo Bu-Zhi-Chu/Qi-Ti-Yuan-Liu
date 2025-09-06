@@ -3,7 +3,7 @@
 -->
 <script lang="ts">
     import { getNodePropsStore, getNodeProps as _getNodeProps, getFullNode, updateNodeProps } from '../../../services/property-panel/property-panel.service'
-    import blocksConfig from '../../blocks/blocks.config.json' assert { type: 'json' }
+    import blocksConfig from '../../blocks/blocks.config.json'
     import PropertyRow from './PropertyRow.svelte'
     import PropertySelect from './PropertySelect.svelte'
 

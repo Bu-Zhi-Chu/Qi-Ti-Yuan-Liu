@@ -8,7 +8,8 @@ import type { Component } from 'svelte'
 
 // 收集所有组件（Svelte/TS/JS），懒加载（非 eager）
 // 这里使用绝对相对路径：以当前文件为基准，上上级到 src，再到 components
-const modules = import.meta.glob('../../components/blocks/**/*.{svelte,ts,js}') as Record<string, () => Promise<{ default: Component }>>
+// 使用静态（eager）方式加载，避免动态导入与静态导入并存造成 Vite 警告
+const modules = import.meta.glob('../../components/blocks/**/*.{svelte,ts,js}', { eager: true }) as Record<string, { default: Component }>
 
 /**
  * 根据 blocks.config.json 中的 `item.path`（如 "../core/SimpleBox.svelte"）加载组件。
@@ -25,5 +26,6 @@ export async function loadComponent(relativePath: string): Promise<{ default: Co
         throw new Error(`无法找到组件: ${relativePath}`)
     }
 
-    return modules[matchKey]()
+    // 由于使用了 eager: true，模块已经加载完成，直接返回即可
+    return Promise.resolve(modules[matchKey])
 }

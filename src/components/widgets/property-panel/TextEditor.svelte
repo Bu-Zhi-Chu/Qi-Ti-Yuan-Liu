@@ -33,7 +33,7 @@
     import PropertyRow from './PropertyRow.svelte'
     import PropertySelect from './PropertySelect.svelte'
     import SizeInput from './SizeInput.svelte'
-    import blocksConfig from '../../blocks/blocks.config.json' assert { type: 'json' }
+    import blocksConfig from '../../blocks/blocks.config.json'
 
     interface Props {
         selectedId: string | null

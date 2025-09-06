@@ -8,25 +8,15 @@
     import type { Component, Snippet } from 'svelte'
     import { onMount } from 'svelte'
     import { loadComponent } from '../../services/utils/manifest-loader'
+    import blocksConfig from '../blocks/blocks.config.json'
 
-    let blocksConfig: any = null
     let componentMap: Record<string, () => Promise<{ default: Component }>> = {}
-    // 标记组件映射是否已准备好，确保 effect 在映射加载后重新触发
-    let mapReady = $state(false)
 
-    onMount(async () => {
-        // 使用动态导入避免静态导入冲突
-        const config = await import('../blocks/blocks.config.json', { assert: { type: 'json' } })
-        blocksConfig = config.default
-
-        // 根据 JSON 配置直接生成组件映射（动态 import）
-        // 使用 /* @vite-ignore */ 提示 Vite 允许基于变量路径的动态加载
+    onMount(() => {
+        // 根据 JSON 配置直接生成组件映射
         for (const item of blocksConfig) {
             componentMap[item.type] = () => loadComponent(item.path)
         }
-
-        // 更新 mapReady 以触发响应式 effect 重新执行
-        mapReady = true
     })
 
     // 组件属性定义
@@ -51,12 +41,12 @@
 
     // 监听类型变化，动态加载对应组件
     $effect(() => {
-        if (type && mapReady && componentMap[type]) {
+        if (type && componentMap[type]) {
             componentMap[type]().then((module) => {
                 TargetComponent = module.default
             })
         }
-    })
+    })  
 </script>
 
 <!-- 根据组件加载状态渲染 -->

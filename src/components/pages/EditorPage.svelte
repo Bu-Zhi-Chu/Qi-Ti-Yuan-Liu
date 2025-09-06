@@ -21,7 +21,7 @@
     import DomTreeList from '../widgets/DomTreeList.svelte'
     import PropertyPanel from '../widgets/property-panel/PropertyPanel.svelte'
     import Icon from '../widgets/Icon.svelte'
-    import blocksConfig from '../blocks/blocks.config.json' assert { type: 'json' }
+    import blocksConfig from '../blocks/blocks.config.json'
     import { applyLogConfig } from '../../services/utils/log-switch'
 
     // 引入 DOM 树集中式状态管理

@@ -12,6 +12,7 @@
     import PropertySelect from './PropertySelect.svelte'
     import SizeInput from './SizeInput.svelte'
     import { updateNodeProperties } from '../../../services/repository/dom-tree.store.svelte'
+    import blocksConfig from '../../blocks/blocks.config.json'
     interface BlockItem {
         type: string
         nameZh: string
@@ -44,9 +45,8 @@
         { value: 'none', label: '禁止 (none)' }
     ]
 
-    onMount(async () => {
-        const config = await import('../../blocks/blocks.config.json', { assert: { type: 'json' } })
-        componentOptions = config.default as BlockItem[]
+    onMount(() => {
+        componentOptions = blocksConfig as BlockItem[]
     })
 
     // 当前选中节点 id（来自外部）

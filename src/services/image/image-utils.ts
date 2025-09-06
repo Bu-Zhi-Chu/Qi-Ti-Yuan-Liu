@@ -3,20 +3,15 @@
  */
 export async function hashBlob(blob: Blob, salt = ""): Promise<string> {
     const buffer = await blob.arrayBuffer()
-    // Web Crypto API 在浏览器侧使用 SubtleCrypto，Node 环境回退至 crypto 包
-    if (typeof crypto !== 'undefined' && crypto.subtle) {
-        const saltBytes = new TextEncoder().encode(salt)
-        const combined = new Uint8Array(saltBytes.length + buffer.byteLength)
-        combined.set(saltBytes, 0)
-        combined.set(new Uint8Array(buffer), saltBytes.length)
-        const hashBuffer = await crypto.subtle.digest('SHA-1', combined)
-        return Array.from(new Uint8Array(hashBuffer))
-            .map((b) => b.toString(16).padStart(2, '0'))
-            .join('')
-    }
-    // Node 环境（例如 SSR 或单测）
-    const { createHash } = await import('crypto')
-    return createHash('sha1').update(salt).update(Buffer.from(buffer)).digest('hex')
+    // 使用浏览器原生 Web Crypto API
+    const saltBytes = new TextEncoder().encode(salt)
+    const combined = new Uint8Array(saltBytes.length + buffer.byteLength)
+    combined.set(saltBytes, 0)
+    combined.set(new Uint8Array(buffer), saltBytes.length)
+    const hashBuffer = await window.crypto.subtle.digest('SHA-1', combined)
+    return Array.from(new Uint8Array(hashBuffer))
+        .map((b) => b.toString(16).padStart(2, '0'))
+        .join('')
 }
 
 /**
