@@ -2,7 +2,14 @@
     import { RouterView } from '@dvcol/svelte-simple-router/components'
     import { routerOptions } from './router/routes'
     import { isLiteMode } from './services/env/environment.service'
-    import EditorPage from './components/pages/EditorPage.svelte'
+
+    // 动态加载 EditorPage 组件
+    let EditorPage: typeof import('./components/pages/EditorPage.svelte').default | null = null;
+    if (isLiteMode()) {
+        import('./components/pages/EditorPage.svelte').then(mod => {
+            EditorPage = mod.default;
+        });
+    }
 
     /**
      * 应用主组件
@@ -25,8 +32,10 @@
 -->
 
 {#if isLiteMode()}
-    <!-- 生产精简模式：直接显示编辑页面 -->
-    <EditorPage />
+    <!-- 生产精简模式：动态显示编辑页面 -->
+    {#if EditorPage}
+        <svelte:component this={EditorPage} />
+    {/if}
 {:else}
     <!-- 标准模式：使用路由系统 -->
     <RouterView options={routerOptions} />

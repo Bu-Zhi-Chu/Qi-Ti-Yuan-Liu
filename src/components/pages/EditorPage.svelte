@@ -28,6 +28,7 @@
     import { domTree, selectedId, removeNodeById, projectId } from '../../services/repository/dom-tree.store.svelte'
     import DexieService from '../../services/database/dexie-service'
     import StatusBar from '../widgets/StatusBar.svelte'
+    import { screenDetector } from '../../services/screen/screen-detector.service'
     // 是否显示工作区，默认显示工作区
     let showWorkspace = $state(true)
 
@@ -172,6 +173,8 @@
     })
 
     onDestroy(() => {
+        // 离开编辑器页面时恢复默认设计尺寸，避免主页UI被放大
+        screenDetector.setDesignSize(1920, 1080)
         unregister && unregister()
         stopKonamiVerification()
         unregisterDelKey && unregisterDelKey()
