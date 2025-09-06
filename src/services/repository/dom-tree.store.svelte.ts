@@ -676,6 +676,8 @@ function generateUniqueDataName(baseName: string): string {
 
 // 剪贴板临时存储
 let clipboardNode: DomNode | null = null;
+// 标记当前剪贴板内容是否来自剪切操作
+let clipboardIsCut = false;
 
 /**
  * 复制当前选中节点及其子树到剪贴板
@@ -685,6 +687,7 @@ export function copySelectedNode(): boolean {
   const node = findNodeById(domTreeData, selectedNodeId);
   if (!node) return false;
   clipboardNode = deepCopyNode(node);
+  clipboardIsCut = false;
   console.log('已复制节点:', clipboardNode!.id);
   return true;
 }
@@ -699,6 +702,7 @@ export async function cutSelectedNode(): Promise<boolean> {
   const deleted = await removeNodeById(selectedNodeId);
   if (!deleted) return false;
   clipboardNode = deepCopyNode(node);
+  clipboardIsCut = true;
   console.log('已剪切节点:', clipboardNode!.id);
   return true;
 }
@@ -741,18 +745,28 @@ export async function pasteNodeToSelectedParent(toParent: boolean = false, selec
       targetParentId = parentNode?.id ?? 'root';
     }
   }
-  const hashes: string[] = [];
-  const cloned = cloneNodeWithNewIds(clipboardNode, hashes);
-  const added = addNodeToParent(targetParentId, cloned);
-  if (added && selectAfterPaste) {
-    await setSelectedId(cloned.id);
+  let nodeToPaste: DomNode;
+  let hashes: string[] = [];
+  if (clipboardIsCut) {
+    // 剪切操作：直接使用原节点，不修改 data-name
+    nodeToPaste = deepCopyNode(clipboardNode);
+  } else {
+    // 复制操作：克隆并生成新 ID / data-name
+    hashes = [];
+    nodeToPaste = cloneNodeWithNewIds(clipboardNode, hashes);
   }
-  if (added && currentProjectId) {
+  const added = addNodeToParent(targetParentId, nodeToPaste);
+  if (added && selectAfterPaste) {
+    await setSelectedId(nodeToPaste.id);
+  }
+  if (!clipboardIsCut && added && currentProjectId) {
     for (const h of hashes) {
       const img = await getImage(currentProjectId, h);
       if (img) await addOrIncrement(img, 1);
     }
   }
+  // 粘贴完成后，重置剪切标记（保持剪贴板内容）
+  clipboardIsCut = false;
   console.log('已粘贴节点到:', targetParentId);
-  return added ? cloned.id : null;
+  return added ? nodeToPaste.id : null;
 }
