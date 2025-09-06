@@ -651,6 +651,29 @@ function releaseNodeResources(node: DomNode) {
   }
 }
 
+// 生成唯一 dataName 辅助函数
+function generateUniqueDataName(baseName: string): string {
+  if (!baseName) return baseName;
+  // 收集当前树中的所有 dataName
+  const names = new Set<string>();
+  function collect(node: DomNode) {
+    if (node.dataName) names.add(node.dataName);
+    const attrName = node.attributes?.['data-name'] as string | undefined;
+    if (attrName) names.add(attrName);
+    node.children?.forEach(collect);
+  }
+  collect(domTreeData);
+  // 初始候选名："原名 Copy"
+  let candidate = `${baseName} Copy`;
+  if (!names.has(candidate)) return candidate;
+  // 若冲突则追加序号
+  let index = 1;
+  while (names.has(`${candidate} ${index}`)) {
+    index++;
+  }
+  return `${candidate} ${index}`;
+}
+
 // 剪贴板临时存储
 let clipboardNode: DomNode | null = null;
 
@@ -687,6 +710,11 @@ function cloneNodeWithNewIds(node: DomNode, hashes: string[] = []): DomNode {
   const newId = globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
   const clonedOriginal = deepCopyNode(node);
   const cloned: DomNode = { ...clonedOriginal, id: newId };
+  // 同步更新 attributes 中的 "data-name"
+  const originalAttrName = (clonedOriginal.attributes as any)?.['data-name'] as string | undefined;
+  if (originalAttrName) {
+    cloned.attributes = { ...(cloned.attributes ?? {}), 'data-name': generateUniqueDataName(originalAttrName) } as any;
+  }
   const bg = (cloned.styles as any)?.backgroundImage;
   if (typeof bg === 'string' && hashRegex.test(bg.trim())) {
     hashes.push(bg.trim());
