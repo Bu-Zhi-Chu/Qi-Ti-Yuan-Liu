@@ -54,6 +54,7 @@ const useWheelZoom: Action<HTMLElement, WheelZoomOptions> = (node, opts) => {
 
   let keyPressed = false
   let sequenceTimer: number | null = null
+  let altActivationTimer: number | null = null
 
   function resetSequence() {
     if (!keyPressed) {
@@ -66,18 +67,24 @@ const useWheelZoom: Action<HTMLElement, WheelZoomOptions> = (node, opts) => {
   }
 
   function handleKeyDown(e: KeyboardEvent) {
-    if (e.key === options.key && !keyPressed) {
+    if (e.key === options.key && !keyPressed && !altActivationTimer) {
       if (options.editingAccessor && !options.editingAccessor()) return;
       e.preventDefault()
-      keyPressed = true
-      node.style.cursor = 'ns-resize';
-      document.body.style.cursor = 'ns-resize'
+      altActivationTimer = window.setTimeout(() => {
+        keyPressed = true
+        node.style.cursor = 'ns-resize';
+        document.body.style.cursor = 'ns-resize'
+      }, 200)
     }
   }
 
   function handleKeyUp(e: KeyboardEvent) {
     if (e.key === options.key) {
       e.preventDefault()
+      if (altActivationTimer) {
+        window.clearTimeout(altActivationTimer)
+        altActivationTimer = null
+      }
       keyPressed = false
       if (sequenceTimer) {
         window.clearTimeout(sequenceTimer)
@@ -135,6 +142,7 @@ const useWheelZoom: Action<HTMLElement, WheelZoomOptions> = (node, opts) => {
       window.removeEventListener('keydown', handleKeyDown)
       window.removeEventListener('keyup', handleKeyUp)
       node.removeEventListener('wheel', handleWheel)
+      if (altActivationTimer) window.clearTimeout(altActivationTimer)
       // 恢复光标
       node.style.cursor = '';
       document.body.style.cursor = '';
