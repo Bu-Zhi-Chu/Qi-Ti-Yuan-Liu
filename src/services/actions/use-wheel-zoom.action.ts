@@ -70,6 +70,7 @@ const useWheelZoom: Action<HTMLElement, WheelZoomOptions> = (node, opts) => {
     if (e.key === options.key && !keyPressed && !altActivationTimer) {
       if (options.editingAccessor && !options.editingAccessor()) return;
       e.preventDefault()
+      // 避免误触和快捷键冲突
       altActivationTimer = window.setTimeout(() => {
         keyPressed = true
         node.style.cursor = 'ns-resize';
