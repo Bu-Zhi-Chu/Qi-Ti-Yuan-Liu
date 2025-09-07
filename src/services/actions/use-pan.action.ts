@@ -87,6 +87,7 @@ export default function usePan(node: HTMLElement, opts: UsePanOptions = {}) {
       state.keyPressed = true;
       if (!state.panActive) {
         node.style.cursor = 'grab';
+        document.body.style.cursor = 'grab';
       }
     }
   }
@@ -94,9 +95,12 @@ export default function usePan(node: HTMLElement, opts: UsePanOptions = {}) {
     if (e.code !== options.key) return;
     if (e.ctrlKey || e.metaKey) return;
     state.keyPressed = false;
-    if (!state.panActive) {
-      node.style.cursor = '';
+    if (state.panActive) {
+      // 松开快捷键立即终止拖动
+      state.panActive = false;
     }
+    node.style.cursor = '';
+    document.body.style.cursor = '';
   }
   if (options.key) {
     window.addEventListener('keydown', handleKeyDown);
@@ -119,12 +123,16 @@ export default function usePan(node: HTMLElement, opts: UsePanOptions = {}) {
     state.lastY = e.clientY;
     node.setPointerCapture(e.pointerId);
     node.style.cursor = 'grabbing';
+    document.body.style.cursor = 'grabbing';
   }
 
   function onPointerMove(e: PointerEvent) {
     if (!state.panActive) return;
     if (options.throttle && state.throttling) return;
 
+    if (document.body.style.cursor !== 'grabbing') {
+      document.body.style.cursor = 'grabbing';
+    }
     const scale = options.scaleAccessor?.() ?? 1;
     const dx = (e.clientX - state.lastX) / scale;
     const dy = (e.clientY - state.lastY) / scale;
@@ -172,6 +180,7 @@ export default function usePan(node: HTMLElement, opts: UsePanOptions = {}) {
     node.releasePointerCapture(e.pointerId);
     const nextCursor = state.keyPressed ? 'grab' : '';
     node.style.cursor = nextCursor;
+    document.body.style.cursor = nextCursor;
   }
 
   node.addEventListener('pointerdown', onPointerDown);
@@ -193,6 +202,7 @@ export default function usePan(node: HTMLElement, opts: UsePanOptions = {}) {
         window.removeEventListener('keydown', handleKeyDown);
         window.removeEventListener('keyup', handleKeyUp);
       }
+      document.body.style.cursor = '';
     },
   };
 }

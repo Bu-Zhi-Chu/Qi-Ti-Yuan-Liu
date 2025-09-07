@@ -57,9 +57,11 @@ const useWheelZoom: Action<HTMLElement, WheelZoomOptions> = (node, opts) => {
 
   function resetSequence() {
     if (!keyPressed) {
-      node.style.cursor = ''
+      node.style.cursor = '';
+      document.body.style.cursor = '';
     } else {
-      node.style.cursor = 'ns-resize'
+      node.style.cursor = 'ns-resize';
+      document.body.style.cursor = 'ns-resize';
     }
   }
 
@@ -68,7 +70,8 @@ const useWheelZoom: Action<HTMLElement, WheelZoomOptions> = (node, opts) => {
       if (options.editingAccessor && !options.editingAccessor()) return;
       e.preventDefault()
       keyPressed = true
-      node.style.cursor = 'ns-resize'
+      node.style.cursor = 'ns-resize';
+      document.body.style.cursor = 'ns-resize'
     }
   }
 
@@ -81,7 +84,8 @@ const useWheelZoom: Action<HTMLElement, WheelZoomOptions> = (node, opts) => {
         sequenceTimer = null
       }
       // 立即恢复默认光标
-      node.style.cursor = ''
+      node.style.cursor = '';
+      document.body.style.cursor = ''
     }
   }
 
@@ -114,7 +118,8 @@ const useWheelZoom: Action<HTMLElement, WheelZoomOptions> = (node, opts) => {
 
     // 更新光标样式
     const cursor = dir > 0 ? 'zoom-in' : 'zoom-out'
-    node.style.cursor = cursor
+    node.style.cursor = cursor;
+    document.body.style.cursor = cursor
   }
 
   // -------------------- 监听 --------------------
@@ -131,7 +136,8 @@ const useWheelZoom: Action<HTMLElement, WheelZoomOptions> = (node, opts) => {
       window.removeEventListener('keyup', handleKeyUp)
       node.removeEventListener('wheel', handleWheel)
       // 恢复光标
-      node.style.cursor = ''
+      node.style.cursor = '';
+      document.body.style.cursor = '';
     },
   }
 }
