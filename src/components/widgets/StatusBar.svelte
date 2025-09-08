@@ -6,9 +6,9 @@
     import { onMount, onDestroy } from 'svelte'
     $: percent = Math.round($canvasScale * 100)
     let fps = 0
-    let fpsText = "--"
+    let fpsText = '--'
     // 浏览器支持时显示已用 JS 堆内存（MB）
-    let memoryMB: string = "--"
+    let memoryMB: string = '--'
     // 监控开关
     let fpsEnabled = true
     let memoryEnabled = true
@@ -21,13 +21,13 @@
             if (fpsEnabled) frames++
             if (now - lastTime >= 1000) {
                 // FPS
-                fpsText = fpsEnabled ? String(frames) : "--"
+                fpsText = fpsEnabled ? String(frames) : '--'
                 // 内存
                 if (memoryEnabled && (performance as any).memory) {
                     const { usedJSHeapSize } = (performance as any).memory
                     memoryMB = (usedJSHeapSize / 1024 / 1024).toFixed(1)
                 } else if (!memoryEnabled) {
-                    memoryMB = "--"
+                    memoryMB = '--'
                 }
                 frames = 0
                 lastTime = now
@@ -67,13 +67,13 @@
 
     function toggleFPS(e?: Event) {
         fpsEnabled = !fpsEnabled
-        fpsText = fpsEnabled ? String(fps) : "--"
+        fpsText = fpsEnabled ? String(fps) : '--'
         restartLoop()
         if (e) (e.currentTarget as HTMLElement)?.blur()
     }
     function toggleMemory(e?: Event) {
         memoryEnabled = !memoryEnabled
-        memoryMB = memoryEnabled ? memoryMB : "--"
+        memoryMB = memoryEnabled ? memoryMB : '--'
         restartLoop()
         if (e) (e.currentTarget as HTMLElement)?.blur()
     }
