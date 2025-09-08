@@ -70,14 +70,7 @@ const drawModeAction: Action<HTMLElement, DrawModeOptions> = (node, opts) => {
 
   /** ------------- 绘制过程鼠标移动 ------------- */
   function handleMouseMove(e: MouseEvent) {
-    // 根据 Alt 键实时同步对齐状态：按住 Alt 开启，对齐松开 Alt 关闭
-    if (isDrawModeGetter()) {
-      if (e.altKey) {
-        if (!isAlignOpen()) openAlign()
-      } else {
-        if (isAlignOpen()) closeAlign()
-      }
-    }
+
     const alignEnabled = isAlignOpen()
 
     // 选择容器：绘制中使用 targetNodeIdGetter，否则回退到当前选中节点
@@ -194,9 +187,9 @@ const drawModeAction: Action<HTMLElement, DrawModeOptions> = (node, opts) => {
 
     // 键盘状态标记
     let bPressed = false
-    let altPressed = false
+    let shiftPressed = false
 
-    // 键盘长按 B 进入绘画模式，B + Alt 进入对齐检测；松开任一键退出；按 Esc 可随时退出
+    // 键盘长按 B 进入绘画模式，B + Shift 进入对齐检测；松开任一键退出；按 Esc 可随时退出
     const keydownHandler = (e: KeyboardEvent) => {
       if (e.repeat) return // 忽略长按自动重复事件
       // 记录状态
@@ -208,16 +201,15 @@ const drawModeAction: Action<HTMLElement, DrawModeOptions> = (node, opts) => {
           enterDrawMode()
           node.style.cursor = 'crosshair'
         }
-        // 如 Alt 已按下则开启对齐
-        if (altPressed) openAlign()
+        // 如 Shift 已按下则开启对齐
+        if (shiftPressed) openAlign()
         return
       }
-      if (e.key === 'Alt') {
+      if (e.key === 'Shift') {
         // 仅当 B 已按下时才处理 Alt，避免与画布缩放冲突
         if (!bPressed) return
-        altPressed = true
+        shiftPressed = true
         openAlign()
-        e.preventDefault()
         return
       }
       if (e.key === 'Escape') {
@@ -227,23 +219,26 @@ const drawModeAction: Action<HTMLElement, DrawModeOptions> = (node, opts) => {
         }
         closeAlign()
         bPressed = false
-        altPressed = false
+        shiftPressed = false
       }
     }
     const keyupHandler = (e: KeyboardEvent) => {
       if (e.key === 'b' || e.key === 'B') {
+        // 松开 B：结束绘画，并同步关闭对齐状态
         bPressed = false
         if (isDrawModeGetter()) {
           exitDrawMode()
           node.style.cursor = 'default'
         }
         closeAlign()
+        // 同步重置 Shift 状态，避免残留
+        shiftPressed = false
         return
       }
-      if (e.key === 'Alt') {
+      if (e.key === 'Shift') {
         // 若未按 B，则忽略 Alt 弹起
         if (!bPressed) return
-        altPressed = false
+        shiftPressed = false
         closeAlign()
       }
     }
