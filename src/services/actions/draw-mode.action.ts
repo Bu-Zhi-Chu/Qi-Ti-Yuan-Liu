@@ -99,25 +99,58 @@ const drawModeAction: Action<HTMLElement, DrawModeOptions> = (node, opts) => {
     // 阈值：基准 4px，随画布缩放反向自适应，缩放越大阈值越小
     const BASE_THRESHOLD = 4
     const THRESHOLD = BASE_THRESHOLD / scale
-    const guidelines: Guideline[] = []
+
+    // 最近原则：垂直、水平各保留距离指针最近的一条辅助线
+    let nearestVertical: Guideline | null = null
+    let nearestVerticalDist = Number.POSITIVE_INFINITY
+    let nearestHorizontal: Guideline | null = null
+    let nearestHorizontalDist = Number.POSITIVE_INFINITY
+
     const children = Array.from(targetEl.children).filter((el) => !el.hasAttribute('data-align-ignore')) as HTMLElement[]
     children.forEach((child) => {
       const childRect = child.getBoundingClientRect()
-      // 垂直
-      if (Math.abs(e.clientX - childRect.left) <= THRESHOLD) {
-        guidelines.push({ type: 'vertical', position: (childRect.left - rect.left) / scale })
+
+      // 垂直方向（左右边缘）
+      const leftDist = Math.abs(e.clientX - childRect.left)
+      if (leftDist <= THRESHOLD && leftDist < nearestVerticalDist) {
+        nearestVerticalDist = leftDist
+        nearestVertical = {
+          type: 'vertical',
+          position: (childRect.left - rect.left) / scale,
+        }
       }
-      if (Math.abs(e.clientX - childRect.right) <= THRESHOLD) {
-        guidelines.push({ type: 'vertical', position: (childRect.right - rect.left) / scale })
+      const rightDist = Math.abs(e.clientX - childRect.right)
+      if (rightDist <= THRESHOLD && rightDist < nearestVerticalDist) {
+        nearestVerticalDist = rightDist
+        nearestVertical = {
+          type: 'vertical',
+          position: (childRect.right - rect.left) / scale,
+        }
       }
-      // 水平
-      if (Math.abs(e.clientY - childRect.top) <= THRESHOLD) {
-        guidelines.push({ type: 'horizontal', position: (childRect.top - rect.top) / scale })
+
+      // 水平方向（上下边缘）
+      const topDist = Math.abs(e.clientY - childRect.top)
+      if (topDist <= THRESHOLD && topDist < nearestHorizontalDist) {
+        nearestHorizontalDist = topDist
+        nearestHorizontal = {
+          type: 'horizontal',
+          position: (childRect.top - rect.top) / scale,
+        }
       }
-      if (Math.abs(e.clientY - childRect.bottom) <= THRESHOLD) {
-        guidelines.push({ type: 'horizontal', position: (childRect.bottom - rect.top) / scale })
+      const bottomDist = Math.abs(e.clientY - childRect.bottom)
+      if (bottomDist <= THRESHOLD && bottomDist < nearestHorizontalDist) {
+        nearestHorizontalDist = bottomDist
+        nearestHorizontal = {
+          type: 'horizontal',
+          position: (childRect.bottom - rect.top) / scale,
+        }
       }
     })
+
+    const guidelines: Guideline[] = []
+    if (nearestVertical) guidelines.push(nearestVertical)
+    if (nearestHorizontal) guidelines.push(nearestHorizontal)
+
     if (alignEnabled) {
       setGuidelines(guidelines)
     } else {
