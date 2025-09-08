@@ -10,6 +10,8 @@
     import PropertyRow from './PropertyRow.svelte'
     import PropertySelect from './PropertySelect.svelte'
     import SizeInput from './SizeInput.svelte'
+    import { addNodeToParent, removeNodeById } from '../../../services/repository/dom-tree.store.svelte'
+    import { getFullNode } from '../../../services/property-panel/property-panel.service'
 
     interface Props {
         selectedId: string | null
@@ -41,6 +43,10 @@
     let currentGridGap = $state('')
     let currentGridColumnGap = $state('')
     let currentGridRowGap = $state('')
+
+    // 网格行列数字（方便直观编辑）
+    let gridColsCount = $state<number>(1)
+    let gridRowsCount = $state<number>(1)
 
     // 可用的display值
     const displayOptions = [
@@ -111,6 +117,47 @@
     }
 
     // 处理grid属性变更
+    function handleGridColsChange(n: number) {
+        if (!selectedId) return
+        if (n < 1) n = 1
+        gridColsCount = n
+        updateNodeProps(selectedId, { styles: { gridTemplateColumns: `repeat(${n}, 1fr)` } })
+        syncGridChildren(gridRowsCount, gridColsCount)
+    }
+    function handleGridRowsChange(n: number) {
+        if (!selectedId) return
+        if (n < 1) n = 1
+        gridRowsCount = n
+        updateNodeProps(selectedId, { styles: { gridTemplateRows: `repeat(${n}, 1fr)` } })
+        syncGridChildren(gridRowsCount, gridColsCount)
+    }
+
+    // 同步子节点数量与网格单元一致
+    async function syncGridChildren(rows: number, cols: number) {
+        if (!selectedId) return
+        const desired = rows * cols
+        const node = getFullNode(selectedId)
+        if (!node) return
+        const current = node.children?.length ?? 0
+        // 添加不足部分
+        for (let i = 0; i < desired - current; i++) {
+            const childId = globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-${Math.random()}`
+            addNodeToParent(selectedId, {
+                id: childId,
+                componentType: 'SimpleBox',
+                styles: { backgroundColor: 'rgba(255,255,255,0.05)' },
+                attributes: { 'data-name': `单元格 ${current + i + 1}` },
+                children: []
+            } as any)
+        }
+        // 删除多余部分
+        if (current > desired && node.children) {
+            const extras = node.children.slice(desired)
+            for (const c of extras) {
+                await removeNodeById(c.id)
+            }
+        }
+    }
     function handleGridPropChange(prop: string, value: string) {
         if (!selectedId) return
 
@@ -222,12 +269,12 @@
 
             <!-- Grid属性 -->
             {#if currentDisplay === 'grid'}
-                <PropertyRow label="列模板项">
-                    <input id="node-grid-columns" type="text" bind:value={currentGridTemplateColumns} oninput={(e) => handleGridPropChange('gridTemplateColumns', e.currentTarget.value)} placeholder="例: 1fr 2fr 1fr" />
+                <PropertyRow label="网格列数">
+                    <input type="number" min="1" bind:value={gridColsCount} onchange={(e) => handleGridColsChange(parseInt(e.currentTarget.value))} />
                 </PropertyRow>
 
-                <PropertyRow label="行模板项">
-                    <input id="node-grid-rows" type="text" bind:value={currentGridTemplateRows} oninput={(e) => handleGridPropChange('gridTemplateRows', e.currentTarget.value)} placeholder="例: auto 100px auto" />
+                <PropertyRow label="网格行数">
+                    <input type="number" min="1" bind:value={gridRowsCount} onchange={(e) => handleGridRowsChange(parseInt(e.currentTarget.value))} />
                 </PropertyRow>
 
                 <PropertyRow label="间距设置">
