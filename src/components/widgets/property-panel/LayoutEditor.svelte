@@ -63,6 +63,10 @@
         return typeof value === 'string' ? value : ''
     }
     // 新增：解析像素值（支持calc表达式）
+    const parseRepeatCount = (tpl: string): number => {
+        const m = tpl?.match(/repeat\(\s*(\d+)\s*,/i)
+        return m ? parseInt(m[1]) : 1
+    }
     const parsePixelValue = (val: string): string => {
         if (!val) return ''
         const calcMatch = val.match(/calc\(\s*(\d+(?:\.\d+)?)\s*px/i)
@@ -94,8 +98,11 @@
                 currentColumnGap = parsePixelValue(getStringValue(props.styles?.columnGap))
 
                 // 初始化grid属性
-                currentGridTemplateColumns = getStringValue(props.styles?.gridTemplateColumns)
                 currentGridTemplateRows = getStringValue(props.styles?.gridTemplateRows)
+                currentGridTemplateColumns = getStringValue(props.styles?.gridTemplateColumns)
+                // 根据 repeat() 语法回显行列数字
+                if (currentGridTemplateRows) gridRowsCount = parseRepeatCount(currentGridTemplateRows)
+                if (currentGridTemplateColumns) gridColsCount = parseRepeatCount(currentGridTemplateColumns)
                 currentGridGap = parsePixelValue(getStringValue(props.styles?.gap || props.styles?.gridGap))
                 currentGridColumnGap = parsePixelValue(getStringValue(props.styles?.columnGap || props.styles?.gridColumnGap))
                 currentGridRowGap = parsePixelValue(getStringValue(props.styles?.rowGap || props.styles?.gridRowGap))
