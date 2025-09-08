@@ -70,9 +70,9 @@ const drawModeAction: Action<HTMLElement, DrawModeOptions> = (node, opts) => {
 
   /** ------------- 绘制过程鼠标移动 ------------- */
   function handleMouseMove(e: MouseEvent) {
-    // 根据 Ctrl 键实时同步对齐状态：按住 Ctrl 开启，松开 Ctrl 关闭
+    // 根据 Alt 键实时同步对齐状态：按住 Alt 开启，对齐松开 Alt 关闭
     if (isDrawModeGetter()) {
-      if (e.ctrlKey) {
+      if (e.altKey) {
         if (!isAlignOpen()) openAlign()
       } else {
         if (isAlignOpen()) closeAlign()
@@ -168,8 +168,16 @@ const drawModeAction: Action<HTMLElement, DrawModeOptions> = (node, opts) => {
 
     if (alignEnabled) {
       setGuidelines(guidelines)
-      currentSnapX = (nearestVertical as Guideline | null)?.position ?? null
-      currentSnapY = (nearestHorizontal as Guideline | null)?.position ?? null
+      if (nearestVertical !== null) {
+        currentSnapX = (nearestVertical as Guideline).position
+      } else {
+        currentSnapX = null
+      }
+      if (nearestHorizontal !== null) {
+        currentSnapY = (nearestHorizontal as Guideline).position
+      } else {
+        currentSnapY = null
+      }
     } else {
       clearGuidelines()
       currentSnapX = null
@@ -186,9 +194,9 @@ const drawModeAction: Action<HTMLElement, DrawModeOptions> = (node, opts) => {
 
     // 键盘状态标记
     let bPressed = false
-    let ctrlPressed = false
+    let altPressed = false
 
-    // 键盘长按 B 进入绘画模式，B + Ctrl 进入对齐检测；松开任一键退出；按 Esc 可随时退出
+    // 键盘长按 B 进入绘画模式，B + Alt 进入对齐检测；松开任一键退出；按 Esc 可随时退出
     const keydownHandler = (e: KeyboardEvent) => {
       if (e.repeat) return // 忽略长按自动重复事件
       // 记录状态
@@ -201,13 +209,13 @@ const drawModeAction: Action<HTMLElement, DrawModeOptions> = (node, opts) => {
           node.style.cursor = 'crosshair'
         }
         // 如 Alt 已按下则开启对齐
-        if (ctrlPressed) openAlign()
+        if (altPressed) openAlign()
         return
       }
-      if (e.key === 'Control') {
-        // 仅当 B 已按下时才处理 Ctrl，避免与画布缩放冲突
+      if (e.key === 'Alt') {
+        // 仅当 B 已按下时才处理 Alt，避免与画布缩放冲突
         if (!bPressed) return
-        ctrlPressed = true
+        altPressed = true
         openAlign()
         e.preventDefault()
         return
@@ -219,7 +227,7 @@ const drawModeAction: Action<HTMLElement, DrawModeOptions> = (node, opts) => {
         }
         closeAlign()
         bPressed = false
-        ctrlPressed = false
+        altPressed = false
       }
     }
     const keyupHandler = (e: KeyboardEvent) => {
@@ -232,10 +240,10 @@ const drawModeAction: Action<HTMLElement, DrawModeOptions> = (node, opts) => {
         closeAlign()
         return
       }
-      if (e.key === 'Control') {
-        // 若未按 B，则忽略 Ctrl 弹起
+      if (e.key === 'Alt') {
+        // 若未按 B，则忽略 Alt 弹起
         if (!bPressed) return
-        ctrlPressed = false
+        altPressed = false
         closeAlign()
       }
     }
