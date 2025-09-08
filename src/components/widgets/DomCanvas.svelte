@@ -294,10 +294,17 @@
             scale = editing ? 1 : 0.5
         } else {
             const el = getElementByNodeId(currentSelectedId!)
-            if (el) {
+            const container = canvasContainerRef
+            if (el && container) {
                 const rect = el.getBoundingClientRect()
+                const containerRect = container.getBoundingClientRect()
+
+                // 视口尺寸
                 const viewportW = window.innerWidth
                 const viewportH = window.innerHeight
+
+                const viewportCenterX = viewportW / 2
+                const viewportCenterY = viewportH / 2
 
                 // 目标让元素占据 80% 视口尺寸
                 const desiredScreenScale = Math.min((viewportW * 0.8) / rect.width, (viewportH * 0.8) / rect.height)
@@ -308,14 +315,18 @@
                 scale = Math.max(0.2, Math.min(scale, 3))
 
                 const effectiveScale = (editing ? scale * 0.5 : scale) * ratio
-                const centerX = rect.left + rect.width / 2
-                const centerY = rect.top + rect.height / 2
-                const viewportCenterX = viewportW / 2
-                const viewportCenterY = viewportH / 2
 
-                // 将屏幕位移转换为画布 offset
-                offsetX += (viewportCenterX - centerX) / effectiveScale
-                offsetY += (viewportCenterY - centerY) / effectiveScale
+                // 元素中心在画布坐标系中的像素位置
+                const nodeCenterCanvasX = rect.left - containerRect.left + rect.width / 2
+                const nodeCenterCanvasY = rect.top - containerRect.top + rect.height / 2
+
+                // 画布容器中心（像素）
+                const canvasCenterX = containerRect.width / 2
+                const canvasCenterY = containerRect.height / 2
+
+                // 将屏幕位移转换为画布偏移量
+                offsetX += (canvasCenterX - nodeCenterCanvasX) / effectiveScale
+                offsetY += (canvasCenterY - nodeCenterCanvasY) / effectiveScale
                 // 递归微调，使用 rAF 在布局刷新后再次测量，最多执行 maxRefine 次
                 let attempt = 0
                 function refine() {
