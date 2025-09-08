@@ -116,6 +116,33 @@
                 })
             }
         }
+
+        // 如果切换为 grid 布局，根据现有子节点数量自动计算行列数并调整网格
+        if (newValue === 'grid') {
+            const node = getFullNode(selectedId)
+            const count = node?.children?.length ?? 0
+            if (count) {
+                // 计算接近正方形的行列数
+                let rows = Math.floor(Math.sqrt(count))
+                if (rows * rows < count) rows += 1
+                const cols = Math.ceil(count / rows)
+
+                gridRowsCount = rows
+                gridColsCount = cols
+
+                updateNodeProps(selectedId, {
+                    styles: {
+                        gridTemplateRows: `repeat(${rows}, 1fr)`,
+                        gridTemplateColumns: `repeat(${cols}, 1fr)`
+                    }
+                })
+
+                // 同步子节点数量（不会增加/删除，但会清理宽高）
+                node!.children!.forEach((child) => {
+                    updateNodeProps(child.id, { styles: { width: undefined, height: undefined } })
+                })
+            }
+        }
     }
 
     // 处理flex属性变更
