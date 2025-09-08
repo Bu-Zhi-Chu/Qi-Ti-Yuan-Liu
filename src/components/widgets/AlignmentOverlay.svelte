@@ -63,9 +63,9 @@
     <div data-align-ignore use:portal={targetEl} class="guidelines-layer">
         {#each lines as line (line)}
             {#if line.type === 'vertical'}
-                <div class="guideline vertical" style="left: calc({line.position}px * var(--scale-ratio, 1));"></div>
+                <div class="guideline vertical" style="left: {line.position}px;"></div>
             {:else if line.type === 'horizontal'}
-                <div class="guideline horizontal" style="top: calc({line.position}px * var(--scale-ratio, 1));"></div>
+                <div class="guideline horizontal" style="top: {line.position}px;"></div>
             {/if}
         {/each}
     </div>
