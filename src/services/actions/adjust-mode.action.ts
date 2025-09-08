@@ -265,22 +265,38 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
     // 保证仅存在一个覆盖层
     removeOverlay()
 
+    // 若目标元素无定位上下文，强制设为 relative，确保绝对定位参考
+    if (getComputedStyle(targetEl).position === 'static') {
+      targetEl.style.position = 'relative'
+    }
+
+    // 外层 100% 尺寸绝对容器
+    const wrapper = document.createElement('div')
+    Object.assign(wrapper.style, {
+      position: 'absolute',
+      top: '0',
+      left: '0',
+      width: '100%',
+      height: '100%',
+      pointerEvents: 'none',
+      zIndex: '9998'
+    } as CSSStyleDeclaration)
+
+    // 内层真正可交互的覆盖层
     const overlay = document.createElement('div')
     overlay.className = 'adjust-overlay'
     Object.assign(overlay.style, {
       position: 'relative',
-      top: 'calc(0px * var(--scale-ratio, 1))',
-      left: 'calc(0px * var(--scale-ratio, 1))',
       width: '100%',
       height: '100%',
       pointerEvents: 'auto',
       boxSizing: 'border-box',
-      background: 'transparent',
-      zIndex: '9998'
+      background: 'transparent'
     } as CSSStyleDeclaration)
 
-    targetEl.appendChild(overlay)
-    overlayEl = overlay
+    wrapper.appendChild(overlay)
+    targetEl.appendChild(wrapper)
+    overlayEl = wrapper
 
     // 在覆盖层内部挂载操作手柄
     addHandles(overlay)
