@@ -329,6 +329,8 @@
                 offsetY += (canvasCenterY - nodeCenterCanvasY) / effectiveScale
                 // 递归微调，使用 rAF 在布局刷新后再次测量，最多执行 maxRefine 次
                 let attempt = 0
+                let lastDeltaCanvasX: number | null = null
+                let lastDeltaCanvasY: number | null = null
                 function refine() {
                     attempt++
                     const el2 = getElementByNodeId(currentSelectedId!)
@@ -336,16 +338,34 @@
                     const rect2 = el2.getBoundingClientRect()
                     const centerX2 = rect2.left + rect2.width / 2
                     const centerY2 = rect2.top + rect2.height / 2
+
+                    // 每次迭代都重新计算 scaleRatio，保证与画布实时缩放保持一致
+                    const curEffectiveScale = (editing ? scale * 0.5 : scale) * getScaleRatio()
+
                     const deltaScreenX = viewportCenterX - centerX2
                     const deltaScreenY = viewportCenterY - centerY2
-                    const deltaCanvasX = deltaScreenX / effectiveScale
-                    const deltaCanvasY = deltaScreenY / effectiveScale
-                    // 若偏移量足够小或超过尝试次数则停止
-                    if ((Math.abs(deltaScreenX) < threshold && Math.abs(deltaScreenY) < threshold) || attempt >= maxRefine) {
+                    const deltaCanvasX = deltaScreenX / curEffectiveScale
+                    const deltaCanvasY = deltaScreenY / curEffectiveScale
+
+                    // 按当前缩放换算阈值，避免不同缩放下判断失真
+                    const thresholdCanvas = threshold / curEffectiveScale
+                    const oscillationThresholdCanvas = 150 / curEffectiveScale
+                    const oscillated =
+                        lastDeltaCanvasX !== null &&
+                        lastDeltaCanvasY !== null &&
+                        Math.sign(deltaCanvasX) !== Math.sign(lastDeltaCanvasX) &&
+                        Math.sign(deltaCanvasY) !== Math.sign(lastDeltaCanvasY) &&
+                        (Math.abs(deltaCanvasX) >= oscillationThresholdCanvas || Math.abs(deltaCanvasY) >= oscillationThresholdCanvas)
+
+                    // 若已稳定、超过迭代次数或检测到大幅来回震荡则停止
+                    if ((Math.abs(deltaCanvasX) < thresholdCanvas && Math.abs(deltaCanvasY) < thresholdCanvas) || attempt >= maxRefine || oscillated) {
                         return
                     }
+
                     offsetX += deltaCanvasX
                     offsetY += deltaCanvasY
+                    lastDeltaCanvasX = deltaCanvasX
+                    lastDeltaCanvasY = deltaCanvasY
                     window.requestAnimationFrame(refine)
                 }
                 window.requestAnimationFrame(refine)
