@@ -62,6 +62,15 @@
     const getStringValue = (value: string | Blob | undefined): string => {
         return typeof value === 'string' ? value : ''
     }
+    // 新增：解析像素值（支持calc表达式）
+    const parsePixelValue = (val: string): string => {
+        if (!val) return ''
+        const calcMatch = val.match(/calc\(\s*(\d+(?:\.\d+)?)\s*px/i)
+        if (calcMatch) return calcMatch[1]
+        const pxMatch = val.match(/^(\d+(?:\.\d+)?)\s*px$/i)
+        if (pxMatch) return pxMatch[1]
+        return val
+    }
 
     // 新版：通过 getNodePropsStore 订阅实时变化
     $effect(() => {
@@ -80,12 +89,16 @@
                 currentAlignItems = getStringValue(props.styles?.alignItems) || 'stretch'
                 currentFlexWrap = getStringValue(props.styles?.flexWrap) || 'nowrap'
 
+                // 新增 flex 行/列间距初始化
+                currentRowGap = parsePixelValue(getStringValue(props.styles?.rowGap))
+                currentColumnGap = parsePixelValue(getStringValue(props.styles?.columnGap))
+
                 // 初始化grid属性
                 currentGridTemplateColumns = getStringValue(props.styles?.gridTemplateColumns)
                 currentGridTemplateRows = getStringValue(props.styles?.gridTemplateRows)
-                currentGridGap = getStringValue(props.styles?.gap || props.styles?.gridGap)
-                currentGridColumnGap = getStringValue(props.styles?.columnGap || props.styles?.gridColumnGap)
-                currentGridRowGap = getStringValue(props.styles?.rowGap || props.styles?.gridRowGap)
+                currentGridGap = parsePixelValue(getStringValue(props.styles?.gap || props.styles?.gridGap))
+                currentGridColumnGap = parsePixelValue(getStringValue(props.styles?.columnGap || props.styles?.gridColumnGap))
+                currentGridRowGap = parsePixelValue(getStringValue(props.styles?.rowGap || props.styles?.gridRowGap))
             })
         }
         return () => {
@@ -115,32 +128,26 @@
                     }
                 })
             }
-        }
-
-        // 如果切换为 grid 布局，根据现有子节点数量自动计算行列数并调整网格
-        if (newValue === 'grid') {
+        } else if (newValue === 'grid') {
             const node = getFullNode(selectedId)
-            const count = node?.children?.length ?? 0
-            if (count) {
-                // 计算接近正方形的行列数
-                let rows = Math.floor(Math.sqrt(count))
-                if (rows * rows < count) rows += 1
-                const cols = Math.ceil(count / rows)
-
-                gridRowsCount = rows
-                gridColsCount = cols
-
-                updateNodeProps(selectedId, {
-                    styles: {
-                        gridTemplateRows: `repeat(${rows}, 1fr)`,
-                        gridTemplateColumns: `repeat(${cols}, 1fr)`
-                    }
-                })
-
-                // 同步子节点数量（不会增加/删除，但会清理宽高）
-                node!.children!.forEach((child) => {
-                    updateNodeProps(child.id, { styles: { width: undefined, height: undefined } })
-                })
+            if (node) {
+                const count = node.children?.length ?? 0
+                if (count > 0) {
+                    const rows = Math.ceil(Math.sqrt(count))
+                    const cols = Math.ceil(count / rows)
+                    gridRowsCount = rows
+                    gridColsCount = cols
+                    updateNodeProps(selectedId, {
+                        styles: {
+                            gridTemplateRows: `repeat(${rows}, 1fr)`,
+                            gridTemplateColumns: `repeat(${cols}, 1fr)`
+                        }
+                    })
+                    // 清理子节点宽高并将定位重置为 static，保证参与网格布局
+                    node.children?.forEach((child) => {
+                        updateNodeProps(child.id, { styles: { width: '', height: '', position: 'static' } })
+                    })
+                }
             }
         }
     }
@@ -294,16 +301,13 @@
                     />
                 </PropertyRow>
 
-                <PropertyRow label="间距设置">
-                    <SizeInput bind:value={currentGap} unitOptions={['px']} step={1} on:change={({ detail: { value, unit } }) => handleFlexPropChange('gap', value + unit)} />
-                </PropertyRow>
 
                 <PropertyRow label="行间距值">
-                    <SizeInput bind:value={currentRowGap} unitOptions={['px']} step={1} on:change={({ detail: { value, unit } }) => handleFlexPropChange('rowGap', value + unit)} />
+                    <SizeInput bind:value={currentRowGap} unitOptions={['px']} step={1} on:change={({ detail: { value } }) => handleFlexPropChange('rowGap', `calc(${value}px * var(--scale-ratio, 1))`)} />
                 </PropertyRow>
 
                 <PropertyRow label="列间距值">
-                    <SizeInput bind:value={currentColumnGap} unitOptions={['px']} step={1} on:change={({ detail: { value, unit } }) => handleFlexPropChange('columnGap', value + unit)} />
+                    <SizeInput bind:value={currentColumnGap} unitOptions={['px']} step={1} on:change={({ detail: { value } }) => handleFlexPropChange('columnGap', `calc(${value}px * var(--scale-ratio, 1))`)} />
                 </PropertyRow>
             {/if}
 
@@ -318,15 +322,15 @@
                 </PropertyRow>
 
                 <PropertyRow label="间距设置">
-                    <SizeInput bind:value={currentGridGap} unitOptions={['px']} step={1} on:change={({ detail: { value, unit } }) => handleGridPropChange('gap', value + unit)} />
+                    <SizeInput bind:value={currentGridGap} unitOptions={['px']} step={1} on:change={({ detail: { value } }) => handleGridPropChange('gap', `calc(${value}px * var(--scale-ratio, 1))`)} />
                 </PropertyRow>
 
                 <PropertyRow label="列间距值">
-                    <SizeInput bind:value={currentGridColumnGap} unitOptions={['px']} step={1} on:change={({ detail: { value, unit } }) => handleGridPropChange('columnGap', value + unit)} />
+                    <SizeInput bind:value={currentGridColumnGap} unitOptions={['px']} step={1} on:change={({ detail: { value } }) => handleGridPropChange('columnGap', `calc(${value}px * var(--scale-ratio, 1))`)} />
                 </PropertyRow>
 
                 <PropertyRow label="行间距值">
-                    <SizeInput bind:value={currentGridRowGap} unitOptions={['px']} step={1} on:change={({ detail: { value, unit } }) => handleGridPropChange('rowGap', value + unit)} />
+                    <SizeInput bind:value={currentGridRowGap} unitOptions={['px']} step={1} on:change={({ detail: { value } }) => handleGridPropChange('rowGap', `calc(${value}px * var(--scale-ratio, 1))`)} />
                 </PropertyRow>
             {/if}
         </div>
