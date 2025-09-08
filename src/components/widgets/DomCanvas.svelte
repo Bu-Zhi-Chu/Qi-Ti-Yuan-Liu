@@ -43,6 +43,7 @@
 
     import { onMount } from 'svelte'
     import { domTree, selectedId, setSelectedId, setProjectId, loadDomTreeFromDatabase, projectId } from '../../services/repository/dom-tree.store.svelte'
+    import { getElementByNodeId } from '../../services/utils/dom-geometry.util'
     import Dexie from 'dexie'
     import { isLiteMode } from '../../services/env/environment.service'
     // 顶部容器引用，用于渲染画布内容
@@ -87,8 +88,12 @@
             }
         })
 
+        // 快捷键监听 F 聚焦
+        window.addEventListener('keydown', handleFocusKey)
+
         return () => {
             unsubscribe?.()
+            window.removeEventListener('keydown', handleFocusKey)
         }
     })
 
@@ -275,6 +280,82 @@
     $effect(() => {
         canvasScale.set(editing ? scale * 0.5 : scale)
     })
+
+    // 聚焦画布：根节点缩放 50%；非根节点自动计算缩放并递归微调直至偏移量稳定
+    function focusCanvas() {
+        const currentSelectedId = selectedId()
+        const maxRefine = 5
+        const threshold = 1 // 屏幕像素阈值，小于该值判定为稳定
+
+        // 若未选中或选中根节点，使用默认视图
+        if (!currentSelectedId || currentSelectedId === 'root') {
+            offsetX = 0
+            offsetY = 0
+            scale = editing ? 1 : 0.5
+        } else {
+            const el = getElementByNodeId(currentSelectedId!)
+            if (el) {
+                const rect = el.getBoundingClientRect()
+                const viewportW = window.innerWidth
+                const viewportH = window.innerHeight
+
+                // 目标让元素占据 80% 视口尺寸
+                const desiredScreenScale = Math.min((viewportW * 0.8) / rect.width, (viewportH * 0.8) / rect.height)
+                const ratio = getScaleRatio()
+                // 将屏幕缩放转换为内部画布 scale
+                scale = desiredScreenScale / (editing ? 0.5 * ratio : 1 * ratio)
+                // 限制缩放范围
+                scale = Math.max(0.2, Math.min(scale, 3))
+
+                const effectiveScale = (editing ? scale * 0.5 : scale) * ratio
+                const centerX = rect.left + rect.width / 2
+                const centerY = rect.top + rect.height / 2
+                const viewportCenterX = viewportW / 2
+                const viewportCenterY = viewportH / 2
+
+                // 将屏幕位移转换为画布 offset
+                offsetX += (viewportCenterX - centerX) / effectiveScale
+                offsetY += (viewportCenterY - centerY) / effectiveScale
+                // 递归微调，使用 rAF 在布局刷新后再次测量，最多执行 maxRefine 次
+                let attempt = 0
+                function refine() {
+                    attempt++
+                    const el2 = getElementByNodeId(currentSelectedId!)
+                    if (!el2) return
+                    const rect2 = el2.getBoundingClientRect()
+                    const centerX2 = rect2.left + rect2.width / 2
+                    const centerY2 = rect2.top + rect2.height / 2
+                    const deltaScreenX = viewportCenterX - centerX2
+                    const deltaScreenY = viewportCenterY - centerY2
+                    const deltaCanvasX = deltaScreenX / effectiveScale
+                    const deltaCanvasY = deltaScreenY / effectiveScale
+                    // 若偏移量足够小或超过尝试次数则停止
+                    if ((Math.abs(deltaScreenX) < threshold && Math.abs(deltaScreenY) < threshold) || attempt >= maxRefine) {
+                        return
+                    }
+                    offsetX += deltaCanvasX
+                    offsetY += deltaCanvasY
+                    window.requestAnimationFrame(refine)
+                }
+                window.requestAnimationFrame(refine)
+            } else {
+                // 元素不存在回退
+                offsetX = 0
+                offsetY = 0
+                scale = editing ? 1 : 0.5
+            }
+        }
+        // 同步全局缩放到状态栏
+        canvasScale.set(editing ? scale * 0.5 : scale)
+    }
+
+    // 处理快捷键 F 触发聚焦
+    function handleFocusKey(e: KeyboardEvent) {
+        if (e.key === 'f' || e.key === 'F') {
+            e.preventDefault()
+            focusCanvas()
+        }
+    }
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
