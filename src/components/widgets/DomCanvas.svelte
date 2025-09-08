@@ -31,6 +31,7 @@
     import drawModeAction from '../../services/actions/draw-mode.action'
     import useAdjustMode from '../../services/actions/adjust-mode.action'
     import DrawModeOverlay from './DrawModeOverlay.svelte'
+    import AlignmentOverlay from './AlignmentOverlay.svelte'
     import { isDrawMode } from '../../services/repository/draw-mode.store.svelte'
     import DexieService from '../../services/database/dexie-service'
     import { canvasScale } from '../../services/repository/canvas-state.store'
@@ -437,6 +438,9 @@
 
     <!-- 使用独立的DrawModeOverlay组件渲染预览矩形 -->
     <DrawModeOverlay {editing} />
+
+    <!-- 对齐辅助线 -->
+    <AlignmentOverlay {editing} />
 
     <!-- 加载状态 -->
     {#if isLoading}

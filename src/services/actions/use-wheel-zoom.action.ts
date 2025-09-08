@@ -55,6 +55,8 @@ const useWheelZoom: Action<HTMLElement, WheelZoomOptions> = (node, opts) => {
   let keyPressed = false
   let sequenceTimer: number | null = null
   let altActivationTimer: number | null = null
+  // 当前按下的键集合，用于判断 Alt 是否为单独按键
+  const pressedKeys = new Set<string>()
 
   function resetSequence() {
     if (!keyPressed) {
@@ -67,7 +69,26 @@ const useWheelZoom: Action<HTMLElement, WheelZoomOptions> = (node, opts) => {
   }
 
   function handleKeyDown(e: KeyboardEvent) {
+    // 记录当前按键
+    if (!pressedKeys.has(e.key)) pressedKeys.add(e.key)
+    // 若在按住 Alt（等待激活或已激活）期间按下其他任意键，立即终止缩放模式
+    if (e.key !== options.key && (keyPressed || altActivationTimer)) {
+      if (altActivationTimer) {
+        window.clearTimeout(altActivationTimer)
+        altActivationTimer = null
+      }
+      keyPressed = false
+      if (sequenceTimer) {
+        window.clearTimeout(sequenceTimer)
+        sequenceTimer = null
+      }
+      node.style.cursor = ''
+      document.body.style.cursor = ''
+      return
+    }
     if (e.key === options.key && !keyPressed && !altActivationTimer) {
+      // Alt 必须独立按下（按下时集合里只有 Alt 本身）
+      if (pressedKeys.size > 1) return
       if (options.editingAccessor && !options.editingAccessor()) return;
       e.preventDefault()
       // 避免误触和快捷键冲突
@@ -75,11 +96,13 @@ const useWheelZoom: Action<HTMLElement, WheelZoomOptions> = (node, opts) => {
         keyPressed = true
         node.style.cursor = 'ns-resize';
         document.body.style.cursor = 'ns-resize'
-      }, 200)
+      }, 10)
     }
   }
 
   function handleKeyUp(e: KeyboardEvent) {
+    // 移除记录的按键
+    if (pressedKeys.has(e.key)) pressedKeys.delete(e.key)
     if (e.key === options.key) {
       e.preventDefault()
       if (altActivationTimer) {

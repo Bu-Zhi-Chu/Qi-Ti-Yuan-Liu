@@ -14,6 +14,170 @@ applyLogConfig(import.meta.env.DEV === true)
 
 // 控制台日志始终开启，便于调试和监控
 
+// 增强的Alt+Tab检测系统
+let isHidden = false
+let isInitialized = false
+let lastActivity = Date.now()
+let focusCheckInterval: number | null = null
+let altKeyMonitorInterval: number | null = null
+let isProcessingFocusChange = false
+let lastFocusChangeTime = 0
+const FOCUS_CHANGE_DEBOUNCE = 50 // 防抖时间50ms
+
+// releaseAltKey 功能已合并到 checkAltKeyState，移除重复代码
+
+function checkAltKeyState() {
+    // 同步释放Alt键，避免异步延迟
+    console.log('释放Alt键...')
+
+    // 快速释放左右Alt键
+    const leftAltEvent = new KeyboardEvent('keyup', {
+        key: 'Alt',
+        code: 'AltLeft',
+        keyCode: 18,
+        altKey: false,
+        bubbles: true
+    })
+
+    const rightAltEvent = new KeyboardEvent('keyup', {
+        key: 'Alt',
+        code: 'AltRight',
+        keyCode: 18,
+        altKey: false,
+        bubbles: true
+    })
+
+    document.dispatchEvent(leftAltEvent)
+    document.dispatchEvent(rightAltEvent)
+
+    // 同时触发window事件
+    window.dispatchEvent(leftAltEvent)
+    window.dispatchEvent(rightAltEvent)
+}
+
+function handleVisibilityChange(isVisible: boolean, source: string) {
+    const now = Date.now()
+
+    // 防抖处理：如果距离上次焦点变化时间太近，忽略此次变化
+    if (now - lastFocusChangeTime < FOCUS_CHANGE_DEBOUNCE) {
+        return
+    }
+
+    // 同步处理：如果正在处理焦点变化，排队等待
+    if (isProcessingFocusChange) {
+        setTimeout(() => {
+            handleVisibilityChange(isVisible, source)
+        }, FOCUS_CHANGE_DEBOUNCE)
+        return
+    }
+
+    isProcessingFocusChange = true
+    lastFocusChangeTime = now
+
+    try {
+        if (isVisible) {
+            console.log(`[${source}] TAB+ALT切换回来浏览器了 (${now - lastActivity}ms)`)
+            isHidden = false
+
+            // 同步释放Alt键，避免延迟
+            checkAltKeyState()
+
+        } else {
+            console.log(`[${source}] TAB+ALT切换离开浏览器了`)
+            isHidden = true
+        }
+
+        lastActivity = now
+    } finally {
+        // 确保状态重置
+        setTimeout(() => {
+            isProcessingFocusChange = false
+        }, FOCUS_CHANGE_DEBOUNCE)
+    }
+}
+
+// 增强的焦点检测，使用多种方法
+function initFocusDetection() {
+    if (isInitialized) return
+    isInitialized = true
+
+    // 方法1: 直接的焦点事件
+    window.addEventListener('blur', () => handleVisibilityChange(false, 'blur'))
+    window.addEventListener('focus', () => handleVisibilityChange(true, 'focus'))
+
+    // 方法2: 页面可见性变化
+    document.addEventListener('visibilitychange', () => {
+        handleVisibilityChange(!document.hidden, 'visibility')
+    })
+
+    // 方法3: 鼠标离开/进入检测
+    document.addEventListener('mouseenter', () => handleVisibilityChange(true, 'mouse'))
+    document.addEventListener('mouseleave', () => handleVisibilityChange(false, 'mouse'))
+
+    // 方法4: 定时器检测（处理某些浏览器不触发事件的情况）
+    focusCheckInterval = window.setInterval(() => {
+        const hasFocus = document.hasFocus()
+        const isVisible = !document.hidden
+
+        // 如果状态变化了，触发事件
+        if (hasFocus && isVisible && isHidden) {
+            handleVisibilityChange(true, 'interval')
+        } else if ((!hasFocus || !isVisible) && !isHidden) {
+            handleVisibilityChange(false, 'interval')
+        }
+    }, 1000)
+
+    // 方法5: 键盘活动检测
+    document.addEventListener('keydown', () => {
+        lastActivity = Date.now()
+        if (isHidden) {
+            handleVisibilityChange(true, 'keyboard')
+        }
+    })
+
+    // 方法6: 鼠标活动检测
+    document.addEventListener('mousedown', () => {
+        lastActivity = Date.now()
+        if (isHidden) {
+            handleVisibilityChange(true, 'mouse')
+        }
+    })
+
+    // 方法7: Alt键状态监控 - 改为事件驱动，避免定时器
+    // 在每次焦点变化时同步处理，不再使用定时器
+
+    // 初始状态
+    const initialHasFocus = document.hasFocus()
+    const initialIsVisible = !document.hidden
+
+    console.log(`初始化焦点检测: hasFocus=${initialHasFocus}, visible=${initialIsVisible}`)
+    isHidden = !initialHasFocus || !initialIsVisible
+
+    if (isHidden) {
+        console.log('页面初始状态：未聚焦')
+    } else {
+        console.log('页面初始状态：已聚焦')
+    }
+}
+
+// 清理函数
+function cleanupFocusDetection() {
+    if (focusCheckInterval) {
+        clearInterval(focusCheckInterval)
+        focusCheckInterval = null
+    }
+    // altKeyMonitorInterval 已移除，不再使用
+}
+
+// 延迟初始化以确保DOM完全加载
+setTimeout(() => {
+    try {
+        initFocusDetection()
+    } catch (error) {
+        console.warn('初始化焦点检测失败:', error)
+    }
+}, 100)
+
 let app: ReturnType<typeof mount> | undefined // 提前声明，供导出使用
 
     // 初始化 Dexie 数据库并随后挂载应用

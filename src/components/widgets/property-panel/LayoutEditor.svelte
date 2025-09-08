@@ -308,7 +308,6 @@
                     />
                 </PropertyRow>
 
-
                 <PropertyRow label="行间距值">
                     <SizeInput bind:value={currentRowGap} unitOptions={['px']} step={1} on:change={({ detail: { value } }) => handleFlexPropChange('rowGap', `calc(${value}px * var(--scale-ratio, 1))`)} />
                 </PropertyRow>

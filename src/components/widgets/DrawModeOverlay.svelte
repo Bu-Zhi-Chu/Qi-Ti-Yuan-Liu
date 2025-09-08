@@ -55,6 +55,7 @@
 {#if drawing && rect && targetEl}
     <div
         use:portal={targetEl}
+        data-align-ignore
         class="draw-preview"
         style={`position: absolute; left: ${rect.left}%; top: ${rect.top}%; width: ${rect.width}%; height: ${rect.height}%; background-color: rgba(148, 163, 184, 0.35); border: calc(2px * var(--scale-ratio, 1)) dashed #94a3b8; border-radius: calc(4px * var(--scale-ratio, 1)); box-shadow: 0 0 calc(6px * var(--scale-ratio, 1)) rgba(0,0,0,0.15); pointer-events: none; z-index: 100;`}
     ></div>
