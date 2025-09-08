@@ -103,6 +103,19 @@
                 display: newValue
             }
         })
+
+        // 如果切换为 flex 布局，自动将所有绝对定位的子节点改为静态定位，确保参与 flex 布局
+        if (newValue === 'flex') {
+            const node = getFullNode(selectedId)
+            if (node?.children?.length) {
+                node.children.forEach((child) => {
+                    const pos = (child.styles?.position as string) || ''
+                    if (pos === 'absolute') {
+                        updateNodeProps(child.id, { styles: { position: 'static' } })
+                    }
+                })
+            }
+        }
     }
 
     // 处理flex属性变更
