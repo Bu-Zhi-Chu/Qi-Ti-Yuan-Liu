@@ -64,8 +64,20 @@ const drawModeAction: Action<HTMLElement, DrawModeOptions> = (node, opts) => {
     }
   }
 
+  // 当前可吸附位置（相对于容器、未除scale）
+  let currentSnapX: number | null = null
+  let currentSnapY: number | null = null
+
   /** ------------- 绘制过程鼠标移动 ------------- */
   function handleMouseMove(e: MouseEvent) {
+    // 根据 Ctrl 键实时同步对齐状态：按住 Ctrl 开启，松开 Ctrl 关闭
+    if (isDrawModeGetter()) {
+      if (e.ctrlKey) {
+        if (!isAlignOpen()) openAlign()
+      } else {
+        if (isAlignOpen()) closeAlign()
+      }
+    }
     const alignEnabled = isAlignOpen()
 
     // 选择容器：绘制中使用 targetNodeIdGetter，否则回退到当前选中节点
@@ -86,6 +98,9 @@ const drawModeAction: Action<HTMLElement, DrawModeOptions> = (node, opts) => {
     // 绘制中才更新预览矩形
     if (isDrawingGetter() && drawStartGetter()) {
       const endPoint = clampPointToRect({ x: e.clientX, y: e.clientY }, rect)
+      // 吸附预览终点
+      if (currentSnapX !== null) endPoint.x = rect.left + currentSnapX * scale
+      if (currentSnapY !== null) endPoint.y = rect.top + currentSnapY * scale
       const nextRect = calculateRelativeRect(
         drawStartGetter() as { x: number; y: number },
         endPoint,
@@ -153,8 +168,12 @@ const drawModeAction: Action<HTMLElement, DrawModeOptions> = (node, opts) => {
 
     if (alignEnabled) {
       setGuidelines(guidelines)
+      currentSnapX = (nearestVertical as Guideline | null)?.position ?? null
+      currentSnapY = (nearestHorizontal as Guideline | null)?.position ?? null
     } else {
       clearGuidelines()
+      currentSnapX = null
+      currentSnapY = null
     }
 
     e.preventDefault()
@@ -167,9 +186,9 @@ const drawModeAction: Action<HTMLElement, DrawModeOptions> = (node, opts) => {
 
     // 键盘状态标记
     let bPressed = false
-    let altPressed = false
+    let ctrlPressed = false
 
-    // 键盘长按 B 进入绘画模式，B + Alt 进入对齐检测；松开任一键退出；按 Esc 可随时退出
+    // 键盘长按 B 进入绘画模式，B + Ctrl 进入对齐检测；松开任一键退出；按 Esc 可随时退出
     const keydownHandler = (e: KeyboardEvent) => {
       if (e.repeat) return // 忽略长按自动重复事件
       // 记录状态
@@ -182,13 +201,13 @@ const drawModeAction: Action<HTMLElement, DrawModeOptions> = (node, opts) => {
           node.style.cursor = 'crosshair'
         }
         // 如 Alt 已按下则开启对齐
-        if (altPressed) openAlign()
+        if (ctrlPressed) openAlign()
         return
       }
-      if (e.key === 'Alt') {
-        // 仅当 B 已按下时才处理 Alt，避免与画布缩放冲突
+      if (e.key === 'Control') {
+        // 仅当 B 已按下时才处理 Ctrl，避免与画布缩放冲突
         if (!bPressed) return
-        altPressed = true
+        ctrlPressed = true
         openAlign()
         e.preventDefault()
         return
@@ -200,7 +219,7 @@ const drawModeAction: Action<HTMLElement, DrawModeOptions> = (node, opts) => {
         }
         closeAlign()
         bPressed = false
-        altPressed = false
+        ctrlPressed = false
       }
     }
     const keyupHandler = (e: KeyboardEvent) => {
@@ -213,10 +232,10 @@ const drawModeAction: Action<HTMLElement, DrawModeOptions> = (node, opts) => {
         closeAlign()
         return
       }
-      if (e.key === 'Alt') {
-        // 若未按 B，则忽略 Alt 弹起
+      if (e.key === 'Control') {
+        // 若未按 B，则忽略 Ctrl 弹起
         if (!bPressed) return
-        altPressed = false
+        ctrlPressed = false
         closeAlign()
       }
     }
@@ -230,8 +249,7 @@ const drawModeAction: Action<HTMLElement, DrawModeOptions> = (node, opts) => {
 
     // 鼠标按压/释放
     unregisters.unregisterMouse = registerMouseLeftPressRelease(
-      (e: MouseEvent) => {
-        // 按下左键开始绘制（此时才开启对齐检测）
+      (e: MouseEvent) => {      // 按下左键开始绘制（此时才开启对齐检测）\n        // 再次执行一次对齐检测，确保使用最新吸附坐标\n        handleMouseMove(e);
         if (!isDrawModeGetter() || isDrawingGetter()) return
         if (options.editingAccessor && !options.editingAccessor()) return
         let id = selectedId()
@@ -245,6 +263,9 @@ const drawModeAction: Action<HTMLElement, DrawModeOptions> = (node, opts) => {
         const rect = targetEl.getBoundingClientRect()
         const scale = options.scaleAccessor()
         const clampedStart = clampPointToRect({ x: e.clientX, y: e.clientY }, rect)
+        // 吸附起点
+        if (currentSnapX !== null) clampedStart.x = rect.left + currentSnapX * scale
+        if (currentSnapY !== null) clampedStart.y = rect.top + currentSnapY * scale
         const start = clampedStart
         const initRect = {
           left: ((clampedStart.x - rect.left) / scale / rect.width) * 100,
@@ -258,7 +279,7 @@ const drawModeAction: Action<HTMLElement, DrawModeOptions> = (node, opts) => {
         e.stopPropagation()
       },
       (e: MouseEvent) => {
-        // 松开左键结束绘制
+        // 松开左键结束绘制\n        // 结束前再次执行对齐检测，保证终点吸附\n        handleMouseMove(e);
         if (!isDrawingGetter() || !drawStartGetter() || !drawRectGetter() || !targetNodeIdGetter()) return
 
         const targetEl = getElementByNodeId(targetNodeIdGetter() as string)
@@ -272,6 +293,9 @@ const drawModeAction: Action<HTMLElement, DrawModeOptions> = (node, opts) => {
         const rect = targetEl.getBoundingClientRect()
         const scale = options.scaleAccessor()
         const endPoint = clampPointToRect({ x: e.clientX, y: e.clientY }, rect)
+        // 吸附终点
+        if (currentSnapX !== null) endPoint.x = rect.left + currentSnapX * scale
+        if (currentSnapY !== null) endPoint.y = rect.top + currentSnapY * scale
         const finalRect = calculateRelativeRect(drawStartGetter() as { x: number; y: number }, endPoint, rect, scale)
 
         if ((finalRect.width * rect.width) / 100 > 5 && (finalRect.height * rect.height) / 100 > 5) {
