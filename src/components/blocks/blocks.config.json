@@ -53,15 +53,7 @@
         "nameZh": "按钮组",
         "path": "../blocks/ButtonGroup.svelte",
         "showFeatureTab": true,
-        "featureProps": {
-            "buttonCount": {
-                "label": "按钮个数",
-                "type": "number",
-                "min": 1,
-                "max": 10,
-                "default": 3
-            }
-        }
+        "featureProps": {}
     },
     {
         "type": "Button",
@@ -103,9 +95,18 @@
                 "label": "悬浮效果",
                 "type": "select",
                 "options": [
-                    { "value": "", "label": "无" },
-                    { "value": "zoom", "label": "放大" },
-                    { "value": "lift", "label": "浮起" }
+                    {
+                        "value": "",
+                        "label": "无"
+                    },
+                    {
+                        "value": "zoom",
+                        "label": "放大"
+                    },
+                    {
+                        "value": "lift",
+                        "label": "浮起"
+                    }
                 ]
             }
         }
