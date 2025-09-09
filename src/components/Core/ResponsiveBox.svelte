@@ -21,20 +21,21 @@
 
 <script lang="ts">
     import { v4 as uuidv4 } from 'uuid'
+    import { createEventDispatcher } from 'svelte'
     import type { Snippet } from 'svelte'
 
     interface Props {
         style?: string
         children?: Snippet // Svelte 5 snippet 类型
         baseWidth?: number // 基准宽度，默认1920
-        'data-id'?: string // 外部指定的数据标识符，用于低代码平台定位
+        id?: string // 外部指定的唯一标识符，用于低代码平台定位
         [key: string]: any // 支持其他任意属性
     }
 
-    let { style = '', children, baseWidth = 1920, ...rest }: Props = $props()
+    let { style = '', children, baseWidth = 1920, id = '', ...rest }: Props = $props()
 
     // 使用传入的data-id，没有传入则为空
-    const componentId = rest['data-id'] || ''
+    const componentId = id
 
     // 使用$state管理容器宽度状态
     let containerWidth = $state(0)
@@ -106,6 +107,6 @@
     })
 </script>
 
-<div bind:this={containerRef} style={finalStyle} data-id={componentId} {...rest}>
+<div bind:this={containerRef} style={finalStyle} id={componentId} {...rest}>
     {@render children?.()}
 </div>
