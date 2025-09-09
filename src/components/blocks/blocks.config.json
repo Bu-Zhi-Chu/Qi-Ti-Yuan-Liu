@@ -88,12 +88,16 @@
                 "max": 100,
                 "default": 0
             },
-             "textOffsetTop": {
+            "textOffsetTop": {
                 "label": "文字上移",
                 "type": "size",
                 "min": -100,
                 "max": 100,
                 "default": 0
+            },
+            "highlightImage": {
+                "label": "高亮图片",
+                "type": "image"
             }
         }
     }

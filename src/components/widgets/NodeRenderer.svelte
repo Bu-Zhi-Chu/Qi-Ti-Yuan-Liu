@@ -138,7 +138,7 @@
     /** 派生最终内联样式，依赖 selectedId、node.styles、node.hidden 实时更新 */
     let finalStyle = $derived.by(() => {
         const _v = urlCacheVersion // 保证依赖
-        const styleEntries = Object.entries(node.styles ?? {}).filter(([k]) => !['textOffsetLeft', 'textOffsetTop'].includes(k))
+        const styleEntries = Object.entries(node.styles ?? {}).filter(([k]) => !['textOffsetLeft', 'textOffsetTop', 'highlightImage'].includes(k))
         const styleStr = styleEntries
             .map(([k, v]) => {
                 const kebab = k.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
@@ -253,11 +253,32 @@
 
     /** 获取组件属性，合并 componentProps 和其他属性（保持响应式） */
     const componentProps = $derived.by(() => {
+        // 引入缓存版本号以保持响应式依赖
+        const _cv = urlCacheVersion
         const styleProps: Record<string, any> = {}
-        const extraKeys = ['textOffsetLeft', 'textOffsetTop']
+        const extraKeys = ['textOffsetLeft', 'textOffsetTop', 'highlightImage']
         extraKeys.forEach((k) => {
-            const v = (node.styles as any)?.[k]
-            if (v !== undefined) styleProps[k] = v
+            let v = (node.styles as any)?.[k]
+            if (v !== undefined) {
+                // 当 key 为 highlightImage 时，支持哈希自动解析
+                if (k === 'highlightImage' && typeof v === 'string') {
+                    const str = v.trim()
+                    if (hashRegex.test(str)) {
+                        const cached = urlCache.get(str)
+                        if (cached) {
+                            v = cached
+                        } else {
+                            getUrlByHash(str).then((u) => {
+                                if (u) {
+                                    urlCache.set(str, u)
+                                    urlCacheVersion = urlCacheVersion + 1
+                                }
+                            })
+                        }
+                    }
+                }
+                styleProps[k] = v
+            }
         })
         return { 'data-name': dataNameAttr, ...restAttrs, ...(node.componentProps ?? {}), ...styleProps }
     })

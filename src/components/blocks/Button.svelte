@@ -17,15 +17,27 @@
         enableClick?: boolean
         textOffsetLeft?: string
         textOffsetTop?: string
+        highlightImage?: string
+        style?: string
         children?: any
         [key: string]: any
     }
 
-    let { id = crypto.randomUUID(), text = '按钮', textContent, disabled = false, enableClick = false, textOffsetLeft = '0px', textOffsetTop = '0px', children, ...rest } = $props() as Props
+    let { id = crypto.randomUUID(), text = '按钮', textContent, disabled = false, enableClick = false, textOffsetLeft = '0px', textOffsetTop = '0px', highlightImage = '', style = '', children, ...rest } = $props() as Props
+
+    let isHighlighted = $state(false)
+
+    const mergedStyle = $derived(() => {
+        const highlight = isHighlighted && highlightImage ? `background-image: url(${highlightImage}); background-size: contain; background-repeat: no-repeat; background-position: center;` : ''
+        return style && highlight ? `${style}; ${highlight}` : style || highlight
+    })
 
     /** 点击事件，默认输出日志 */
     function handleClick() {
         console.log(`Button(${id}) clicked`)
+        if (highlightImage) {
+            isHighlighted = !isHighlighted
+        }
     }
     /** 键盘事件：回车或空格等价点击 */
     function handleKey(e: KeyboardEvent) {
@@ -36,7 +48,7 @@
     }
 </script>
 
-<ResponsiveBox {id} {...rest} class="btn" {disabled}>
+<ResponsiveBox {id} {...rest} class="btn" {disabled} style={mergedStyle()}>
     <div class="full-size" role="button" tabindex={enableClick ? 0 : undefined} onclick={enableClick ? handleClick : undefined} onkeydown={enableClick ? handleKey : undefined}>
         <span style="margin-left: calc({textOffsetLeft} * var(--scale-ratio, 1)); margin-top: calc({textOffsetTop} * var(--scale-ratio, 1));">
             {#if children}
