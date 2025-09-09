@@ -644,14 +644,19 @@ function deepCopyNode<T>(obj: T): T {
 
 // 递归释放节点资源：对子节点逐一扣减背景图引用计数
 function releaseNodeResources(node: DomNode) {
-  const bg = (node.styles as any)?.backgroundImage
-  if (typeof bg === 'string' && hashRegex.test(bg.trim())) {
+    const styles: any = node.styles || {}
+    const candidates = [styles.backgroundImage, styles.highlightImage]
     const pid = get(projectId)
-    if (pid) decrementOrDelete(pid, bg.trim())
-  }
-  if (node.children && node.children.length) {
-    node.children.forEach((child) => releaseNodeResources(child))
-  }
+    if (pid) {
+        for (const v of candidates) {
+            if (typeof v === 'string' && hashRegex.test(v.trim())) {
+                decrementOrDelete(pid, v.trim())
+            }
+        }
+    }
+    if (node.children && node.children.length) {
+        node.children.forEach((child) => releaseNodeResources(child))
+    }
 }
 
 // 生成唯一 dataName 辅助函数

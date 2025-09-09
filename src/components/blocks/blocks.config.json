@@ -98,6 +98,15 @@
             "highlightImage": {
                 "label": "高亮图片",
                 "type": "image"
+            },
+            "hoverEffect": {
+                "label": "悬浮效果",
+                "type": "select",
+                "options": [
+                    { "value": "", "label": "无" },
+                    { "value": "zoom", "label": "放大" },
+                    { "value": "lift", "label": "浮起" }
+                ]
             }
         }
     }

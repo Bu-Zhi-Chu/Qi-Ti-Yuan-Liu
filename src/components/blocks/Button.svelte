@@ -18,12 +18,13 @@
         textOffsetLeft?: string
         textOffsetTop?: string
         highlightImage?: string
+        hoverEffect?: string
         style?: string
         children?: any
         [key: string]: any
     }
 
-    let { id = crypto.randomUUID(), text = '按钮', textContent, disabled = false, enableClick = false, textOffsetLeft = '0px', textOffsetTop = '0px', highlightImage = '', style = '', children, ...rest } = $props() as Props
+    let { id = crypto.randomUUID(), text = '按钮', textContent, disabled = false, enableClick = false, textOffsetLeft = '0px', textOffsetTop = '0px', highlightImage = '', hoverEffect = '', style = '', children, ...rest } = $props() as Props
 
     let isHighlighted = $state(false)
 
@@ -48,7 +49,7 @@
     }
 </script>
 
-<ResponsiveBox {id} {...rest} class="btn" {disabled} style={mergedStyle()}>
+<ResponsiveBox {id} {...rest} class="btn {hoverEffect}" {disabled} style={mergedStyle()}>
     <div class="full-size" role="button" tabindex={enableClick ? 0 : undefined} onclick={enableClick ? handleClick : undefined} onkeydown={enableClick ? handleKey : undefined}>
         <span style="margin-left: calc({textOffsetLeft} * var(--scale-ratio, 1)); margin-top: calc({textOffsetTop} * var(--scale-ratio, 1));">
             {#if children}
@@ -68,5 +69,22 @@
         align-items: center;
         justify-content: center;
         cursor: pointer;
+    }
+
+    /* 悬浮效果：放大 */
+    :global(.zoom:hover) {
+        transform: scale(1.05);
+        transition: transform 0.25s ease;
+    }
+
+    /* 悬浮效果：浮起 */
+    :global(.lift) {
+        transition:
+            transform 0.25s ease,
+            box-shadow 0.25s ease;
+    }
+    :global(.lift:hover) {
+        transform: translateY(calc(-4px * var(--scale-ratio, 1)));
+        box-shadow: 0 calc(6px * var(--scale-ratio, 1)) calc(14px * var(--scale-ratio, 1)) rgba(0, 0, 0, 0.25);
     }
 </style>

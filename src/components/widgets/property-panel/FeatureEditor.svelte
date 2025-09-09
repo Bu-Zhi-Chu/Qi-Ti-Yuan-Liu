@@ -11,7 +11,7 @@
     import { processImageUpload } from '../../../services/image/upload-image.service'
     import { get } from 'svelte/store'
     import { hashBlob, canDecode, convertTo } from '../../../services/image/image-utils'
-    import { getImage, addOrIncrement } from '../../../services/database/image-store.service'
+    import { getImage, addOrIncrement, decrementOrDelete } from '../../../services/database/image-store.service'
     import { getImageSize } from '../../../services/image/upload-image.service'
     import { projectId } from '../../../services/repository/dom-tree.store.svelte'
 
@@ -189,10 +189,15 @@
     function triggerUpload(key: string) {
         fileInputs[key]?.click()
     }
-    function handleRemoveImage(key: string) {
+    async function handleRemoveImage(key: string) {
+        const oldHash = currentValues[key]
         currentValues[key] = ''
         if (selectedId) {
             updateNodeProps(selectedId, { styles: { [key]: '' } })
+        }
+        const pid = get(projectId)
+        if (pid && typeof oldHash === 'string' && /^[a-f0-9]{40,}$/.test(oldHash.trim())) {
+            await decrementOrDelete(pid, oldHash.trim())
         }
     }
 
