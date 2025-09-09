@@ -6,6 +6,7 @@
     import blocksConfig from '../../blocks/blocks.config.json'
     import PropertyRow from './PropertyRow.svelte'
     import PropertySelect from './PropertySelect.svelte'
+    import ToggleSwitch from '../ToggleSwitch.svelte'
 
     // 派生当前选中节点的 featureProps
     const featureProps = $derived(() => {
@@ -43,7 +44,7 @@
     // 派生下拉 options
 
     // 派生属性描述数组
-    type PropEntry = { key: string; label: string; type: string; options?: any[] }
+    type PropEntry = { key: string; label: string; type: string; options?: any[]; min?: number; max?: number; default?: any }
     const propEntries: () => PropEntry[] = $derived(() => {
         const fp = featureProps()
         if (!fp) return []
@@ -74,6 +75,11 @@
             if ((currentValues as any)[p.key] === undefined) {
                 if (p.type === 'select' && p.options?.length) {
                     updates[p.key] = p.options[0].value
+                } else if (p.type === 'number' && p.default !== undefined) {
+                    updates[p.key] = p.default
+                } else if (p.type === 'switch') {
+                    // 默认为配置的 default 或 false，避免 undefined 造成 Svelte 报错
+                    updates[p.key] = p.default !== undefined ? p.default : false
                 }
                 // 未来可在此扩展其他类型默认值
             }
@@ -89,9 +95,13 @@
     <div class="feature-editor">
         <h3>特性设置</h3>
         {#each propEntries() as p (p.key)}
-            <PropertyRow label={`${p.label}：`}>
+            <PropertyRow label={`${p.label}`}>
                 {#if p.type === 'select'}
                     <PropertySelect bind:value={currentValues[p.key]} options={p.options} change={(v) => handleAttrChange(p.key, v)} />
+                {:else if p.type === 'number'}
+                    <input type="number" min={p.min} max={p.max} bind:value={currentValues[p.key]} oninput={(e) => handleAttrChange(p.key, +(e.currentTarget as HTMLInputElement).value)} class="number-input" />
+                {:else if p.type === 'switch'}
+                    <ToggleSwitch checked={currentValues[p.key] ?? false} on:change={(e) => handleAttrChange(p.key, e.detail)} />
                 {/if}
                 <!-- 其他类型控件可在此扩展 -->
             </PropertyRow>

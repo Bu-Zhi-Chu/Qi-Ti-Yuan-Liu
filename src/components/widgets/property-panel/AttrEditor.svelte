@@ -209,6 +209,12 @@
 
         // 直接更新节点的 componentType 字段，确保回显与渲染一致
         updateNodeProperties(selectedId, { componentType: finalType })
+
+        // 若 blocks.config.json 中为该类型配置了 presetStyles，则批量写入节点样式
+        const blockMeta = (blocksConfig as any[]).find((b) => b.type === finalType)
+        if (blockMeta && blockMeta.presetStyles) {
+            updateNodeProps(selectedId, { styles: { ...blockMeta.presetStyles } })
+        }
     }
 
     // 新增：修改备注

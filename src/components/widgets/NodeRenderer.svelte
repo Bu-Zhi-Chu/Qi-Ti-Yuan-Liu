@@ -115,22 +115,12 @@
         // 只在编辑模式下允许节点选择
         if (!editing) return
 
-        // console.log(`[NodeRenderer] 点击事件触发: ${nodeKey}, target:`, event.target, 'currentTarget:', event.currentTarget)
+        // 立即阻止事件冒泡和默认行为
+        event.stopImmediatePropagation()
+        event.preventDefault()
 
-        // 检查是否是直接点击当前元素（不是子元素冒泡上来的）
-        const isDirectClick = event.target === event.currentTarget
-
-        if (isDirectClick) {
-            // 立即阻止事件冒泡和默认行为
-            event.stopImmediatePropagation()
-            event.preventDefault()
-
-            // 选中当前元素
-            select?.(nodeKey)
-            // console.log(`[NodeRenderer] 直接点击选中: ${nodeKey}`)
-        } else {
-            // console.log(`[NodeRenderer] 忽略子元素冒泡: ${nodeKey}`)
-        }
+        // 选中当前元素
+        select?.(nodeKey)
     }
 
     // 计算当前节点是否被选中

@@ -26,15 +26,15 @@
         children?: Snippet // Svelte 5 snippet 类型
         style?: string
         class?: string
-        'data-id': string // 必须提供稳定的data-id
+        id: string // 必须提供稳定的id
         [key: string]: any // 支持任意HTML属性透传
     }
 
     // 解构props，data-id必须由父组件提供稳定的值
-    let { type, props = {}, children, style, class: className, 'data-id': dataId, ...restProps }: Props = $props()
+    let { type, props = {}, children, style, class: className, id, ...restProps }: Props = $props()
 
     // 直接使用传入的data-id，确保在组件生命周期内保持不变
-    const componentUUID = dataId
+    const componentUUID = id
 
     // 动态加载的组件
     let TargetComponent: any = $state(null)
@@ -46,18 +46,18 @@
                 TargetComponent = module.default
             })
         }
-    })  
+    })
 </script>
 
 <!-- 根据组件加载状态渲染 -->
 {#if TargetComponent}
     <!-- Svelte 5 runes 模式：组件默认动态，直接使用组件语法 -->
-    <TargetComponent {style} class={className} data-id={componentUUID} {...props} {...restProps}>
+    <TargetComponent {style} class={className} id={componentUUID} {...props} {...restProps}>
         {@render children?.()}
     </TargetComponent>
 {:else}
     <!-- 组件未加载时的占位符 -->
-    <div data-id={componentUUID} {style} class={className} {...restProps}>
+    <div id={componentUUID} {style} class={className} {...restProps}>
         {@render children?.()}
     </div>
 {/if}

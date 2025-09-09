@@ -348,6 +348,8 @@ export function addNodeToParent(parentId: string, newNode: DomNode): boolean {
     parent.expanded = true;
     // 添加新节点并触发响应式更新
     parent.children = [...parent.children, newNode];
+    // 递增版本号，通知订阅者刷新
+    bumpDomTreeVersion();
     // 自动保存到doms表（不影响projects表）
     autoSaveToDomsTable();
     return true;
@@ -513,6 +515,7 @@ export async function removeNodeById(nodeId: string): Promise<boolean> {
   if (targetNode) releaseNodeResources(targetNode);
   if (selectedNodeId === nodeId) await setSelectedId('root');
   parent.children = parent.children.filter(c => c.id !== nodeId);
+  bumpDomTreeVersion();
   autoSaveToDomsTable();
   return true;
 }
