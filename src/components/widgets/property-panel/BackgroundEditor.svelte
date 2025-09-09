@@ -932,9 +932,9 @@
                 {#if !hasBackgroundImage}
                     <button id="background-image-input" class="input-style" onclick={() => fileInput.click()} ondragover={handleDragOver} ondrop={handleDrop} title="点击上传或拖拽图片到此处">上传图片</button>
                 {:else}
-                    <div style="display: flex; gap: calc(4px * var(--scale-ratio, 1)); flex: 1;">
-                        <button class="input-style" onclick={clearBackgroundImage} title="移除图片" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">移除</button>
-                        <button class="unit-toggle" onclick={applyImageDimensions} title="一键匹配原尺寸" disabled={!imageSize || selectedId === 'root' || isDimensionMatched}>
+                    <div class="remove-image-wrapper">
+                        <button class="input-style remove-button" onclick={clearBackgroundImage} title="移除图片" style="background: rgba(239, 68, 68, 0.2); color: #f87171; width: 82%;">移除</button>
+                        <button class="unit-toggle ratio-overlay" onclick={applyImageDimensions} title="一键匹配原尺寸" disabled={!imageSize || selectedId === 'root' || isDimensionMatched}>
                             <Icon name="Ratio" size={16} />
                         </button>
                     </div>
@@ -1199,5 +1199,15 @@
     .input-style:focus {
         border-color: #6366f1;
         box-shadow: 0 0 0 calc(3px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.2);
+    }
+    .remove-image-wrapper {
+        position: relative;
+        flex: 1;
+    }
+    .remove-image-wrapper .ratio-overlay {
+        position: absolute;
+        top: 50%;
+        right: 0;
+        transform: translateY(-50%);
     }
 </style>
