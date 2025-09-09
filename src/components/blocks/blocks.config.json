@@ -72,13 +72,28 @@
             "display": "flex",
             "justifyContent": "center",
             "alignItems": "center",
-            "cursor": "pointer"
+            "cursor": "pointer",
+            "backgroundColor": "none"
         },
         "featureProps": {
             "enableClick": {
                 "label": "点击事件",
                 "type": "switch",
                 "default": false
+            },
+            "textOffsetLeft": {
+                "label": "文字左移",
+                "type": "size",
+                "min": -100,
+                "max": 100,
+                "default": 0
+            },
+             "textOffsetTop": {
+                "label": "文字上移",
+                "type": "size",
+                "min": -100,
+                "max": 100,
+                "default": 0
             }
         }
     }

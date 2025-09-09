@@ -138,7 +138,7 @@
     /** 派生最终内联样式，依赖 selectedId、node.styles、node.hidden 实时更新 */
     let finalStyle = $derived.by(() => {
         const _v = urlCacheVersion // 保证依赖
-        const styleEntries = Object.entries(node.styles ?? {})
+        const styleEntries = Object.entries(node.styles ?? {}).filter(([k]) => !['textOffsetLeft', 'textOffsetTop'].includes(k))
         const styleStr = styleEntries
             .map(([k, v]) => {
                 const kebab = k.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
@@ -252,7 +252,15 @@
     const componentType = $derived.by(() => node.componentType ?? 'SimpleBox')
 
     /** 获取组件属性，合并 componentProps 和其他属性（保持响应式） */
-    const componentProps = $derived.by(() => ({ 'data-name': dataNameAttr, ...restAttrs, ...(node.componentProps ?? {}) }))
+    const componentProps = $derived.by(() => {
+        const styleProps: Record<string, any> = {}
+        const extraKeys = ['textOffsetLeft', 'textOffsetTop']
+        extraKeys.forEach((k) => {
+            const v = (node.styles as any)?.[k]
+            if (v !== undefined) styleProps[k] = v
+        })
+        return { 'data-name': dataNameAttr, ...restAttrs, ...(node.componentProps ?? {}), ...styleProps }
+    })
 </script>
 
 {#if nodeKey === 'root'}
