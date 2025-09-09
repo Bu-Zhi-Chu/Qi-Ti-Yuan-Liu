@@ -4,7 +4,7 @@
      * TODO: 后续补充实际功能与样式
      */
     import ResponsiveBox from '../core/ResponsiveBox.svelte'
-import { domTree, addNodeToParent, removeNodeById, findNodeById } from '../../services/repository/dom-tree.store.svelte'
+    import { domTree, addNodeToParent, removeNodeById, findNodeById } from '../../services/repository/dom-tree.store.svelte'
     interface Props {
         buttonCount?: number
         style?: string
@@ -18,14 +18,14 @@ import { domTree, addNodeToParent, removeNodeById, findNodeById } from '../../se
 
     // 同步 dom-tree 子节点数量，与 buttonCount 保持一致
     function syncChildButtons() {
-        if (!id) return;
-        const node = findNodeById(domTree, id);
-        if (!node) return;
-        const currentChildren = node.children || [];
-        const diff = buttonCount - currentChildren.length;
+        if (!id) return
+        const node = findNodeById(domTree, id)
+        if (!node) return
+        const currentChildren = node.children || []
+        const diff = buttonCount - currentChildren.length
         if (diff > 0) {
             for (let i = 0; i < diff; i++) {
-                const newId = crypto.randomUUID();
+                const newId = crypto.randomUUID()
                 addNodeToParent(id, {
                     id: newId,
                     componentType: 'SimpleBox',
@@ -33,12 +33,12 @@ import { domTree, addNodeToParent, removeNodeById, findNodeById } from '../../se
                     styles: { width: 'auto', height: 'auto' },
                     expanded: true,
                     children: []
-                } as any);
+                } as any)
             }
         } else if (diff < 0) {
-            const excess = currentChildren.slice(diff);
+            const excess = currentChildren.slice(diff)
             for (const child of excess) {
-                removeNodeById(child.id);
+                removeNodeById(child.id)
             }
         }
     }
@@ -46,7 +46,7 @@ import { domTree, addNodeToParent, removeNodeById, findNodeById } from '../../se
     $effect(() => syncChildButtons())
 </script>
 
-<ResponsiveBox {style} id={id} {...restProps}>
+<ResponsiveBox {style} {id} {...restProps}>
     <div class="button-group">
         {#each buttons() as btn}
             <button class="btn">{btn.label}</button>
