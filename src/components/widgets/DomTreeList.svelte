@@ -20,6 +20,7 @@
     export interface Props {
         domTree: any
         selectedId?: string | null
+        searchQuery?: string
     }
 
     /** DOM 节点类型 */
@@ -121,7 +122,20 @@
     }
 
     // 递归生成 HTML 字符串
-    function renderNode(node: DomNode, level = 0, currentSelectedId: string | null): string {
+    const { searchQuery = '' } = $props<{ searchQuery?: string }>()
+
+    function shouldInclude(node: DomNode, q: string): boolean {
+        if (!q) return true
+        const displayName = (node.attributes?.['data-name'] || node.componentType || (node.attributes as any)?.type || '元素').toString().toLowerCase()
+        if (displayName.includes(q)) return true
+        if (node.children) {
+            return node.children.some((child) => shouldInclude(child, q))
+        }
+        return false
+    }
+
+    function renderNode(node: DomNode, level = 0, currentSelectedId: string | null, qLower = searchQuery.toLowerCase()): string {
+        if (!shouldInclude(node, qLower)) return ''
         const padding = 16
         const nodeKey = node.id
         const isSelected = nodeKey === currentSelectedId

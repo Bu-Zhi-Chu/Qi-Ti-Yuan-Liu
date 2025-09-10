@@ -778,3 +778,37 @@ export async function pasteNodeToSelectedParent(toParent: boolean = false, selec
   console.log('已粘贴节点到:', targetParentId);
   return added ? nodeToPaste.id : null;
 }
+
+/**
+ * 根据搜索关键字过滤节点列表，隐藏不匹配且其子树均不匹配的节点
+ * @param query 搜索关键词，忽略大小写。若为空字符串则全部显示
+ */
+export function filterDomTreeBySearch(query: string): void {
+  const qLower = query.trim().toLowerCase();
+
+  function matches(node: DomNode): boolean {
+    if (!qLower) return true;
+    const displayName = (node.attributes?.['data-name'] || node.componentType || (node.attributes as any)?.type || '元素').toString().toLowerCase();
+    return displayName.includes(qLower);
+  }
+
+  function dfs(node: DomNode, isRoot = false): boolean {
+    let selfMatch = matches(node);
+    let childrenMatch = false;
+    if (node.children && node.children.length) {
+      for (const child of node.children) {
+        const childVisible = dfs(child);
+        childrenMatch = childrenMatch || childVisible;
+      }
+    }
+    const visible = selfMatch || childrenMatch;
+    if (!isRoot) {
+      node.hidden = !visible;
+    }
+    return visible;
+  }
+
+  // 根节点始终可见
+  dfs(domTreeData, true);
+  bumpDomTreeVersion();
+}

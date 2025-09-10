@@ -3,12 +3,14 @@
         "type": "SimpleBox",
         "nameZh": "简单盒子",
         "path": "../blocks/SimpleBox.svelte",
+        "preview": "/previews/SimpleBox.svg",
         "showFeatureTab": false
     },
     {
         "type": "RealTimeClock",
         "nameZh": "实时时间",
         "path": "../blocks/RealTimeClock.svelte",
+        "preview": "/previews/RealTimeClock.svg",
         "showFeatureTab": true,
         "hideTextContent": true,
         "featureProps": {
@@ -52,6 +54,7 @@
         "type": "ButtonGroup",
         "nameZh": "按钮组",
         "path": "../blocks/ButtonGroup.svelte",
+        "preview": "/previews/ButtonGroup.svg",
         "showFeatureTab": true,
         "featureProps": {}
     },
@@ -59,6 +62,7 @@
         "type": "Button",
         "nameZh": "按钮",
         "path": "../blocks/Button.svelte",
+        "preview": "/previews/Button.svg",
         "showFeatureTab": true,
         "presetStyles": {
             "display": "flex",

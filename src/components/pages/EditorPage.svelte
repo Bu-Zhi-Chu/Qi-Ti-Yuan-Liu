@@ -19,7 +19,7 @@
 
     /* 新增：Dom 区域与 Dom 树列表组件 */
     import DomCanvas from '../widgets/DomCanvas.svelte'
-    import DomTreeList from '../widgets/DomTreeList.svelte'
+    import TabbedPanel from '../widgets/TabbedPanel.svelte'
     import PropertyPanel from '../widgets/property-panel/PropertyPanel.svelte'
     import Icon from '../widgets/Icon.svelte'
     import blocksConfig from '../blocks/blocks.config.json'
@@ -494,8 +494,7 @@
                 <div style="width: 12%; height: 100%;background: rgb(15, 20, 29);"></div>
                 <!-- dom树列表 -->
                 <div style="width: 88%;height: 100%;background: rgba(30, 41, 59, 0.8);pointer-events: auto">
-                    <!-- @ts-ignore: props typing still WIP -->
-                    <DomTreeList />
+                    <TabbedPanel />
                 </div>
             </div>
 
