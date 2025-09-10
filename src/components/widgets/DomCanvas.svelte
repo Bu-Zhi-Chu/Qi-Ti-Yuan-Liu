@@ -89,12 +89,12 @@
             }
         })
 
-        // 快捷键监听 F 聚焦
-        window.addEventListener('keydown', handleFocusKey)
+        // 快捷键监听 F 聚焦 - 使用capture阶段确保优先处理
+        document.addEventListener('keydown', handleFocusKey, true)
 
         return () => {
             unsubscribe?.()
-            window.removeEventListener('keydown', handleFocusKey)
+            document.removeEventListener('keydown', handleFocusKey, true)
         }
     })
 
@@ -383,6 +383,12 @@
 
     // 处理快捷键 F 触发聚焦
     function handleFocusKey(e: KeyboardEvent) {
+        // 如果焦点在输入框、文本域或其他可编辑元素中，不触发聚焦
+        const target = e.target as HTMLElement
+        if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable || target.closest('[contenteditable="true"]'))) {
+            return
+        }
+
         if (e.key === 'f' || e.key === 'F') {
             e.preventDefault()
             focusCanvas()
