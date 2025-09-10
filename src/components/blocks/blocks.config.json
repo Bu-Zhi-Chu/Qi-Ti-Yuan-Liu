@@ -4,7 +4,15 @@
         "nameZh": "简单盒子",
         "path": "../blocks/SimpleBox.svelte",
         "preview": "/previews/SimpleBox.svg",
-        "showFeatureTab": false
+        "showFeatureTab": false,
+        "presetStyles": {
+            "display": "flex",
+            "justifyContent": "center",
+            "alignItems": "center",
+            "width": "25%",
+            "height": "25%",
+            "backgroundColor": "rgba(30, 41, 59, 0.15)"
+        }
     },
     {
         "type": "RealTimeClock",
