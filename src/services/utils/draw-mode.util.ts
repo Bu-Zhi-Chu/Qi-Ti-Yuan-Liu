@@ -4,6 +4,8 @@
  */
 
 import type { DomNode } from '../../types/dom-node.types'
+import blocksConfig from '../../components/blocks/blocks.config.json'
+import { domTree } from '../repository/dom-tree.store.svelte'
 
 export interface RelativeRect {
     left: number
@@ -57,27 +59,53 @@ export function clampPointToRect(point: { x: number; y: number }, rect: DOMRect)
 /**
  * 生成绘制完成后的新 DomNode。
  */
-export function createDrawNode(rect: RelativeRect): DomNode {
-    const id = (globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}`)
+export interface CreateDrawNodeOptions {
+    componentType?: string;
+    presetStyles?: Record<string, any>;
+}
+
+export function createDrawNode(rect: RelativeRect, options: CreateDrawNodeOptions = {}): DomNode {
+    const { componentType = 'SimpleBox', presetStyles = {} } = options;
+    const id = (globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}`);
+    // 根据 blocks.config.json 获取中文名称
+    const matched = (blocksConfig as any[]).find(b => b.type === componentType)
+    const baseName = matched?.nameZh ?? componentType
+    // 生成唯一名称，若已存在则追加计数
+    const names = new Set<string>()
+    function collect(node: any) {
+        const attrName = node.attributes?.['data-name'] as string | undefined
+        if (attrName) names.add(attrName)
+        node.children?.forEach(collect)
+    }
+    collect(domTree)
+    let displayName = baseName
+    if (names.has(displayName)) {
+        let index = 1
+        while (names.has(`${baseName} ${index}`)) {
+            index++
+        }
+        displayName = `${baseName} ${index}`
+    }
     return {
         id,
-        componentType: 'SimpleBox',
+        componentType,
         styles: {
             position: 'absolute',
             left: `${rect.left}%`,
             top: `${rect.top}%`,
             width: `${rect.width}%`,
             height: `${rect.height}%`,
-            backgroundColor: 'rgba(30, 41, 59, 0.15)', // 与主背景协调的蓝灰色半透明背景
-            boxSizing: 'border-box', // 默认使用边框盒模型
-            overflow: 'hidden', // 默认隐藏溢出内容
-            pointerEvents: 'auto' // 默认允许鼠标事件
+            backgroundColor: 'rgba(30, 41, 59, 0.15)',
+            boxSizing: 'border-box',
+            overflow: 'hidden',
+            pointerEvents: 'auto',
+            ...presetStyles
         },
         attributes: {
-            'data-name': '元素'
+            'data-name': displayName
         },
         children: []
-    }
+    };
 }
 
 /**

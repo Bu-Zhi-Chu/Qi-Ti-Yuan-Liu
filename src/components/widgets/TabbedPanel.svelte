@@ -77,6 +77,17 @@
         // TODO: 实现添加节点逻辑
         console.log('添加节点:', item)
     }
+
+    function handleDragStart(e: DragEvent, item: WarehouseItem) {
+        if (!e.dataTransfer) return
+        const payload = {
+            type: item.type,
+            name: item.name,
+            presetStyles: item.presetStyles ?? {}
+        }
+        e.dataTransfer.setData('application/json', JSON.stringify(payload))
+        e.dataTransfer.effectAllowed = 'copy'
+    }
 </script>
 
 <!-- 页签式面板容器 -->
@@ -116,7 +127,7 @@
             <div class="tab-pane warehouse-pane">
                 <div class="warehouse-grid">
                     {#each filteredWarehouseItems() as item (item.id)}
-                        <button class="warehouse-item" onclick={() => addNodeFromWarehouse(item)} type="button">
+                        <button class="warehouse-item" draggable="true" ondragstart={(e) => handleDragStart(e, item)} onclick={() => addNodeFromWarehouse(item)} type="button">
                             <div class="item-icon">
                                 <img src={item.preview} alt={item.name} width="32" height="32" />
                             </div>

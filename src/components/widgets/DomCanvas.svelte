@@ -43,7 +43,7 @@
     let { editing = false } = $props<{ editing?: boolean }>()
 
     import { onMount } from 'svelte'
-    import { domTree, selectedId, setSelectedId, setProjectId, loadDomTreeFromDatabase, projectId } from '../../services/repository/dom-tree.store.svelte'
+    import { domTree, selectedId, setSelectedId, setProjectId, loadDomTreeFromDatabase, projectId, addNodeToParent } from '../../services/repository/dom-tree.store.svelte'
     import { getElementByNodeId } from '../../services/utils/dom-geometry.util'
     import Dexie from 'dexie'
     import { isLiteMode } from '../../services/env/environment.service'
@@ -394,6 +394,90 @@
             focusCanvas()
         }
     }
+
+    // 拖放处理函数
+    function handleDragOver(event: DragEvent) {
+        event.preventDefault()
+        event.dataTransfer!.dropEffect = 'copy'
+    }
+
+    function handleDrop(event: DragEvent) {
+        event.preventDefault()
+        const dataStr = event.dataTransfer?.getData('application/json')
+        if (!dataStr) return
+
+        let payload: { type: string; name?: string; presetStyles?: Record<string, any> }
+        try {
+            payload = JSON.parse(dataStr)
+        } catch {
+            return
+        }
+
+        const parentId = selectedId() || 'root'
+        const parentEl = getElementByNodeId(parentId) ?? canvasContainerRef
+        if (!parentEl) return
+        const parentRect = parentEl.getBoundingClientRect()
+
+        const defaultW = 10
+        const defaultH = 10
+        let widthPercent = defaultW
+        let heightPercent = defaultH
+
+        if (payload.presetStyles) {
+            const wStr = payload.presetStyles.width as string | undefined
+            const hStr = payload.presetStyles.height as string | undefined
+            if (wStr && wStr.endsWith('%')) widthPercent = parseFloat(wStr)
+            if (hStr && hStr.endsWith('%')) heightPercent = parseFloat(hStr)
+        }
+
+        const dropX = event.clientX
+        const dropY = event.clientY
+        const relativeXPercent = ((dropX - parentRect.left) / parentRect.width) * 100
+        const relativeYPercent = ((dropY - parentRect.top) / parentRect.height) * 100
+
+        const leftPercent = relativeXPercent - widthPercent / 2
+        const topPercent = relativeYPercent - heightPercent / 2
+
+        // 生成唯一 data-name，避免重名
+        function generateUniqueDataName(baseName: string): string {
+            if (!baseName) return baseName
+            const names = new Set<string>()
+            function collect(node: any) {
+                const attrName = (node.attributes?.['data-name']) as string | undefined
+                if (attrName) names.add(attrName)
+                node.children?.forEach(collect)
+            }
+            collect(domTree)
+            let candidate = baseName
+            if (!names.has(candidate)) return candidate
+            let index = 1
+            while (names.has(`${baseName} ${index}`)) {
+                index++
+            }
+            return `${baseName} ${index}`
+        }
+        const displayName = generateUniqueDataName(payload.name ?? payload.type)
+
+        const newNode = {
+            id: globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}`,
+            componentType: payload.type,
+            styles: {
+                position: 'absolute',
+                left: `${leftPercent}%`,
+                top: `${topPercent}%`,
+                width: `${widthPercent}%`,
+                height: `${heightPercent}%`,
+                ...(payload.presetStyles || {})
+            },
+            attributes: {
+                'data-name': displayName
+            },
+            children: []
+        } as any
+
+        addNodeToParent(parentId, newNode)
+        // setSelectedId(newNode.id)  // 移除自动切换新节点的选中，保持原有选中状态
+    }
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
@@ -437,6 +521,8 @@
     onpointerdown={() => (isDragging = true)}
     onpointerup={() => (isDragging = false)}
     onpointercancel={() => (isDragging = false)}
+    ondragover={handleDragOver}
+    ondrop={handleDrop}
 >
     {#if !isLoading}
         <NodeRenderer node={domTree} selectedId={selectedId()} {editing} select={handleSelect} />
@@ -474,6 +560,15 @@
         width: 100%;
         height: 100%;
         position: relative;
+    }
+
+    .canvas-container.editing {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(calc(-50% + calc(var(--offset-x, 0px) * var(--scale-ratio, 1))), calc(-50% + calc(var(--offset-y, 0px) * var(--scale-ratio, 1)))) scale(calc(var(--scale, 1) * 0.5));
+        transform-origin: center center;
+        z-index: 5;
     }
 
     .canvas-container.editing {
