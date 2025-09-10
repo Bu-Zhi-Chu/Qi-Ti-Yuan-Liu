@@ -129,7 +129,7 @@
                     {#each filteredWarehouseItems() as item (item.id)}
                         <button class="warehouse-item" draggable="true" ondragstart={(e) => handleDragStart(e, item)} onclick={() => addNodeFromWarehouse(item)} type="button">
                             <div class="item-icon">
-                                <img src={item.preview} alt={item.name} width="32" height="32" />
+                                <img src={item.preview} alt={item.name} width="32" height="32" draggable="false" />
                             </div>
                             <div class="item-name">{item.name}</div>
                             <div class="item-type">{item.type}</div>
