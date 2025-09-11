@@ -515,6 +515,16 @@ export async function removeNodeById(nodeId: string): Promise<boolean> {
   if (targetNode) releaseNodeResources(targetNode);
   if (selectedNodeId === nodeId) await setSelectedId('root');
   parent.children = parent.children.filter(c => c.id !== nodeId);
+
+  // 如果父节点是 ButtonGroup 且已无子节点，则一并删除父节点
+  if (parent.componentType === 'ButtonGroup' || (parent.attributes as any)?.type === 'ButtonGroup') {
+    if (parent.children.length === 0) {
+      // 递归删除父节点，但防止死循环
+      await removeNodeById(parent.id);
+      return true;
+    }
+  }
+
   bumpDomTreeVersion();
   autoSaveToDomsTable();
   return true;

@@ -49,8 +49,6 @@
         }
     })
 
-    // 派生下拉 options
-
     // 派生属性描述数组
     type PropEntry = { key: string; label: string; type: string; options?: any[]; min?: number; max?: number; default?: any }
     const propEntries: () => PropEntry[] = $derived(() => {
@@ -67,7 +65,18 @@
         // 属性与样式合并，样式优先（避免同名冲突）
         currentValues = { ...attrs, ...styles }
     })
+    let syncingFromDomTree = false
+    let editingButtonCount = false // 标记正在由输入框主动修改中
     function handleAttrChange(key: string, value: any) {
+        // 如果是 DOM 树同步过来的 buttonCount 变更，则仅更新 view，不再触发增删按钮
+        if (key === 'buttonCount' && syncingFromDomTree) {
+            syncingFromDomTree = false
+            currentValues[key] = value
+            if (selectedId) {
+                updateNodeProps(selectedId, { attributes: { [key]: value } })
+            }
+            return
+        }
         currentValues[key] = value
         if (!selectedId) return
         // size 类型写入 styles，其余写入 attributes
@@ -79,18 +88,26 @@
 
             // 额外逻辑：ButtonGroup 按钮数量同步
             if (key === 'buttonCount') {
+                editingButtonCount = true
                 const node = getFullNode(selectedId)
                 if (node && (node.componentType === 'ButtonGroup' || (node.attributes as any)?.type === 'ButtonGroup')) {
-                    const desired = Math.max(1, Math.min(10, Number(value))) || 1
+                    const desired = Math.max(0, Math.min(10, Number(value))) // 允许用户将数量设为0
+                    if (desired === 0) {
+                        // 若用户主动设为0，则移除整个按钮组组件
+                        removeNodeById(selectedId)
+                        return
+                    }
                     const current = node.children?.length ?? 0
 
                     // 添加不足的按钮
                     for (let i = 0; i < desired - current; i++) {
                         const childId = globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-${Math.random()}`
+                        const buttonMeta = (blocksConfig as any[]).find((b) => b.type === 'Button') as any
+                        const baseStyles = buttonMeta?.presetStyles ? { ...buttonMeta.presetStyles } : {}
                         addNodeToParent(selectedId, {
                             id: childId,
                             componentType: 'Button',
-                            styles: {},
+                            styles: baseStyles,
                             attributes: { 'data-name': `按钮 ${current + i + 1}` },
                             children: []
                         } as any)
@@ -103,6 +120,10 @@
                             removeNodeById(c.id)
                         }
                     }
+                    // 等待一轮 microtask 后再清除标记，确保 DOM 树已经同步完成
+                    queueMicrotask(() => {
+                        editingButtonCount = false
+                    })
                 }
             }
         }
@@ -280,10 +301,12 @@
                     // 添加不足的按钮
                     for (let i = 0; i < desired - current; i++) {
                         const childId = globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-${Math.random()}`
+                        const buttonMeta = (blocksConfig as any[]).find((b) => b.type === 'Button') as any
+                        const baseStyles = buttonMeta?.presetStyles ? { ...buttonMeta.presetStyles } : {}
                         addNodeToParent(selectedId, {
                             id: childId,
                             componentType: 'Button',
-                            styles: {},
+                            styles: baseStyles,
                             attributes: { 'data-name': `按钮 ${current + i + 1}` },
                             children: []
                         } as any)
@@ -298,6 +321,27 @@
             }
         }
     })
+    // 新增：当 ButtonGroup 的子节点数量与 buttonCount 不一致时，只同步数字框，不触发增删按钮
+    $effect(() => {
+        if (!selectedId) return
+        const node = getFullNode(selectedId)
+        if (!node || node.componentType !== 'ButtonGroup') return
+        const realCount = node.children?.length ?? 0
+        const shownCount = Number(currentValues['buttonCount'] ?? node.attributes?.buttonCount ?? realCount)
+
+        // 若已无子按钮，则移除整个按钮组
+        if (realCount === 0) {
+            removeNodeById(selectedId)
+            return
+        }
+
+        if (!editingButtonCount && realCount !== shownCount) {
+            syncingFromDomTree = true
+            currentValues['buttonCount'] = realCount
+            // 仅写入 attributes，保持状态一致，不触发增删
+            updateNodeProps(selectedId, { attributes: { buttonCount: String(realCount) } })
+        }
+    })
 </script>
 
 {#if propEntries().length}
@@ -308,7 +352,7 @@
                 {#if p.type === 'select'}
                     <PropertySelect bind:value={currentValues[p.key]} options={p.options} change={(v) => handleAttrChange(p.key, v)} />
                 {:else if p.type === 'number'}
-                    <input type="number" min={p.min} max={p.max} bind:value={currentValues[p.key]} oninput={(e) => handleAttrChange(p.key, +(e.currentTarget as HTMLInputElement).value)} class="number-input" />
+                    <input type="number" min={p.min} max={p.max} value={currentValues[p.key] ?? ''} oninput={(e) => handleAttrChange(p.key, +(e.currentTarget as HTMLInputElement).value)} class="number-input" />
                 {:else if p.type === 'size'}
                     <SizeInput value={parseSize(currentValues[p.key])[0]} unit="px" unitOptions={['px']} convert={(v) => v} on:change={({ detail: { value, unit } }) => handleAttrChange(p.key, value ? `${value}${unit}` : '')} />
                 {:else if p.type === 'image'}

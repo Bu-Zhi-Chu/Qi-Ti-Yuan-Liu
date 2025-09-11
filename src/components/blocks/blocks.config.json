@@ -71,6 +71,14 @@
         "path": "../blocks/ButtonGroup.svelte",
         "preview": "/previews/ButtonGroup.svg",
         "showFeatureTab": true,
+        "presetStyles": {
+            "display": "flex",
+            "justifyContent": "center",
+            "alignItems": "center",
+            "cursor": "pointer",
+            "gap": "8px",
+            "backgroundColor": "rgba(99, 102, 241, 0.15)"
+        },
         "featureProps": {
             "buttonCount": {
                 "label": "按钮数量",

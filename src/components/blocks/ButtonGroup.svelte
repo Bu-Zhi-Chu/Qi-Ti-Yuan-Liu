@@ -23,7 +23,7 @@
 </script>
 
 <!-- 使用 ResponsiveBox 包裹，内部水平排列子节点 -->
-<ResponsiveBox {id} style={style + ';display:flex;gap:8px;align-items:center;justify-content:flex-start;'} {...rest}>
+<ResponsiveBox {id} style={style} {...rest}>
     {#if children}
         {@render children()}
     {:else}

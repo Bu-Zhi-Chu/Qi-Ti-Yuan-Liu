@@ -13,6 +13,7 @@
     import SizeInput from './SizeInput.svelte'
     import { updateNodeProperties } from '../../../services/repository/dom-tree.store.svelte'
     import blocksConfig from '../../blocks/blocks.config.json'
+    import { addNodeToParent, removeNodeById } from '../../../services/repository/dom-tree.store.svelte'
     interface BlockItem {
         type: string
         nameZh: string
@@ -199,26 +200,64 @@
             attributes: { 'data-name': newName }
         })
     }
-
     // 修改组件类型
     function handleTypeChange(newType: string) {
         if (!selectedId) return
         // 如果为空，使用第一个组件类型作为默认值
         const finalType = newType || componentOptions[0]?.type || ''
         currentType = finalType
-
         // 直接更新节点的 componentType 字段，确保回显与渲染一致
         updateNodeProperties(selectedId, { componentType: finalType })
-
-        // 若 blocks.config.json 中为该类型配置了 presetStyles，则批量写入节点样式
-
+        // 下面会统一处理 blockMeta 相关逻辑，避免重复声明
         const blockMeta = (blocksConfig as any[]).find((b) => b.type === finalType)
-        if (blockMeta && blockMeta.presetStyles) {
-            // 仅在切换节点类型时应用预设样式，但**不**覆盖 width / height，
-            // 这些尺寸在绘画模式下已由绘制时确定。
-            const { width: _w, height: _h, ...restStyles } = blockMeta.presetStyles as Record<string, any>
-            if (Object.keys(restStyles).length > 0) {
-                updateNodeProps(selectedId, { styles: { ...restStyles } })
+        if (blockMeta) {
+            // 1. 处理预设样式（排除宽高）
+            if (blockMeta.presetStyles) {
+                const { width: _w, height: _h, ...restStyles } = blockMeta.presetStyles as Record<string, any>
+                if (Object.keys(restStyles).length > 0) {
+                    updateNodeProps(selectedId, { styles: { ...restStyles } })
+                }
+            }
+
+            // 2. 处理 featureProps 默认值
+            const featureProps = blockMeta.featureProps as Record<string, any> | undefined
+            if (featureProps) {
+                const defaultAttrs: Record<string, any> = {}
+                for (const [k, cfg] of Object.entries(featureProps)) {
+                    if (cfg?.default !== undefined) {
+                        defaultAttrs[k] = cfg.default
+                    }
+                }
+                if (Object.keys(defaultAttrs).length > 0) {
+                    updateNodeProps(selectedId, { attributes: defaultAttrs })
+                }
+
+                // 特殊处理 ButtonGroup 子按钮同步
+                if (finalType === 'ButtonGroup' && defaultAttrs['buttonCount'] !== undefined) {
+                    const desired = Math.max(1, Math.min(10, Number(defaultAttrs['buttonCount']))) || 1
+                    const node = getFullNode(selectedId)
+                    if (node) {
+                        const current = node.children?.length ?? 0
+                        // 添加不足的按钮
+                        for (let i = 0; i < desired - current; i++) {
+                            const childId = globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-${Math.random()}`
+                            const buttonMeta = (blocksConfig as any[]).find((b) => b.type === 'Button') as any
+                            const baseStyles = buttonMeta?.presetStyles ? { ...buttonMeta.presetStyles } : {}
+                            addNodeToParent(selectedId, {
+                                id: childId,
+                                componentType: 'Button',
+                                styles: baseStyles,
+                                attributes: { 'data-name': `按钮 ${current + i + 1}` },
+                                children: []
+                            } as any)
+                        }
+                        // 删除多余
+                        if (current > desired && node.children) {
+                            const extras = node.children.slice(desired)
+                            for (const c of extras) removeNodeById(c.id)
+                        }
+                    }
+                }
             }
         }
     }
