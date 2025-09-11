@@ -312,9 +312,12 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
   }
 
   // 在调整模式下阻止点击选中
+  // 仅在点击事件发生于覆盖层内部时才阻止冒泡，避免拦截工具栏等其他操作
   function preventClick(e: MouseEvent) {
-    e.stopPropagation()
-    e.preventDefault()
+    if (overlayEl && overlayEl.contains(e.target as Node)) {
+      e.stopPropagation()
+      e.preventDefault()
+    }
   }
 
   /**

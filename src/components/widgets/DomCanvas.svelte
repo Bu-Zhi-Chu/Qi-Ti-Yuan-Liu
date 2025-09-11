@@ -384,8 +384,14 @@
     // 处理快捷键 F 触发聚焦
     function handleFocusKey(e: KeyboardEvent) {
         // 如果焦点在输入框、文本域或其他可编辑元素中，不触发聚焦
-        const target = e.target as HTMLElement
-        if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable || target.closest('[contenteditable="true"]'))) {
+        const target = e.target
+        if (
+            target instanceof HTMLElement &&
+            (target.tagName === 'INPUT' ||
+                target.tagName === 'TEXTAREA' ||
+                target.isContentEditable ||
+                target.closest('[contenteditable="true"]'))
+        ) {
             return
         }
 

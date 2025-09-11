@@ -98,6 +98,39 @@
 
         const prevTool = activeTool
 
+        // 若之前处于绘制模式且本次点击的不是绘制工具，需先触发一次 b 键抬起以退出绘制模式
+        if (prevTool === 'draw' && k !== 'draw') {
+            const evt = new KeyboardEvent('keyup', {
+                key: 'b',
+                code: 'KeyB',
+                bubbles: true,
+                cancelable: true
+            })
+            document.dispatchEvent(evt)
+        }
+
+        // 若之前处于缩放模式且本次点击的不是缩放工具，需触发一次 Alt 键抬起以退出缩放模式
+        if (prevTool === 'zoom' && k !== 'zoom') {
+            const evt = new KeyboardEvent('keyup', {
+                key: 'Alt',
+                code: 'AltLeft',
+                bubbles: true,
+                cancelable: true
+            })
+            document.dispatchEvent(evt)
+        }
+
+        // 若之前处于调整模式且本次点击的不是调整工具，需触发一次 v 键抬起以退出调整模式
+        if (prevTool === 'adjust' && k !== 'adjust') {
+            const evt = new KeyboardEvent('keyup', {
+                key: 'v',
+                code: 'KeyV',
+                bubbles: true,
+                cancelable: true
+            })
+            document.dispatchEvent(evt)
+        }
+
         // 若之前是移动工具且此次点击的不是移动工具，无论新类型如何，都要先松开空格并清理状态
         if (prevTool === 'move' && k !== 'move') {
             const evtUp = new KeyboardEvent('keyup', {
