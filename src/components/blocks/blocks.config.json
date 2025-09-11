@@ -111,6 +111,15 @@
                 "type": "switch",
                 "default": false
             },
+            "buttonType": {
+                "label": "按钮类型",
+                "type": "select",
+                "options": [
+                    { "value": "switch", "label": "开关" },
+                    { "value": "trigger", "label": "触发" },
+                    { "value": "navigate", "label": "导航" }
+                ]
+            },
             "textOffsetLeft": {
                 "label": "文字左移",
                 "type": "size",
