@@ -114,8 +114,14 @@
         let heightPercent = 10
         const widthVal: string | undefined = presetStyles.width as any
         const heightVal: string | undefined = presetStyles.height as any
-        if (widthVal && /%$/.test(widthVal)) widthPercent = parseFloat(widthVal)
-        if (heightVal && /%$/.test(heightVal)) heightPercent = parseFloat(heightVal)
+        const widthRaw: string | undefined = typeof widthVal === 'string' ? widthVal.trim() : undefined
+        const heightRaw: string | undefined = typeof heightVal === 'string' ? heightVal.trim() : undefined
+        // 若预设为百分比，直接解析；若为固定px，则稍后转换为百分比
+        if (widthRaw && /%$/.test(widthRaw)) widthPercent = parseFloat(widthRaw)
+        if (heightRaw && /%$/.test(heightRaw)) heightPercent = parseFloat(heightRaw)
+        // 记录若为px值，稍后转换
+        const widthPxPreset = widthRaw && /px$/i.test(widthRaw) ? parseFloat(widthRaw) : null
+        const heightPxPreset = heightRaw && /px$/i.test(heightRaw) ? parseFloat(heightRaw) : null
 
         const parentId = selectedId() || 'root'
         const parentEl = getElementByNodeId(parentId) as HTMLElement | null
@@ -124,6 +130,14 @@
 
         const parentRect = parent.getBoundingClientRect()
         const scaleRatio = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--scale-ratio') || '1') || 1
+
+        // 若预设为px，需要折算到百分比，确保拖拽时中心定位仍正确
+        if (widthPxPreset !== null && parent.offsetWidth) {
+            widthPercent = ((widthPxPreset * scaleRatio) / parent.offsetWidth) * 100
+        }
+        if (heightPxPreset !== null && parent.offsetHeight) {
+            heightPercent = ((heightPxPreset * scaleRatio) / parent.offsetHeight) * 100
+        }
 
         // 生成 data-name
         function generateUniqueDataName(baseName: string): string {
@@ -203,6 +217,13 @@
                 previewEl = null
             }
             if (addNode && pendingNode) {
+                // 如果原始预设为px，则在落地前转换为自适应px写法
+                if (widthPxPreset !== null) {
+                    pendingNode.styles.width = `calc(${widthPxPreset}px * var(--scale-ratio, 1))`
+                }
+                if (heightPxPreset !== null) {
+                    pendingNode.styles.height = `calc(${heightPxPreset}px * var(--scale-ratio, 1))`
+                }
                 addNodeToParent(parentId, pendingNode)
             }
             pendingNode = null

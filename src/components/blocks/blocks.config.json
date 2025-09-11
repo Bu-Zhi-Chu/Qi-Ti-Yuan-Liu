@@ -21,6 +21,13 @@
         "preview": "/previews/RealTimeClock.svg",
         "showFeatureTab": true,
         "hideTextContent": true,
+        "presetStyles": {
+            "display": "flex",
+            "justifyContent": "center",
+            "alignItems": "center",
+            "width": "200px",
+            "height": "30px"
+        },
         "featureProps": {
             "displayType": {
                 "label": "显示模式",
@@ -77,7 +84,9 @@
             "justifyContent": "center",
             "alignItems": "center",
             "cursor": "pointer",
-            "backgroundColor": "none"
+            "width": "150px",
+            "height": "30px",
+            "backgroundColor": "rgba(99, 102, 241, 0.15)"
         },
         "featureProps": {
             "enableClick": {
