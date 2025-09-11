@@ -18,9 +18,11 @@
         "type": "Screen",
         "nameZh": "页面容器",
         "path": "../blocks/Screen.svelte",
-        "preview": "",
+        "preview": "/previews/Screen.svg",
         "showFeatureTab": true,
         "presetStyles": {
+            "width": "100%",
+            "height": "100%",
             "position": "absolute",
             "inset": "0"
         },

@@ -239,6 +239,11 @@
                 previewEl = null
             }
             if (addNode && pendingNode) {
+                // Screen 页容器始终居父容器左上角
+                if (pendingNode.componentType === 'Screen') {
+                    pendingNode.styles.left = '0%'
+                    pendingNode.styles.top = '0%'
+                }
                 // 如果原始预设为px，则在落地前转换为自适应px写法
                 if (widthPxPreset !== null) {
                     pendingNode.styles.width = `calc(${widthPxPreset}px * var(--scale-ratio, 1))`
