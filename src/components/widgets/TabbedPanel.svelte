@@ -94,10 +94,10 @@
     let previewEl: HTMLElement | null = null
     let pendingNode: any = null
     let cleanupListeners: (() => void) | null = null
-    
+
     function addNodeFromWarehouse(e: MouseEvent, item: WarehouseItem) {
         e.stopPropagation()
-    
+
         // 若已有正在拖拽的预览，先清理
         if (previewEl) {
             previewEl.remove()
@@ -107,7 +107,7 @@
             cleanupListeners()
             cleanupListeners = null
         }
-    
+
         /* 1. 计算父节点与尺寸百分比 */
         const presetStyles = item.presetStyles || {}
         let widthPercent = 10
@@ -116,15 +116,15 @@
         const heightVal: string | undefined = presetStyles.height as any
         if (widthVal && /%$/.test(widthVal)) widthPercent = parseFloat(widthVal)
         if (heightVal && /%$/.test(heightVal)) heightPercent = parseFloat(heightVal)
-    
+
         const parentId = selectedId() || 'root'
         const parentEl = getElementByNodeId(parentId) as HTMLElement | null
         if (!parentEl) return
         const parent = parentEl as HTMLElement
-    
+
         const parentRect = parent.getBoundingClientRect()
         const scaleRatio = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--scale-ratio') || '1') || 1
-    
+
         // 生成 data-name
         function generateUniqueDataName(baseName: string): string {
             const names = new Set<string>()
@@ -140,7 +140,7 @@
             while (names.has(`${baseName} ${index}`)) index++
             return `${baseName} ${index}`
         }
-    
+
         /* 2. 创建待加入节点描述对象（百分比定位） */
         pendingNode = {
             id: globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}`,
@@ -158,58 +158,74 @@
             },
             children: []
         }
-    
+
         /* 3. 生成真实 DOM 作为预览 */
         previewEl = document.createElement('div')
         previewEl.style.position = 'absolute'
         previewEl.style.pointerEvents = 'none'
         previewEl.style.background = 'rgba(99,102,241,0.3)'
-        previewEl.style.border = '1px dashed #6366f1'
-        previewEl.style.borderRadius = '4px'
-    
+        previewEl.style.border = 'calc(3px * var(--scale-ratio, 1)) dashed #6366f1'
+        previewEl.style.boxSizing = 'border-box'
+
         parentEl.appendChild(previewEl)
-    
+
         function updatePreview(clientX: number, clientY: number) {
             const relX = (clientX - parentRect.left) / parentRect.width
             const relY = (clientY - parentRect.top) / parentRect.height
             const leftPercent = relX * 100 - widthPercent / 2
             const topPercent = relY * 100 - heightPercent / 2
-    
-            const pxW = (widthPercent / 100) * parent.offsetWidth / scaleRatio
-            const pxH = (heightPercent / 100) * parent.offsetHeight / scaleRatio
-            const pxL = (leftPercent / 100) * parent.offsetWidth / scaleRatio
-            const pxT = (topPercent / 100) * parent.offsetHeight / scaleRatio
-    
-            previewEl!.style.width = `${pxW}px`
-            previewEl!.style.height = `${pxH}px`
-            previewEl!.style.left = `${pxL}px`
-            previewEl!.style.top = `${pxT}px`
-    
+
+            const pxW = ((widthPercent / 100) * parent.offsetWidth) / scaleRatio
+            const pxH = ((heightPercent / 100) * parent.offsetHeight) / scaleRatio
+            const pxL = ((leftPercent / 100) * parent.offsetWidth) / scaleRatio
+            const pxT = ((topPercent / 100) * parent.offsetHeight) / scaleRatio
+
+            // 使用自适应 px（calc * var(--scale-ratio)）以适配不同浏览器缩放
+            previewEl!.style.width = `calc(${pxW}px * var(--scale-ratio, 1))`
+            previewEl!.style.height = `calc(${pxH}px * var(--scale-ratio, 1))`
+            previewEl!.style.left = `calc(${pxL}px * var(--scale-ratio, 1))`
+            previewEl!.style.top = `calc(${pxT}px * var(--scale-ratio, 1))`
+
             // 记录到 pendingNode，方便松开时写入
             pendingNode.styles.left = `${leftPercent}%`
             pendingNode.styles.top = `${topPercent}%`
         }
-    
+
         updatePreview(e.clientX, e.clientY)
-    
-        const onMove = (ev: MouseEvent) => updatePreview(ev.clientX, ev.clientY)
-        const onUp = () => {
+
+        // 公共清理函数（移除预览并清理监听器）
+        function cancelDrag(addNode = true) {
             window.removeEventListener('mousemove', onMove)
             window.removeEventListener('mouseup', onUp)
+            window.removeEventListener('contextmenu', onCtxMenu)
             if (previewEl) {
                 previewEl.remove()
                 previewEl = null
             }
-            addNodeToParent(parentId, pendingNode)
+            if (addNode && pendingNode) {
+                addNodeToParent(parentId, pendingNode)
+            }
             pendingNode = null
             cleanupListeners = null
         }
+
+        const onMove = (ev: MouseEvent) => updatePreview(ev.clientX, ev.clientY)
+        const onUp = (ev: MouseEvent) => {
+            if (ev.button !== 0) return // 仅左键触发落地
+            cancelDrag(true)
+        }
+        // 右键取消拖拽：阻止默认菜单并中止，不添加节点
+        const onCtxMenu = (ev: MouseEvent) => {
+            ev.preventDefault()
+            cancelDrag(false)
+        }
+
         window.addEventListener('mousemove', onMove)
         window.addEventListener('mouseup', onUp)
-    
+        window.addEventListener('contextmenu', onCtxMenu)
+
         cleanupListeners = () => {
-            window.removeEventListener('mousemove', onMove)
-            window.removeEventListener('mouseup', onUp)
+            cancelDrag(false)
         }
     }
 
