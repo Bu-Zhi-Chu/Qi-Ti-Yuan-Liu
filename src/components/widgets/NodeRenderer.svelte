@@ -28,6 +28,7 @@
     import { decrementOrDelete } from '../../services/database/image-store.service'
     import { LRUMap } from 'lru_map'
     import { registerBlobUrl } from '../../services/utils/blob-url-manager'
+    import { currentPage } from '../../services/repository/dom-tree.store.svelte'
 
     // 40+位十六进制哈希
     const hashRegex = /^[a-f0-9]{40,}$/
@@ -225,9 +226,16 @@
         }
 
         // 根据 hidden 属性控制显示/隐藏
+        let visibility = ''
+        if (node.componentType === 'Screen') {
+            const cp = get(currentPage)
+            if (cp && node.id !== cp) {
+                visibility = 'display:none !important;'
+            }
+        }
         const hiddenStyle = node.hidden ? 'display:none !important;' : ''
 
-        const defaultStyles = `${outlineStyles}; ${hiddenStyle}`
+        const defaultStyles = `${outlineStyles}; ${hiddenStyle} ${visibility}`
         const result = styleStr ? `${styleStr}; ${defaultStyles}` : defaultStyles
 
         return result

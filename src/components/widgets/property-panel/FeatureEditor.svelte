@@ -15,6 +15,8 @@
     import { getImage, addOrIncrement, decrementOrDelete } from '../../../services/database/image-store.service'
     import { getImageSize } from '../../../services/image/upload-image.service'
     import { projectId } from '../../../services/repository/dom-tree.store.svelte'
+    import { domTree } from '../../../services/repository/dom-tree.store.svelte'
+    import { setCurrentPage } from '../../../services/repository/dom-tree.store.svelte'
 
     // 派生当前选中节点的 featureProps
     const featureProps = $derived(() => {
@@ -51,10 +53,25 @@
 
     // 派生属性描述数组
     type PropEntry = { key: string; label: string; type: string; options?: any[]; min?: number; max?: number; default?: any }
+    // 修改 propEntries，若为导航按钮，则动态加入 targetPageId 字段
     const propEntries: () => PropEntry[] = $derived(() => {
         const fp = featureProps()
         if (!fp) return []
-        return Object.entries(fp).map(([key, cfg]: [string, any]) => ({ key, ...cfg }))
+        const base = Object.entries(fp).map(([key, cfg]: [string, any]) => ({ key, ...cfg }))
+
+        // 若当前节点按钮类型为 navigate，则附加目标页面选择项
+        if (currentValues['buttonType'] === 'navigate') {
+            // 收集所有 Screen 节点，生成下拉选项
+            function collectScreens(node: any, arr: any[]) {
+                if (node.componentType === 'Screen') arr.push(node)
+                node.children?.forEach((c: any) => collectScreens(c, arr))
+            }
+            const screens: any[] = []
+            collectScreens(domTree, screens)
+            const options = screens.map((s) => ({ value: s.id, label: (s.attributes as any)?.['data-name'] || s.id }))
+            base.push({ key: 'targetPageId', label: '目标页面', type: 'select', options })
+        }
+        return base
     })
 
     // 当前各属性绑定值
@@ -102,6 +119,25 @@
         } else {
             updateNodeProps(selectedId, { attributes: { [key]: value } })
 
+            // 新增逻辑：导航按钮自动创建 Screen 页面并写入 targetPageId
+            if (key === 'buttonType') {
+                if (value === 'navigate') {
+                    // 不再自动创建页面，由用户在目标页面下拉框中手动选择
+                    if (!('targetPageId' in currentValues)) {
+                        currentValues['targetPageId'] = ''
+                        updateNodeProps(selectedId, { attributes: { targetPageId: '' } })
+                    }
+                } else {
+                    // 非导航类型：删除关联页面并清理 targetPageId
+                    const targetIdToDelete = currentValues['targetPageId']
+                    if (targetIdToDelete) {
+                        removeNodeById(targetIdToDelete)
+                    }
+                    currentValues['targetPageId'] = ''
+                    updateNodeProps(selectedId, { attributes: { targetPageId: '' } })
+                }
+            }
+
             // 额外逻辑：ButtonGroup 按钮数量同步
             if (key === 'buttonCount') {
                 editingButtonCount = true
@@ -124,6 +160,8 @@
                         if (node.children && node.children.length) {
                             baseStyles = { ...(node.children[0].styles || {}) }
                             baseAttrs = { ...(node.children[0].attributes || {}) }
+                            // 复制时若存在导航目标，应清除，避免多个按钮指向同一页面
+                            if ('targetPageId' in baseAttrs) delete baseAttrs['targetPageId']
                             baseChildren = JSON.parse(JSON.stringify(node.children[0].children || []))
                         } else {
                             const buttonMeta = (blocksConfig as any[]).find((b) => b.type === 'Button') as any

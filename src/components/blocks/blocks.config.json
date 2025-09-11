@@ -1,7 +1,7 @@
 [
     {
         "type": "SimpleBox",
-        "nameZh": "简单盒子",
+        "nameZh": "简单容器",
         "path": "../blocks/SimpleBox.svelte",
         "preview": "/previews/SimpleBox.svg",
         "showFeatureTab": false,
@@ -12,6 +12,24 @@
             "width": "25%",
             "height": "25%",
             "backgroundColor": "rgba(30, 41, 59, 0.15)"
+        }
+    },
+    {
+        "type": "Screen",
+        "nameZh": "页面容器",
+        "path": "../blocks/Screen.svelte",
+        "preview": "",
+        "showFeatureTab": true,
+        "presetStyles": {
+            "position": "absolute",
+            "inset": "0"
+        },
+        "featureProps": {
+            "keepMounted": {
+                "label": "保持挂载",
+                "type": "switch",
+                "default": true
+            }
         }
     },
     {
@@ -115,9 +133,18 @@
                 "label": "按钮类型",
                 "type": "select",
                 "options": [
-                    { "value": "switch", "label": "开关" },
-                    { "value": "trigger", "label": "触发" },
-                    { "value": "navigate", "label": "导航" }
+                    {
+                        "value": "switch",
+                        "label": "开关"
+                    },
+                    {
+                        "value": "trigger",
+                        "label": "触发"
+                    },
+                    {
+                        "value": "navigate",
+                        "label": "导航"
+                    }
                 ]
             },
             "textOffsetLeft": {

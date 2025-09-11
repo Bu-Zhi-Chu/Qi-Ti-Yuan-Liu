@@ -8,6 +8,7 @@
 
 <script lang="ts">
     import ResponsiveBox from '../core/ResponsiveBox.svelte'
+    import { currentPage } from '../../services/repository/dom-tree.store.svelte'
 
     interface Props {
         id?: string
@@ -19,25 +20,31 @@
         textOffsetTop?: string
         highlightImage?: string
         hoverEffect?: string
+        buttonType?: string
+        targetPageId?: string
         style?: string
         children?: any
         [key: string]: any
     }
 
-    let { id = crypto.randomUUID(), text = '按钮', textContent, disabled = false, enableClick = false, textOffsetLeft = '0px', textOffsetTop = '0px', highlightImage = '', hoverEffect = '', style = '', children, ...rest } = $props() as Props
+    let { id = crypto.randomUUID(), text = '按钮', textContent, disabled = false, enableClick = false, textOffsetLeft = '0px', textOffsetTop = '0px', highlightImage = '', hoverEffect = '', buttonType = '', targetPageId = '', style = '', children, ...rest } = $props() as Props
 
-    let isHighlighted = $state(false)
+    const isHighlighted = $derived(() => {
+        return buttonType === 'navigate' && targetPageId && $currentPage === targetPageId
+    })
 
     const mergedStyle = $derived(() => {
-        const highlight = isHighlighted && highlightImage ? `background-image: url(${highlightImage}); background-size: contain; background-repeat: no-repeat; background-position: center;` : ''
+        const highlight = isHighlighted() && highlightImage
+            ? `background-image: url(${highlightImage}); background-size: contain; background-repeat: no-repeat; background-position: center;`
+            : ''
         return style && highlight ? `${style}; ${highlight}` : style || highlight
     })
 
     /** 点击事件，默认输出日志 */
     function handleClick() {
         console.log(`Button(${id}) clicked`)
-        if (highlightImage) {
-            isHighlighted = !isHighlighted
+        if (buttonType === 'navigate' && targetPageId) {
+            currentPage.set(targetPageId)
         }
     }
     /** 键盘事件：回车或空格等价点击 */

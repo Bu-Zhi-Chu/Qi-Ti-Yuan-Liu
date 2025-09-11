@@ -822,3 +822,13 @@ export function filterDomTreeBySearch(query: string): void {
   dfs(domTreeData, true);
   bumpDomTreeVersion();
 }
+
+// 当前页面 Screen ID（用于 SPA 页面切换）
+let currentPageId = $state<string | null>(null)
+export const currentPage = writable<string | null>(null)
+
+/** 切换当前页面 */
+export function setCurrentPage(id: string | null) {
+  currentPageId = id
+  currentPage.set(id)
+}
