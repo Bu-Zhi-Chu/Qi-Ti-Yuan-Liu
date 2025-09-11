@@ -114,6 +114,10 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
   let handleEls: HTMLElement[] = []
   // 新增覆盖层引用
   let overlayEl: HTMLElement | null = null
+  // 当前已添加覆盖层的节点 ID
+  let currentOverlayNodeId: string | null = null
+  // requestAnimationFrame 任务 ID，用于取消
+  let monitorRAF = 0
 
   // ===== 尺寸调整相关状态 =====
   let isResizing = false
@@ -297,6 +301,7 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
     wrapper.appendChild(overlay)
     targetEl.appendChild(wrapper)
     overlayEl = wrapper
+    currentOverlayNodeId = targetEl.getAttribute('node-id') || selectedNodeAccessor() || null
 
     // 在覆盖层内部挂载操作手柄
     addHandles(overlay)
@@ -324,9 +329,19 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
    * 键盘按下处理
    */
   function keydownHandler(e: KeyboardEvent) {
+    // 若正在输入框/文本域/可编辑区域中输入，则忽略快捷键
+    const target = e.target as HTMLElement | null;
+    if (
+      target &&
+      (['INPUT', 'TEXTAREA'].includes(target.tagName) ||
+        (typeof (target as any).closest === 'function' && target.closest('[contenteditable="true"]')))
+    ) {
+      return;
+    }
     if (e.code !== key) return
     // 避免 Ctrl+V 等组合键触发独立 V 功能
     if (e.ctrlKey || e.metaKey) return
+
     if (!editingAccessor()) return
 
     // 仅在选中非根节点时启用调整模式
@@ -345,6 +360,29 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
       if (targetEl) {
         addOverlayWithHandles(targetEl)
       }
+      // 启动选中节点监视，保证切换节点时同步更新手柄
+      const monitor = () => {
+        if (!keyPressed) return
+        const curId = selectedNodeAccessor()
+        if (!curId || isRootNodeAccessor(curId)) {
+          // 选中根节点或无节点时，自动退出调整模式
+          const evt = new KeyboardEvent('keyup', {
+            key: 'v',
+            code: key,
+            bubbles: true,
+            cancelable: true
+          })
+          document.dispatchEvent(evt)
+          return
+        }
+        if (curId !== currentOverlayNodeId) {
+          const newEl = getElementByNodeId(curId)
+          removeOverlay()
+          if (newEl) addOverlayWithHandles(newEl)
+        }
+        monitorRAF = requestAnimationFrame(monitor)
+      }
+      monitorRAF = requestAnimationFrame(monitor)
     }
   }
 
@@ -352,6 +390,14 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
    * 键盘释放处理
    */
   function keyupHandler(e: KeyboardEvent) {
+    const target = e.target as HTMLElement | null;
+    if (
+      target &&
+      (['INPUT', 'TEXTAREA'].includes(target.tagName) ||
+        (typeof (target as any).closest === 'function' && target.closest('[contenteditable="true"]')))
+    ) {
+      return;
+    }
     if (e.code !== key) return
     if (e.ctrlKey || e.metaKey) return
 
@@ -367,6 +413,7 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
       removeHandles()
       // 清理覆盖层
       removeOverlay()
+      cancelAnimationFrame(monitorRAF)
     }
   }
 
@@ -1036,6 +1083,7 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
       window.removeEventListener('mousemove', handleMouseMove)
       // 移除覆盖层及手柄
       removeOverlay()
+      cancelAnimationFrame(monitorRAF)
     }
   }
 }

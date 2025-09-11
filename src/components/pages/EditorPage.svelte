@@ -525,6 +525,14 @@
 
     function onSpaceDown(e: KeyboardEvent) {
         if (!e.isTrusted) return // 忽略 ourselves派发的合成事件
+        const target = e.target as HTMLElement | null;
+        if (
+            target &&
+            (['INPUT', 'TEXTAREA'].includes(target.tagName) ||
+                (typeof (target as any).closest === 'function' && target.closest('[contenteditable="true"]')))
+        ) {
+            return;
+        }
         if (e.code === 'Space' && !spacePressing) {
             spacePressing = true
             if (activeTool !== 'move') {
@@ -535,6 +543,14 @@
 
     function onSpaceUp(e: KeyboardEvent) {
         if (!e.isTrusted) return
+        const target = e.target as HTMLElement | null;
+        if (
+            target &&
+            (['INPUT', 'TEXTAREA'].includes(target.tagName) ||
+                (typeof (target as any).closest === 'function' && target.closest('[contenteditable="true"]')))
+        ) {
+            return;
+        }
         if (e.code === 'Space' && spacePressing) {
             spacePressing = false
             // 仅当是按空格触发的高亮时才移除
@@ -565,6 +581,14 @@
     // 按住 B 进入绘制节点准备模式
     function onBDown(e: KeyboardEvent) {
         if (!e.isTrusted) return
+        const target = e.target as HTMLElement | null;
+        if (
+            target &&
+            (['INPUT', 'TEXTAREA'].includes(target.tagName) ||
+                (typeof (target as any).closest === 'function' && target.closest('[contenteditable="true"]')))
+        ) {
+            return;
+        }
         if ((e.key === 'b' || e.key === 'B') && !bPressing) {
             bPressing = true
             if (activeTool !== 'draw') {
@@ -575,6 +599,14 @@
 
     function onBUp(e: KeyboardEvent) {
         if (!e.isTrusted) return
+        const target = e.target as HTMLElement | null;
+        if (
+            target &&
+            (['INPUT', 'TEXTAREA'].includes(target.tagName) ||
+                (typeof (target as any).closest === 'function' && target.closest('[contenteditable="true"]')))
+        ) {
+            return;
+        }
         if ((e.key === 'b' || e.key === 'B') && bPressing) {
             bPressing = false
             if (activeTool === 'draw') {
@@ -586,6 +618,14 @@
     // 按住 V 进入调整节点准备模式（仅当选中非根节点时生效）
     function onVDown(e: KeyboardEvent) {
         if (!e.isTrusted) return
+        const target = e.target as HTMLElement | null;
+        if (
+            target &&
+            (['INPUT', 'TEXTAREA'].includes(target.tagName) ||
+                (typeof (target as any).closest === 'function' && target.closest('[contenteditable="true"]')))
+        ) {
+            return;
+        }
         if ((e.key === 'v' || e.key === 'V') && !vPressing) {
             const id = selectedId()
             if (!id || id === 'root') return // 根节点不可调整
@@ -598,6 +638,14 @@
 
     function onVUp(e: KeyboardEvent) {
         if (!e.isTrusted) return
+        const target = e.target as HTMLElement | null;
+        if (
+            target &&
+            (['INPUT', 'TEXTAREA'].includes(target.tagName) ||
+                (typeof (target as any).closest === 'function' && target.closest('[contenteditable="true"]')))
+        ) {
+            return;
+        }
         if ((e.key === 'v' || e.key === 'V') && vPressing) {
             vPressing = false
             if (activeTool === 'adjust') {

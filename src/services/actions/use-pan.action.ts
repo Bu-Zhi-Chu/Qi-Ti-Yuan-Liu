@@ -79,6 +79,15 @@ export default function usePan(node: HTMLElement, opts: UsePanOptions = {}) {
 
   /** ----------------- 键盘监听 ---------------- */
   function handleKeyDown(e: KeyboardEvent) {
+    // 若焦点位于输入框/文本域/可编辑区域，则忽略快捷键，避免打字触发拖动
+    const target = e.target as HTMLElement | null;
+    if (
+      target &&
+      (['INPUT', 'TEXTAREA'].includes(target.tagName) ||
+        (typeof (target as any).closest === 'function' && target.closest('[contenteditable="true"]')))
+    ) {
+      return;
+    }
     if (e.code !== options.key) return;
     // 避免 Ctrl+V 等组合键触发独立 V 功能
     if (e.ctrlKey || e.metaKey) return;
@@ -92,6 +101,14 @@ export default function usePan(node: HTMLElement, opts: UsePanOptions = {}) {
     }
   }
   function handleKeyUp(e: KeyboardEvent) {
+    const target = e.target as HTMLElement | null;
+    if (
+      target &&
+      (['INPUT', 'TEXTAREA'].includes(target.tagName) ||
+        (typeof (target as any).closest === 'function' && target.closest('[contenteditable="true"]')))
+    ) {
+      return;
+    }
     if (e.code !== options.key) return;
     if (e.ctrlKey || e.metaKey) return;
     state.keyPressed = false;

@@ -385,13 +385,7 @@
     function handleFocusKey(e: KeyboardEvent) {
         // 如果焦点在输入框、文本域或其他可编辑元素中，不触发聚焦
         const target = e.target
-        if (
-            target instanceof HTMLElement &&
-            (target.tagName === 'INPUT' ||
-                target.tagName === 'TEXTAREA' ||
-                target.isContentEditable ||
-                target.closest('[contenteditable="true"]'))
-        ) {
+        if (target instanceof HTMLElement && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable || target.closest('[contenteditable="true"]'))) {
             return
         }
 
