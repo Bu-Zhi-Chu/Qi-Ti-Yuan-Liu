@@ -135,6 +135,27 @@
                     document.dispatchEvent(evt)
                 }
             }
+
+            // 点击缩放画布按钮，按需按下/松开 Alt 键，模拟快捷缩放准备模式
+            if (k === 'zoom') {
+                if (activeTool === 'zoom') {
+                    const evt = new KeyboardEvent('keydown', {
+                        key: 'Alt',
+                        code: 'AltLeft',
+                        bubbles: true,
+                        cancelable: true
+                    })
+                    document.dispatchEvent(evt)
+                } else {
+                    const evt = new KeyboardEvent('keyup', {
+                        key: 'Alt',
+                        code: 'AltLeft',
+                        bubbles: true,
+                        cancelable: true
+                    })
+                    document.dispatchEvent(evt)
+                }
+            }
         }
 
         // trigger 类型：点击后立即执行操作，同时关闭可能存在的 toggle 工具
@@ -421,6 +442,7 @@
 
     // track if space key pressed to set move tool highlight
     let spacePressing = false
+    let altPressing = false
 
     function onSpaceDown(e: KeyboardEvent) {
         if (!e.isTrusted) return // 忽略我们自己派发的合成事件
@@ -442,14 +464,35 @@
             }
         }
     }
+    function onAltDown(e: KeyboardEvent) {
+        if (!e.isTrusted) return
+        if (e.key === 'Alt' && !altPressing) {
+            altPressing = true
+            if (activeTool !== 'zoom') {
+                activeTool = 'zoom'
+            }
+        }
+    }
 
+    function onAltUp(e: KeyboardEvent) {
+        if (!e.isTrusted) return
+        if (e.key === 'Alt' && altPressing) {
+            altPressing = false
+            if (activeTool === 'zoom') {
+                activeTool = null
+            }
+        }
+    }
     onMount(() => {
         document.addEventListener('keydown', onSpaceDown)
         document.addEventListener('keyup', onSpaceUp)
-
+        document.addEventListener('keydown', onAltDown)
+        document.addEventListener('keyup', onAltUp)
         return () => {
             document.removeEventListener('keydown', onSpaceDown)
             document.removeEventListener('keyup', onSpaceUp)
+            document.removeEventListener('keydown', onAltDown)
+            document.removeEventListener('keyup', onAltUp)
         }
     })
 </script>
