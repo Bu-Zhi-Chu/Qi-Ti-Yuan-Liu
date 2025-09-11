@@ -18,7 +18,7 @@
     import DomTreeList from './DomTreeList.svelte'
     import blocksConfig from '../blocks/blocks.config.json'
     import { getElementByNodeId } from '../../services/utils/dom-geometry.util'
-    import { onMount } from 'svelte'
+    import { onMount, onDestroy } from 'svelte'
     import { filterDomTreeBySearch } from '../../services/repository/dom-tree.store.svelte'
     import { addNodeToParent } from '../../services/repository/dom-tree.store.svelte'
 
@@ -62,6 +62,21 @@
             preview: block.preview,
             presetStyles: block.presetStyles || {}
         }))
+
+        const handleKey = (e: KeyboardEvent) => {
+            if (!e.ctrlKey) return
+            if (e.key === '1') {
+                e.preventDefault()
+                switchToNodes()
+            } else if (e.key === '2') {
+                e.preventDefault()
+                switchToWarehouse()
+            }
+        }
+        window.addEventListener('keydown', handleKey)
+        onDestroy(() => {
+            window.removeEventListener('keydown', handleKey)
+        })
     })
 
     // 切换到节点列表页签
