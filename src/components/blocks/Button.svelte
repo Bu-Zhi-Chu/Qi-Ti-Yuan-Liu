@@ -9,6 +9,8 @@
 <script lang="ts">
     import ResponsiveBox from '../core/ResponsiveBox.svelte'
     import { currentPage } from '../../services/repository/dom-tree.store.svelte'
+    import { setCurrentPage } from '../../services/repository/dom-tree.store.svelte'
+    import { onMount } from 'svelte'
 
     interface Props {
         id?: string
@@ -22,21 +24,20 @@
         hoverEffect?: string
         buttonType?: string
         targetPageId?: string
+        defaultHome?: boolean
         style?: string
         children?: any
         [key: string]: any
     }
 
-    let { id = crypto.randomUUID(), text = '按钮', textContent, disabled = false, enableClick = false, textOffsetLeft = '0px', textOffsetTop = '0px', highlightImage = '', hoverEffect = '', buttonType = '', targetPageId = '', style = '', children, ...rest } = $props() as Props
+    let { id = crypto.randomUUID(), text = '按钮', textContent, disabled = false, enableClick = false, textOffsetLeft = '0px', textOffsetTop = '0px', highlightImage = '', hoverEffect = '', buttonType = '', targetPageId = '', defaultHome = false, style = '', children, ...rest } = $props() as Props
 
     const isHighlighted = $derived(() => {
         return buttonType === 'navigate' && targetPageId && $currentPage === targetPageId
     })
 
     const mergedStyle = $derived(() => {
-        const highlight = isHighlighted() && highlightImage
-            ? `background-image: url(${highlightImage}); background-size: contain; background-repeat: no-repeat; background-position: center;`
-            : ''
+        const highlight = isHighlighted() && highlightImage ? `background-image: url(${highlightImage}); background-size: contain; background-repeat: no-repeat; background-position: center;` : ''
         return style && highlight ? `${style}; ${highlight}` : style || highlight
     })
 
@@ -54,6 +55,12 @@
             handleClick()
         }
     }
+    onMount(() => {
+        const homeFlag = typeof defaultHome === 'string' ? defaultHome !== 'false' : !!defaultHome
+        if (homeFlag && buttonType === 'navigate' && targetPageId && $currentPage == null) {
+            setCurrentPage(targetPageId)
+        }
+    })
 </script>
 
 <ResponsiveBox {id} {...rest} class="btn {hoverEffect}" {disabled} style={mergedStyle()}>

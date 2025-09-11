@@ -336,6 +336,8 @@ export function findNodeById(node: DomNode, id: string): DomNode | null {
 export function addNodeToParent(parentId: string, newNode: DomNode): boolean {
   const parent = findNodeById(domTreeData, parentId);
   if (parent) {
+    // 维护 parentId 引用，便于自节点快速定位父节点
+    newNode.parentId = parentId;
     // 确保children数组存在
     if (!parent.children) {
       parent.children = [];
@@ -372,7 +374,7 @@ function isDescendant(root: DomNode, targetId: string): boolean {
 /**
  * 查找 targetId 的直接父节点
  */
-function findParentById(node: DomNode, targetId: string): DomNode | null {
+export function findParentById(node: DomNode, targetId: string): DomNode | null {
   if (!node.children) return null;
   for (const child of node.children) {
     if (child.id === targetId) return node;

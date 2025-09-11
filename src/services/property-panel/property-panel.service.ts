@@ -9,7 +9,7 @@ import { domTree, findNodeById, updateNodeProperties, updateNodeStyles } from '.
 
 // -------------------- 类型定义 --------------------
 export interface PropPatch {
-  attributes?: Record<string, string | undefined>;
+  attributes?: Record<string, any | undefined>;
   styles?: Record<string, string | undefined>;
   events?: Record<string, Function | undefined>;
 }

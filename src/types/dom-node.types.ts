@@ -13,7 +13,10 @@ export interface DomNode {
   /** 子节点列表 */
   children?: DomNode[]
   /** DOM 属性 */
-  attributes?: Record<string, string>
+  attributes?: Record<string, any>
+
+  /** 父节点ID */
+  parentId?: string | null
   /** 行内样式 - 支持字符串和 Blob 类型 */
   styles?: Record<string, string | Blob>
 

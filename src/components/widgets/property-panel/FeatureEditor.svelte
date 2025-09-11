@@ -17,6 +17,7 @@
     import { projectId } from '../../../services/repository/dom-tree.store.svelte'
     import { domTree } from '../../../services/repository/dom-tree.store.svelte'
     import { setCurrentPage } from '../../../services/repository/dom-tree.store.svelte'
+    import { findParentById } from '../../../services/repository/dom-tree.store.svelte'
 
     // 派生当前选中节点的 featureProps
     const featureProps = $derived(() => {
@@ -135,6 +136,34 @@
                     }
                     currentValues['targetPageId'] = ''
                     updateNodeProps(selectedId, { attributes: { targetPageId: '' } })
+                }
+            }
+
+            // 新增逻辑：指定首页唯一性，开启时关闭同父下其他按钮的 defaultHome
+            if (key === 'defaultHome' && (value === true || value === 'true')) {
+                const node = getFullNode(selectedId)
+                console.log('[defaultHome] toggled ON for', selectedId, node)
+                let parentNode: any = null
+                if (node) {
+                    if (node.parentId) {
+                        parentNode = getFullNode(node.parentId)
+                    }
+                    if (!parentNode) {
+                        // 兼容旧数据：回溯查找父节点
+                        parentNode = findParentById(domTree, node.id)
+                    }
+                }
+                console.log('[defaultHome] parentNode', parentNode)
+                if (parentNode && parentNode.children?.length) {
+                    for (const sibling of parentNode.children) {
+                        console.log('[defaultHome] inspect sibling', sibling.id, sibling.attributes?.defaultHome)
+                        if (sibling.id !== selectedId && (sibling.componentType === 'Button' || (sibling.attributes as any)?.type === 'Button')) {
+                            if (sibling.attributes?.defaultHome) {
+                                console.log('[defaultHome] turning off sibling', sibling.id)
+                                updateNodeProps(sibling.id, { attributes: { defaultHome: undefined } })
+                            }
+                        }
+                    }
                 }
             }
 
