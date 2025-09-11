@@ -57,6 +57,7 @@
         Play: () => import('@lucide/svelte/icons/play'),
         Pause: () => import('@lucide/svelte/icons/pause'),
         Stop: () => import('@lucide/svelte/icons/square'),
+        SquareX: () => import('@lucide/svelte/icons/square-x'),
         Refresh: () => import('@lucide/svelte/icons/refresh-cw'),
         Loading: () => import('@lucide/svelte/icons/loader-2'),
         Check: () => import('@lucide/svelte/icons/check'),
@@ -82,12 +83,14 @@
         Calendar: () => import('@lucide/svelte/icons/calendar'),
         Mail: () => import('@lucide/svelte/icons/mail'),
         Phone: () => import('@lucide/svelte/icons/phone'),
+        LayoutDashboard: () => import('@lucide/svelte/icons/layout-dashboard'),
         Location: () => import('@lucide/svelte/icons/map-pin'),
         User: () => import('@lucide/svelte/icons/user'),
         Users: () => import('@lucide/svelte/icons/users'),
         Lock: () => import('@lucide/svelte/icons/lock'),
         Unlock: () => import('@lucide/svelte/icons/unlock'),
         Key: () => import('@lucide/svelte/icons/key'),
+        Brush: () => import('@lucide/svelte/icons/brush'),
         Shield: () => import('@lucide/svelte/icons/shield'),
         Award: () => import('@lucide/svelte/icons/award'),
         Trophy: () => import('@lucide/svelte/icons/trophy'),
@@ -111,7 +114,8 @@
         Layout: () => import('@lucide/svelte/icons/layout'),
         Type: () => import('@lucide/svelte/icons/type'),
         Puzzle: () => import('@lucide/svelte/icons/puzzle'),
-        Workflow: () => import('@lucide/svelte/icons/workflow')
+        Workflow: () => import('@lucide/svelte/icons/workflow'),
+        Scan: () => import('@lucide/svelte/icons/scan')
     }
 
     /** 将 PascalCase / camelCase 转为 kebab-case，便于按文件名加载 */

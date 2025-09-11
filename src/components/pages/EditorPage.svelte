@@ -36,13 +36,13 @@
     // 属性面板标签控制
     const tabs = [
         { key: 'attr', icon: 'Sliders', title: '主要属性' },
-        { key: 'feature', icon: 'Puzzle', title: '特性设置' },
-        { key: 'position', icon: 'Move', title: '定位样式' },
+        { key: 'position', icon: 'Scan', title: '定位样式' },
         { key: 'layout', icon: 'Layout', title: '布局样式' },
         { key: 'background', icon: 'Image', title: '背景样式' },
         { key: 'text', icon: 'Type', title: '文字样式' },
         { key: 'border', icon: 'SquareDashed', title: '边框样式' },
-        { key: 'event', icon: 'Workflow', title: '事件处理' }
+        { key: 'event', icon: 'Workflow', title: '事件处理' },
+        { key: 'feature', icon: 'Puzzle', title: '特性设置' }
     ] as const
 
     // 根据组件类型判断是否展示特性页签
@@ -76,6 +76,73 @@
 
     // 可见标签数组
     let visibleTabs = $derived.by(() => tabs.filter((t) => t.key !== 'feature' || showFeatureTab))
+
+    /* ----------------------------------------
+       左侧工具栏按钮定义
+    ---------------------------------------- */
+    const tools = [
+        { key: 'move', icon: 'Move', title: '移动画布', type: 'toggle' },
+        { key: 'zoom', icon: 'Search', title: '缩放画布', type: 'toggle' },
+        { key: 'draw', icon: 'Brush', title: '绘制节点', type: 'toggle' },
+        { key: 'adjust', icon: 'LayoutDashboard', title: '调整节点', type: 'toggle' },
+        { key: 'delete', icon: 'SquareX', title: '删除节点', type: 'trigger' }
+    ] as const
+
+    let activeTool: (typeof tools)[number]['key'] | null = $state(null)
+
+    function setTool(k: (typeof tools)[number]['key']) {
+        const selected = tools.find((t) => t.key === k)
+        if (!selected) return
+
+        if (!selected) return
+
+        const prevTool = activeTool
+
+        // 若之前是移动工具且此次点击的不是移动工具，无论新类型如何，都要先松开空格并清理状态
+        if (prevTool === 'move' && k !== 'move') {
+            const evtUp = new KeyboardEvent('keyup', {
+                key: ' ',
+                code: 'Space',
+                bubbles: true,
+                cancelable: true
+            })
+            document.dispatchEvent(evtUp)
+            activeTool = null
+        }
+
+        if (selected.type === 'toggle') {
+            activeTool = activeTool === k ? null : k
+
+            // 点击移动画布本身，按需按下/松开空格
+            if (k === 'move') {
+                if (activeTool === 'move') {
+                    // 触发一次 keydown Space
+                    const evt = new KeyboardEvent('keydown', {
+                        key: ' ',
+                        code: 'Space',
+                        bubbles: true,
+                        cancelable: true
+                    })
+                    document.dispatchEvent(evt)
+                } else {
+                    // 触发一次 keyup Space
+                    const evt = new KeyboardEvent('keyup', {
+                        key: ' ',
+                        code: 'Space',
+                        bubbles: true,
+                        cancelable: true
+                    })
+                    document.dispatchEvent(evt)
+                }
+            }
+        }
+
+        // trigger 类型：点击后立即执行操作，同时关闭可能存在的 toggle 工具
+        if (selected.type === 'trigger') {
+            // TODO: 向 DomCanvas 组件派发删除事件
+            activeTool = null
+        }
+    }
 
     // 根据选中节点的 activePropertyTab 动态设置 activeTab
     let activeTab: 'attr' | 'feature' | 'position' | 'layout' | 'background' | 'text' | 'border' | 'event' = $derived.by(() => {
@@ -131,6 +198,7 @@
     let unregisterCopy: () => void
     let unregisterCut: () => void
     let unregisterPaste: () => void
+    let unregisterTabShortcuts: (() => void)[] = []
 
     onMount(async () => {
         // 初始化项目ID（兼容精简/路由两种场景）
@@ -183,6 +251,15 @@
         unregisterPaste = registerShortcut('Ctrl+V', () => {
             pasteNodeToSelectedParent(false, false)
         })
+
+        // 注册 Alt+数字键 1~8 快捷切换属性页签
+        unregisterTabShortcuts = tabs.slice(0, 8).map((t, idx) =>
+            registerShortcut(`Alt+${idx + 1}`, () => {
+                // 如果是特性设置页签且当前不显示，则忽略
+                if (t.key === 'feature' && !showFeatureTab) return
+                setTab(t.key)
+            })
+        )
     })
 
     onDestroy(() => {
@@ -194,6 +271,7 @@
         unregisterCopy && unregisterCopy()
         unregisterCut && unregisterCut()
         unregisterPaste && unregisterPaste()
+        unregisterTabShortcuts.forEach((fn) => fn())
     })
 
     // Konami Code验证器相关函数
@@ -491,7 +569,21 @@
             <!-- 左侧 -->
             <div style=" display: flex;width: 22.5%;height: 100%;">
                 <!-- 工具栏 -->
-                <div style="width: 12%; height: 100%;background: rgb(15, 20, 29);"></div>
+
+                <div class="tool-bar" style="width: 12%; height: 100%;background: rgb(15, 20, 29);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top: calc(12px * var(--scale-ratio, 1));gap: calc(8px * var(--scale-ratio, 1));pointer-events:auto;">
+                    {#each tools as t}
+                        <button
+                            class:active={activeTool === t.key}
+                            onclick={(e) => {
+                                setTool(t.key)
+                                ;(e.currentTarget as HTMLButtonElement).blur()
+                            }}
+                            title={t.title}
+                        >
+                            <Icon name={t.icon} size={16} style="width: calc(16px * var(--scale-ratio, 1)); height: calc(16px * var(--scale-ratio, 1))" />
+                        </button>
+                    {/each}
+                </div>
                 <!-- dom树列表 -->
                 <div style="width: 88%;height: 100%;background: rgba(30, 41, 59, 0.8);pointer-events: auto">
                     <TabbedPanel />
@@ -549,6 +641,28 @@
         background: rgba(255, 255, 255, 0.18);
     }
     .prop-tabbar button.active {
+        background: rgba(255, 255, 255, 0.28);
+    }
+
+    /* 左侧工具栏按钮同样使用相同样式 */
+    .tool-bar button {
+        width: calc(32px * var(--scale-ratio, 1));
+        height: calc(32px * var(--scale-ratio, 1));
+        border: none;
+        background: rgba(255, 255, 255, 0.08);
+        color: #fff;
+        border-radius: calc(6px * var(--scale-ratio, 1));
+        cursor: pointer;
+        font-size: calc(16px * var(--scale-ratio, 1));
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .tool-bar button:hover {
+        background: rgba(255, 255, 255, 0.18);
+    }
+    .tool-bar button.active {
         background: rgba(255, 255, 255, 0.28);
     }
 </style>
