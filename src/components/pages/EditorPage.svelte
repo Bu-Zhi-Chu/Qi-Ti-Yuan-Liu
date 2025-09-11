@@ -176,6 +176,32 @@
                     document.dispatchEvent(evt)
                 }
             }
+            // 点击调整节点按钮，按需按下/松开 V 键，模拟调整准备模式（仅当选中非根节点时生效）
+            if (k === 'adjust') {
+                const currentSelectedId = selectedId()
+                if (!currentSelectedId || currentSelectedId === 'root') {
+                    // 如果是根节点，强制取消调整工具
+                    activeTool = null
+                } else {
+                    if (activeTool === 'adjust') {
+                        const evt = new KeyboardEvent('keydown', {
+                            key: 'v',
+                            code: 'KeyV',
+                            bubbles: true,
+                            cancelable: true
+                        })
+                        document.dispatchEvent(evt)
+                    } else {
+                        const evt = new KeyboardEvent('keyup', {
+                            key: 'v',
+                            code: 'KeyV',
+                            bubbles: true,
+                            cancelable: true
+                        })
+                        document.dispatchEvent(evt)
+                    }
+                }
+            }
         } else if (selected.type === 'trigger') {
             // trigger 类型：点击后立即执行操作，同时关闭可能存在的 toggle 工具
             // TODO: 向 DomCanvas 组件派发删除事件
@@ -462,6 +488,7 @@
     let spacePressing = false
     let altPressing = false
     let bPressing = false
+    let vPressing = false // track V key state for adjust tool
 
     function onSpaceDown(e: KeyboardEvent) {
         if (!e.isTrusted) return // 忽略 ourselves派发的合成事件
@@ -522,6 +549,30 @@
             }
         }
     }
+
+    // 按住 V 进入调整节点准备模式（仅当选中非根节点时生效）
+    function onVDown(e: KeyboardEvent) {
+        if (!e.isTrusted) return
+        if ((e.key === 'v' || e.key === 'V') && !vPressing) {
+            const id = selectedId()
+            if (!id || id === 'root') return // 根节点不可调整
+            vPressing = true
+            if (activeTool !== 'adjust') {
+                activeTool = 'adjust'
+            }
+        }
+    }
+
+    function onVUp(e: KeyboardEvent) {
+        if (!e.isTrusted) return
+        if ((e.key === 'v' || e.key === 'V') && vPressing) {
+            vPressing = false
+            if (activeTool === 'adjust') {
+                activeTool = null
+            }
+        }
+    }
+
     onMount(() => {
         document.addEventListener('keydown', onSpaceDown)
         document.addEventListener('keyup', onSpaceUp)
@@ -529,6 +580,8 @@
         document.addEventListener('keyup', onAltUp)
         document.addEventListener('keydown', onBDown)
         document.addEventListener('keyup', onBUp)
+        document.addEventListener('keydown', onVDown)
+        document.addEventListener('keyup', onVUp)
         return () => {
             document.removeEventListener('keydown', onSpaceDown)
             document.removeEventListener('keyup', onSpaceUp)
@@ -536,6 +589,8 @@
             document.removeEventListener('keyup', onAltUp)
             document.removeEventListener('keydown', onBDown)
             document.removeEventListener('keyup', onBUp)
+            document.removeEventListener('keydown', onVDown)
+            document.removeEventListener('keyup', onVUp)
         }
     })
 </script>
