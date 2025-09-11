@@ -41,7 +41,8 @@
         { key: 'background', icon: 'Image', title: '背景样式' },
         { key: 'text', icon: 'Type', title: '文字样式' },
         { key: 'border', icon: 'SquareDashed', title: '边框样式' },
-        { key: 'event', icon: 'Workflow', title: '事件处理' },
+        { key: 'event', icon: 'Activity', title: '事件处理' },
+        { key: 'data', icon: 'Database', title: '数据绑定' },
         { key: 'feature', icon: 'Puzzle', title: '特性设置' }
     ] as const
 
@@ -75,7 +76,7 @@
     })
 
     // 可见标签数组
-    let visibleTabs = $derived.by(() => tabs.filter((t) => t.key !== 'feature' || showFeatureTab))
+    let visibleTabs = $derived.by(() => tabs)
 
     /* ----------------------------------------
        左侧工具栏按钮定义
@@ -864,7 +865,7 @@
                 <!-- 标签切换按钮栏 -->
                 <div class="prop-tabbar" style="width: 12%;height: 100%;display: flex;flex-direction: column;align-items: center;justify-content: flex-start;padding-top: calc(12px * var(--scale-ratio, 1));gap: calc(8px * var(--scale-ratio, 1));pointer-events: auto;background: rgb(15, 20, 29);">
                     {#each visibleTabs as t}
-                        <button class:active={activeTab === t.key} onclick={() => setTab(t.key)} title={t.title}>
+                        <button disabled={t.key === 'feature' && !showFeatureTab} class:active={activeTab === t.key} onclick={() => setTab(t.key)} title={t.title}>
                             <Icon name={t.icon} size={16} style="width: calc(16px * var(--scale-ratio, 1)); height: calc(16px * var(--scale-ratio, 1))" />
                         </button>
                     {/each}
@@ -903,6 +904,15 @@
     }
     .prop-tabbar button:hover {
         background: rgba(255, 255, 255, 0.18);
+    }
+    /* 禁用状态样式 */
+    .prop-tabbar button:disabled {
+        background: rgba(255, 255, 255, 0.04);
+        cursor: not-allowed;
+        opacity: 0.4;
+    }
+    .prop-tabbar button:disabled:hover {
+        background: rgba(255, 255, 255, 0.04);
     }
     .prop-tabbar button.active {
         background: rgba(255, 255, 255, 0.28);

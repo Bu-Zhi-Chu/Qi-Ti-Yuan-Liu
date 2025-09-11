@@ -116,6 +116,8 @@
         Type: () => import('@lucide/svelte/icons/type'),
         Puzzle: () => import('@lucide/svelte/icons/puzzle'),
         Workflow: () => import('@lucide/svelte/icons/workflow'),
+        Zap: () => import('@lucide/svelte/icons/zap'),
+        Activity: () => import('@lucide/svelte/icons/activity'),
         Scan: () => import('@lucide/svelte/icons/scan')
     }
 

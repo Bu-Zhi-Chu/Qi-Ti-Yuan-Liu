@@ -14,6 +14,7 @@
     import TextEditor from './TextEditor.svelte'
     import LayoutEditor from './LayoutEditor.svelte'
     import EventEditor from './EventEditor.svelte'
+    import DataEditor from './DataEditor.svelte'
     import FeatureEditor from './FeatureEditor.svelte'
     import { selectedId as getSelectedId } from '../../../services/repository/dom-tree.store.svelte'
 
@@ -24,9 +25,9 @@
         showToolbar = true,
         onTabChange
     } = $props<{
-        activeTab?: 'attr' | 'feature' | 'position' | 'background' | 'border' | 'text' | 'layout' | 'event'
+        activeTab?: 'attr' | 'feature' | 'position' | 'background' | 'border' | 'text' | 'layout' | 'event' | 'data'
         showToolbar?: boolean
-        onTabChange?: (tab: 'attr' | 'feature' | 'position' | 'background' | 'border' | 'text' | 'layout' | 'event') => void
+        onTabChange?: (tab: 'attr' | 'feature' | 'position' | 'background' | 'border' | 'text' | 'layout' | 'event' | 'data') => void
     }>()
 
     // 当前选中节点 id，响应式刷新
@@ -50,6 +51,8 @@
             <BorderEditor selectedId={currentId} />
         {:else if activeTab === 'text'}
             <TextEditor selectedId={currentId} />
+        {:else if activeTab === 'data'}
+            <DataEditor selectedId={currentId} />
         {:else}
             <EventEditor selectedId={currentId} />
         {/if}
