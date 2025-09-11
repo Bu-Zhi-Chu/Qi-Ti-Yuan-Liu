@@ -167,10 +167,32 @@
                 height: `${heightPercent}%`,
                 ...(presetStyles || {})
             },
-            attributes: {
-                'data-name': generateUniqueDataName(item.name ?? item.type)
-            },
-            children: []
+            // 如果是按钮组，预先生成一个默认子按钮
+            ...(item.type === 'ButtonGroup'
+                ? {
+                      attributes: {
+                          'data-name': generateUniqueDataName(item.name ?? item.type),
+                          buttonCount: 1
+                      },
+                      children: [
+                          {
+                              id: globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-child`,
+                              componentType: 'Button',
+                              styles: (() => {
+                                  const buttonMeta = (blocksConfig as any[]).find((b) => b.type === 'Button') as any
+                                  return buttonMeta?.presetStyles ? { ...buttonMeta.presetStyles } : {}
+                              })(),
+                              attributes: { 'data-name': '按钮 1' },
+                              children: []
+                          }
+                      ]
+                  }
+                : {
+                      attributes: {
+                          'data-name': generateUniqueDataName(item.name ?? item.type)
+                      },
+                      children: []
+                  })
         }
 
         /* 3. 生成真实 DOM 作为预览 */
