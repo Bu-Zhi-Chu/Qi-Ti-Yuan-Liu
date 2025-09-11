@@ -418,6 +418,40 @@
             }
         } catch {}
     })
+
+    // track if space key pressed to set move tool highlight
+    let spacePressing = false
+
+    function onSpaceDown(e: KeyboardEvent) {
+        if (!e.isTrusted) return // 忽略我们自己派发的合成事件
+        if (e.code === 'Space' && !spacePressing) {
+            spacePressing = true
+            if (activeTool !== 'move') {
+                activeTool = 'move'
+            }
+        }
+    }
+
+    function onSpaceUp(e: KeyboardEvent) {
+        if (!e.isTrusted) return
+        if (e.code === 'Space' && spacePressing) {
+            spacePressing = false
+            // 仅当是按空格触发的高亮时才移除
+            if (activeTool === 'move') {
+                activeTool = null
+            }
+        }
+    }
+
+    onMount(() => {
+        document.addEventListener('keydown', onSpaceDown)
+        document.addEventListener('keyup', onSpaceUp)
+
+        return () => {
+            document.removeEventListener('keydown', onSpaceDown)
+            document.removeEventListener('keyup', onSpaceUp)
+        }
+    })
 </script>
 
 <svelte:head>
