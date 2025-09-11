@@ -127,25 +127,7 @@
             "enableClick": {
                 "label": "点击事件",
                 "type": "switch",
-                "default": false
-            },
-            "buttonType": {
-                "label": "按钮类型",
-                "type": "select",
-                "options": [
-                    {
-                        "value": "switch",
-                        "label": "开关"
-                    },
-                    {
-                        "value": "trigger",
-                        "label": "触发"
-                    },
-                    {
-                        "value": "navigate",
-                        "label": "导航"
-                    }
-                ]
+                "default": true
             },
             "textOffsetLeft": {
                 "label": "文字左移",
@@ -185,6 +167,24 @@
                     {
                         "value": "lift",
                         "label": "浮起"
+                    }
+                ]
+            },
+            "buttonType": {
+                "label": "按钮类型",
+                "type": "select",
+                "options": [
+                    {
+                        "value": "switch",
+                        "label": "开关"
+                    },
+                    {
+                        "value": "trigger",
+                        "label": "触发"
+                    },
+                    {
+                        "value": "navigate",
+                        "label": "导航"
                     }
                 ]
             }

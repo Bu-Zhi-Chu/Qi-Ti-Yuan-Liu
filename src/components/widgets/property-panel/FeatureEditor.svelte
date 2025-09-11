@@ -58,10 +58,19 @@
     const propEntries: () => PropEntry[] = $derived(() => {
         const fp = featureProps()
         if (!fp) return []
-        const base = Object.entries(fp).map(([key, cfg]: [string, any]) => ({ key, ...cfg }))
 
-        // 若当前节点按钮类型为 navigate，则附加目标页面选择项
+        // 初始列表（过滤 defaultHome 与 targetPageId，稍后按条件追加）
+        const base: PropEntry[] = Object.entries(fp)
+            .filter(([k]) => k !== 'defaultHome' && k !== 'targetPageId')
+            .map(([key, cfg]: [string, any]) => ({ key, ...cfg }))
+
+        // 仅在导航按钮类型下显示 defaultHome 与 targetPageId
         if (currentValues['buttonType'] === 'navigate') {
+            // 1. defaultHome 在前
+            if ('defaultHome' in fp) {
+                base.push({ key: 'defaultHome', ...(fp as any)['defaultHome'] })
+            }
+            // 2. targetPageId 在后
             // 收集所有 Screen 节点，生成下拉选项
             function collectScreens(node: any, arr: any[]) {
                 if (node.componentType === 'Screen') arr.push(node)
