@@ -17,6 +17,7 @@
     import { domTree, selectedId, setSelectedId } from '../../services/repository/dom-tree.store.svelte'
     import DomTreeList from './DomTreeList.svelte'
     import blocksConfig from '../blocks/blocks.config.json'
+    import { getElementByNodeId } from '../../services/utils/dom-geometry.util'
     import { onMount } from 'svelte'
     import { filterDomTreeBySearch } from '../../services/repository/dom-tree.store.svelte'
 
@@ -80,13 +81,70 @@
 
     function handleDragStart(e: DragEvent, item: WarehouseItem) {
         if (!e.dataTransfer) return
+
+        // ----------------------- 样式提取 -----------------------
+        // 仅提取宽高属性，其余保持原逻辑
+        const presetStyles = item.presetStyles || {}
+        const widthVal: string | undefined = presetStyles.width as any
+        const heightVal: string | undefined = presetStyles.height as any
+
+        // 用于构造新的宽高，可能是 px/百分比/自适应公式
+        let finalWidth = widthVal
+        let finalHeight = heightVal
+
+        // ------------------- 尺寸处理优先级 ----------------------
+        // a) 若有预设宽高，则按优先级处理
+        if (widthVal && heightVal) {
+            const widIsPercent = /%$/.test(widthVal)
+            const heiIsPercent = /%$/.test(heightVal)
+            const isAutoFormula = (v: string) => /^calc\(/i.test(v)
+
+            // 1. 纯 px 或自适应公式无需处理
+            if (!(widIsPercent || isAutoFormula(widthVal))) {
+                finalWidth = widthVal
+            }
+            if (!(heiIsPercent || isAutoFormula(heightVal))) {
+                finalHeight = heightVal
+            }
+
+            // 2. 若为百分比，需要基于当前选中节点（或 root）换算为 px(calc)
+            if (widIsPercent || heiIsPercent) {
+                const targetId = selectedId() || 'root'
+                const targetEl = getElementByNodeId(targetId) as HTMLElement | null
+                if (targetEl) {
+                    const parentEl = targetEl
+                    const parentRect = parentEl.getBoundingClientRect()
+                    const scaleRatio = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--scale-ratio') || '1') || 1
+
+                    if (widIsPercent && parentRect.width) {
+                        const percent = parseFloat(widthVal!.replace('%', '')) || 0
+                        const px = ((percent / 100) * parentRect.width) / scaleRatio
+                        finalWidth = `calc(${px}px * var(--scale-ratio, 1))`
+                    }
+                    if (heiIsPercent && parentRect.height) {
+                        const percent = parseFloat(heightVal!.replace('%', '')) || 0
+                        const px = ((percent / 100) * parentRect.height) / scaleRatio
+                        finalHeight = `calc(${px}px * var(--scale-ratio, 1))`
+                    }
+                }
+            }
+        }
+
+        // 如果预设中没有宽高，则保持默认逻辑
+        const mergedStyles = { ...presetStyles }
+        if (finalWidth) mergedStyles.width = finalWidth
+        if (finalHeight) mergedStyles.height = finalHeight
+
         const payload = {
             type: item.type,
             name: item.name,
+            // 拖拽中预览会用到 conversion 结果，但落地节点仍使用原始尺寸（百分比）
             presetStyles: item.presetStyles ?? {}
         }
         e.dataTransfer.setData('application/json', JSON.stringify(payload))
         e.dataTransfer.effectAllowed = 'copy'
+
+        // 保持浏览器默认预览，但可以在此自定义 dragImage，如有需要
     }
 </script>
 

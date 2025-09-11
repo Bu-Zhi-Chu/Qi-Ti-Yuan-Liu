@@ -443,7 +443,7 @@
             if (!baseName) return baseName
             const names = new Set<string>()
             function collect(node: any) {
-                const attrName = (node.attributes?.['data-name']) as string | undefined
+                const attrName = node.attributes?.['data-name'] as string | undefined
                 if (attrName) names.add(attrName)
                 node.children?.forEach(collect)
             }
