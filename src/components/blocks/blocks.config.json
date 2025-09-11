@@ -72,12 +72,13 @@
         "preview": "/previews/ButtonGroup.svg",
         "showFeatureTab": true,
         "presetStyles": {
+            "width": "70%",
+            "height": "10%",
             "display": "flex",
             "justifyContent": "center",
             "alignItems": "center",
             "cursor": "pointer",
-            "gap": "8px",
-            "backgroundColor": "rgba(99, 102, 241, 0.15)"
+            "gap": "8px"
         },
         "featureProps": {
             "buttonCount": {
