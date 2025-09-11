@@ -102,14 +102,22 @@
                     // 添加不足的按钮
                     for (let i = 0; i < desired - current; i++) {
                         const childId = globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-${Math.random()}`
-                        const buttonMeta = (blocksConfig as any[]).find((b) => b.type === 'Button') as any
-                        const baseStyles = buttonMeta?.presetStyles ? { ...buttonMeta.presetStyles } : {}
+                        // 复制第一个按钮完整 DOM（样式、特性等），实现批量同步
+                        let baseStyles: Record<string, any> = {}
+                        let baseAttrs: Record<string, any> = {}
+                        if (node.children && node.children.length) {
+                            baseStyles = { ...(node.children[0].styles || {}) }
+                            baseAttrs = { ...(node.children[0].attributes || {}) }
+                        } else {
+                            const buttonMeta = (blocksConfig as any[]).find((b) => b.type === 'Button') as any
+                            baseStyles = buttonMeta?.presetStyles ? { ...buttonMeta.presetStyles } : {}
+                        }
                         addNodeToParent(selectedId, {
                             id: childId,
                             componentType: 'Button',
                             styles: baseStyles,
-                            attributes: { 'data-name': `按钮 ${current + i + 1}` },
-                            children: []
+                            attributes: { ...baseAttrs, 'data-name': `按钮 ${current + i + 1}` },
+                            children: JSON.parse(JSON.stringify(node.children && node.children.length ? node.children[0].children || [] : []))
                         } as any)
                     }
 
