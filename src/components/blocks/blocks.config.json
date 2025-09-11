@@ -71,7 +71,15 @@
         "path": "../blocks/ButtonGroup.svelte",
         "preview": "/previews/ButtonGroup.svg",
         "showFeatureTab": true,
-        "featureProps": {}
+        "featureProps": {
+            "buttonCount": {
+                "label": "按钮数量",
+                "type": "number",
+                "min": 1,
+                "max": 10,
+                "default": 1
+            }
+        }
     },
     {
         "type": "Button",

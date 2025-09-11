@@ -3,6 +3,7 @@
 -->
 <script lang="ts">
     import { getNodePropsStore, getNodeProps as _getNodeProps, getFullNode, updateNodeProps } from '../../../services/property-panel/property-panel.service'
+    import { addNodeToParent, removeNodeById } from '../../../services/repository/dom-tree.store.svelte'
     import blocksConfig from '../../blocks/blocks.config.json'
     import PropertyRow from './PropertyRow.svelte'
     import PropertySelect from './PropertySelect.svelte'
@@ -75,6 +76,35 @@
             updateNodeProps(selectedId, { styles: { [key]: value } })
         } else {
             updateNodeProps(selectedId, { attributes: { [key]: value } })
+
+            // 额外逻辑：ButtonGroup 按钮数量同步
+            if (key === 'buttonCount') {
+                const node = getFullNode(selectedId)
+                if (node && (node.componentType === 'ButtonGroup' || (node.attributes as any)?.type === 'ButtonGroup')) {
+                    const desired = Math.max(1, Math.min(10, Number(value))) || 1
+                    const current = node.children?.length ?? 0
+
+                    // 添加不足的按钮
+                    for (let i = 0; i < desired - current; i++) {
+                        const childId = globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-${Math.random()}`
+                        addNodeToParent(selectedId, {
+                            id: childId,
+                            componentType: 'Button',
+                            styles: {},
+                            attributes: { 'data-name': `按钮 ${current + i + 1}` },
+                            children: []
+                        } as any)
+                    }
+
+                    // 删除多余的按钮（从末尾开始）
+                    if (current > desired && node.children) {
+                        const extras = node.children.slice(desired)
+                        for (const c of extras) {
+                            removeNodeById(c.id)
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -240,6 +270,32 @@
         if (Object.keys(updatesAttr).length || Object.keys(updatesStyle).length) {
             currentValues = { ...currentValues, ...updatesAttr, ...updatesStyle }
             updateNodeProps(selectedId, { attributes: updatesAttr, styles: updatesStyle })
+            // 如果默认添加了 ButtonGroup 的 buttonCount，则同步子按钮
+            if ('buttonCount' in updatesAttr && selectedId) {
+                const node = getFullNode(selectedId)
+                if (node && (node.componentType === 'ButtonGroup' || (node.attributes as any)?.type === 'ButtonGroup')) {
+                    const desired = Math.max(1, Math.min(10, Number(updatesAttr['buttonCount']))) || 1
+                    const current = node.children?.length ?? 0
+
+                    // 添加不足的按钮
+                    for (let i = 0; i < desired - current; i++) {
+                        const childId = globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-${Math.random()}`
+                        addNodeToParent(selectedId, {
+                            id: childId,
+                            componentType: 'Button',
+                            styles: {},
+                            attributes: { 'data-name': `按钮 ${current + i + 1}` },
+                            children: []
+                        } as any)
+                    }
+
+                    // 删除多余的按钮
+                    if (current > desired && node.children) {
+                        const extras = node.children.slice(desired)
+                        for (const c of extras) removeNodeById(c.id)
+                    }
+                }
+            }
         }
     })
 </script>

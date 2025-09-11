@@ -211,9 +211,15 @@
         updateNodeProperties(selectedId, { componentType: finalType })
 
         // 若 blocks.config.json 中为该类型配置了 presetStyles，则批量写入节点样式
+
         const blockMeta = (blocksConfig as any[]).find((b) => b.type === finalType)
         if (blockMeta && blockMeta.presetStyles) {
-            updateNodeProps(selectedId, { styles: { ...blockMeta.presetStyles } })
+            // 仅在切换节点类型时应用预设样式，但**不**覆盖 width / height，
+            // 这些尺寸在绘画模式下已由绘制时确定。
+            const { width: _w, height: _h, ...restStyles } = blockMeta.presetStyles as Record<string, any>
+            if (Object.keys(restStyles).length > 0) {
+                updateNodeProps(selectedId, { styles: { ...restStyles } })
+            }
         }
     }
 
