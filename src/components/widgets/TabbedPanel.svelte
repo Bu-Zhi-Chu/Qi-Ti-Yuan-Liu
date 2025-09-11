@@ -116,15 +116,19 @@
                     const parentRect = parentEl.getBoundingClientRect()
                     const scaleRatio = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--scale-ratio') || '1') || 1
 
-                    if (widIsPercent && parentRect.width) {
+                    if (widIsPercent && parentEl.offsetWidth) {
                         const percent = parseFloat(widthVal!.replace('%', '')) || 0
-                        const px = ((percent / 100) * parentRect.width) / scaleRatio
-                        finalWidth = `calc(${px}px * var(--scale-ratio, 1))`
+                        const parentWidth = parentEl.offsetWidth
+                        const px = ((percent / 100) * parentWidth) / scaleRatio
+                        const pxRounded = Math.round(px * 100) / 100 // 保留两位小数
+                        finalWidth = `calc(${pxRounded}px * var(--scale-ratio, 1))`
                     }
-                    if (heiIsPercent && parentRect.height) {
+                    if (heiIsPercent && parentEl.offsetHeight) {
                         const percent = parseFloat(heightVal!.replace('%', '')) || 0
-                        const px = ((percent / 100) * parentRect.height) / scaleRatio
-                        finalHeight = `calc(${px}px * var(--scale-ratio, 1))`
+                        const parentHeight = parentEl.offsetHeight
+                        const px = ((percent / 100) * parentHeight) / scaleRatio
+                        const pxRounded = Math.round(px * 100) / 100
+                        finalHeight = `calc(${pxRounded}px * var(--scale-ratio, 1))`
                     }
                 }
             }
@@ -135,6 +139,9 @@
         if (finalWidth) mergedStyles.width = finalWidth
         if (finalHeight) mergedStyles.height = finalHeight
 
+        // 调试输出：查看转换后的自适应 px（若存在）
+        console.log('[DragPreviewSize]', { finalWidth, finalHeight, scaleRatio: getComputedStyle(document.documentElement).getPropertyValue('--scale-ratio') })
+
         const payload = {
             type: item.type,
             name: item.name,
@@ -144,7 +151,13 @@
         e.dataTransfer.setData('application/json', JSON.stringify(payload))
         e.dataTransfer.effectAllowed = 'copy'
 
-        // 保持浏览器默认预览，但可以在此自定义 dragImage，如有需要
+        // 始终让光标位于拖拽预览的中心
+        const dragEl = e.currentTarget as HTMLElement | null
+        if (dragEl) {
+            const { width, height } = dragEl.getBoundingClientRect()
+            // 在某些浏览器中 setDragImage 必须传入 DOM 节点，直接用当前目标即可
+            e.dataTransfer.setDragImage(dragEl, width / 2, height / 2)
+        }
     }
 </script>
 
