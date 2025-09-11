@@ -20,6 +20,7 @@
     import { getElementByNodeId } from '../../services/utils/dom-geometry.util'
     import { onMount } from 'svelte'
     import { filterDomTreeBySearch } from '../../services/repository/dom-tree.store.svelte'
+    import { addNodeToParent } from '../../services/repository/dom-tree.store.svelte'
 
     // 当前激活的页签
     let activeTab = $state<'nodes' | 'warehouse'>('nodes')
@@ -74,11 +75,130 @@
     }
 
     // 从仓库添加节点到画布
-    function addNodeFromWarehouse(item: any) {
-        // TODO: 实现添加节点逻辑
-        console.log('添加节点:', item)
+    // ------------------- 点击仓库项生成拖拽预览，松开后才入树 -------------------
+    let previewEl: HTMLElement | null = null
+    let pendingNode: any = null
+    let cleanupListeners: (() => void) | null = null
+    
+    function addNodeFromWarehouse(e: MouseEvent, item: WarehouseItem) {
+        e.stopPropagation()
+    
+        // 若已有正在拖拽的预览，先清理
+        if (previewEl) {
+            previewEl.remove()
+            previewEl = null
+        }
+        if (cleanupListeners) {
+            cleanupListeners()
+            cleanupListeners = null
+        }
+    
+        /* 1. 计算父节点与尺寸百分比 */
+        const presetStyles = item.presetStyles || {}
+        let widthPercent = 10
+        let heightPercent = 10
+        const widthVal: string | undefined = presetStyles.width as any
+        const heightVal: string | undefined = presetStyles.height as any
+        if (widthVal && /%$/.test(widthVal)) widthPercent = parseFloat(widthVal)
+        if (heightVal && /%$/.test(heightVal)) heightPercent = parseFloat(heightVal)
+    
+        const parentId = selectedId() || 'root'
+        const parentEl = getElementByNodeId(parentId) as HTMLElement | null
+        if (!parentEl) return
+        const parent = parentEl as HTMLElement
+    
+        const parentRect = parent.getBoundingClientRect()
+        const scaleRatio = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--scale-ratio') || '1') || 1
+    
+        // 生成 data-name
+        function generateUniqueDataName(baseName: string): string {
+            const names = new Set<string>()
+            function collect(node: any) {
+                const attrName = node.attributes?.['data-name'] as string | undefined
+                if (attrName) names.add(attrName)
+                node.children?.forEach(collect)
+            }
+            collect(domTree)
+            let candidate = baseName
+            if (!names.has(candidate)) return candidate
+            let index = 1
+            while (names.has(`${baseName} ${index}`)) index++
+            return `${baseName} ${index}`
+        }
+    
+        /* 2. 创建待加入节点描述对象（百分比定位） */
+        pendingNode = {
+            id: globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}`,
+            componentType: item.type,
+            styles: {
+                position: 'absolute',
+                left: '0%', // 占位，松开时再写入
+                top: '0%',
+                width: `${widthPercent}%`,
+                height: `${heightPercent}%`,
+                ...(presetStyles || {})
+            },
+            attributes: {
+                'data-name': generateUniqueDataName(item.name ?? item.type)
+            },
+            children: []
+        }
+    
+        /* 3. 生成真实 DOM 作为预览 */
+        previewEl = document.createElement('div')
+        previewEl.style.position = 'absolute'
+        previewEl.style.pointerEvents = 'none'
+        previewEl.style.background = 'rgba(99,102,241,0.3)'
+        previewEl.style.border = '1px dashed #6366f1'
+        previewEl.style.borderRadius = '4px'
+    
+        parentEl.appendChild(previewEl)
+    
+        function updatePreview(clientX: number, clientY: number) {
+            const relX = (clientX - parentRect.left) / parentRect.width
+            const relY = (clientY - parentRect.top) / parentRect.height
+            const leftPercent = relX * 100 - widthPercent / 2
+            const topPercent = relY * 100 - heightPercent / 2
+    
+            const pxW = (widthPercent / 100) * parent.offsetWidth / scaleRatio
+            const pxH = (heightPercent / 100) * parent.offsetHeight / scaleRatio
+            const pxL = (leftPercent / 100) * parent.offsetWidth / scaleRatio
+            const pxT = (topPercent / 100) * parent.offsetHeight / scaleRatio
+    
+            previewEl!.style.width = `${pxW}px`
+            previewEl!.style.height = `${pxH}px`
+            previewEl!.style.left = `${pxL}px`
+            previewEl!.style.top = `${pxT}px`
+    
+            // 记录到 pendingNode，方便松开时写入
+            pendingNode.styles.left = `${leftPercent}%`
+            pendingNode.styles.top = `${topPercent}%`
+        }
+    
+        updatePreview(e.clientX, e.clientY)
+    
+        const onMove = (ev: MouseEvent) => updatePreview(ev.clientX, ev.clientY)
+        const onUp = () => {
+            window.removeEventListener('mousemove', onMove)
+            window.removeEventListener('mouseup', onUp)
+            if (previewEl) {
+                previewEl.remove()
+                previewEl = null
+            }
+            addNodeToParent(parentId, pendingNode)
+            pendingNode = null
+            cleanupListeners = null
+        }
+        window.addEventListener('mousemove', onMove)
+        window.addEventListener('mouseup', onUp)
+    
+        cleanupListeners = () => {
+            window.removeEventListener('mousemove', onMove)
+            window.removeEventListener('mouseup', onUp)
+        }
     }
 
+    // 旧的handleDragStart函数可保留以免编译错误，但仓库按钮不再使用原生drag
     function handleDragStart(e: DragEvent, item: WarehouseItem) {
         if (!e.dataTransfer) return
 
@@ -198,7 +318,7 @@
             <div class="tab-pane warehouse-pane">
                 <div class="warehouse-grid">
                     {#each filteredWarehouseItems() as item (item.id)}
-                        <button class="warehouse-item" draggable="true" ondragstart={(e) => handleDragStart(e, item)} onclick={() => addNodeFromWarehouse(item)} type="button">
+                        <button class="warehouse-item" onmousedown={(e) => addNodeFromWarehouse(e, item)} type="button">
                             <div class="item-icon">
                                 <img src={item.preview} alt={item.name} width="32" height="32" draggable="false" />
                             </div>
