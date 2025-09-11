@@ -67,7 +67,23 @@
     })
     let syncingFromDomTree = false
     let editingButtonCount = false // 标记正在由输入框主动修改中
-    function handleAttrChange(key: string, value: any) {
+    // 新增：哈希校验正则
+    const hashRegex = /^[a-f0-9]{40,}$/
+
+    // 新增：递归收集节点及子节点中的背景 / 高亮图片哈希
+    function collectImageHashes(node: any, hashes: string[]) {
+        const styles: any = node.styles || {}
+        const candidates = [styles.backgroundImage, styles.highlightImage]
+        for (const v of candidates) {
+            if (typeof v === 'string' && hashRegex.test(v.trim())) {
+                hashes.push(v.trim())
+            }
+        }
+        if (node.children && node.children.length) {
+            node.children.forEach((c: any) => collectImageHashes(c, hashes))
+        }
+    }
+    async function handleAttrChange(key: string, value: any) {
         // 如果是 DOM 树同步过来的 buttonCount 变更，则仅更新 view，不再触发增删按钮
         if (key === 'buttonCount' && syncingFromDomTree) {
             syncingFromDomTree = false
@@ -98,27 +114,46 @@
                         return
                     }
                     const current = node.children?.length ?? 0
-
-                    // 添加不足的按钮
+                    // 已移除原简单复制逻辑，改用下方复制首按钮完整 DOM 的实现
                     for (let i = 0; i < desired - current; i++) {
                         const childId = globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-${Math.random()}`
                         // 复制第一个按钮完整 DOM（样式、特性等），实现批量同步
                         let baseStyles: Record<string, any> = {}
                         let baseAttrs: Record<string, any> = {}
+                        let baseChildren: any[] = []
                         if (node.children && node.children.length) {
                             baseStyles = { ...(node.children[0].styles || {}) }
                             baseAttrs = { ...(node.children[0].attributes || {}) }
+                            baseChildren = JSON.parse(JSON.stringify(node.children[0].children || []))
                         } else {
                             const buttonMeta = (blocksConfig as any[]).find((b) => b.type === 'Button') as any
                             baseStyles = buttonMeta?.presetStyles ? { ...buttonMeta.presetStyles } : {}
                         }
-                        addNodeToParent(selectedId, {
+
+                        const newButtonNode: any = {
                             id: childId,
                             componentType: 'Button',
                             styles: baseStyles,
                             attributes: { ...baseAttrs, 'data-name': `按钮 ${current + i + 1}` },
-                            children: JSON.parse(JSON.stringify(node.children && node.children.length ? node.children[0].children || [] : []))
-                        } as any)
+                            children: baseChildren
+                        }
+
+                        // 收集并维护图片引用计数
+                        const hashes: string[] = []
+                        collectImageHashes(newButtonNode, hashes)
+
+                        addNodeToParent(selectedId, newButtonNode)
+
+                        if (hashes.length) {
+                            const pid = get(projectId)
+                            if (pid) {
+                                for (const h of hashes) {
+                                    getImage(pid, h).then((img) => {
+                                        if (img) addOrIncrement(img, 1)
+                                    })
+                                }
+                            }
+                        }
                     }
 
                     // 删除多余的按钮（从末尾开始）
