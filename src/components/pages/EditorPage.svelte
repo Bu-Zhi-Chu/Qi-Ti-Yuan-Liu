@@ -156,10 +156,28 @@
                     document.dispatchEvent(evt)
                 }
             }
-        }
-
-        // trigger 类型：点击后立即执行操作，同时关闭可能存在的 toggle 工具
-        if (selected.type === 'trigger') {
+            // 点击绘制节点按钮，按需按下/松开 B 键，模拟快捷绘制准备模式
+            if (k === 'draw') {
+                if (activeTool === 'draw') {
+                    const evt = new KeyboardEvent('keydown', {
+                        key: 'b',
+                        code: 'KeyB',
+                        bubbles: true,
+                        cancelable: true
+                    })
+                    document.dispatchEvent(evt)
+                } else {
+                    const evt = new KeyboardEvent('keyup', {
+                        key: 'b',
+                        code: 'KeyB',
+                        bubbles: true,
+                        cancelable: true
+                    })
+                    document.dispatchEvent(evt)
+                }
+            }
+        } else if (selected.type === 'trigger') {
+            // trigger 类型：点击后立即执行操作，同时关闭可能存在的 toggle 工具
             // TODO: 向 DomCanvas 组件派发删除事件
             activeTool = null
         }
@@ -443,9 +461,10 @@
     // track if space key pressed to set move tool highlight
     let spacePressing = false
     let altPressing = false
+    let bPressing = false
 
     function onSpaceDown(e: KeyboardEvent) {
-        if (!e.isTrusted) return // 忽略我们自己派发的合成事件
+        if (!e.isTrusted) return // 忽略 ourselves派发的合成事件
         if (e.code === 'Space' && !spacePressing) {
             spacePressing = true
             if (activeTool !== 'move') {
@@ -483,16 +502,40 @@
             }
         }
     }
+    // 按住 B 进入绘制节点准备模式
+    function onBDown(e: KeyboardEvent) {
+        if (!e.isTrusted) return
+        if ((e.key === 'b' || e.key === 'B') && !bPressing) {
+            bPressing = true
+            if (activeTool !== 'draw') {
+                activeTool = 'draw'
+            }
+        }
+    }
+
+    function onBUp(e: KeyboardEvent) {
+        if (!e.isTrusted) return
+        if ((e.key === 'b' || e.key === 'B') && bPressing) {
+            bPressing = false
+            if (activeTool === 'draw') {
+                activeTool = null
+            }
+        }
+    }
     onMount(() => {
         document.addEventListener('keydown', onSpaceDown)
         document.addEventListener('keyup', onSpaceUp)
         document.addEventListener('keydown', onAltDown)
         document.addEventListener('keyup', onAltUp)
+        document.addEventListener('keydown', onBDown)
+        document.addEventListener('keyup', onBUp)
         return () => {
             document.removeEventListener('keydown', onSpaceDown)
             document.removeEventListener('keyup', onSpaceUp)
             document.removeEventListener('keydown', onAltDown)
             document.removeEventListener('keyup', onAltUp)
+            document.removeEventListener('keydown', onBDown)
+            document.removeEventListener('keyup', onBUp)
         }
     })
 </script>
