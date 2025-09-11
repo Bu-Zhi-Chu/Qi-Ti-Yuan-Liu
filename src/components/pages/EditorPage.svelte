@@ -683,6 +683,38 @@
             document.removeEventListener('keyup', onVUp)
         }
     })
+
+    onMount(() => {
+        let lastSwitch = 0
+        const MIN_INTERVAL = 100 // ms
+
+        function wheelHandler(e: WheelEvent) {
+            if (!e.ctrlKey) return
+            // 屏蔽浏览器默认缩放
+            e.preventDefault()
+            const now = Date.now()
+            if (now - lastSwitch < MIN_INTERVAL) return
+            lastSwitch = now
+            // 在输入框/可编辑区域时不切换
+            const target = e.target as HTMLElement
+            const tagName = target.tagName.toLowerCase()
+            if (['input', 'textarea', 'select'].includes(tagName) || target.isContentEditable) return
+
+            const dir = e.deltaY > 0 ? 1 : -1
+            const idx = visibleTabs.findIndex((t) => t.key === activeTab)
+            const len = visibleTabs.length
+            let nextIdx = idx
+            do {
+                nextIdx = (nextIdx + dir + len) % len
+            } while (visibleTabs[nextIdx].key === 'feature' && !showFeatureTab)
+
+            setTab(visibleTabs[nextIdx].key)
+        }
+        window.addEventListener('wheel', wheelHandler, { passive: false })
+        return () => {
+            window.removeEventListener('wheel', wheelHandler)
+        }
+    })
 </script>
 
 <svelte:head>
