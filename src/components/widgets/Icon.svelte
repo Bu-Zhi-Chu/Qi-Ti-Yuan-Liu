@@ -84,6 +84,7 @@
         Mail: () => import('@lucide/svelte/icons/mail'),
         Phone: () => import('@lucide/svelte/icons/phone'),
         LayoutDashboard: () => import('@lucide/svelte/icons/layout-dashboard'),
+        Crosshair: () => import('@lucide/svelte/icons/crosshair'),
         Location: () => import('@lucide/svelte/icons/map-pin'),
         User: () => import('@lucide/svelte/icons/user'),
         Users: () => import('@lucide/svelte/icons/users'),

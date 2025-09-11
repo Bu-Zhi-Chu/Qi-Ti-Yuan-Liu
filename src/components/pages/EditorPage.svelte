@@ -83,6 +83,7 @@
     const tools = [
         { key: 'move', icon: 'Move', title: '移动画布', type: 'toggle' },
         { key: 'zoom', icon: 'Search', title: '缩放画布', type: 'toggle' },
+        { key: 'focus', icon: 'Crosshair', title: '聚焦节点', type: 'trigger' },
         { key: 'draw', icon: 'Brush', title: '绘制节点', type: 'toggle' },
         { key: 'adjust', icon: 'LayoutDashboard', title: '调整节点', type: 'toggle' },
         { key: 'delete', icon: 'SquareX', title: '删除节点', type: 'trigger' }
@@ -237,7 +238,38 @@
             }
         } else if (selected.type === 'trigger') {
             // trigger 类型：点击后立即执行操作，同时关闭可能存在的 toggle 工具
-            // TODO: 向 DomCanvas 组件派发删除事件
+            if (selected.key === 'focus') {
+                // 触发快捷键 F 聚焦当前节点（或根节点）
+                const evt = new KeyboardEvent('keydown', {
+                    key: 'f',
+                    code: 'KeyF',
+                    bubbles: true,
+                    cancelable: true
+                })
+                document.dispatchEvent(evt)
+                const evtUp = new KeyboardEvent('keyup', {
+                    key: 'f',
+                    code: 'KeyF',
+                    bubbles: true,
+                    cancelable: true
+                })
+                document.dispatchEvent(evtUp)
+            } else if (selected.key === 'delete') {
+                // 触发 Delete 键删除逻辑，等同于按下 DEL
+                const currentSelectedId = selectedId()
+                if (currentSelectedId && currentSelectedId !== 'root') {
+                    console.log('点击删除按钮，删除节点:', currentSelectedId)
+                    removeNodeById(currentSelectedId).then((success) => {
+                        if (success) {
+                            console.log('节点删除成功:', currentSelectedId)
+                        } else {
+                            console.warn('节点删除失败:', currentSelectedId)
+                        }
+                    })
+                } else {
+                    console.log('点击删除按钮，但没有选中节点或选中的是根节点')
+                }
+            }
             activeTool = null
         }
     }
@@ -525,13 +557,9 @@
 
     function onSpaceDown(e: KeyboardEvent) {
         if (!e.isTrusted) return // 忽略 ourselves派发的合成事件
-        const target = e.target as HTMLElement | null;
-        if (
-            target &&
-            (['INPUT', 'TEXTAREA'].includes(target.tagName) ||
-                (typeof (target as any).closest === 'function' && target.closest('[contenteditable="true"]')))
-        ) {
-            return;
+        const target = e.target as HTMLElement | null
+        if (target && (['INPUT', 'TEXTAREA'].includes(target.tagName) || (typeof (target as any).closest === 'function' && target.closest('[contenteditable="true"]')))) {
+            return
         }
         if (e.code === 'Space' && !spacePressing) {
             spacePressing = true
@@ -543,13 +571,9 @@
 
     function onSpaceUp(e: KeyboardEvent) {
         if (!e.isTrusted) return
-        const target = e.target as HTMLElement | null;
-        if (
-            target &&
-            (['INPUT', 'TEXTAREA'].includes(target.tagName) ||
-                (typeof (target as any).closest === 'function' && target.closest('[contenteditable="true"]')))
-        ) {
-            return;
+        const target = e.target as HTMLElement | null
+        if (target && (['INPUT', 'TEXTAREA'].includes(target.tagName) || (typeof (target as any).closest === 'function' && target.closest('[contenteditable="true"]')))) {
+            return
         }
         if (e.code === 'Space' && spacePressing) {
             spacePressing = false
@@ -581,13 +605,9 @@
     // 按住 B 进入绘制节点准备模式
     function onBDown(e: KeyboardEvent) {
         if (!e.isTrusted) return
-        const target = e.target as HTMLElement | null;
-        if (
-            target &&
-            (['INPUT', 'TEXTAREA'].includes(target.tagName) ||
-                (typeof (target as any).closest === 'function' && target.closest('[contenteditable="true"]')))
-        ) {
-            return;
+        const target = e.target as HTMLElement | null
+        if (target && (['INPUT', 'TEXTAREA'].includes(target.tagName) || (typeof (target as any).closest === 'function' && target.closest('[contenteditable="true"]')))) {
+            return
         }
         if ((e.key === 'b' || e.key === 'B') && !bPressing) {
             bPressing = true
@@ -599,13 +619,9 @@
 
     function onBUp(e: KeyboardEvent) {
         if (!e.isTrusted) return
-        const target = e.target as HTMLElement | null;
-        if (
-            target &&
-            (['INPUT', 'TEXTAREA'].includes(target.tagName) ||
-                (typeof (target as any).closest === 'function' && target.closest('[contenteditable="true"]')))
-        ) {
-            return;
+        const target = e.target as HTMLElement | null
+        if (target && (['INPUT', 'TEXTAREA'].includes(target.tagName) || (typeof (target as any).closest === 'function' && target.closest('[contenteditable="true"]')))) {
+            return
         }
         if ((e.key === 'b' || e.key === 'B') && bPressing) {
             bPressing = false
@@ -618,13 +634,9 @@
     // 按住 V 进入调整节点准备模式（仅当选中非根节点时生效）
     function onVDown(e: KeyboardEvent) {
         if (!e.isTrusted) return
-        const target = e.target as HTMLElement | null;
-        if (
-            target &&
-            (['INPUT', 'TEXTAREA'].includes(target.tagName) ||
-                (typeof (target as any).closest === 'function' && target.closest('[contenteditable="true"]')))
-        ) {
-            return;
+        const target = e.target as HTMLElement | null
+        if (target && (['INPUT', 'TEXTAREA'].includes(target.tagName) || (typeof (target as any).closest === 'function' && target.closest('[contenteditable="true"]')))) {
+            return
         }
         if ((e.key === 'v' || e.key === 'V') && !vPressing) {
             const id = selectedId()
@@ -638,13 +650,9 @@
 
     function onVUp(e: KeyboardEvent) {
         if (!e.isTrusted) return
-        const target = e.target as HTMLElement | null;
-        if (
-            target &&
-            (['INPUT', 'TEXTAREA'].includes(target.tagName) ||
-                (typeof (target as any).closest === 'function' && target.closest('[contenteditable="true"]')))
-        ) {
-            return;
+        const target = e.target as HTMLElement | null
+        if (target && (['INPUT', 'TEXTAREA'].includes(target.tagName) || (typeof (target as any).closest === 'function' && target.closest('[contenteditable="true"]')))) {
+            return
         }
         if ((e.key === 'v' || e.key === 'V') && vPressing) {
             vPressing = false
