@@ -15,10 +15,10 @@
     $: isVisible = $currentPage === id || !$currentPage
     $: mergedStyles = keepMountedBool
         ? {
-            ...defaultStyles,
-            ...styles,
-            display: isVisible ? (styles.display ?? 'block') : 'none'
-        }
+              ...defaultStyles,
+              ...styles,
+              display: isVisible ? (styles.display ?? 'block') : 'none'
+          }
         : { ...defaultStyles, ...styles }
     $: {
         console.debug('[Screen]', id, 'currentPage=', $currentPage, 'isVisible=', isVisible, 'keepMounted=', keepMountedBool)
@@ -27,9 +27,9 @@
 </script>
 
 {#if keepMountedBool || isVisible}
-<div id={id} {...$$restProps} class="screen {hiddenClass}" style:apply={mergedStyles as any}>
-    <slot></slot>
-</div>
+    <div {id} {...$$restProps} class="screen {hiddenClass}" style:apply={mergedStyles as any}>
+        <slot></slot>
+    </div>
 {/if}
 
 <style>
