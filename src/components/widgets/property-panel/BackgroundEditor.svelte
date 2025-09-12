@@ -24,7 +24,6 @@
     import { ProjectThumbnailService } from '../../../services/project/project-thumbnail.service'
     import ColorPaletteService from '../../../services/project/color-palette.service'
     import ColorPicker from '../ColorPicker.svelte'
-    import ResponsiveSlider from '../ResponsiveSlider.svelte'
     import ToggleSwitch from '../ToggleSwitch.svelte'
     import PropertyRow from './PropertyRow.svelte'
     import PropertySelect from './PropertySelect.svelte'
@@ -113,6 +112,8 @@
 
         const nodeProps = _getNodeProps(selectedId)
         const styles = nodeProps?.styles || {}
+        // 新增：同步背景图片字段，确保刷新后按钮状态正确
+        backgroundImage = getStringValue(styles.backgroundImage)
         // 读取节点 attributes 中缓存的图片原始尺寸，刷新后恢复 imageSize
         const attrs = (nodeProps?.attributes || {}) as Record<string, string>
         const attrWidth = parseInt(attrs['data-img-width'] || '')
@@ -220,10 +221,7 @@
                 gradientColors = []
             }
 
-            // 背景图片 - 仅在未使用渐变时读取 backgroundImage 字段
-            if (!styles.backgroundGradient) {
-                backgroundImage = styles.backgroundImage || ''
-            }
+            // 背景图片的读取逻辑调整到外层，避免条件永远不满足
 
             // 如果doms表中没有颜色，再从styles.backgroundColor读取，但不设置默认值
             if (!backgroundColor) {
@@ -292,13 +290,7 @@
 
     // 添加渐变颜色
     function addGradientColor() {
-        // 清空背景图片
-        if (backgroundImage) {
-            cleanupBlobUrls()
-            backgroundImage = ''
-        }
-
-        // 保留背景颜色，不清空
+        // 保留背景颜色并保持现有背景图片，不再互相清空
         const tempColor = backgroundColor || '#ffffff'
         const tempOpacity = backgroundOpacity
 
@@ -327,10 +319,7 @@
         // 退出渐变模式时同步关闭背景裁剪开关
         backgroundClipToText = false
 
-        if (backgroundImage) {
-            cleanupBlobUrls()
-            backgroundImage = ''
-        }
+        // 保持已设置的背景图片，不再清空
         updateBackgroundStyles()
     }
 
@@ -383,10 +372,7 @@
 
     // 处理图片上传
     async function handleImageUpload(event: Event) {
-        // 如果已存在渐变颜色，上传图片前应先移除渐变
-        if (gradientColors.length > 0) {
-            gradientColors = []
-        }
+        // 允许背景图片与渐变共存，不再清空渐变颜色
         const target = event.target as HTMLInputElement
         const file = target.files?.[0]
 
@@ -520,7 +506,9 @@
     async function updateBackgroundStyles() {
         if (!selectedId) return
 
-        const styles: Record<string, any> = {}
+        // 先读取现有样式，避免不相关字段被意外清空
+        const prevStyles = _getNodeProps(selectedId)?.styles || {}
+        const styles: Record<string, any> = { ...prevStyles }
 
         // 背景尺寸 - 直接存储数值和单位
         styles.backgroundSize = `${formatSize(backgroundSizeX, sizeUnitX)} ${formatSize(backgroundSizeY, sizeUnitY)}`
@@ -552,22 +540,22 @@
             styles.backgroundColor = ''
         }
 
-        // 背景渐变 - 改为使用 backgroundGradient 字段，同时写入 backgroundImage 用于 DOM 展示
+        // 背景渐变 - 仅在变化时覆盖，允许与背景图片共存
         if (gradientColors.length > 0) {
-            styles.backgroundGradient = generateGradientCSS()
-            styles.gradientRatio = gradientRatio.toString()
-            // 仅在存在背景图片时写入 backgroundImage，渐变不再存入该字段
-            styles.backgroundImage = ''
-        } else {
-            // 无渐变时清空 backgroundGradient 字段
+            const newGradient = generateGradientCSS()
+            if (newGradient !== prevStyles.backgroundGradient) {
+                styles.backgroundGradient = newGradient
+                styles.gradientRatio = gradientRatio.toString()
+            }
+        } else if (prevStyles.backgroundGradient) {
+            // 用户清除了渐变
             styles.backgroundGradient = ''
             styles.gradientRatio = ''
-            // 背景图片逻辑保持不变
-            if (backgroundImage) {
-                styles.backgroundImage = backgroundImage
-            } else {
-                styles.backgroundImage = ''
-            }
+        }
+
+        // 背景图片 - 仅在变化时覆盖
+        if (backgroundImage !== prevStyles.backgroundImage) {
+            styles.backgroundImage = backgroundImage || ''
         }
 
         // 背景重复
@@ -1081,10 +1069,17 @@
                 <!-- 渐变比例 -->
                 {#if gradientColors.length >= 2}
                     <PropertyRow label="渐变比例">
-                        <ResponsiveSlider bind:value={gradientRatio} min={0} max={100} step={1} oninput={updateBackgroundStyles} />
-                        <span style="min-width: calc(40px * var(--scale-ratio, 1)); text-align: center; font-size: calc(12px * var(--scale-ratio, 1)); color: #94a3b8;">
-                            {gradientRatio}%
-                        </span>
+                        <SizeInput
+                            value={String(gradientRatio)}
+                            unit="%"
+                            unitOptions={['%']}
+                            step={1}
+                            on:change={(e) => {
+                                const v = parseFloat(e.detail.value)
+                                gradientRatio = isNaN(v) ? 0 : Math.max(0, Math.min(100, v))
+                                updateBackgroundStyles()
+                            }}
+                        />
                     </PropertyRow>
                 {/if}
             {/if}

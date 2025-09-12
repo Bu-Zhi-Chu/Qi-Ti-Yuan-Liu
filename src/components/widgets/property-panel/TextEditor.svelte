@@ -28,7 +28,6 @@
     import { updateNodeProperties } from '../../../services/repository/dom-tree.store.svelte'
     import { projectId } from '../../../services/repository/dom-tree.store.svelte'
     import ColorPicker from '../ColorPicker.svelte'
-    import ResponsiveSlider from '../ResponsiveSlider.svelte'
     import { getScaleRatio } from '../../../services/utils/get-scale-ratio.util'
     import PropertyRow from './PropertyRow.svelte'
     import PropertySelect from './PropertySelect.svelte'

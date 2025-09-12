@@ -137,6 +137,17 @@
     })
 
     /** 派生最终内联样式，依赖 selectedId、node.styles、node.hidden 实时更新 */
+    let hasPseudoBg = $derived.by(() => {
+        const bg = (node.styles as any)?.backgroundImage
+        if (!bg) return false
+        if (typeof bg === 'string') {
+            const str = bg.trim()
+            // 过滤渐变
+            return !!str && !str.includes('gradient(')
+        }
+        return true // Blob 等
+    })
+
     let finalStyle = $derived.by(() => {
         const _v = urlCacheVersion // 保证依赖
         const styleEntries = Object.entries(node.styles ?? {}).filter(([k]) => !['textOffsetLeft', 'textOffsetTop', 'highlightImage'].includes(k))
@@ -145,16 +156,13 @@
                 let propertyName = k.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
                 let value: any = v
 
-                // 处理背景图片 - 直接处理 Blob 对象或 URL 字符串
+                // 处理背景图片 - 改为写入 CSS 变量，交由伪元素渲染
                 if (k === 'backgroundImage') {
                     if (typeof v === 'string') {
                         const str = v.trim()
-                        // 使用全局 hashRegex
                         if (hashRegex.test(str)) {
-                            // 哈希值：同步查询缓存，异步解码
                             let url = urlCache.get(str)
                             if (!url) {
-                                // 先返回占位，异步更新
                                 getUrlByHash(str).then((u) => {
                                     if (u) {
                                         urlCache.set(str, u)
@@ -164,19 +172,24 @@
                             } else {
                                 value = `url(${url})`
                             }
-                        } else if (str.startsWith('url(') || str.startsWith('linear-gradient(') || str.startsWith('radial-gradient(')) {
+                        } else if (str.startsWith('url(')) {
                             value = str
                         } else if (str) {
                             value = `url(${str})`
                         }
-                    } else if (v) {
-                        // 其他情况直接使用原值
-                        value = v
                     }
+                    // 使用 CSS 变量 --bg-img
+                    propertyName = '--bg-img'
                 } else if (k === 'backgroundGradient') {
-                    // 将 backgroundGradient 渲染为标准 CSS background-image
+                    // 渐变依旧直接渲染在元素本体
                     propertyName = 'background-image'
                     value = typeof v === 'string' ? v.trim() : v
+                } else if (k === 'backgroundSize') {
+                    propertyName = '--bg-size'
+                } else if (k === 'backgroundPosition') {
+                    propertyName = '--bg-pos'
+                } else if (k === 'backgroundRepeat') {
+                    propertyName = '--bg-repeat'
                 }
 
                 return `${propertyName}:${value}`
@@ -297,14 +310,14 @@
 </script>
 
 {#if nodeKey === 'root'}
-    <div id={nodeKey} data-name={dataNameAttr} style={finalStyle} {...restAttrs} onclick={handleClick}>
+    <div id={nodeKey} data-name={dataNameAttr} style={finalStyle} class:use-pseudo-bg={hasPseudoBg} {...restAttrs} onclick={handleClick}>
         {node.textContent || ''}
         {#each node.children ?? [] as child (child.id)}
             <NodeRenderer node={child} {selectedId} {editing} {select} />
         {/each}
     </div>
 {:else}
-    <DynamicComponent type={componentType} id={nodeKey} data-name={dataNameAttr} style={finalStyle} {...componentProps} onclick={handleClick}>
+    <DynamicComponent type={componentType} id={nodeKey} data-name={dataNameAttr} style={finalStyle} {...componentProps} class={hasPseudoBg ? 'use-pseudo-bg' : undefined} onclick={handleClick}>
         {node.textContent || ''}
         {#each node.children ?? [] as child (child.id)}
             <NodeRenderer node={child} {selectedId} {editing} {select} />
