@@ -68,6 +68,7 @@
     let fontStyle = $state('normal')
     let letterSpacing = $state('0')
     let wordSpacing = $state('0')
+    let textIndent = $state('0')
     let textWrapStyle = $state('normal-normal')
 
     // 字体族选项
@@ -194,6 +195,7 @@
         let newFontStyle = getStringValue(styles.fontStyle) || 'normal'
         let newLetterSpacing = '0'
         let newWordSpacing = '0'
+        let newTextIndent = '0'
         let newTextWrapStyle = 'normal-normal'
 
         // 字体大小
@@ -234,6 +236,10 @@
         const [parsedWordSpacing] = parseSize(getStringValue(styles.wordSpacing) || '0px')
         newWordSpacing = parsedWordSpacing
 
+        // 首行缩进
+        const [parsedTextIndent] = parseSize(getStringValue(styles.textIndent) || '0px')
+        newTextIndent = parsedTextIndent
+
         // 文字换行 - 根据whiteSpace和wordBreak匹配合适的组合
         const whiteSpaceValue = getStringValue(styles.whiteSpace) || 'normal'
         const wordBreakValue = getStringValue(styles.wordBreak) || 'normal'
@@ -257,6 +263,7 @@
         fontStyle = newFontStyle
         letterSpacing = newLetterSpacing
         wordSpacing = newWordSpacing
+        textIndent = newTextIndent
         textWrapStyle = newTextWrapStyle
     }
 
@@ -289,6 +296,7 @@
             letterSpacing = '0'
             wordSpacing = '0'
             textWrapStyle = 'normal-normal'
+            textIndent = '0'
         }
 
         // 清理函数，组件卸载或依赖变化时执行
@@ -417,6 +425,9 @@
 
         // 单词间距
         styles.wordSpacing = formatSize(wordSpacing, 'px')
+
+        // 首行缩进
+        styles.textIndent = formatSize(textIndent, 'px')
 
         // 文字换行
         const wrapStyle = textWrapOptions.find((opt) => opt.value === textWrapStyle)
@@ -581,6 +592,19 @@
                         updateTextStyles()
                     }}
                     placeholder="单词间距..."
+                />
+            </PropertyRow>
+
+            <PropertyRow label="首行缩进">
+                <SizeInput
+                    bind:value={textIndent}
+                    unitOptions={['px']}
+                    convert={(v) => v}
+                    on:change={({ detail }) => {
+                        textIndent = detail.value
+                        updateTextStyles()
+                    }}
+                    placeholder="首行缩进..."
                 />
             </PropertyRow>
 
