@@ -655,6 +655,28 @@ export function updateNodeStyles(nodeId: string, styles: Record<string, string |
 }
 
 /**
+ * 更新节点显示名称（data-name 属性）
+ * @param nodeId 节点 ID
+ * @param newName 新名称
+ */
+export async function updateNodeName(nodeId: string, newName: string): Promise<boolean> {
+  const node = findNodeById(domTreeData, nodeId);
+  if (!node) return false;
+
+  console.log('【updateNodeName】准备更新节点名称', { nodeId, newName });
+
+  // 确保 attributes 对象存在
+  if (!node.attributes) node.attributes = {};
+  node.attributes['data-name'] = newName;
+
+  // 递增版本号并自动保存
+  bumpDomTreeVersion();
+  await autoSaveToDomsTable();
+  console.log('【updateNodeName】已写入数据库');
+  return true;
+}
+
+/**
  * 重置所有节点的 activePropertyTab 属性
  */
 export function resetActivePropertyTab(): void {

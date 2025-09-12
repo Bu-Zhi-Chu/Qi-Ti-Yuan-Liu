@@ -28,7 +28,7 @@
 </script>
 
 <script lang="ts">
-    import { domTree, selectedId, setSelectedId, toggleExpanded, toggleHidden, toggleLocked, removeNodeById, moveNode, insertNodeBefore, insertNodeAfter } from '../../services/repository/dom-tree.store.svelte'
+    import { domTree, selectedId, setSelectedId, toggleExpanded, toggleHidden, toggleLocked, removeNodeById, moveNode, insertNodeBefore, insertNodeAfter, updateNodeName } from '../../services/repository/dom-tree.store.svelte'
 
     import { TreeDragDropService } from '../../services/interactions/tree-drag-drop.service'
 
@@ -133,6 +133,83 @@
     // 递归生成 HTML 字符串
     const { searchQuery = '' } = $props<{ searchQuery?: string }>()
 
+    // 当前正在编辑的节点 ID 和临时文本
+    let editingNodeId: string | null = $state(null)
+    let editingText: string = $state('')
+    let originalName: string = ''
+
+    /** 按 F2 进入编辑模式 */
+    function startEdit(nodeId: string, currentName: string) {
+        if (nodeId === 'root') return // ✅ 根节点禁止重命名
+        editingNodeId = nodeId
+        editingText = currentName
+        originalName = currentName
+        queueMicrotask(() => {
+            const input = document.querySelector<HTMLInputElement>(`#edit-${nodeId}`)
+            input?.focus()
+            input?.select()
+        })
+    }
+
+    /** 确认更新名称 */
+    async function confirmEdit() {
+        if (!editingNodeId) return
+        // 实时读取输入框当前值
+        const input = document.querySelector<HTMLInputElement>(`#edit-${editingNodeId}`)
+        const newName = input?.value.trim()
+        if (newName) {
+            await updateNodeName(editingNodeId, newName)
+        }
+        cancelEdit()
+    }
+
+    /** 取消编辑 */
+    function cancelEdit() {
+        editingNodeId = null
+        editingText = ''
+        originalName = ''
+    }
+
+    /** 键盘事件：Enter 确认，Escape 取消 */
+    function handleEditKeydown(event: KeyboardEvent) {
+        switch (event.key) {
+            case 'Enter':
+                confirmEdit()
+                break
+            case 'Escape':
+                cancelEdit()
+                break
+        }
+    }
+
+    /** 全局键盘监听：F2 进入编辑 */
+    $effect(() => {
+        function onKeyDown(e: KeyboardEvent) {
+            if (e.key === 'F2' && selectedId()) {
+                e.preventDefault()
+                const node = findNodeById(domTree, selectedId()!)
+                if (node) {
+                    const name = node.attributes?.['data-name'] || node.componentType || '元素'
+                    startEdit(selectedId()!, name)
+                }
+            }
+        }
+        window.addEventListener('keydown', onKeyDown)
+        return () => window.removeEventListener('keydown', onKeyDown)
+    })
+
+    // 辅助：根据 id 找到节点
+    function findNodeById(tree: DomNode, id: string): DomNode | null {
+        if (tree.id === id) return tree
+        if (tree.children) {
+            for (const child of tree.children) {
+                const found = findNodeById(child, id)
+                if (found) return found
+            }
+        }
+        return null
+    }
+
     function containsLocked(node: DomNode): boolean {
         if (node.locked) return true
         if (node.children) {
@@ -157,6 +234,26 @@
         const nodeKey = node.id
         const isSelected = nodeKey === currentSelectedId
         const displayName = level === 0 ? '画布' : node.attributes?.['data-name'] || node.componentType || (node.attributes as any)?.type || '元素'
+        const nameHtml =
+            editingNodeId === nodeKey
+                ? `
+              <span class="edit-wrapper" onclick="event.stopPropagation()">
+                <input id="edit-${nodeKey}" type="text" value="${editingText}" class="edit-input"
+                       onkeydown="handleEditKeydown(event)" />
+                <button class="edit-btn ok" onclick="confirmEdit()" title="确认">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 6L9 17l-5-5"></path>
+                  </svg>
+                </button>
+                <button class="edit-btn cancel" onclick="cancelEdit()" title="取消">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </span>
+            `
+                : `<span class="node-name" title="${displayName}">${displayName}</span>`
         const hasChildren = node.children && node.children.length
 
         const childrenHtml = hasChildren && node.expanded ? node.children!.map((child: DomNode) => renderNode(child, level + 1, currentSelectedId)).join('') : ''
@@ -238,7 +335,7 @@
             <div class="node-content ${isSelected ? 'selected' : ''} ${node.hidden ? 'hidden' : ''} ${hasChildren && !node.expanded ? 'collapsed' : ''}">
               <div class="node-left">
                 ${dragHandleSvg}
-                <span class="node-id${node.locked ? ' locked' : ''}" id="${nodeKey}">${displayName}</span>
+                ${nameHtml}
               </div>
               <div class="node-actions">
                 ${lockIconSvg}
@@ -252,6 +349,38 @@
     }
 
     const htmlString = $derived(() => (domTree ? renderNode(domTree, 0, selectedId()) : ''))
+    $effect(() => {
+        // 暴露到全局供字符串模板里的 onclick/onkeydown 使用
+        ;(window as any).confirmEdit = confirmEdit
+        ;(window as any).cancelEdit = cancelEdit
+        ;(window as any).handleEditKeydown = handleEditKeydown
+        return () => {
+            delete (window as any).confirmEdit
+            delete (window as any).cancelEdit
+            delete (window as any).handleEditKeydown
+        }
+    })
+
+    // 点击外部关闭重命名模式
+    function handleClickOutside(event: MouseEvent) {
+        const target = event.target as HTMLElement
+        const isInsideEditBox = target.closest('.edit-wrapper')
+        const isInsideNodeItem = target.closest('.node-item') as HTMLElement | null
+
+        // 如果点击的不是当前编辑节点，也不是编辑框内部，则关闭编辑
+        if (!isInsideEditBox && (!isInsideNodeItem || isInsideNodeItem.dataset?.id !== editingNodeId)) {
+            cancelEdit()
+        }
+    }
+
+    // 监听全局点击事件
+    import { onMount } from 'svelte'
+    onMount(() => {
+        document.addEventListener('click', handleClickOutside)
+        return () => {
+            document.removeEventListener('click', handleClickOutside)
+        }
+    })
 </script>
 
 <!-- 容器使用事件委托监听 -->
@@ -393,7 +522,7 @@
         color: #60a5fa;
     }
 
-    :global(.node-id) {
+    :global(.node-name) {
         color: #e2e8f0;
         font-weight: 500;
         cursor: pointer;
@@ -405,13 +534,75 @@
         border-radius: calc(4px * var(--scale-ratio, 1));
     }
 
-    :global(.node-id.locked) {
-        color: #60a5fa;
-    }
-
-    :global(.node-id:hover) {
+    :global(.node-name:hover) {
         color: #f8fafc;
         background: rgba(255, 255, 255, 0.08);
+    }
+
+    /* ========= 行内编辑框样式（自适应） ========= */
+    :global(.edit-wrapper) {
+        display: inline-flex;
+        align-items: center;
+        background: #1e293b;
+        border: calc(1px * var(--scale-ratio, 1)) solid #475569;
+        border-radius: calc(4px * var(--scale-ratio, 1));
+        overflow: hidden;
+    }
+
+    :global(.edit-input) {
+        background: transparent;
+        color: #e2e8f0;
+        border: none;
+        padding: calc(2px * var(--scale-ratio, 1)) calc(4px * var(--scale-ratio, 1));
+        font-size: calc(13px * var(--scale-ratio, 1));
+        font-family: inherit;
+        width: calc(100px * var(--scale-ratio, 1));
+        outline: none;
+    }
+
+    :global(.edit-btn) {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: #94a3b8;
+        padding: calc(2px * var(--scale-ratio, 1));
+        display: flex;
+        align-items: center;
+        transition: color 0.15s ease;
+    }
+
+    :global(.edit-btn svg) {
+        width: calc(14px * var(--scale-ratio, 1));
+        height: calc(14px * var(--scale-ratio, 1));
+    }
+
+    :global(.edit-btn:hover) {
+        color: #e2e8f0;
+    }
+
+    :global(.edit-btn.ok:hover) {
+        color: #22c55e; /* 绿色确认 */
+    }
+
+    :global(.edit-btn.cancel:hover) {
+        color: #ef4444; /* 红色取消 */
+    }
+
+    :global(.edit-input:focus) {
+        border-color: #6366f1;
+    }
+
+    :global(.edit-btn) {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: calc(12px * var(--scale-ratio, 1));
+        padding: 0 calc(4px * var(--scale-ratio, 1));
+        transition: transform 0.1s ease;
+    }
+
+    :global(.edit-btn:hover) {
+        transform: scale(1.2);
     }
 
     :global(.node-content.selected) {
