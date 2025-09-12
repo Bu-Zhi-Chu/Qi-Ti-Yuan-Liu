@@ -148,13 +148,10 @@
             }
         }
 
-        // 背景图片 - 直接使用 backgroundImage 字段
-        backgroundImage = styles.backgroundImage || ''
-
-        // 从CSS backgroundImage解析渐变（不存储gradientColors到数据库）
-        const bgImageStr = typeof styles.backgroundImage === 'string' ? styles.backgroundImage : ''
-        if (bgImageStr && (bgImageStr.startsWith('linear-gradient') || bgImageStr.startsWith('radial-gradient'))) {
-            const gradientMatch = bgImageStr.match(/(linear|radial)-gradient\(([^,]+),(.+)\)/)
+        // 从CSS backgroundGradient解析渐变（不再使用backgroundImage字段存储渐变）
+        const bgGradientStr = typeof styles.backgroundGradient === 'string' ? styles.backgroundGradient : ''
+        if (bgGradientStr && (bgGradientStr.startsWith('linear-gradient') || bgGradientStr.startsWith('radial-gradient'))) {
+            const gradientMatch = bgGradientStr.match(/(linear|radial)-gradient\(([^,]+),(.+)\)/)
             if (gradientMatch) {
                 gradientDirection = gradientMatch[2].trim()
                 const colorStopsText = gradientMatch[3]
@@ -222,8 +219,12 @@
             } else {
                 gradientColors = []
             }
-        } else {
-            gradientColors = []
+
+            // 背景图片 - 仅在未使用渐变时读取 backgroundImage 字段
+            if (!styles.backgroundGradient) {
+                backgroundImage = styles.backgroundImage || ''
+            }
+
             // 如果doms表中没有颜色，再从styles.backgroundColor读取，但不设置默认值
             if (!backgroundColor) {
                 const bgColor = getStringValue(styles.backgroundColor)
@@ -551,18 +552,22 @@
             styles.backgroundColor = ''
         }
 
-        // 背景图片或渐变背景 - 使用background-image属性
+        // 背景渐变 - 改为使用 backgroundGradient 字段，同时写入 backgroundImage 用于 DOM 展示
         if (gradientColors.length > 0) {
-            styles.backgroundImage = generateGradientCSS()
-            // 保存计算出的渐变比例
+            styles.backgroundGradient = generateGradientCSS()
             styles.gradientRatio = gradientRatio.toString()
-        } else if (backgroundImage) {
-            // 直接将 Blob 或字符串存储到 backgroundImage 字段
-            styles.backgroundImage = backgroundImage
-            styles.gradientRatio = '' // 清除渐变比例
+            // 仅在存在背景图片时写入 backgroundImage，渐变不再存入该字段
+            styles.backgroundImage = ''
         } else {
-            styles.backgroundImage = '' // 清除背景图片
-            styles.gradientRatio = '' // 清除渐变比例
+            // 无渐变时清空 backgroundGradient 字段
+            styles.backgroundGradient = ''
+            styles.gradientRatio = ''
+            // 背景图片逻辑保持不变
+            if (backgroundImage) {
+                styles.backgroundImage = backgroundImage
+            } else {
+                styles.backgroundImage = ''
+            }
         }
 
         // 背景重复

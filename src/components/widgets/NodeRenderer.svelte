@@ -142,7 +142,7 @@
         const styleEntries = Object.entries(node.styles ?? {}).filter(([k]) => !['textOffsetLeft', 'textOffsetTop', 'highlightImage'].includes(k))
         const styleStr = styleEntries
             .map(([k, v]) => {
-                const kebab = k.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
+                let propertyName = k.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
                 let value: any = v
 
                 // 处理背景图片 - 直接处理 Blob 对象或 URL 字符串
@@ -173,9 +173,13 @@
                         // 其他情况直接使用原值
                         value = v
                     }
+                } else if (k === 'backgroundGradient') {
+                    // 将 backgroundGradient 渲染为标准 CSS background-image
+                    propertyName = 'background-image'
+                    value = typeof v === 'string' ? v.trim() : v
                 }
 
-                return `${kebab}:${value}`
+                return `${propertyName}:${value}`
             })
             .join(';')
 
