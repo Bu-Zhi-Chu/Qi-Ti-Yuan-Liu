@@ -11,6 +11,7 @@
     import { currentPage } from '../../services/repository/dom-tree.store.svelte'
     import { setCurrentPage } from '../../services/repository/dom-tree.store.svelte'
     import { onMount } from 'svelte'
+    import { findNodeById, domTree } from '../../services/repository/dom-tree.store.svelte'
 
     interface Props {
         id?: string
@@ -34,18 +35,31 @@
     const externalClass = $derived(() => (rest as any)?.class ?? '')
     delete rest.class
 
-    const isHighlighted = $derived(() => {
-        return false
-    })
+    // 开关状态（仅在 buttonType === 'switch' 时使用）
+    let toggled = false
 
-    const mergedStyle = $derived(() => {
-        const highlight = isHighlighted() && highlightImage ? `background-image: url(${highlightImage}); background-size: contain; background-repeat: no-repeat; background-position: center;` : ''
-        return style && highlight ? `${style}; ${highlight}` : style || highlight
-    })
+    // 移除对 highlightImage 的直接样式注入，交由 NodeRenderer 通过 --bg-img 处理
+    const mergedStyle = $derived(() => style)
 
-    /** 点击事件，默认输出日志 */
+    /** 点击事件，根据按钮类型执行不同逻辑 */
     function handleClick() {
-        console.log(`Button(${id}) clicked`)
+        switch (buttonType) {
+            case 'switch':
+                toggled = !toggled
+                // 把状态写回节点
+                const node = findNodeById(domTree, id)
+                if (node) node.toggled = toggled
+                console.log(`Button(${id}) ${toggled ? '开启' : '关闭'}`)
+                break
+            case 'navigation':
+                // 导航逻辑待实现
+                console.log(`Button(${id}) 导航`)
+                break
+            case 'trigger':
+            default:
+                console.log(`Button(${id}) 触发`)
+                break
+        }
     }
     /** 键盘事件：回车或空格等价点击 */
     function handleKey(e: KeyboardEvent) {
@@ -54,9 +68,6 @@
             handleClick()
         }
     }
-    onMount(() => {
-        // 导航相关逻辑已移除
-    })
 </script>
 
 <ResponsiveBox {id} {...rest} class={`btn ${hoverEffect} ${externalClass()}`} {disabled} style={mergedStyle()}>

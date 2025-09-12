@@ -158,8 +158,18 @@
 
                 // 处理背景图片 - 改为写入 CSS 变量，交由伪元素渲染
                 if (k === 'backgroundImage') {
-                    if (typeof v === 'string') {
-                        const str = v.trim()
+                    let actualImage = v
+
+                    // 如果是switch按钮，根据toggled状态选择图片
+
+                    const btnType = (node.attributes as any)?.buttonType
+
+                    if (node.componentType === 'Button' && btnType === 'switch') {
+                        actualImage = node.toggled ? (node.styles as any)?.highlightImage : v
+                    }
+
+                    if (typeof actualImage === 'string') {
+                        const str = actualImage.trim()
                         if (hashRegex.test(str)) {
                             let url = urlCache.get(str)
                             if (!url) {
