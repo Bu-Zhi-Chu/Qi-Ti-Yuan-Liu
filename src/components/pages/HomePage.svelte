@@ -74,6 +74,17 @@
             console.error('删除项目DOM数据失败:', error)
         }
 
+        // 删除imageStore表中对应项目ID的所有图片记录
+        try {
+            const db = await DexieService.getDatabase(dbName)
+            if (db) {
+                console.log(`【数据库交互】删除项目图片记录: 项目ID=${projectId}`)
+                await db.table('imageStore').where('projectId').equals(String(projectId)).delete()
+            }
+        } catch (error) {
+            console.error('删除项目图片数据失败:', error)
+        }
+
         // 删除projects表中的项目记录
         console.log(`【数据库交互】删除项目记录: 项目ID=${projectId}`)
         const ok = await DexieService.deleteRecord(dbName, 'projects', projectId)
