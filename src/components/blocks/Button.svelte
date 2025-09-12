@@ -11,7 +11,7 @@
     import { currentPage } from '../../services/repository/dom-tree.store.svelte'
     import { setCurrentPage } from '../../services/repository/dom-tree.store.svelte'
     import { onMount } from 'svelte'
-    import { findNodeById, domTree } from '../../services/repository/dom-tree.store.svelte'
+    import { findNodeById, domTree, findParentById } from '../../services/repository/dom-tree.store.svelte'
 
     interface Props {
         id?: string
@@ -52,12 +52,26 @@
                 console.log(`Button(${id}) ${toggled ? '开启' : '关闭'}`)
                 break
             case 'navigation':
-                // 导航逻辑待实现
-                console.log(`Button(${id}) 导航`)
+                const nodeNav = findNodeById(domTree, id)
+                if (!nodeNav) break
+                if (nodeNav.toggled) {
+                    // 已经高亮则不处理
+                    break
+                }
+                // 清除同父级其他导航按钮高亮
+                const parent = findParentById(domTree, id)
+                if (parent?.children) {
+                    parent.children.forEach((child) => {
+                        if (child.componentType === 'Button' && (child.buttonType === 'navigation' || (child.attributes as any)?.buttonType === 'navigation')) {
+                            ;(child as any).toggled = child.id === id
+                        }
+                    })
+                }
+                console.log(`Button(${id}) 导航高亮`)
                 break
             case 'trigger':
-            default:
                 console.log(`Button(${id}) 触发`)
+            default:
                 break
         }
     }

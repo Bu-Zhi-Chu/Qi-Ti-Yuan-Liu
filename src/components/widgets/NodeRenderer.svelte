@@ -162,9 +162,9 @@
 
                     // 如果是switch按钮，根据toggled状态选择图片
 
-                    const btnType = (node.attributes as any)?.buttonType
+                    const btnType = (node as any).buttonType ?? (node.attributes as any)?.buttonType ?? (node.componentProps as any)?.buttonType
 
-                    if (node.componentType === 'Button' && btnType === 'switch') {
+                    if (node.componentType === 'Button' && (btnType === 'switch' || btnType === 'navigation')) {
                         actualImage = node.toggled ? (node.styles as any)?.highlightImage : v
                     }
 

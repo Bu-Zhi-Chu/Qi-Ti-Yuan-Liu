@@ -36,6 +36,8 @@ export interface DomNode {
   selfLocked?: boolean
   /** 继承锁定：由父级传递 */
   inheritedLocked?: boolean
-  /** 开关状态：用于switch按钮类型 */
+  /** 开关状态：用于switch或navigation按钮 */
   toggled?: boolean
+  /** 按钮类型，如 'switch' | 'navigation' | 'trigger' */
+  buttonType?: string
 }
