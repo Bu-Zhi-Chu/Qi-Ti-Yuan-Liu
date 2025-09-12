@@ -30,4 +30,6 @@ export interface DomNode {
   expanded?: boolean
   /** 是否隐藏（树形控件用） */
   hidden?: boolean
+  /** 是否锁定（锁定后属性面板只读） */
+  locked?: boolean
 }

@@ -90,8 +90,10 @@ async function loadDomNodesFromDomsTable(projectId: string): Promise<DomNode | n
       const attributes = nodeData.attributes || {};
       const componentType = attributes.type ?? nodeData.componentType ?? 'SimpleBox';
       const textContent = attributes.textContent ?? nodeData.textContent ?? '';
+      const isLocked = attributes.locked === true; // 新增：读取锁定状态
       delete attributes.type;
       delete attributes.textContent;
+      delete attributes.locked; // 移除防止污染 attributes
 
       const node: DomNode = {
         id: nodeData.id,
@@ -101,6 +103,7 @@ async function loadDomNodesFromDomsTable(projectId: string): Promise<DomNode | n
         textContent: textContent,
         expanded: nodeData.attributes?.expanded !== false,
         hidden: nodeData.attributes?.hidden || false,
+        locked: isLocked, // 新增：写入锁定状态
         children: []
       } as DomNode & { order?: number };
       (node as any).order = nodeData.order ?? 0;
@@ -231,6 +234,7 @@ async function saveDomNodesToDomsTable(projectId: string, domTree: DomNode): Pro
         attributes: {
           expanded: node.expanded,
           hidden: node.hidden,
+          locked: node.locked, // 新增：持久化锁定状态
           ...safeAttributes,
           type: node.componentType,
           textContent: node.textContent || ''
@@ -488,6 +492,22 @@ export function toggleHidden(nodeId: string): boolean {
 }
 
 /**
+ * 切换节点锁定状态
+ * @param nodeId 节点ID
+ * @returns 是否切换成功
+ */
+export function toggleLocked(nodeId: string): boolean {
+  if (nodeId === 'root') return false; // 根节点不可锁定
+  const node = findNodeById(domTreeData, nodeId);
+  if (node) {
+    node.locked = !node.locked;
+    autoSaveToDomsTable();
+    return true;
+  }
+  return false;
+}
+
+/**
  * 移动节点到新的父节点
  * @param nodeId 要移动的节点ID
  * @param newParentId 新父节点ID
@@ -509,12 +529,31 @@ export async function moveNode(nodeId: string, newParentId: string): Promise<boo
  * @param nodeId 要移除的节点ID
  * @returns 是否移除成功
  */
+/**
+ * 判断节点本身或其子孙是否存在 locked=true
+ */
+function hasLocked(node: DomNode): boolean {
+  if (node.locked) return true;
+  if (node.children) {
+    for (const child of node.children) {
+      if (hasLocked(child)) return true;
+    }
+  }
+  return false;
+}
+
 export async function removeNodeById(nodeId: string): Promise<boolean> {
   if (nodeId === 'root') return false;
   const parent = findParentById(domTreeData, nodeId);
   if (!parent || !parent.children) return false;
   const targetNode = parent.children.find(c => c.id === nodeId);
-  if (targetNode) releaseNodeResources(targetNode);
+  if (!targetNode) return false;
+  // 若自身或子孙节点存在锁定，不允许删除
+  if (hasLocked(targetNode)) {
+    console.warn('节点或其子孙被锁定，无法删除');
+    return false;
+  }
+  releaseNodeResources(targetNode);
   if (selectedNodeId === nodeId) await setSelectedId('root');
   parent.children = parent.children.filter(c => c.id !== nodeId);
 

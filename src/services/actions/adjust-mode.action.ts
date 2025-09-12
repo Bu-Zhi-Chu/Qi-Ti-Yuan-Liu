@@ -36,6 +36,7 @@ import { registerMouseLeftPressRelease } from '../interactions/shortcut.service'
 import { getScaleRatio } from '../utils/get-scale-ratio.util'
 import { moveDomByOffset } from '../utils/move-dom.util'
 import { getElementByNodeId } from '../utils/dom-geometry.util'
+import { domTree, findNodeById } from '../repository/dom-tree.store.svelte'
 import { copySelectedNode, pasteNodeToSelectedParent } from '../repository/dom-tree.store.svelte'
 
 
@@ -316,6 +317,13 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
     }
   }
 
+  function isSelectedNodeLocked(): boolean {
+    const id = selectedNodeAccessor()
+    if (!id) return false
+    const node = findNodeById(domTree, id)
+    return node?.locked === true
+  }
+
   // 在调整模式下阻止点击选中
   // 仅在点击事件发生于覆盖层内部时才阻止冒泡，避免拦截工具栏等其他操作
   function preventClick(e: MouseEvent) {
@@ -342,6 +350,7 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
     // 避免 Ctrl+V 等组合键触发独立 V 功能
     if (e.ctrlKey || e.metaKey) return
 
+    if (isSelectedNodeLocked()) return
     if (!editingAccessor()) return
 
     // 仅在选中非根节点时启用调整模式

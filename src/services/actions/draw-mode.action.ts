@@ -31,7 +31,7 @@ import {
 import { registerMouseLeftPressRelease } from '../interactions/shortcut.service'
 import { calculateRelativeRect, createDrawNode, clampPointToRect } from '../utils/draw-mode.util'
 import { getElementByNodeId } from '../utils/dom-geometry.util'
-import { selectedId, addNodeToParent } from '../repository/dom-tree.store.svelte'
+import { selectedId, addNodeToParent, domTree, findNodeById } from '../repository/dom-tree.store.svelte'
 import type { Guideline } from '../repository/draw-align.store.svelte'
 import { openAlign, closeAlign, setGuidelines, clearGuidelines, isAlignOpen } from '../repository/draw-align.store.svelte'
 
@@ -185,6 +185,13 @@ const drawModeAction: Action<HTMLElement, DrawModeOptions> = (node, opts) => {
   function initListeners() {
     cleanup()
 
+    function isSelectedNodeLocked(): boolean {
+      const id = selectedId()
+      if (!id) return false
+      const node = findNodeById(domTree, id)
+      return node?.locked === true
+    }
+
     // 键盘状态标记
     let bPressed = false
     let shiftPressed = false
@@ -203,6 +210,7 @@ const drawModeAction: Action<HTMLElement, DrawModeOptions> = (node, opts) => {
       }
       // 记录状态
       if (e.key === 'b' || e.key === 'B') {
+        if (isSelectedNodeLocked()) return
         bPressed = true
         // 进入绘制模式（仅需 B 键）
         if (options.editingAccessor && !options.editingAccessor()) return

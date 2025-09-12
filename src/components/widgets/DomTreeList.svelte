@@ -28,7 +28,7 @@
 </script>
 
 <script lang="ts">
-    import { domTree, selectedId, setSelectedId, toggleExpanded, toggleHidden, removeNodeById, moveNode, insertNodeBefore, insertNodeAfter } from '../../services/repository/dom-tree.store.svelte'
+    import { domTree, selectedId, setSelectedId, toggleExpanded, toggleHidden, toggleLocked, removeNodeById, moveNode, insertNodeBefore, insertNodeAfter } from '../../services/repository/dom-tree.store.svelte'
 
     import { TreeDragDropService } from '../../services/interactions/tree-drag-drop.service'
 
@@ -85,6 +85,9 @@
                 case 'toggle-hidden':
                     toggleHidden(id)
                     break
+                case 'toggle-locked':
+                    toggleLocked(id)
+                    break
                 case 'delete-node':
                     removeNodeById(id).then((success) => {
                         // removeNodeById内部已经处理了选中根节点的逻辑
@@ -111,6 +114,12 @@
     function handleDoubleClick(event: MouseEvent) {
         const target = event.target as HTMLElement | null
         if (!target) return
+
+        // 如果双击发生在操作按钮或者拖拽手柄上，则不执行折叠/展开
+        if (target.closest('.action-btn') || target.closest('.drag-handle')) {
+            return
+        }
+
         const nodeContent = target.closest('.node-content')
         if (!nodeContent) return
 
@@ -123,6 +132,14 @@
 
     // 递归生成 HTML 字符串
     const { searchQuery = '' } = $props<{ searchQuery?: string }>()
+
+    function containsLocked(node: DomNode): boolean {
+        if (node.locked) return true
+        if (node.children) {
+            return node.children.some((child: DomNode) => containsLocked(child))
+        }
+        return false
+    }
 
     function shouldInclude(node: DomNode, q: string): boolean {
         if (!q) return true
@@ -159,6 +176,23 @@
           </svg>
         `
 
+        const lockIconSvg =
+            level === 0
+                ? ''
+                : node.locked
+                  ? `
+          <svg class="icon action-btn lock-btn" data-action="toggle-locked" id="${nodeKey}" title="解锁元素" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+        `
+                  : `
+          <svg class="icon action-btn lock-btn" data-action="toggle-locked" id="${nodeKey}" title="锁定元素" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 11V7a5 5 0 0 0-10 0v4"></path>
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          </svg>
+        `
+
         const hideIconSvg =
             level === 0
                 ? ''
@@ -179,25 +213,35 @@
         `
 
         const deleteIconSvg =
-            level === 0
-                ? ''
-                : `
-          <svg class="icon action-btn delete-btn" data-action="delete-node" id="${nodeKey}" title="删除元素" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 6h18"></path>
-            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-            <path d="M10 11v6"></path>
-            <path d="M14 11v6"></path>
-          </svg>
-        `
+             level === 0
+                 ? ''
+                 : containsLocked(node)
+                   ? `
+           <svg class="icon action-btn delete-btn placeholder" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="visibility:hidden; pointer-events:none;">
+             <path d="M3 6h18"></path>
+             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+             <path d="M10 11v6"></path>
+             <path d="M14 11v6"></path>
+           </svg>
+         `
+                   : `
+           <svg class="icon action-btn delete-btn" data-action="delete-node" id="${nodeKey}" title="删除元素" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+             <path d="M3 6h18"></path>
+             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+             <path d="M10 11v6"></path>
+             <path d="M14 11v6"></path>
+           </svg>
+         `
 
         return /*html*/ `
           <div class="tree-node" style="padding-left: calc(16px * var(--scale-ratio, 1));" id="${nodeKey}" data-level="${level}">
             <div class="node-content ${isSelected ? 'selected' : ''} ${node.hidden ? 'hidden' : ''} ${hasChildren && !node.expanded ? 'collapsed' : ''}">
               <div class="node-left">
                 ${dragHandleSvg}
-                <span class="node-id" id="${nodeKey}">${displayName}</span>
+                <span class="node-id${node.locked ? ' locked' : ''}" id="${nodeKey}">${displayName}</span>
               </div>
               <div class="node-actions">
+                ${lockIconSvg}
                 ${hideIconSvg}
                 ${deleteIconSvg}
               </div>
@@ -344,6 +388,11 @@
         color: #f87171;
     }
 
+    :global(.lock-btn:hover) {
+        background: rgba(59, 130, 246, 0.2);
+        color: #60a5fa;
+    }
+
     :global(.node-id) {
         color: #e2e8f0;
         font-weight: 500;
@@ -354,6 +403,10 @@
         transition: all 0.2s ease;
         padding: calc(2px * var(--scale-ratio, 1)) calc(4px * var(--scale-ratio, 1));
         border-radius: calc(4px * var(--scale-ratio, 1));
+    }
+
+    :global(.node-id.locked){
+        color:#60a5fa;
     }
 
     :global(.node-id:hover) {
@@ -385,6 +438,11 @@
 
     :global(.node-content.selected .node-id) {
         color: #e0e7ff;
+    }
+
+    /* 锁定节点在选中时仍保持蓝色文字 */
+    :global(.node-content.selected .node-id.locked) {
+        color: #60a5fa;
     }
 
     .drop-indicator {

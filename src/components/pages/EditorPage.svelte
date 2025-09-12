@@ -26,7 +26,7 @@
     import { applyLogConfig } from '../../services/utils/log-switch'
 
     // 引入 DOM 树集中式状态管理
-    import { domTree, selectedId, removeNodeById, projectId } from '../../services/repository/dom-tree.store.svelte'
+    import { domTree, selectedId, removeNodeById, projectId, findNodeById } from '../../services/repository/dom-tree.store.svelte'
     import DexieService from '../../services/database/dexie-service'
     import StatusBar from '../widgets/StatusBar.svelte'
     import { screenDetector } from '../../services/screen/screen-detector.service'
@@ -94,8 +94,6 @@
 
     function setTool(k: (typeof tools)[number]['key']) {
         const selected = tools.find((t) => t.key === k)
-        if (!selected) return
-
         if (!selected) return
 
         const prevTool = activeTool
@@ -603,11 +601,23 @@
             }
         }
     }
+    function isSelectedNodeLocked(): boolean {
+        const id = selectedId()
+        if (!id) return false
+        const node = findNodeById(domTree, id)
+        return node?.locked === true
+    }
+
     // 按住 B 进入绘制节点准备模式
     function onBDown(e: KeyboardEvent) {
         if (!e.isTrusted) return
         const target = e.target as HTMLElement | null
         if (target && (['INPUT', 'TEXTAREA'].includes(target.tagName) || (typeof (target as any).closest === 'function' && target.closest('[contenteditable="true"]')))) {
+            return
+        }
+        if (isSelectedNodeLocked()) {
+            e.preventDefault()
+            e.stopImmediatePropagation?.()
             return
         }
         if ((e.key === 'b' || e.key === 'B') && !bPressing) {
@@ -639,7 +649,7 @@
         if (target && (['INPUT', 'TEXTAREA'].includes(target.tagName) || (typeof (target as any).closest === 'function' && target.closest('[contenteditable="true"]')))) {
             return
         }
-        if ((e.key === 'v' || e.key === 'V') && !vPressing) {
+        if ((e.key === 'v' || e.key === 'V') && !vPressing && !isSelectedNodeLocked()) {
             const id = selectedId()
             if (!id || id === 'root') return // 根节点不可调整
             vPressing = true

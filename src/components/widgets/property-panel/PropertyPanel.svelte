@@ -17,6 +17,7 @@
     import DataEditor from './DataEditor.svelte'
     import FeatureEditor from './FeatureEditor.svelte'
     import { selectedId as getSelectedId } from '../../../services/repository/dom-tree.store.svelte'
+    import { getFullNode } from '../../../services/property-panel/property-panel.service'
 
     // Runes props - 使用 $props 代替 export let
     // 新增 showToolbar，用于控制是否显示顶部工具栏，默认为 true
@@ -32,9 +33,16 @@
 
     // 当前选中节点 id，响应式刷新
     const currentId = $derived.by(() => getSelectedId())
+    // 是否锁定
+    const isLocked = $derived.by(() => {
+        const id = getSelectedId()
+        if (!id) return false
+        const node = getFullNode(id)
+        return node?.locked ?? false
+    })
 </script>
 
-<div class="panel">
+<div class="panel {isLocked ? 'locked' : ''}">
     <!-- 内容区域 -->
     <div class="body">
         {#if activeTab === 'attr'}
@@ -74,5 +82,10 @@
         flex: 1;
         overflow: auto;
         padding: 0;
+    }
+
+    .panel.locked .body {
+        pointer-events: none;
+        opacity: 0.6;
     }
 </style>
