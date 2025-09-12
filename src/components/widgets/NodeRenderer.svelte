@@ -260,7 +260,7 @@
                 visibility = 'display:none !important;'
             }
         }
-        const hiddenStyle = node.hidden ? 'display:none !important;' : ''
+        const hiddenStyle = node.hidden || (node.attributes as any)?.['cut-mark'] ? 'display:none !important;' : ''
 
         const defaultStyles = `${outlineStyles}; ${hiddenStyle} ${visibility}`
         const result = styleStr ? `${styleStr}; ${defaultStyles}` : defaultStyles

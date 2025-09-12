@@ -454,17 +454,20 @@ export function reorderChildren(parentId: string, orderedChildIds: string[] | Do
 }
 
 /**
- * 将节点移动到新的父节点（兼容旧 API 名称）
- * @param nodeId 要移动的节点 ID
- * @param newParentId 新的父节点 ID
+ * 将节点从当前父节点移动到新父节点下
+ * @param nodeId 要移动的节点ID
+ * @param newParentId 新父节点ID
  * @returns 是否移动成功
  */
 export async function moveNode(nodeId: string, newParentId: string): Promise<boolean> {
-  if (nodeId === 'root' || newParentId === 'root' || nodeId === newParentId) return false;
+  if (nodeId === 'root' || nodeId === newParentId) return false; // 仍禁止把根节点本身移动，或移动到自身
+  // ✅ 允许 newParentId === 'root'，不再拦截
+
   const movingNode = findNodeById(domTreeData, nodeId);
   const newParent = findNodeById(domTreeData, newParentId);
   if (!movingNode || !newParent) return false;
-  // 防止将节点移动到其子孙节点内部，导致循环
+
+  // 防止把节点移动到其子孙节点内部，导致循环
   if (isDescendant(movingNode, newParentId)) return false;
 
   // 从旧父节点移除（不释放资源，不影响计数）
@@ -479,7 +482,10 @@ export async function moveNode(nodeId: string, newParentId: string): Promise<boo
   }
   newParent.children.push(movingNode);
 
-  // 递增版本号并自动保存
+  // ✅ 更新节点的 parentId，根节点用 'root'
+  (movingNode as any).parentId = newParentId;
+
+  // 递增版本号并自动保存（立即写库，保证 parentId 持久化）
   bumpDomTreeVersion();
   autoSaveToDomsTable();
   return true;
@@ -762,6 +768,9 @@ let clipboardNode: DomNode | null = null;
 // 标记当前剪贴板内容是否来自剪切操作
 let clipboardIsCut = false;
 
+// 记录最近一次被标记为“待剪切”的节点 id
+let lastCutId: string | null = null;
+
 /**
  * 复制当前选中节点及其子树到剪贴板
  */
@@ -776,79 +785,117 @@ export function copySelectedNode(): boolean {
 }
 
 /**
- * 剪切当前选中节点：复制到剪贴板并删除原节点
+ * 剪切当前选中节点：给当前节点及其所有子节点打 cut-mark 并隐藏
+ * 二次 Ctrl+X 时会真正删除上一次被标记的整棵子树
  */
 export async function cutSelectedNode(): Promise<boolean> {
   if (!selectedNodeId || selectedNodeId === 'root') return false;
-  const node = findNodeById(domTreeData, selectedNodeId);
-  if (!node) return false;
-  const deleted = await removeNodeById(selectedNodeId);
-  if (!deleted) return false;
-  clipboardNode = deepCopyNode(node);
-  clipboardIsCut = true;
-  console.log('已剪切节点:', clipboardNode!.id);
+
+  // 如果有上一次被标记的子树，先真正删除整棵树
+  if (lastCutId && lastCutId !== selectedNodeId) {
+    await removeNodeById(lastCutId);
+    lastCutId = null;
+  }
+
+  const root = findNodeById(domTreeData, selectedNodeId);
+  if (!root) return false;
+
+  // 递归给当前节点及其所有子节点打 cut-mark 并隐藏
+  function markTree(node: DomNode) {
+    node.attributes = { ...(node.attributes ?? {}), 'cut-mark': true } as any;
+    node.hidden = true;
+    if (node.children) {
+      node.children.forEach(markTree);
+    }
+  }
+  markTree(root);
+
+  lastCutId = selectedNodeId;
+  bumpDomTreeVersion();
+  console.log('已标记子树为待剪切:', selectedNodeId);
   return true;
 }
 
 /**
- * 递归克隆节点并为每一层生成新的 ID，同时收集背景图哈希
- */
-function cloneNodeWithNewIds(node: DomNode, hashes: string[] = []): DomNode {
-  const newId = globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
-  const clonedOriginal = deepCopyNode(node);
-  const cloned: DomNode = { ...clonedOriginal, id: newId };
-  // 同步更新 attributes 中的 "data-name"
-  const originalAttrName = (clonedOriginal.attributes as any)?.['data-name'] as string | undefined;
-  if (originalAttrName) {
-    cloned.attributes = { ...(cloned.attributes ?? {}), 'data-name': generateUniqueDataName(originalAttrName) } as any;
-  }
-  const bg = (cloned.styles as any)?.backgroundImage;
-  if (typeof bg === 'string' && hashRegex.test(bg.trim())) {
-    hashes.push(bg.trim());
-  }
-  if (cloned.children?.length) {
-    cloned.children = cloned.children.map((c) => cloneNodeWithNewIds(c, hashes));
-  }
-  return cloned;
-}
-
-/**
  * 将剪贴板中的节点粘贴到当前选中节点（作为其子节点）
+ * 如果有 cut-mark 标记的子树，则整棵子树一起移动并清除所有标记
  */
 export async function pasteNodeToSelectedParent(toParent: boolean = false, selectAfterPaste: boolean = false): Promise<string | null> {
+  // 如果有被标记的子树，优先处理整棵树移动
+  if (lastCutId) {
+    const cutRoot = findNodeById(domTreeData, lastCutId);
+    if (!cutRoot) {
+      lastCutId = null;
+      return null;
+    }
+
+    let targetParentId: string = selectedNodeId || 'root';
+    if (toParent) {
+      if (selectedNodeId && selectedNodeId !== 'root') {
+        const parentNode = findParentById(domTreeData, selectedNodeId);
+        targetParentId = parentNode?.id ?? 'root';
+      }
+    }
+
+    // 递归清除整棵子树的 cut-mark 并恢复显示
+    function unmarkTree(node: DomNode) {
+      if (node.attributes) {
+        delete (node.attributes as any)['cut-mark'];
+      }
+      node.hidden = false;
+      if (node.children) {
+        node.children.forEach(unmarkTree);
+      }
+    }
+    unmarkTree(cutRoot);
+
+    // 整棵子树一起移动
+    const moved = await moveNode(lastCutId, targetParentId);
+    if (moved && selectAfterPaste) {
+      await setSelectedId(lastCutId);
+    }
+
+    lastCutId = null;
+    bumpDomTreeVersion();
+    console.log('已移动子树:', lastCutId, '到:', targetParentId);
+    return moved ? lastCutId : null;
+  }
+
+  // 原有的剪贴板逻辑（复制/剪切）保持不变
   if (!clipboardNode) {
     console.warn('剪贴板为空，无法粘贴');
     return null;
   }
+
   let targetParentId: string = selectedNodeId || 'root';
   if (toParent) {
-    // 指定粘贴到父容器
     if (selectedNodeId && selectedNodeId !== 'root') {
       const parentNode = findParentById(domTreeData, selectedNodeId);
       targetParentId = parentNode?.id ?? 'root';
     }
   }
+
   let nodeToPaste: DomNode;
   let hashes: string[] = [];
   if (clipboardIsCut) {
-    // 剪切操作：直接使用原节点，不修改 data-name
     nodeToPaste = deepCopyNode(clipboardNode);
   } else {
-    // 复制操作：克隆并生成新 ID / data-name
     hashes = [];
     nodeToPaste = cloneNodeWithNewIds(clipboardNode, hashes);
   }
-  const added = addNodeToParent(targetParentId, nodeToPaste);
+
+  const added = await addNodeToParent(targetParentId, nodeToPaste);
   if (added && selectAfterPaste) {
     await setSelectedId(nodeToPaste.id);
   }
+
   if (!clipboardIsCut && added && currentProjectId) {
     for (const h of hashes) {
       const img = await getImage(currentProjectId, h);
       if (img) await addOrIncrement(img, 1);
     }
   }
-  // 粘贴完成后，重置剪切标记（保持剪贴板内容）
+
   clipboardIsCut = false;
   console.log('已粘贴节点到:', targetParentId);
   return added ? nodeToPaste.id : null;
@@ -896,4 +943,26 @@ export const currentPage = writable<string | null>(null)
 export function setCurrentPage(id: string | null) {
   currentPageId = id
   currentPage.set(id)
+}
+
+/**
+ * 递归克隆节点并为每一层生成新的 ID，同时收集背景图哈希
+ */
+function cloneNodeWithNewIds(node: DomNode, hashes: string[] = []): DomNode {
+  const newId = globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+  const clonedOriginal = deepCopyNode(node);
+  const cloned: DomNode = { ...clonedOriginal, id: newId };
+  // 同步更新 attributes 中的 "data-name"
+  const originalAttrName = (clonedOriginal.attributes as any)?.['data-name'] as string | undefined;
+  if (originalAttrName) {
+    cloned.attributes = { ...(cloned.attributes ?? {}), 'data-name': generateUniqueDataName(originalAttrName) } as any;
+  }
+  const bg = (cloned.styles as any)?.backgroundImage;
+  if (typeof bg === 'string' && hashRegex.test(bg.trim())) {
+    hashes.push(bg.trim());
+  }
+  if (cloned.children?.length) {
+    cloned.children = cloned.children.map((c) => cloneNodeWithNewIds(c, hashes));
+  }
+  return cloned;
 }
