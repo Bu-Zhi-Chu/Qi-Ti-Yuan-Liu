@@ -54,33 +54,14 @@
 
     // 派生属性描述数组
     type PropEntry = { key: string; label: string; type: string; options?: any[]; min?: number; max?: number; default?: any }
-    // 修改 propEntries，若为导航按钮，则动态加入 targetPageId 字段
+    // 属性描述数组
     const propEntries: () => PropEntry[] = $derived(() => {
         const fp = featureProps()
         if (!fp) return []
 
-        // 初始列表（过滤 defaultHome 与 targetPageId，稍后按条件追加）
-        const base: PropEntry[] = Object.entries(fp)
-            .filter(([k]) => k !== 'defaultHome' && k !== 'targetPageId')
-            .map(([key, cfg]: [string, any]) => ({ key, ...cfg }))
+        // 返回所有属性，不再过滤导航相关属性
+        const base: PropEntry[] = Object.entries(fp).map(([key, cfg]: [string, any]) => ({ key, ...cfg }))
 
-        // 仅在导航按钮类型下显示 defaultHome 与 targetPageId
-        if (currentValues['buttonType'] === 'navigate') {
-            // 1. defaultHome 在前
-            if ('defaultHome' in fp) {
-                base.push({ key: 'defaultHome', ...(fp as any)['defaultHome'] })
-            }
-            // 2. targetPageId 在后
-            // 收集所有 Screen 节点，生成下拉选项
-            function collectScreens(node: any, arr: any[]) {
-                if (node.componentType === 'Screen') arr.push(node)
-                node.children?.forEach((c: any) => collectScreens(c, arr))
-            }
-            const screens: any[] = []
-            collectScreens(domTree, screens)
-            const options = screens.map((s) => ({ value: s.id, label: (s.attributes as any)?.['data-name'] || s.id }))
-            base.push({ key: 'targetPageId', label: '目标页面', type: 'select', options })
-        }
         return base
     })
 
@@ -129,53 +110,6 @@
         } else {
             updateNodeProps(selectedId, { attributes: { [key]: value } })
 
-            // 新增逻辑：导航按钮自动创建 Screen 页面并写入 targetPageId
-            if (key === 'buttonType') {
-                if (value === 'navigate') {
-                    // 不再自动创建页面，由用户在目标页面下拉框中手动选择
-                    if (!('targetPageId' in currentValues)) {
-                        currentValues['targetPageId'] = ''
-                        updateNodeProps(selectedId, { attributes: { targetPageId: '' } })
-                    }
-                } else {
-                    // 非导航类型：删除关联页面并清理 targetPageId
-                    const targetIdToDelete = currentValues['targetPageId']
-                    if (targetIdToDelete) {
-                        removeNodeById(targetIdToDelete)
-                    }
-                    currentValues['targetPageId'] = ''
-                    updateNodeProps(selectedId, { attributes: { targetPageId: '' } })
-                }
-            }
-
-            // 新增逻辑：指定首页唯一性，开启时关闭同父下其他按钮的 defaultHome
-            if (key === 'defaultHome' && (value === true || value === 'true')) {
-                const node = getFullNode(selectedId)
-                console.log('[defaultHome] toggled ON for', selectedId, node)
-                let parentNode: any = null
-                if (node) {
-                    if (node.parentId) {
-                        parentNode = getFullNode(node.parentId)
-                    }
-                    if (!parentNode) {
-                        // 兼容旧数据：回溯查找父节点
-                        parentNode = findParentById(domTree, node.id)
-                    }
-                }
-                console.log('[defaultHome] parentNode', parentNode)
-                if (parentNode && parentNode.children?.length) {
-                    for (const sibling of parentNode.children) {
-                        console.log('[defaultHome] inspect sibling', sibling.id, sibling.attributes?.defaultHome)
-                        if (sibling.id !== selectedId && (sibling.componentType === 'Button' || (sibling.attributes as any)?.type === 'Button')) {
-                            if (sibling.attributes?.defaultHome) {
-                                console.log('[defaultHome] turning off sibling', sibling.id)
-                                updateNodeProps(sibling.id, { attributes: { defaultHome: undefined } })
-                            }
-                        }
-                    }
-                }
-            }
-
             // 额外逻辑：ButtonGroup 按钮数量同步
             if (key === 'buttonCount') {
                 editingButtonCount = true
@@ -198,8 +132,6 @@
                         if (node.children && node.children.length) {
                             baseStyles = { ...(node.children[0].styles || {}) }
                             baseAttrs = { ...(node.children[0].attributes || {}) }
-                            // 复制时若存在导航目标，应清除，避免多个按钮指向同一页面
-                            if ('targetPageId' in baseAttrs) delete baseAttrs['targetPageId']
                             baseChildren = JSON.parse(JSON.stringify(node.children[0].children || []))
                         } else {
                             const buttonMeta = (blocksConfig as any[]).find((b) => b.type === 'Button') as any

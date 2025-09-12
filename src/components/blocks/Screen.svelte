@@ -10,6 +10,7 @@
     }
     export let id: string = crypto.randomUUID()
     export let keepMounted: boolean | string = true
+
     // 转成布尔
     $: keepMountedBool = typeof keepMounted === 'string' ? keepMounted !== 'false' : !!keepMounted
     $: isVisible = $currentPage === id || !$currentPage
@@ -27,7 +28,7 @@
 </script>
 
 {#if keepMountedBool || isVisible}
-    <div {id} {...$$restProps} class="screen {hiddenClass}" style:apply={mergedStyles as any}>
+    <div {id} {...$$restProps} class={`screen ${hiddenClass}`} class:use-pseudo-bg={(($$restProps as any).class ?? '').includes('use-pseudo-bg')} style:apply={mergedStyles as any}>
         <slot></slot>
     </div>
 {/if}

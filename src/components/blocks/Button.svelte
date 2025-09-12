@@ -23,17 +23,19 @@
         highlightImage?: string
         hoverEffect?: string
         buttonType?: string
-        targetPageId?: string
-        defaultHome?: boolean
         style?: string
         children?: any
         [key: string]: any
     }
 
-    let { id = crypto.randomUUID(), text = '按钮', textContent, disabled = false, enableClick = false, textOffsetLeft = '0px', textOffsetTop = '0px', highlightImage = '', hoverEffect = '', buttonType = '', targetPageId = '', defaultHome = false, style = '', children, ...rest } = $props() as Props
+    let { id = crypto.randomUUID(), text = '按钮', textContent, disabled = false, enableClick = false, textOffsetLeft = '0px', textOffsetTop = '0px', highlightImage = '', hoverEffect = '', buttonType = '', style = '', children, ...rest } = $props() as Props
+
+    // 提取外部传入的 class（如 use-pseudo-bg），保持响应式
+    const externalClass = $derived(() => (rest as any)?.class ?? '')
+    delete rest.class
 
     const isHighlighted = $derived(() => {
-        return buttonType === 'navigate' && targetPageId && $currentPage === targetPageId
+        return false
     })
 
     const mergedStyle = $derived(() => {
@@ -44,9 +46,6 @@
     /** 点击事件，默认输出日志 */
     function handleClick() {
         console.log(`Button(${id}) clicked`)
-        if (buttonType === 'navigate' && targetPageId) {
-            currentPage.set(targetPageId)
-        }
     }
     /** 键盘事件：回车或空格等价点击 */
     function handleKey(e: KeyboardEvent) {
@@ -56,14 +55,11 @@
         }
     }
     onMount(() => {
-        const homeFlag = typeof defaultHome === 'string' ? defaultHome !== 'false' : !!defaultHome
-        if (homeFlag && buttonType === 'navigate' && targetPageId && $currentPage == null) {
-            setCurrentPage(targetPageId)
-        }
+        // 导航相关逻辑已移除
     })
 </script>
 
-<ResponsiveBox {id} {...rest} class="btn {hoverEffect}" {disabled} style={mergedStyle()}>
+<ResponsiveBox {id} {...rest} class={`btn ${hoverEffect} ${externalClass()}`} {disabled} style={mergedStyle()}>
     <div class="full-size" role="button" tabindex={enableClick ? 0 : undefined} onclick={enableClick ? handleClick : undefined} onkeydown={enableClick ? handleKey : undefined}>
         <span style="margin-left: calc({textOffsetLeft} * var(--scale-ratio, 1)); margin-top: calc({textOffsetTop} * var(--scale-ratio, 1));">
             {#if children}

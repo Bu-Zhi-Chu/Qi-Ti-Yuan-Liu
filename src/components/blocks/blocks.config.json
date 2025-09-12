@@ -149,11 +149,6 @@
                 "label": "高亮图片",
                 "type": "image"
             },
-            "defaultHome": {
-                "label": "默认首页",
-                "type": "switch",
-                "default": false
-            },
             "hoverEffect": {
                 "label": "悬浮效果",
                 "type": "select",
@@ -177,15 +172,15 @@
                 "type": "select",
                 "options": [
                     {
-                        "value": "switch",
-                        "label": "开关"
-                    },
-                    {
                         "value": "trigger",
                         "label": "触发"
                     },
                     {
-                        "value": "navigate",
+                        "value": "switch",
+                        "label": "开关"
+                    },
+                    {
+                        "value": "navigation",
                         "label": "导航"
                     }
                 ]
