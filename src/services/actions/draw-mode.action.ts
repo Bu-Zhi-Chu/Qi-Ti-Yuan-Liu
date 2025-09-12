@@ -188,8 +188,8 @@ const drawModeAction: Action<HTMLElement, DrawModeOptions> = (node, opts) => {
     function isSelectedNodeLocked(): boolean {
       const id = selectedId()
       if (!id) return false
-      const node = findNodeById(domTree, id)
-      return node?.locked === true
+      const target = findNodeById(domTree, id)
+      return target ? (target.selfLocked ?? false) || (target.inheritedLocked ?? false) : false
     }
 
     // 键盘状态标记

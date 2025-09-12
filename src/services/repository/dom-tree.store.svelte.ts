@@ -90,10 +90,13 @@ async function loadDomNodesFromDomsTable(projectId: string): Promise<DomNode | n
       const attributes = nodeData.attributes || {};
       const componentType = attributes.type ?? nodeData.componentType ?? 'SimpleBox';
       const textContent = attributes.textContent ?? nodeData.textContent ?? '';
-      const isLocked = attributes.locked === true; // 新增：读取锁定状态
+      const selfLocked = attributes.selfLocked ?? (attributes.locked === true);
+      const inheritedLocked = attributes.inheritedLocked ?? false;
       delete attributes.type;
       delete attributes.textContent;
-      delete attributes.locked; // 移除防止污染 attributes
+      delete attributes.locked;
+      delete attributes.selfLocked;
+      delete attributes.inheritedLocked;
 
       const node: DomNode = {
         id: nodeData.id,
@@ -103,7 +106,9 @@ async function loadDomNodesFromDomsTable(projectId: string): Promise<DomNode | n
         textContent: textContent,
         expanded: nodeData.attributes?.expanded !== false,
         hidden: nodeData.attributes?.hidden || false,
-        locked: isLocked, // 新增：写入锁定状态
+        selfLocked: selfLocked,
+        inheritedLocked: inheritedLocked,
+        locked: selfLocked || inheritedLocked,
         children: []
       } as DomNode & { order?: number };
       (node as any).order = nodeData.order ?? 0;
@@ -454,8 +459,30 @@ export function reorderChildren(parentId: string, orderedChildIds: string[] | Do
  * @param newParentId 新的父节点 ID
  * @returns 是否移动成功
  */
-export async function moveNodeToParent(nodeId: string, newParentId: string): Promise<boolean> {
-  return moveNode(nodeId, newParentId);
+export async function moveNode(nodeId: string, newParentId: string): Promise<boolean> {
+  if (nodeId === 'root' || newParentId === 'root' || nodeId === newParentId) return false;
+  const movingNode = findNodeById(domTreeData, nodeId);
+  const newParent = findNodeById(domTreeData, newParentId);
+  if (!movingNode || !newParent) return false;
+  // 防止将节点移动到其子孙节点内部，导致循环
+  if (isDescendant(movingNode, newParentId)) return false;
+
+  // 从旧父节点移除（不释放资源，不影响计数）
+  const oldParent = findParentById(domTreeData, nodeId);
+  if (oldParent && oldParent.children) {
+    oldParent.children = oldParent.children.filter(c => c.id !== nodeId);
+  }
+
+  // 添加到新父节点末尾
+  if (!newParent.children) {
+    newParent.children = [];
+  }
+  newParent.children.push(movingNode);
+
+  // 递增版本号并自动保存
+  bumpDomTreeVersion();
+  autoSaveToDomsTable();
+  return true;
 }
 
 /**
@@ -492,7 +519,24 @@ export function toggleHidden(nodeId: string): boolean {
 }
 
 /**
- * 切换节点锁定状态
+ * 递归刷新 inheritedLocked / locked 状态
+ */
+function refreshLockStates(node: DomNode, inheritedFlag: boolean = false): void {
+  // 节点的继承锁定：如果祖先或父级被锁定且自身未自锁
+  node.inheritedLocked = inheritedFlag && !node.selfLocked;
+  // 兼容旧代码：locked = selfLocked || inheritedLocked
+  node.locked = (node.selfLocked ?? false) || (node.inheritedLocked ?? false);
+  // 递归子节点
+  if (node.children) {
+    const nextInherited = inheritedFlag || (node.selfLocked ?? false);
+    for (const child of node.children) {
+      refreshLockStates(child, nextInherited);
+    }
+  }
+}
+
+/**
+ * 切换节点锁定状态（针对 selfLocked ）
  * @param nodeId 节点ID
  * @returns 是否切换成功
  */
@@ -500,7 +544,9 @@ export function toggleLocked(nodeId: string): boolean {
   if (nodeId === 'root') return false; // 根节点不可锁定
   const node = findNodeById(domTreeData, nodeId);
   if (node) {
-    node.locked = !node.locked;
+    node.selfLocked = !(node.selfLocked ?? false);
+    // 更新整个树的继承锁定状态
+    refreshLockStates(domTreeData, false);
     autoSaveToDomsTable();
     return true;
   }
@@ -508,32 +554,10 @@ export function toggleLocked(nodeId: string): boolean {
 }
 
 /**
- * 移动节点到新的父节点
- * @param nodeId 要移动的节点ID
- * @param newParentId 新父节点ID
- * @returns 是否移动成功
- */
-export async function moveNode(nodeId: string, newParentId: string): Promise<boolean> {
-  if (nodeId === 'root' || nodeId === newParentId) return false;
-  const node = findNodeById(domTreeData, nodeId);
-  if (!node) return false;
-  const removed = await removeNodeByIdForMove(nodeId);
-  if (!removed) return false;
-  const added = addNodeToParent(newParentId, node);
-  if (added) autoSaveToDomsTable();
-  return added;
-}
-
-/**
- * 从父节点移除指定节点（拖拽移动专用，不释放图片引用计数）
- * @param nodeId 要移除的节点ID
- * @returns 是否移除成功
- */
-/**
  * 判断节点本身或其子孙是否存在 locked=true
  */
 function hasLocked(node: DomNode): boolean {
-  if (node.locked) return true;
+  if ((node.selfLocked ?? false) || (node.inheritedLocked ?? false)) return true;
   if (node.children) {
     for (const child of node.children) {
       if (hasLocked(child)) return true;

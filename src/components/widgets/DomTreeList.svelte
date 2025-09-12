@@ -213,10 +213,10 @@
         `
 
         const deleteIconSvg =
-             level === 0
-                 ? ''
-                 : containsLocked(node)
-                   ? `
+            level === 0
+                ? ''
+                : containsLocked(node)
+                  ? `
            <svg class="icon action-btn delete-btn placeholder" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="visibility:hidden; pointer-events:none;">
              <path d="M3 6h18"></path>
              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -224,7 +224,7 @@
              <path d="M14 11v6"></path>
            </svg>
          `
-                   : `
+                  : `
            <svg class="icon action-btn delete-btn" data-action="delete-node" id="${nodeKey}" title="删除元素" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
              <path d="M3 6h18"></path>
              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -405,8 +405,8 @@
         border-radius: calc(4px * var(--scale-ratio, 1));
     }
 
-    :global(.node-id.locked){
-        color:#60a5fa;
+    :global(.node-id.locked) {
+        color: #60a5fa;
     }
 
     :global(.node-id:hover) {

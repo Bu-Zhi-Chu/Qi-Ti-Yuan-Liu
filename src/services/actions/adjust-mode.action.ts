@@ -320,8 +320,8 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
   function isSelectedNodeLocked(): boolean {
     const id = selectedNodeAccessor()
     if (!id) return false
-    const node = findNodeById(domTree, id)
-    return node?.locked === true
+    const target = findNodeById(domTree, id)
+    return target ? (target.selfLocked ?? false) || (target.inheritedLocked ?? false) : false
   }
 
   // 在调整模式下阻止点击选中

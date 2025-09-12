@@ -32,4 +32,8 @@ export interface DomNode {
   hidden?: boolean
   /** 是否锁定（锁定后属性面板只读） */
   locked?: boolean
+  /** 自身锁定：独立于父级 */
+  selfLocked?: boolean
+  /** 继承锁定：由父级传递 */
+  inheritedLocked?: boolean
 }
