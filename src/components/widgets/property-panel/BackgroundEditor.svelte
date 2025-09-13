@@ -28,7 +28,7 @@
     import PropertyRow from './PropertyRow.svelte'
     import PropertySelect from './PropertySelect.svelte'
     import SizeInput from './SizeInput.svelte'
-import NativeRange from './NativeRange.svelte'
+    import NativeRange from './NativeRange.svelte'
     import Icon from '../Icon.svelte'
     import { hashBlob, convertTo, canDecode } from '../../../services/image/image-utils'
     import { getImage, addOrIncrement } from '../../../services/database/image-store.service'
@@ -951,6 +951,20 @@ import NativeRange from './NativeRange.svelte'
                 </PropertyRow>
             {/if}
 
+            <!-- 背景透明 -->
+            <PropertyRow label="背景透明">
+                <NativeRange
+                    value={backgroundOpacity}
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    onChange={(v) => {
+                        backgroundOpacity = v
+                        updateBackgroundStyles()
+                    }}
+                />
+            </PropertyRow>
+
             <!-- 背景尺寸 -->
             <PropertyRow label="背景宽度">
                 <SizeInput
@@ -1035,20 +1049,6 @@ import NativeRange from './NativeRange.svelte'
                     }}
                 />
                 <button class="unit-toggle" onclick={addGradientColor} title="添加渐变颜色" style="background: rgba(34, 197, 94, 0.2); color: #4ade80;" disabled={gradientColors.length >= 2}>+</button>
-            </PropertyRow>
-
-            <!-- 背景透明 -->
-            <PropertyRow label="背景透明">
-                <NativeRange
-                    value={backgroundOpacity}
-                    min={0}
-                    max={1}
-                    step={0.05}
-                    onChange={(v) => {
-                        backgroundOpacity = v
-                        updateBackgroundStyles()
-                    }}
-                />
             </PropertyRow>
 
             <!-- 渐变颜色选择器 -->
