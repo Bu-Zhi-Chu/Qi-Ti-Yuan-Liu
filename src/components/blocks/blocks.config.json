@@ -3,7 +3,7 @@
         "type": "SimpleBox",
         "nameZh": "简单容器",
         "path": "../blocks/SimpleBox.svelte",
-        "preview": "/previews/SimpleBox.svg",
+        "preview": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSczMicgaGVpZ2h0PSczMic+PHJlY3QgeD0nNCcgeT0nNCcgd2lkdGg9JzI0JyBoZWlnaHQ9JzI0JyBmaWxsPSdub25lJyBzdHJva2U9JyM0YWRlODAnIHN0cm9rZS13aWR0aD0nMicgcng9JzInLz48bGluZSB4MT0nNCcgeTE9JzEyJyB4Mj0nMjgnIHkyPScxMicgc3Ryb2tlPScjNGFkZTgwJyBzdHJva2Utd2lkdGg9JzEnLz48bGluZSB4MT0nMTYnIHkxPSc0JyB4Mj0nMTYnIHkyPScyOCcgc3Ryb2tlPScjNGFkZTgwJyBzdHJva2Utd2lkdGg9JzEnLz48L3N2Zz4=",
         "showFeatureTab": false,
         "presetStyles": {
             "display": "flex",
@@ -18,7 +18,7 @@
         "type": "Screen",
         "nameZh": "页面容器",
         "path": "../blocks/Screen.svelte",
-        "preview": "/previews/Screen.svg",
+        "preview": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSczMicgaGVpZ2h0PSczMic+PHJlY3QgeD0nMicgeT0nNCcgd2lkdGg9JzI4JyBoZWlnaHQ9JzI0JyBmaWxsPSdub25lJyBzdHJva2U9JyMzOGJkZjgnIHN0cm9rZS13aWR0aD0nMicgcng9JzInLz48cmVjdCB4PScyJyB5PSc0JyB3aWR0aD0nMjgnIGhlaWdodD0nNicgZmlsbD0nIzM4YmRmOCcgcng9JzInLz48Y2lyY2xlIGN4PSc2JyBjeT0nNycgcj0nMScgZmlsbD0nIzBmMTcyYScvPjxjaXJjbGUgY3g9JzEwJyBjeT0nNycgcj0nMScgZmlsbD0nIzBmMTcyYScvPjxjaXJjbGUgY3g9JzE0JyBjeT0nNycgcj0nMScgZmlsbD0nIzBmMTcyYScvPjwvc3ZnPg==",
         "showFeatureTab": true,
         "presetStyles": {
             "width": "100%",
@@ -38,7 +38,7 @@
         "type": "RealTimeClock",
         "nameZh": "实时时间",
         "path": "../blocks/RealTimeClock.svelte",
-        "preview": "/previews/RealTimeClock.svg",
+        "preview": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSczMicgaGVpZ2h0PSczMic+PGNpcmNsZSBjeD0nMTYnIGN5PScxNicgcj0nMTInIGZpbGw9JyNmYWNjMTUnIHN0cm9rZT0nI2I0NTMwOScgc3Ryb2tlLXdpZHRoPScyJy8+PGxpbmUgeDE9JzE2JyB5MT0nMTYnIHgyPScxNicgeTI9JzgnIHN0cm9rZT0nI2I0NTMwOScgc3Ryb2tlLXdpZHRoPScyJy8+PGxpbmUgeDE9JzE2JyB5MT0nMTYnIHgyPScyMicgeTI9JzE2JyBzdHJva2U9JyNiNDUzMDknIHN0cm9rZS13aWR0aD0nMicvPjxjaXJjbGUgY3g9JzE2JyBjeT0nMTYnIHI9JzEuNScgZmlsbD0nI2I0NTMwOScvPjwvc3ZnPg==",
         "showFeatureTab": true,
         "hideTextContent": true,
         "presetStyles": {
@@ -89,7 +89,7 @@
         "type": "ButtonGroup",
         "nameZh": "按钮组",
         "path": "../blocks/ButtonGroup.svelte",
-        "preview": "/previews/ButtonGroup.svg",
+        "preview": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSczMicgaGVpZ2h0PSczMic+PHJlY3QgeD0nMicgeT0nMTAnIHdpZHRoPSc4JyBoZWlnaHQ9JzEyJyBmaWxsPScjM2I4MmY2JyByeD0nMicvPjxyZWN0IHg9JzEyJyB5PScxMCcgd2lkdGg9JzgnIGhlaWdodD0nMTInIGZpbGw9JyMzYjgyZjYnIHJ4PScyJy8+PHJlY3QgeD0nMjInIHk9JzEwJyB3aWR0aD0nOCcgaGVpZ2h0PScxMicgZmlsbD0nIzNiODJmNicgcng9JzInLz48L3N2Zz4=",
         "showFeatureTab": true,
         "presetStyles": {
             "width": "70%",
@@ -114,7 +114,7 @@
         "type": "Button",
         "nameZh": "按钮",
         "path": "../blocks/Button.svelte",
-        "preview": "/previews/Button.svg",
+        "preview": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSczMicgaGVpZ2h0PSczMic+PHJlY3QgeD0nNicgeT0nMTAnIHdpZHRoPScyMCcgaGVpZ2h0PScxMicgZmlsbD0nIzNiODJmNicgcng9JzMnLz48cG9seWdvbiBwb2ludHM9JzEyLDE0IDE2LDEwIDIwLDE0IDE2LDE4JyBmaWxsPSd3aGl0ZScvPjwvc3ZnPg==",
         "showFeatureTab": true,
         "presetStyles": {
             "display": "flex",
