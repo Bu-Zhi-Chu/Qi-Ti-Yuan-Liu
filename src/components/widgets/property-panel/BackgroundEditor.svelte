@@ -539,6 +539,8 @@
             const g = parseInt(backgroundColor.slice(3, 5), 16)
             const b = parseInt(backgroundColor.slice(5, 7), 16)
             styles.backgroundColor = `rgba(${r}, ${g}, ${b}, ${backgroundOpacity})`
+        // 存储背景透明度，供伪元素渲染使用
+        styles.backgroundOpacity = String(backgroundOpacity)
         } else {
             // 只有当用户明确清空背景颜色时才清空
             styles.backgroundColor = ''
@@ -1031,6 +1033,22 @@
                     }}
                 />
                 <button class="unit-toggle" onclick={addGradientColor} title="添加渐变颜色" style="background: rgba(34, 197, 94, 0.2); color: #4ade80;" disabled={gradientColors.length >= 2}>+</button>
+            </PropertyRow>
+
+            <!-- 背景透明 -->
+            <PropertyRow label="背景透明">
+                <input
+                    type="number"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    bind:value={backgroundOpacity}
+                    oninput={(e) => {
+                        const v = parseFloat(e.currentTarget.value)
+                        backgroundOpacity = isNaN(v) ? 1 : Math.max(0, Math.min(1, v))
+                        updateBackgroundStyles()
+                    }}
+                />
             </PropertyRow>
 
             <!-- 渐变颜色选择器 -->

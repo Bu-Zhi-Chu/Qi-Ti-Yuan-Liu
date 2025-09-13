@@ -93,4 +93,5 @@ input[type='search']::-moz-search-clear-button {
     background-size: var(--bg-size, cover);
     background-position: var(--bg-pos, center center);
     background-repeat: var(--bg-repeat, no-repeat);
+    opacity: var(--bg-opacity, 1);
 }

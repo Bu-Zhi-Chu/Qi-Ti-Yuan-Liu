@@ -200,6 +200,8 @@
                     propertyName = '--bg-pos'
                 } else if (k === 'backgroundRepeat') {
                     propertyName = '--bg-repeat'
+                } else if (k === 'backgroundOpacity') {
+                    propertyName = '--bg-opacity'
                 }
 
                 return `${propertyName}:${value}`

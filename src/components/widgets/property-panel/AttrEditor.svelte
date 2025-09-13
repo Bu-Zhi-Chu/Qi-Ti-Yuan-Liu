@@ -45,6 +45,16 @@
         { value: 'auto', label: '自动 (auto)' },
         { value: 'none', label: '禁止 (none)' }
     ]
+    // 新增：鼠标光标类型下拉框选项
+    const cursorOptions = [
+        { value: 'auto', label: '默认 (auto)' },
+        { value: 'default', label: '箭头 (default)' },
+        { value: 'pointer', label: '链接手型 (pointer)' },
+        { value: 'move', label: '移动 (move)' },
+        { value: 'text', label: '文本 (text)' },
+        { value: 'crosshair', label: '十字线 (crosshair)' },
+        { value: 'not-allowed', label: '禁止 (not-allowed)' }
+    ]
 
     onMount(() => {
         componentOptions = blocksConfig as BlockItem[]
@@ -74,6 +84,10 @@
 
     // 鼠标穿透相关变量
     let currentPointerEvents = $state<'auto' | 'none'>('auto')
+    // 新增：鼠标光标相关变量
+    let currentCursor = $state<string>('auto')
+    // 新增：透明度相关变量 (0~1)
+    let currentOpacity = $state<string>('1')
 
     // box-sizing 相关变量
     let currentBoxSizing = $state<'content-box' | 'border-box'>('border-box')
@@ -92,7 +106,11 @@
         height: '',
         pointerEvents: 'auto',
         overflow: 'hidden',
-        boxSizing: 'border-box'
+        boxSizing: 'border-box',
+        // 新增：记录光标类型
+        cursor: 'auto',
+        // 新增：记录透明度
+        opacity: '1'
     }
     $effect(() => {
         // 清理上一次订阅
@@ -112,6 +130,10 @@
                 const nextPointerEvents = (snapshot?.styles?.pointerEvents as 'auto' | 'none') || 'auto'
                 const nextOverflow = (snapshot?.styles?.overflow as 'hidden' | 'auto' | 'scroll' | 'visible') || 'hidden'
                 const nextBoxSizing = (snapshot?.styles?.boxSizing as 'content-box' | 'border-box') || 'border-box'
+                // 新增：同步 cursor
+                const nextCursor = (snapshot?.styles?.cursor as string) || 'auto'
+                // 新增：同步 opacity
+                const nextOpacity = snapshot?.styles?.opacity !== undefined ? String(snapshot.styles.opacity) : '1'
 
                 // 若为根节点，固定名称为"画布"
                 const finalName = isRoot ? '画布' : nextName
@@ -125,7 +147,11 @@
                     lastSynced.height === `${nextHeightValue}${nextHeightUnit}` &&
                     lastSynced.pointerEvents === nextPointerEvents &&
                     lastSynced.overflow === nextOverflow &&
-                    lastSynced.boxSizing === nextBoxSizing
+                    lastSynced.boxSizing === nextBoxSizing &&
+                    // 新增：比较 cursor
+                    lastSynced.cursor === nextCursor &&
+                    // 新增：比较 opacity
+                    lastSynced.opacity === nextOpacity
                 ) {
                     return
                 }
@@ -139,7 +165,11 @@
                     height: `${nextHeightValue}${nextHeightUnit}`,
                     pointerEvents: nextPointerEvents,
                     overflow: nextOverflow,
-                    boxSizing: nextBoxSizing
+                    boxSizing: nextBoxSizing,
+                    // 新增：更新 cursor
+                    cursor: nextCursor,
+                    // 新增：更新 opacity
+                    opacity: nextOpacity
                 }
 
                 // 同步基本属性
@@ -168,6 +198,10 @@
                 currentPointerEvents = nextPointerEvents
                 currentOverflow = nextOverflow
                 currentBoxSizing = nextBoxSizing
+                // 新增：同步光标
+                currentCursor = nextCursor
+                // 新增：同步透明度
+                currentOpacity = nextOpacity
             })
         } else {
             // 清空所有属性
@@ -181,6 +215,9 @@
             currentHeightValue = ''
             currentHeightUnit = '%'
             currentPointerEvents = 'auto'
+            currentCursor = 'auto'
+            // 新增：重置透明度
+            currentOpacity = '1'
         }
 
         return () => {
@@ -348,6 +385,23 @@
         currentBoxSizing = value as 'content-box' | 'border-box'
         updateNodeProps(selectedId, { styles: { boxSizing: value } })
     }
+    // 新增：处理 cursor 属性变更
+    function handleCursorChange(value: string) {
+        if (!selectedId) return
+        currentCursor = value
+        updateNodeProps(selectedId, { styles: { cursor: value } })
+    }
+    // 新增：处理透明度属性变更
+    function handleOpacityChange(value: string) {
+        if (!selectedId) return
+        // 限制 0~1
+        let num = parseFloat(value)
+        if (isNaN(num)) return
+        if (num < 0) num = 0
+        if (num > 1) num = 1
+        currentOpacity = String(num)
+        updateNodeProps(selectedId, { styles: { opacity: String(num) } })
+    }
 </script>
 
 <div class="attr-editor">
@@ -406,6 +460,14 @@
             <!-- 鼠标穿透（pointer-events） -->
             <PropertyRow label="鼠标穿透">
                 <PropertySelect bind:value={currentPointerEvents} options={pointerEventsOptions} change={handlePointerEventsChange} />
+            </PropertyRow>
+            <!-- 新增：鼠标光标（cursor） -->
+            <PropertyRow label="鼠标光标">
+                <PropertySelect bind:value={currentCursor} options={cursorOptions} change={handleCursorChange} />
+            </PropertyRow>
+            <!-- 新增：透明度（opacity） -->
+            <PropertyRow label="节点透明">
+                <input type="number" min="0" max="1" step="0.05" bind:value={currentOpacity} oninput={(e) => handleOpacityChange(e.currentTarget.value)} />
             </PropertyRow>
 
             <!-- 节点备注 -->
