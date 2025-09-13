@@ -283,6 +283,16 @@ let app: ReturnType<typeof mount> | undefined // 提前声明，供导出使用
 
 
                             console.log('【数据库交互】dexie-export-import导入完成')
+
+                            // 重置所有项目的 canvasState 为默认值，确保初始缩放一致
+                            try {
+                                await db.table('projects').toCollection().modify((proj: any) => {
+                                    proj.canvasState = { x: 0, y: 0, scale: 0.5 }
+                                })
+                                console.log('【数据库交互】已重置项目 canvasState 为默认值 (scale=0.5, x=0, y=0)')
+                            } catch (resetErr) {
+                                console.warn('【数据库交互】重置 canvasState 失败', resetErr)
+                            }
                         } else {
                             console.log(`【数据库交互】跳过导入 - JSON时间: ${jsonExportTime}, 数据库时间: ${dbExportTime || '无'}`)
                         }
