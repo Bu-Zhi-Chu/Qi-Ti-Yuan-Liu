@@ -11,6 +11,7 @@
     import PropertyRow from './PropertyRow.svelte'
     import PropertySelect from './PropertySelect.svelte'
     import SizeInput from './SizeInput.svelte'
+    import NativeRange from './NativeRange.svelte'
     import { updateNodeProperties } from '../../../services/repository/dom-tree.store.svelte'
     import blocksConfig from '../../blocks/blocks.config.json'
     import { addNodeToParent, removeNodeById, domTree } from '../../../services/repository/dom-tree.store.svelte'
@@ -87,7 +88,7 @@
     // 新增：鼠标光标相关变量
     let currentCursor = $state<string>('auto')
     // 新增：透明度相关变量 (0~1)
-    let currentOpacity = $state<string>('1')
+    let currentOpacity = $state<number>(1)
 
     // box-sizing 相关变量
     let currentBoxSizing = $state<'content-box' | 'border-box'>('border-box')
@@ -133,7 +134,7 @@
                 // 新增：同步 cursor
                 const nextCursor = (snapshot?.styles?.cursor as string) || 'auto'
                 // 新增：同步 opacity
-                const nextOpacity = snapshot?.styles?.opacity !== undefined ? String(snapshot.styles.opacity) : '1'
+                const nextOpacity = snapshot?.styles?.opacity !== undefined ? Number(snapshot.styles.opacity) : 1
 
                 // 若为根节点，固定名称为"画布"
                 const finalName = isRoot ? '画布' : nextName
@@ -151,7 +152,7 @@
                     // 新增：比较 cursor
                     lastSynced.cursor === nextCursor &&
                     // 新增：比较 opacity
-                    lastSynced.opacity === nextOpacity
+                    lastSynced.opacity === String(nextOpacity)
                 ) {
                     return
                 }
@@ -169,7 +170,7 @@
                     // 新增：更新 cursor
                     cursor: nextCursor,
                     // 新增：更新 opacity
-                    opacity: nextOpacity
+                    opacity: String(nextOpacity)
                 }
 
                 // 同步基本属性
@@ -217,7 +218,7 @@
             currentPointerEvents = 'auto'
             currentCursor = 'auto'
             // 新增：重置透明度
-            currentOpacity = '1'
+            currentOpacity = 1
         }
 
         return () => {
@@ -392,14 +393,9 @@
         updateNodeProps(selectedId, { styles: { cursor: value } })
     }
     // 新增：处理透明度属性变更
-    function handleOpacityChange(value: string) {
-        if (!selectedId) return
-        // 限制 0~1
-        let num = parseFloat(value)
-        if (isNaN(num)) return
-        if (num < 0) num = 0
-        if (num > 1) num = 1
-        currentOpacity = String(num)
+    function handleOpacityChange(value: number) {
+        const num = Math.max(0, Math.min(1, value))
+        currentOpacity = num
         updateNodeProps(selectedId, { styles: { opacity: String(num) } })
     }
 </script>
@@ -467,7 +463,7 @@
             </PropertyRow>
             <!-- 新增：透明度（opacity） -->
             <PropertyRow label="节点透明">
-                <input type="number" min="0" max="1" step="0.05" bind:value={currentOpacity} oninput={(e) => handleOpacityChange(e.currentTarget.value)} />
+                <NativeRange min={0} max={1} step={0.05} bind:value={currentOpacity} onChange={handleOpacityChange} />
             </PropertyRow>
 
             <!-- 节点备注 -->
@@ -540,5 +536,24 @@
     }
     textarea {
         min-height: calc(80px * var(--scale-ratio, 1));
+    }
+
+    :global(input[type='range']::-webkit-slider-thumb) {
+        -webkit-appearance: none;
+        width: calc(14px * var(--scale-ratio, 1));
+        height: calc(14px * var(--scale-ratio, 1));
+        border-radius: 50%;
+        background: #e2e8f0;
+        cursor: pointer;
+    }
+
+    :global(input[type='range']::-webkit-slider-thumb:hover) {
+        background: #ffffff;
+    }
+
+    :global(input[type='range']) {
+        -webkit-appearance: slider-horizontal !important;
+        -moz-appearance: slider-horizontal !important;
+        appearance: slider-horizontal !important;
     }
 </style>

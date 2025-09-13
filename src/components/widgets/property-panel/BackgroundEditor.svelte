@@ -28,6 +28,7 @@
     import PropertyRow from './PropertyRow.svelte'
     import PropertySelect from './PropertySelect.svelte'
     import SizeInput from './SizeInput.svelte'
+import NativeRange from './NativeRange.svelte'
     import Icon from '../Icon.svelte'
     import { hashBlob, convertTo, canDecode } from '../../../services/image/image-utils'
     import { getImage, addOrIncrement } from '../../../services/database/image-store.service'
@@ -61,7 +62,8 @@
     // 背景样式状态
     let backgroundImage = $state<string | Blob>('')
     let backgroundColor = $state<string>('')
-    let backgroundOpacity = $state<number>(1)
+    let backgroundOpacity = $state<number>(1) // 仅控制伪元素透明度
+    let backgroundColorAlpha = $state<number>(1) // 背景颜色 Alpha 通道
     let backgroundSizeX = $state<string>('100')
     let backgroundSizeY = $state<string>('100')
     let backgroundPositionX = $state<string>('50')
@@ -141,7 +143,7 @@
                     const b = parseInt(parts[2])
                     const a = parts.length > 3 ? parseFloat(parts[3]) : 1
                     backgroundColor = rgbToHex(r, g, b)
-                    backgroundOpacity = a
+                    backgroundColorAlpha = a
                 }
             } else if (/^#([0-9A-Fa-f]{6})$/.test(bgColorStyle)) {
                 backgroundColor = bgColorStyle
@@ -538,9 +540,9 @@
             const r = parseInt(backgroundColor.slice(1, 3), 16)
             const g = parseInt(backgroundColor.slice(3, 5), 16)
             const b = parseInt(backgroundColor.slice(5, 7), 16)
-            styles.backgroundColor = `rgba(${r}, ${g}, ${b}, ${backgroundOpacity})`
-        // 存储背景透明度，供伪元素渲染使用
-        styles.backgroundOpacity = String(backgroundOpacity)
+            styles.backgroundColor = `rgba(${r}, ${g}, ${b}, ${backgroundColorAlpha})`
+            // 存储背景透明度，供伪元素渲染使用
+            styles.backgroundOpacity = String(backgroundOpacity)
         } else {
             // 只有当用户明确清空背景颜色时才清空
             styles.backgroundColor = ''
@@ -705,7 +707,7 @@
     // 处理背景颜色变化
     function handleBackgroundColorChange(color: string, opacity: number) {
         backgroundColor = color
-        backgroundOpacity = opacity
+        backgroundColorAlpha = opacity
 
         // 如果渐变已启用，同步更新渐变中的第一个颜色
         if (gradientColors.length > 0) {
@@ -1022,7 +1024,7 @@
             <!-- 背景颜色 -->
             <PropertyRow label="背景颜色">
                 <ColorPicker
-                    value={hexToRgba(backgroundColor, backgroundOpacity)}
+                    value={hexToRgba(backgroundColor, backgroundColorAlpha)}
                     projectId={$projectId}
                     componentId={selectedId || 'default'}
                     onchange={(rgba: string) => {
@@ -1037,15 +1039,13 @@
 
             <!-- 背景透明 -->
             <PropertyRow label="背景透明">
-                <input
-                    type="number"
-                    min="0"
-                    max="1"
-                    step="0.05"
-                    bind:value={backgroundOpacity}
-                    oninput={(e) => {
-                        const v = parseFloat(e.currentTarget.value)
-                        backgroundOpacity = isNaN(v) ? 1 : Math.max(0, Math.min(1, v))
+                <NativeRange
+                    value={backgroundOpacity}
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    onChange={(v) => {
+                        backgroundOpacity = v
                         updateBackgroundStyles()
                     }}
                 />

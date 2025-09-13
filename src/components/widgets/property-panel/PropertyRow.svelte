@@ -90,6 +90,12 @@
 
     /* 焦点态 */
     :global(select:focus),
+    :global(input[type='range']) {
+        width: 100%;
+        user-select: auto;
+        -webkit-user-select: auto;
+    }
+
     :global(input:focus),
     :global(textarea:focus) {
         outline: none;
