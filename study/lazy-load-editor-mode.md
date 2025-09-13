@@ -34,8 +34,36 @@
 5. **持久化数据不受影响**
    - 数据仍存 `Dexie/IndexedDB`，懒加载不会影响读取；组件加载后正常读取即可。
 
-6. **预加载（可选）**
-   - 若预测用户即将进入编辑模式，可在空闲时 `import('../workspace/Workspace.svelte')` 以触发浏览器缓存，加速实际切换。
+6. **预加载（推荐）**
+   - 在空闲时间或高概率进入编辑模式前，提前拉取 chunk。
+   - 提供一个可复用的工具函数：
+
+     ```ts
+     // src/utils/preload-workspace.ts
+     export const preloadWorkspace = () => import('../components/pages/workspace/Workspace.svelte');
+     ```
+
+   - 在可能触发编辑的 UI 事件中调用，例如按钮 `mouseover`、`focus` 或路由守卫：
+
+     ```svelte
+     <!-- 首页某个进入编辑按钮 -->
+     <button on:mouseover={() => preloadWorkspace()} on:focus={() => preloadWorkspace()}>
+       开始编辑
+     </button>
+     ```
+
+   - 对于使用 `svelte-spa-router` 或自定义路由，可在路由切换前预加载：
+
+     ```ts
+     // routes.ts
+     import { preloadWorkspace } from '../utils/preload-workspace';
+
+     router.beforeEach((to) => {
+       if (to.name === 'workspace') preloadWorkspace();
+     });
+     ```
+
+   通过预加载，可将首次进入编辑模式的等待控制在 50–100 ms（HTTP 缓存命中时近乎零等待）。
 
 ---
 
