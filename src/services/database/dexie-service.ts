@@ -120,7 +120,11 @@ export default class DexieService {
                                 height: '100%',
                                 pointerEvents: 'auto',
                                 width: '100%',
-                                boxSizing: 'border-box'
+                                boxSizing: 'border-box',
+                                backgroundPositionX: '50%',
+                                backgroundPositionY: '50%',
+                                backgroundSizeX: '100%',
+                                backgroundSizeY: '100%'
                             }
                         }
                     ]

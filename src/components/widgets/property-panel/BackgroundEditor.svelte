@@ -249,16 +249,25 @@
         }
 
         // 背景尺寸 - 使用结构化存储格式
-        backgroundSizeX = getStringValue(styles.backgroundSizeX) || '100'
-        backgroundSizeY = getStringValue(styles.backgroundSizeY) || '100'
-        sizeUnitX = (getStringValue(styles.backgroundSizeUnitX) || '%') as 'px' | '%'
-        sizeUnitY = (getStringValue(styles.backgroundSizeUnitY) || '%') as 'px' | '%'
+
+        const sizeXStr = getStringValue(styles.backgroundSizeX) || '100%'
+        const sizeYStr = getStringValue(styles.backgroundSizeY) || '100%'
+        const matchSizeX = sizeXStr.match(/^(-?\d*\.?\d+)(px|%)$/)
+        const matchSizeY = sizeYStr.match(/^(-?\d*\.?\d+)(px|%)$/)
+        backgroundSizeX = matchSizeX ? matchSizeX[1] : '100'
+        sizeUnitX = matchSizeX ? (matchSizeX[2] as 'px' | '%') : '%'
+        backgroundSizeY = matchSizeY ? matchSizeY[1] : '100'
+        sizeUnitY = matchSizeY ? (matchSizeY[2] as 'px' | '%') : '%'
 
         // 背景位置 - 使用结构化存储格式
-        backgroundPositionX = getStringValue(styles.backgroundPositionX) || '50'
-        backgroundPositionY = getStringValue(styles.backgroundPositionY) || '50'
-        positionUnitX = (getStringValue(styles.backgroundPositionUnitX) || '%') as 'px' | '%'
-        positionUnitY = (getStringValue(styles.backgroundPositionUnitY) || '%') as 'px' | '%'
+        const posXStr = getStringValue(styles.backgroundPositionX) || '50%'
+        const posYStr = getStringValue(styles.backgroundPositionY) || '50%'
+        const matchPosX = posXStr.match(/^(-?\d*\.?\d+)(px|%)$/)
+        const matchPosY = posYStr.match(/^(-?\d*\.?\d+)(px|%)$/)
+        backgroundPositionX = matchPosX ? matchPosX[1] : '50'
+        positionUnitX = matchPosX ? (matchPosX[2] as 'px' | '%') : '%'
+        backgroundPositionY = matchPosY ? matchPosY[1] : '50'
+        positionUnitY = matchPosY ? (matchPosY[2] as 'px' | '%') : '%'
 
         // 背景重复
         backgroundRepeat = getStringValue(styles.backgroundRepeat) || 'no-repeat'
@@ -513,20 +522,15 @@
         // 背景尺寸 - 直接存储数值和单位
         styles.backgroundSize = `${formatSize(backgroundSizeX, sizeUnitX)} ${formatSize(backgroundSizeY, sizeUnitY)}`
 
-        // 存储背景尺寸的原始数值和单位，便于编辑
-        styles.backgroundSizeX = backgroundSizeX
-        styles.backgroundSizeY = backgroundSizeY
-        styles.backgroundSizeUnitX = sizeUnitX
-        styles.backgroundSizeUnitY = sizeUnitY
+        // 存储背景尺寸（数值+单位）
+        styles.backgroundSizeX = `${backgroundSizeX}${sizeUnitX}`
+        styles.backgroundSizeY = `${backgroundSizeY}${sizeUnitY}`
 
-        // 背景位置 - 直接存储数值和单位
-        styles.backgroundPosition = `${formatSize(backgroundPositionX, positionUnitX)} ${formatSize(backgroundPositionY, positionUnitY)}`
-
-        // 存储背景位置的原始数值和单位
-        styles.backgroundPositionX = backgroundPositionX
-        styles.backgroundPositionY = backgroundPositionY
-        styles.backgroundPositionUnitX = positionUnitX
-        styles.backgroundPositionUnitY = positionUnitY
+        // 存储背景位置（数值+单位）
+        styles.backgroundPositionX = `${backgroundPositionX}${positionUnitX}`
+        styles.backgroundPositionY = `${backgroundPositionY}${positionUnitY}`
+        // 合并存储 backgroundPosition，便于渲染
+        styles.backgroundPosition = `${backgroundPositionX}${positionUnitX} ${backgroundPositionY}${positionUnitY}`
 
         // 背景颜色 - 使用background-color属性
         // 背景颜色和背景图片/渐变可以同时存在，不互相冲突

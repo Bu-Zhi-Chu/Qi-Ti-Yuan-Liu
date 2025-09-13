@@ -130,30 +130,6 @@
 
                     await db.table('doms').bulkAdd(domNodes)
                     console.log(`【模板加载】使用模板 ${template.name} 的DOM结构，共 ${domNodes.length} 个节点`)
-                } else {
-                    // 使用最简单的默认根节点，不设置任何样式，让模板系统完全负责
-                    const rootNode = {
-                        id: 'root',
-                        projectId: id,
-                        componentType: 'SimpleBox',
-                        attributes: { type: 'SimpleBox' },
-                        props: {},
-                        style: {
-                            width: '100%',
-                            height: '100%',
-                            boxSizing: 'border-box',
-                            overflow: 'hidden',
-                            pointerEvents: 'auto'
-                        },
-                        children: [],
-                        position: { x: 0, y: 0 },
-                        size: { width: 100, height: 100 },
-                        expanded: true,
-                        createdAt: now,
-                        updatedAt: now
-                    }
-                    await db.table('doms').add(rootNode)
-                    console.log('【模板加载】使用最简默认根节点结构')
                 }
             }
         } catch (error) {
