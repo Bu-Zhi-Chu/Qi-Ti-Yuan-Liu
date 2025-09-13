@@ -10,8 +10,16 @@
     // 浏览器支持时显示已用 JS 堆内存（MB）
     let memoryMB: string = '--'
     // 监控开关
-    let fpsEnabled = true
-    let memoryEnabled = true
+    import { perfMonitorEnabled } from '../../services/repository/perf-monitor.store'
+    let fpsEnabled = $perfMonitorEnabled
+    let memoryEnabled = $perfMonitorEnabled
+
+    // 监听开关变化
+    $: {
+        fpsEnabled = $perfMonitorEnabled
+        memoryEnabled = $perfMonitorEnabled
+        restartLoop()
+    }
     let _frameId: number
     function startFPSCounter() {
         let lastTime = performance.now()
@@ -103,8 +111,10 @@
 
 <div class="status-bar" title="点击缩放百分比可切换 50% / 100%">
     <span class="zoom" role="button" tabindex="0" on:click={handleClick} on:keydown={handleKey} style="cursor: pointer;">缩放：{percent}%</span>
-    <span role="button" tabindex="0" on:click={toggleFPS} on:keydown={handleFPSToggleKey} style="cursor: pointer; margin-left: calc(12px * var(--scale-ratio, 1));">FPS：{fpsText}</span>
-    <span role="button" tabindex="0" on:click={toggleMemory} on:keydown={handleMemoryToggleKey} style="cursor: pointer; margin-left: calc(12px * var(--scale-ratio, 1));">内存：{memoryMB}MB</span>
+    {#if $perfMonitorEnabled}
+        <span role="button" tabindex="0" on:click={toggleFPS} on:keydown={handleFPSToggleKey} style="cursor: pointer; margin-left: calc(12px * var(--scale-ratio, 1));">FPS：{fpsText}</span>
+        <span role="button" tabindex="0" on:click={toggleMemory} on:keydown={handleMemoryToggleKey} style="cursor: pointer; margin-left: calc(12px * var(--scale-ratio, 1));">内存：{memoryMB}MB</span>
+    {/if}
 </div>
 
 <style>

@@ -13,6 +13,8 @@
  -->
 <script lang="ts">
     import { onMount, onDestroy } from 'svelte'
+    import { perfMonitorEnabled } from '../../services/repository/perf-monitor.store'
+    import { get } from 'svelte/store'
     import { registerShortcut } from '../../services/interactions/shortcut.service'
     import { isStandardProdMode, isDevMode, isLiteMode } from '../../services/env/environment.service'
     import { copySelectedNode, pasteNodeToSelectedParent, cutSelectedNode } from '../../services/repository/dom-tree.store.svelte'
@@ -544,6 +546,8 @@
             if (db) {
                 const cfgRecord = (await db.table('config').toArray())[0]
                 showLogsEnabled = (cfgRecord?.showLogs ?? cfgRecord?.value) === true
+                // 更新性能监视开关，默认为 true
+                perfMonitorEnabled.set(cfgRecord?.perfMonitor !== false)
             }
         } catch {}
     })
@@ -748,6 +752,99 @@
             {#if !isLiteMode()}
                 <button onclick={() => (window.location.href = '/')} style="padding: calc(4px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));background: none;border: none;color: white;cursor: pointer;font-size: calc(12px * var(--scale-ratio, 1));">首页</button>
             {/if}
+            {#if $projectId}
+                <button
+                    type="button"
+                    onclick={async (event) => {
+                        const button = event.target as HTMLButtonElement
+                        try {
+                            button.textContent = '保存中...'
+                            button.disabled = true
+
+                            if (!currentProjectId) {
+                                throw new Error('无法获取项目ID')
+                            }
+
+                            const { liteExportService } = await import('../../services/export/lite-export.service')
+                            const blob = await liteExportService.exportLiteData(currentProjectId)
+                            const url = URL.createObjectURL(blob)
+                            const a = document.createElement('a')
+                            a.href = url
+                            a.download = 'project-data.json'
+                            document.body.appendChild(a)
+                            a.click()
+                            a.remove()
+                            URL.revokeObjectURL(url)
+
+                            button.textContent = '保存'
+                        } catch (e) {
+                            console.error('保存失败', e)
+                            button.textContent = '保存'
+                        } finally {
+                            button.disabled = false
+                        }
+                    }}
+                    style="padding: calc(4px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));background: none;border: none;color: white;cursor: pointer;font-size: calc(12px * var(--scale-ratio, 1));"
+                >
+                    保存
+                </button>
+                {#if typeof window !== 'undefined' && 'showSaveFilePicker' in window}
+                    <button
+                        onclick={async (event) => {
+                            const button = event.target as HTMLButtonElement
+                            try {
+                                if (!currentProjectId) throw new Error('无法获取项目ID')
+                                button.disabled = true
+                                button.textContent = '另存中...'
+                                const { liteExportService } = await import('../../services/export/lite-export.service')
+                                const blob = await liteExportService.exportLiteData(currentProjectId)
+                                // @ts-ignore File System Access API
+                                const handle = await window.showSaveFilePicker({
+                                    suggestedName: 'project-data.json',
+                                    types: [
+                                        {
+                                            description: 'JSON 文件',
+                                            accept: { 'application/json': ['.json'] }
+                                        }
+                                    ]
+                                })
+                                // @ts-ignore
+                                const writable = await handle.createWritable()
+                                await writable.write(blob)
+                                await writable.close()
+                                button.textContent = '另存为'
+                            } catch (e) {
+                                console.error('另存失败', e)
+                                button.textContent = '另存为'
+                            } finally {
+                                button.disabled = false
+                            }
+                        }}
+                        style="padding: calc(4px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));background: none;border: none;color: white;cursor: pointer;font-size: calc(12px * var(--scale-ratio, 1));"
+                    >
+                        另存为
+                    </button>
+                {/if}
+            {/if}
+            <button
+                onclick={async (event) => {
+                    const button = event.target as HTMLButtonElement
+                    try {
+                        const db = await DexieService.getDatabase('qi-qiao-ban')
+                        if (!db) throw new Error('无法获取数据库')
+                        const cfgRecord = (await db.table('config').toArray())[0] || { showLogs: false, perfMonitor: true }
+                        const newVal = !cfgRecord.perfMonitor
+                        await db.table('config').clear()
+                        await db.table('config').put({ ...cfgRecord, perfMonitor: newVal })
+                        perfMonitorEnabled.set(newVal)
+                    } catch (e) {
+                        console.error('切换性能监视失败', e)
+                    }
+                }}
+                style="padding: calc(4px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));background: none;border: none;color: white;cursor: pointer;font-size: calc(12px * var(--scale-ratio, 1));"
+            >
+                {$perfMonitorEnabled ? '关闭性能监视' : '开启性能监视'}
+            </button>
 
             <!-- 开发环境构建按钮 -->
             {#if isDevMode() && !isLiteMode()}
@@ -855,7 +952,7 @@
 
                         // 更新数据库配置（清空后写入，因主键为 showLogs）
                         await db.table('config').clear()
-                        await db.table('config').put({ showLogs: newVal })
+                        await db.table('config').put({ ...cfgRecord, showLogs: newVal })
 
                         // 立即应用配置
                         applyLogConfig(newVal)

@@ -51,7 +51,7 @@ export default class DexieService {
         const stores: Record<string, string> = {
             projects: 'id, name, templateId, createdAt, updatedAt, canvasState, mode, exportTime, designWidth, designHeight',
             doms: '[projectId+id], projectId, parentId, attributes, style',
-            config: '++id, showLogs',
+            config: '++id, showLogs, perfMonitor',
             imageStore: 'hash, [projectId+hash], blob, name, width, height, refCount'
         }
 
@@ -70,7 +70,7 @@ export default class DexieService {
         const cfgCount = await db.table('config').count()
         if (cfgCount === 0) {
             // 根据环境决定日志默认值：开发环境默认开启，其他环境默认关闭
-            await db.table('config').put({ showLogs: import.meta.env.DEV === true })
+            await db.table('config').put({ showLogs: import.meta.env.DEV === true, perfMonitor: true })
         }
         // DatabaseLogger.databaseCreated(dbName)
 
