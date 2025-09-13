@@ -330,6 +330,13 @@
     let unregisterCut: () => void
     let unregisterPaste: () => void
     let unregisterTabShortcuts: (() => void)[] = []
+    // 新增保存相关变量及注销函数
+
+    let saveAsButton = $state<HTMLButtonElement | null>(null)
+
+    let unregisterSaveAsShortcut: (() => void) | undefined
+    let unregisterHomeShortcut: (() => void) | undefined
+    let unregisterSaveAsCapture: (() => void) | undefined
 
     onMount(async () => {
         // 初始化项目ID（兼容精简/路由两种场景）
@@ -359,6 +366,7 @@
 
         // 注册DEL键删除选中节点的快捷键
         unregisterDelKey = registerShortcut('Delete', () => {
+            if (!showWorkspace) return
             const currentSelectedId = selectedId()
             if (currentSelectedId && currentSelectedId !== 'root') {
                 console.log('DEL键删除节点:', currentSelectedId)
@@ -374,16 +382,28 @@
             }
         })
         unregisterCopy = registerShortcut('Ctrl+C', () => {
+            if (!showWorkspace) return
             copySelectedNode()
         })
         unregisterCut = registerShortcut('Ctrl+X', () => {
+            if (!showWorkspace) return
             cutSelectedNode()
         })
         unregisterPaste = registerShortcut('Ctrl+V', () => {
+            if (!showWorkspace) return
             pasteNodeToSelectedParent(false, false)
         })
 
-        // 注册 Alt+数字键 1~8 快捷切换属性页签
+        // 仅保留另存为快捷键
+        unregisterSaveAsShortcut = registerShortcut('Ctrl+S', (e) => {
+            if (!showWorkspace) return
+            e.preventDefault()
+            saveAsButton?.click()
+        })
+        unregisterHomeShortcut = registerShortcut('Home', () => {
+            if (!showWorkspace) return
+            window.location.href = '/'
+        })
         unregisterTabShortcuts = tabs.slice(0, 8).map((t, idx) =>
             registerShortcut(`Alt+${idx + 1}`, () => {
                 // 如果是特性设置页签且当前不显示，则忽略
@@ -403,6 +423,11 @@
         unregisterCut && unregisterCut()
         unregisterPaste && unregisterPaste()
         unregisterTabShortcuts.forEach((fn) => fn())
+
+        // 新增：注销快捷键，仅保留另存为
+        unregisterSaveAsShortcut && unregisterSaveAsShortcut()
+        unregisterHomeShortcut && unregisterHomeShortcut()
+        unregisterSaveAsCapture && unregisterSaveAsCapture()
     })
 
     // Konami Code验证器相关函数
@@ -729,6 +754,18 @@
             window.removeEventListener('wheel', wheelHandler)
         }
     })
+
+    // 新增：注册捕获阶段监听，强制屏蔽浏览器 Ctrl+Shift+S（Edge 截图等）
+    const saveAsCaptureHandler = (e: KeyboardEvent) => {
+        if (!showWorkspace) return
+        if (e.ctrlKey && !e.shiftKey && e.key.toLowerCase() === 's') {
+            e.preventDefault()
+            e.stopPropagation()
+            saveAsButton?.click()
+        }
+    }
+    document.addEventListener('keydown', saveAsCaptureHandler, true)
+    unregisterSaveAsCapture = () => document.removeEventListener('keydown', saveAsCaptureHandler, true)
 </script>
 
 <svelte:head>
@@ -753,49 +790,15 @@
                 <button onclick={() => (window.location.href = '/')} style="padding: calc(4px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));background: none;border: none;color: white;cursor: pointer;font-size: calc(12px * var(--scale-ratio, 1));">首页</button>
             {/if}
             {#if $projectId}
-                <button
-                    type="button"
-                    onclick={async (event) => {
-                        const button = event.target as HTMLButtonElement
-                        try {
-                            button.textContent = '保存中...'
-                            button.disabled = true
-
-                            if (!currentProjectId) {
-                                throw new Error('无法获取项目ID')
-                            }
-
-                            const { liteExportService } = await import('../../services/export/lite-export.service')
-                            const blob = await liteExportService.exportLiteData(currentProjectId)
-                            const url = URL.createObjectURL(blob)
-                            const a = document.createElement('a')
-                            a.href = url
-                            a.download = 'project-data.json'
-                            document.body.appendChild(a)
-                            a.click()
-                            a.remove()
-                            URL.revokeObjectURL(url)
-
-                            button.textContent = '保存'
-                        } catch (e) {
-                            console.error('保存失败', e)
-                            button.textContent = '保存'
-                        } finally {
-                            button.disabled = false
-                        }
-                    }}
-                    style="padding: calc(4px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));background: none;border: none;color: white;cursor: pointer;font-size: calc(12px * var(--scale-ratio, 1));"
-                >
-                    保存
-                </button>
                 {#if typeof window !== 'undefined' && 'showSaveFilePicker' in window}
                     <button
+                        bind:this={saveAsButton}
                         onclick={async (event) => {
                             const button = event.target as HTMLButtonElement
                             try {
                                 if (!currentProjectId) throw new Error('无法获取项目ID')
                                 button.disabled = true
-                                button.textContent = '另存中...'
+                                button.textContent = '保存中...'
                                 const { liteExportService } = await import('../../services/export/lite-export.service')
                                 const blob = await liteExportService.exportLiteData(currentProjectId)
                                 // @ts-ignore File System Access API
@@ -812,17 +815,17 @@
                                 const writable = await handle.createWritable()
                                 await writable.write(blob)
                                 await writable.close()
-                                button.textContent = '另存为'
+                                button.textContent = '保存为'
                             } catch (e) {
                                 console.error('另存失败', e)
-                                button.textContent = '另存为'
+                                button.textContent = '保存为'
                             } finally {
                                 button.disabled = false
                             }
                         }}
                         style="padding: calc(4px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));background: none;border: none;color: white;cursor: pointer;font-size: calc(12px * var(--scale-ratio, 1));"
                     >
-                        另存为
+                        保存为
                     </button>
                 {/if}
             {/if}
