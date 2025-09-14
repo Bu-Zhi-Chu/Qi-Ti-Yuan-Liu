@@ -7,7 +7,7 @@
         "showFeatureTab": false,
         "hideTextContent": true,
         "presetStyles": {
-            "fontSize": "24px",
+            "position": "absolute",
             "fontWeight": "bold",
             "display": "flex",
             "justifyContent": "center",
@@ -188,16 +188,16 @@
                 "type": "select",
                 "options": [
                     {
+                        "value": "navigation",
+                        "label": "导航"
+                    },
+                    {
                         "value": "trigger",
                         "label": "触发"
                     },
                     {
                         "value": "switch",
                         "label": "开关"
-                    },
-                    {
-                        "value": "navigation",
-                        "label": "导航"
                     }
                 ]
             },
