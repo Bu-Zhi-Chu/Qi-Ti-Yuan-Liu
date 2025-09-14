@@ -521,11 +521,18 @@
                 <ColorPicker
                     value={hexToRgba(fontColor, fontOpacity)}
                     onchange={(rgba: string) => {
-                        const parsed = parseRgba(rgba)
-                        if (parsed) {
-                            fontColor = rgbToHex(parsed.r, parsed.g, parsed.b)
-                            fontOpacity = parsed.a
+                        if (!rgba) {
+                            // 清空文字颜色
+                            fontColor = '#000000'
+                            fontOpacity = 1
                             updateTextStyles()
+                        } else {
+                            const parsed = parseRgba(rgba)
+                            if (parsed) {
+                                fontColor = rgbToHex(parsed.r, parsed.g, parsed.b)
+                                fontOpacity = parsed.a
+                                updateTextStyles()
+                            }
                         }
                     }}
                     projectId={$projectId}

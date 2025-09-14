@@ -694,6 +694,20 @@
                 </div>
             </div>
 
+            <!-- 添加清空按钮 -->
+            <div class="color-controls">
+                <button 
+                    class="clear-color-btn" 
+                    onclick={() => {
+                        onchange?.('');
+                        isOpen = false;
+                    }} 
+                    type="button"
+                >
+                    清空属性
+                </button>
+            </div>
+
             {#if colorPalette.length > 0}
                 <div class="color-palette">
                     <label class="control-label" for="color-palette">颜色卡</label>
@@ -1007,5 +1021,29 @@
 
     .palette-color:active {
         transform: scale(0.9);
+    }
+
+    .clear-color-btn {
+        width: 100%;
+        padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
+        border: calc(1px * var(--scale-ratio, 1)) solid rgba(239, 68, 68, 0.3);
+        border-radius: calc(4px * var(--scale-ratio, 1));
+        background: rgba(239, 68, 68, 0.1);
+        color: #f87171;
+        font-size: calc(12px * var(--scale-ratio, 1));
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-align: center;
+    }
+
+    .clear-color-btn:hover {
+        background: rgba(239, 68, 68, 0.2);
+        border-color: rgba(239, 68, 68, 0.5);
+        color: #fca5a5;
+    }
+
+    .clear-color-btn:active {
+        background: rgba(239, 68, 68, 0.3);
+        transform: scale(0.98);
     }
 </style>

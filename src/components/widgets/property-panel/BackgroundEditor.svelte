@@ -1051,9 +1051,16 @@
                     projectId={$projectId}
                     componentId={selectedId || 'default'}
                     onchange={(rgba: string) => {
-                        const parsed = parseRgba(rgba)
-                        if (parsed) {
-                            handleBackgroundColorChange(rgbToHex(parsed.r, parsed.g, parsed.b), parsed.a)
+                        if (!rgba) {
+                            // 清空颜色
+                            backgroundColor = ''
+                            backgroundColorAlpha = 1
+                            updateBackgroundStyles()
+                        } else {
+                            const parsed = parseRgba(rgba)
+                            if (parsed) {
+                                handleBackgroundColorChange(rgbToHex(parsed.r, parsed.g, parsed.b), parsed.a)
+                            }
                         }
                     }}
                 />
@@ -1087,9 +1094,16 @@
                             projectId={$projectId}
                             componentId={`${selectedId || 'default'}-gradient-1`}
                             onchange={(rgba: string) => {
-                                const parsed = parseRgba(rgba)
-                                if (parsed) {
-                                    updateGradientColor(1, rgbToHex(parsed.r, parsed.g, parsed.b), parsed.a)
+                                if (!rgba) {
+                                    // 清空渐变颜色 - 设置为白色
+                                    if (gradientColors.length > 1) {
+                                        updateGradientColor(1, '#ffffff', 1)
+                                    }
+                                } else {
+                                    const parsed = parseRgba(rgba)
+                                    if (parsed) {
+                                        updateGradientColor(1, rgbToHex(parsed.r, parsed.g, parsed.b), parsed.a)
+                                    }
                                 }
                             }}
                         />

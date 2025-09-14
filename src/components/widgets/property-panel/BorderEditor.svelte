@@ -223,18 +223,10 @@
 
         const styles: Record<string, string> = {}
 
-        if (borderWidth) {
-            styles.borderWidth = formatPxValue(borderWidth)
-        }
-        if (borderColor) {
-            styles.borderColor = borderColor
-        }
-        if (borderStyle) {
-            styles.borderStyle = borderStyle
-        }
-        if (borderRadius) {
-            styles.borderRadius = formatBorderRadius(borderRadius, borderRadiusUnit)
-        }
+        styles.borderWidth = formatPxValue(borderWidth)
+        styles.borderColor = borderColor || '#000000'
+        styles.borderStyle = borderStyle || 'solid'
+        styles.borderRadius = formatBorderRadius(borderRadius, borderRadiusUnit)
 
         // 清除四边独立样式
         styles.borderTopWidth = ''
@@ -265,7 +257,7 @@
         } else if (prop === 'Width') {
             styles[key] = formatPxValue(value)
         } else {
-            styles[key] = value
+            styles[key] = value || (prop === 'Color' ? '#000000' : 'solid')
         }
 
         // 如果当前修改的不是样式属性，且未显式指定样式，则为该边补充默认样式（solid）
@@ -434,8 +426,8 @@
                     <PropertyRow label="边框颜色">
                         <ColorPicker
                             value={borderColor}
-                            onchange={(color: string) => {
-                                borderColor = color
+                            onchange={(color: string | null) => {
+                                borderColor = color || '#000000'
                                 updateUnifiedBorder()
                             }}
                             disabled={isRoot}
@@ -487,7 +479,7 @@
                     </PropertyRow>
 
                     <PropertyRow label="上边颜色">
-                        <ColorPicker value={borderTopColor} onchange={(color: string) => updateIndividualBorder('Top', 'Color', color)} disabled={isRoot} />
+                        <ColorPicker value={borderTopColor} onchange={(color: string | null) => updateIndividualBorder('Top', 'Color', color || '#000000')} disabled={isRoot} />
                     </PropertyRow>
 
                     <PropertyRow label="上边样式">
@@ -520,7 +512,7 @@
                     </PropertyRow>
 
                     <PropertyRow label="右边颜色">
-                        <ColorPicker value={borderRightColor} onchange={(color: string) => updateIndividualBorder('Right', 'Color', color)} disabled={isRoot} />
+                        <ColorPicker value={borderRightColor} onchange={(color: string | null) => updateIndividualBorder('Right', 'Color', color || '#000000')} disabled={isRoot} />
                     </PropertyRow>
 
                     <PropertyRow label="右边样式">
@@ -553,7 +545,7 @@
                     </PropertyRow>
 
                     <PropertyRow label="下边颜色">
-                        <ColorPicker value={borderBottomColor} onchange={(color: string) => updateIndividualBorder('Bottom', 'Color', color)} disabled={isRoot} />
+                        <ColorPicker value={borderBottomColor} onchange={(color: string | null) => updateIndividualBorder('Bottom', 'Color', color || '#000000')} disabled={isRoot} />
                     </PropertyRow>
 
                     <PropertyRow label="下边样式">
@@ -586,7 +578,7 @@
                     </PropertyRow>
 
                     <PropertyRow label="左边颜色">
-                        <ColorPicker value={borderLeftColor} onchange={(color: string) => updateIndividualBorder('Left', 'Color', color)} disabled={isRoot} />
+                        <ColorPicker value={borderLeftColor} onchange={(color: string | null) => updateIndividualBorder('Left', 'Color', color || '#000000')} disabled={isRoot} />
                     </PropertyRow>
 
                     <PropertyRow label="左边样式">
