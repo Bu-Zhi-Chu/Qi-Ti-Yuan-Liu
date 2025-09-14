@@ -394,7 +394,8 @@
 <style>
     .tree-container {
         position: relative;
-        padding: calc(12px * var(--scale-ratio, 1)) calc(0px * var(--scale-ratio, 1));
+        padding: calc(12px * var(--scale-ratio, 1)) calc(px * var(--scale-ratio, 1));
+        padding-right: calc(16px * var(--scale-ratio, 1));
         font-size: calc(13px * var(--scale-ratio, 1));
         color: #cbd5e1;
         overflow-y: auto;
