@@ -939,16 +939,16 @@
         <div class="background-list">
             <!-- 背景图片上传 -->
             <PropertyRow label="背景图片">
-                {#if !hasBackgroundImage}
-                    <button id="background-image-input" class="input-style" onclick={() => fileInput.click()} ondragover={handleDragOver} ondrop={handleDrop} title="点击上传或拖拽图片到此处">上传图片</button>
-                {:else}
-                    <div class="remove-image-wrapper">
-                        <button class="input-style remove-button" onclick={clearBackgroundImage} title="移除图片" style="background: rgba(239, 68, 68, 0.2); color: #f87171; width: 82%;">移除</button>
-                        <button class="unit-toggle ratio-overlay" onclick={applyImageDimensions} title="一键匹配原尺寸" disabled={!imageSize || selectedId === 'root' || isDimensionMatched}>
-                            <Icon name="Ratio" size={16} />
-                        </button>
-                    </div>
-                {/if}
+                <div class="remove-image-wrapper">
+                    {#if !hasBackgroundImage}
+                        <button id="background-image-input" class="input-style upload-button" onclick={() => fileInput.click()} ondragover={handleDragOver} ondrop={handleDrop} title="点击上传或拖拽图片到此处">上传图片</button>
+                    {:else}
+                        <button class="input-style remove-button" onclick={clearBackgroundImage} title="移除图片" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">移除</button>
+                    {/if}
+                    <button class="unit-toggle ratio-overlay" onclick={applyImageDimensions} title="一键匹配原尺寸" disabled={!imageSize || selectedId === 'root' || isDimensionMatched || !hasBackgroundImage}>
+                        <Icon name="Ratio" size={16} />
+                    </button>
+                </div>
             </PropertyRow>
 
             {#if isUploading}
@@ -1234,11 +1234,12 @@
     .remove-image-wrapper {
         position: relative;
         flex: 1;
+        display: flex;
+        gap: calc(8px * var(--scale-ratio, 1));
+        align-items: center;
     }
     .remove-image-wrapper .ratio-overlay {
-        position: absolute;
-        top: 50%;
-        right: 0;
-        transform: translateY(-50%);
+        position: static;
+        transform: none;
     }
 </style>
