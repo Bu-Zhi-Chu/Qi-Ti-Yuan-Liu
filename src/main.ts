@@ -341,7 +341,7 @@ let app: ReturnType<typeof mount> | undefined // 提前声明，供导出使用
             app = mount(App, {
                 target: document.getElementById('app')!
             })
-            // 初始化视口缩放（基于设计稿1912x1000）
+            // 初始化视口缩放（基于设计稿1920x1000）
             screenDetector.initViewportScale()
         } catch (error) {
             console.error('应用初始化失败', error)

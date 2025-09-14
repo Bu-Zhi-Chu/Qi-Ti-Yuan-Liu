@@ -36,7 +36,7 @@
     let selected = $state('')
     let projectName = $state('')
     // 新增设计尺寸
-    let designWidth = $state('1912')
+    let designWidth = $state('1920')
     let designHeight = $state('1000')
     let isLoading = $state(true)
     const inputId: string = 'project-name-' + Math.random().toString(36).slice(2)

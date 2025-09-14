@@ -199,7 +199,7 @@ class ScreenDetector {
         const { projectId } = await import('../repository/dom-tree.store.svelte')
         const currentProjectId = get(projectId)
         if (!currentProjectId) return
-        
+
         try {
             const project: any = await DexieService.getRecord('qi-qiao-ban', 'projects', currentProjectId)
             if (project && project.designWidth && project.designHeight) {
