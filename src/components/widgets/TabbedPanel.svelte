@@ -21,6 +21,9 @@
     import { onMount, onDestroy } from 'svelte'
     import { filterDomTreeBySearch } from '../../services/repository/dom-tree.store.svelte'
     import { addNodeToParent } from '../../services/repository/dom-tree.store.svelte'
+import { projectId } from '../../services/repository/dom-tree.store.svelte'
+import DexieService from '../../services/database/dexie-service'
+import { get } from 'svelte/store'
 
     // 当前激活的页签
     let activeTab = $state<'nodes' | 'warehouse'>('nodes')
@@ -95,7 +98,7 @@
     let pendingNode: any = null
     let cleanupListeners: (() => void) | null = null
 
-    function addNodeFromWarehouse(e: MouseEvent, item: WarehouseItem) {
+    async function addNodeFromWarehouse(e: MouseEvent, item: WarehouseItem) {
         e.stopPropagation()
 
         // 若已有正在拖拽的预览，先清理
@@ -130,6 +133,23 @@
 
         const parentRect = parent.getBoundingClientRect()
         const scaleRatio = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--scale-ratio') || '1') || 1
+
+        // ---------------------- 文本内容处理 ----------------------
+        const blockMeta = (blocksConfig as any[]).find((b) => b.type === item.type) as any
+        let resolvedTextContent: string | undefined = blockMeta?.textContent
+        if (resolvedTextContent && /\{\{projectName\}\}/.test(resolvedTextContent)) {
+            const pid = get(projectId)
+            if (pid) {
+                try {
+                    const project = await DexieService.getRecord<any>('qi-qiao-ban', 'projects', pid)
+                    if (project?.name) {
+                        resolvedTextContent = resolvedTextContent.replace(/\{\{projectName\}\}/g, project.name as string)
+                    }
+                } catch (err) {
+                    console.error('[TabbedPanel] 获取项目名称失败', err)
+                }
+            }
+        }
 
         // 若预设为px，需要折算到百分比，确保拖拽时中心定位仍正确
         if (widthPxPreset !== null && parent.offsetWidth) {
@@ -167,6 +187,7 @@
                 height: `${heightPercent}%`,
                 ...(presetStyles || {})
             },
+            textContent: resolvedTextContent,
             // 如果是按钮组，预先生成一个默认子按钮
             ...(item.type === 'ButtonGroup'
                 ? {
