@@ -131,6 +131,15 @@
         // 根据恢复的尺寸立即更新按钮禁用状态
         updateDimensionMatch()
 
+        // 先读取 styles.backgroundOpacity 初始化背景透明度
+        const opacityStr = getStringValue(styles.backgroundOpacity)
+        if (opacityStr !== '') {
+            const parsed = parseFloat(opacityStr)
+            if (!isNaN(parsed)) {
+                backgroundOpacity = parsed
+            }
+        }
+
         // 先从 styles.backgroundColor 读取背景颜色（与其他属性一致）
         const bgColorStyle = getStringValue(styles.backgroundColor)
         if (bgColorStyle) {
