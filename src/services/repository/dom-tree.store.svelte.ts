@@ -517,6 +517,8 @@ export function toggleHidden(nodeId: string): boolean {
   const node = findNodeById(domTreeData, nodeId);
   if (node) {
     node.hidden = !node.hidden;
+    // 同步到 attributes.hidden，防止持久化时被旧值覆盖
+    node.attributes = { ...(node.attributes ?? {}), hidden: node.hidden } as any;
     // 自动保存到doms表（不影响projects表）
     autoSaveToDomsTable();
     return true;
