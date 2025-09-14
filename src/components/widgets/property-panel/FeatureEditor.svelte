@@ -123,13 +123,13 @@
         // 如果是 DOM 树同步过来的 buttonCount 变更，则仅更新 view，不再触发增删按钮
         if (key === 'buttonCount' && syncingFromDomTree) {
             syncingFromDomTree = false
-            currentValues[key] = value
+            currentValues = { ...currentValues, [key]: value }
             if (selectedId) {
                 updateNodeProps(selectedId, { attributes: { [key]: value } })
             }
             return
         }
-        currentValues[key] = value
+        currentValues = { ...currentValues, [key]: value }
         if (!selectedId) return
         // size 类型写入 styles，其余写入 attributes
         const entry = propEntries().find((p) => p.key === key)
@@ -299,7 +299,7 @@
             }
 
             // 6. 将哈希写入样式
-            currentValues[key] = hash
+            currentValues = { ...currentValues, [key]: hash }
             updateNodeProps(selectedId, { styles: { [key]: hash } })
         } catch (err) {
             console.error('图片上传失败', err)
@@ -337,7 +337,7 @@
     }
     async function handleRemoveImage(key: string) {
         const oldHash = currentValues[key]
-        currentValues[key] = ''
+        currentValues = { ...currentValues, [key]: '' }
         if (selectedId) {
             updateNodeProps(selectedId, { styles: { [key]: '' } })
         }
@@ -436,7 +436,7 @@
 
         if (!editingButtonCount && realCount !== shownCount) {
             syncingFromDomTree = true
-            currentValues['buttonCount'] = realCount
+            currentValues = { ...currentValues, buttonCount: realCount }
             // 仅写入 attributes，保持状态一致，不触发增删
             updateNodeProps(selectedId, { attributes: { buttonCount: String(realCount) } })
         }
@@ -450,7 +450,7 @@
             {#if !p.showIf || currentValues[p.showIf.key] === p.showIf.value}
                 <PropertyRow label={`${p.label}`}>
                     {#if p.type === 'select'}
-                        <PropertySelect bind:value={currentValues[p.key]} options={p.options} change={(v) => handleAttrChange(p.key, v)} />
+                        <PropertySelect value={currentValues[p.key]} options={p.options} change={(v) => handleAttrChange(p.key, v)} />
                     {:else if p.type === 'number'}
                         <input type="number" min={p.min} max={p.max} value={currentValues[p.key] ?? ''} oninput={(e) => handleAttrChange(p.key, +(e.currentTarget as HTMLInputElement).value)} class="number-input" />
                     {:else if p.type === 'size'}

@@ -188,16 +188,16 @@
                 "type": "select",
                 "options": [
                     {
-                        "value": "navigation",
-                        "label": "导航"
-                    },
-                    {
                         "value": "trigger",
                         "label": "触发"
                     },
                     {
                         "value": "switch",
                         "label": "开关"
+                    },
+                    {
+                        "value": "navigation",
+                        "label": "导航"
                     }
                 ]
             },
