@@ -53,16 +53,44 @@
     })
 
     // 派生属性描述数组
-    type PropEntry = { key: string; label: string; type: string; options?: any[]; min?: number; max?: number; default?: any }
+    type PropEntry = { key: string; label: string; type: string; options?: any[]; min?: number; max?: number; default?: any; showIf?: { key: string; value: any } }
     // 属性描述数组
     const propEntries: () => PropEntry[] = $derived(() => {
         const fp = featureProps()
         if (!fp) return []
 
-        // 返回所有属性，不再过滤导航相关属性
-        const base: PropEntry[] = Object.entries(fp).map(([key, cfg]: [string, any]) => ({ key, ...cfg }))
+        // 基础属性映射
+        const base: PropEntry[] = Object.entries(fp).map(([key, cfg]: [string, any]) => {
+            const entry: any = { key, ...cfg }
 
-        return base
+            // 处理动态选项
+            if (cfg.dynamicOptions === 'screens') {
+                // 收集 DOM 树中的 Screen 组件
+                const screens: { id: string; label: string }[] = []
+                function visit(node: any) {
+                    if (!node) return
+                    if (node.componentType === 'Screen' || (node.attributes as any)?.type === 'Screen') {
+                        const label = (node.attributes as any)?.['data-name'] || node.id
+                        screens.push({ id: node.id, label })
+                    }
+                    if (node.children) node.children.forEach(visit)
+                }
+                visit(domTree)
+
+                entry.options = screens.map((s) => ({ value: s.id, label: s.label }))
+            }
+
+            return entry
+        })
+
+        // 过滤基于 showIf
+        const filtered = base.filter((e) => {
+            if (!e.showIf) return true
+            const { key: depKey, value: depVal } = e.showIf
+            return currentValues[depKey] === depVal
+        })
+
+        return filtered
     })
 
     // 当前各属性绑定值
@@ -109,6 +137,22 @@
             updateNodeProps(selectedId, { styles: { [key]: value } })
         } else {
             updateNodeProps(selectedId, { attributes: { [key]: value } })
+
+            // 额外逻辑：同级导航按钮唯一默认首页
+            if (key === 'defaultHome' && value === true) {
+                const parent = findParentById(domTree, selectedId)
+                if (parent?.children) {
+                    parent.children.forEach((child: any) => {
+                        if (child.id !== selectedId && child.componentType === 'Button') {
+                            const attr = child.attributes || {}
+                            const isNav = attr.buttonType === 'navigation' || (child as any).buttonType === 'navigation'
+                            if (isNav && attr.defaultHome) {
+                                updateNodeProps(child.id, { attributes: { defaultHome: false } })
+                            }
+                        }
+                    })
+                }
+            }
 
             // 额外逻辑：ButtonGroup 按钮数量同步
             if (key === 'buttonCount') {
@@ -321,8 +365,12 @@
         for (const p of entries) {
             if ((currentValues as any)[p.key] === undefined) {
                 let val: any = undefined
-                if (p.type === 'select' && p.options?.length) {
-                    val = p.options[0].value
+                if (p.type === 'select') {
+                    if (p.default !== undefined) {
+                        val = p.default
+                    } else if (p.options?.length) {
+                        val = p.options[0].value
+                    }
                 } else if (p.type === 'number' && p.default !== undefined) {
                     val = p.default
                 } else if (p.type === 'size' && p.default !== undefined) {
@@ -399,29 +447,31 @@
     <div class="feature-editor">
         <h3>特性设置</h3>
         {#each propEntries() as p (p.key)}
-            <PropertyRow label={`${p.label}`}>
-                {#if p.type === 'select'}
-                    <PropertySelect bind:value={currentValues[p.key]} options={p.options} change={(v) => handleAttrChange(p.key, v)} />
-                {:else if p.type === 'number'}
-                    <input type="number" min={p.min} max={p.max} value={currentValues[p.key] ?? ''} oninput={(e) => handleAttrChange(p.key, +(e.currentTarget as HTMLInputElement).value)} class="number-input" />
-                {:else if p.type === 'size'}
-                    <SizeInput value={parseSize(currentValues[p.key])[0]} unit="px" unitOptions={['px']} convert={(v) => v} on:change={({ detail: { value, unit } }) => handleAttrChange(p.key, value ? `${value}${unit}` : '')} />
-                {:else if p.type === 'image'}
-                    <div class="image-uploader">
-                        {#if !currentValues[p.key]}
-                            <button class="input-style" onclick={() => triggerUpload(p.key)} ondragover={handleDragOver} ondrop={(e) => handleDrop(p.key, e)} title="点击上传或拖拽图片到此处">上传图片</button>
-                        {:else}
-                            <div class="remove-image-wrapper">
-                                <button class="input-style remove-button" onclick={() => handleRemoveImage(p.key)} title="移除图片" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">移除</button>
-                            </div>
-                        {/if}
-                        <input type="file" accept="image/*" style="display:none" use:bindFileInput={p.key} onchange={(e) => handleImageFileChange(p.key, e)} />
-                    </div>
-                {:else if p.type === 'switch'}
-                    <ToggleSwitch checked={currentValues[p.key] ?? false} on:change={(e) => handleAttrChange(p.key, e.detail)} />
-                {/if}
-                <!-- 其他类型控件可在此扩展 -->
-            </PropertyRow>
+            {#if !p.showIf || currentValues[p.showIf.key] === p.showIf.value}
+                <PropertyRow label={`${p.label}`}>
+                    {#if p.type === 'select'}
+                        <PropertySelect bind:value={currentValues[p.key]} options={p.options} change={(v) => handleAttrChange(p.key, v)} />
+                    {:else if p.type === 'number'}
+                        <input type="number" min={p.min} max={p.max} value={currentValues[p.key] ?? ''} oninput={(e) => handleAttrChange(p.key, +(e.currentTarget as HTMLInputElement).value)} class="number-input" />
+                    {:else if p.type === 'size'}
+                        <SizeInput value={parseSize(currentValues[p.key])[0]} unit="px" unitOptions={['px']} convert={(v) => v} on:change={({ detail: { value, unit } }) => handleAttrChange(p.key, value ? `${value}${unit}` : '')} />
+                    {:else if p.type === 'image'}
+                        <div class="image-uploader">
+                            {#if !currentValues[p.key]}
+                                <button class="input-style" onclick={() => triggerUpload(p.key)} ondragover={handleDragOver} ondrop={(e) => handleDrop(p.key, e)} title="点击上传或拖拽图片到此处">上传图片</button>
+                            {:else}
+                                <div class="remove-image-wrapper">
+                                    <button class="input-style remove-button" onclick={() => handleRemoveImage(p.key)} title="移除图片" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">移除</button>
+                                </div>
+                            {/if}
+                            <input type="file" accept="image/*" style="display:none" use:bindFileInput={p.key} onchange={(e) => handleImageFileChange(p.key, e)} />
+                        </div>
+                    {:else if p.type === 'switch'}
+                        <ToggleSwitch checked={currentValues[p.key] ?? false} on:change={(e) => handleAttrChange(p.key, e.detail)} />
+                    {/if}
+                    <!-- 其他类型控件可在此扩展 -->
+                </PropertyRow>
+            {/if}
         {/each}
     </div>
 {/if}

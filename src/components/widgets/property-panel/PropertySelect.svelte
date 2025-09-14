@@ -23,7 +23,8 @@
      */
     export let value: string
     export let options: Option[] = []
-    // placeholder prop 已移除
+    // 新增：占位提示文字，可选
+    export let placeholder: string | undefined = undefined
     export let disabled = false
     export let id: string | undefined = undefined
     export let change: (value: string) => void = () => {}
@@ -32,6 +33,8 @@
     // 标记组件是否已完成初始化，避免初次渲染时触发 change 事件回写默认值
     let initialized = false
     onMount(() => {
+        // 当父组件未传入初始值时，设置为空字符串，确保不会自动选中正式选项
+        if (value === undefined) value = ''
         initialized = true
     })
 
@@ -44,7 +47,10 @@
 
 <div class="select-wrapper">
     <select {id} bind:value {disabled} on:change={handleChange}>
-        <!-- 已移除 placeholder 默认选项 -->
+        {#if placeholder}
+            <!-- 占位提示选项，文字颜色更浅 -->
+            <option class="placeholder-option" value="" disabled selected={!value}>{placeholder}</option>
+        {/if}
         {#each options as opt}
             <option value={opt.value}>{opt.label}</option>
         {/each}
@@ -94,6 +100,11 @@
     .select-wrapper select option:focus,
     .select-wrapper select option:checked {
         color: #e2e8f0;
+    }
+
+    /* Placeholder option style */
+    .select-wrapper select option.placeholder-option {
+        color: #64748b;
     }
 
     .select-wrapper select:disabled {

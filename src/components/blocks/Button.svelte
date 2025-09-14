@@ -24,12 +24,31 @@
         highlightImage?: string
         hoverEffect?: string
         buttonType?: string
+        navigationTarget?: string
+        // 新增：默认首页开关
+        defaultHome?: boolean
         style?: string
         children?: any
         [key: string]: any
     }
 
-    let { id = crypto.randomUUID(), text = '按钮', textContent, disabled = false, enableClick = false, textOffsetLeft = '0px', textOffsetTop = '0px', highlightImage = '', hoverEffect = '', buttonType = '', style = '', children, ...rest } = $props() as Props
+    let {
+        id = crypto.randomUUID(),
+        text = '按钮',
+        textContent,
+        disabled = false,
+        enableClick = false,
+        textOffsetLeft = '0px',
+        textOffsetTop = '0px',
+        highlightImage = '',
+        hoverEffect = '',
+        buttonType = '',
+        navigationTarget = '',
+        /* 新增 */ defaultHome = false,
+        style = '',
+        children,
+        ...rest
+    } = $props() as Props
 
     // 提取外部传入的 class（如 use-pseudo-bg），保持响应式
     const externalClass = $derived(() => (rest as any)?.class ?? '')
@@ -68,6 +87,10 @@
                     })
                 }
                 console.log(`Button(${id}) 导航高亮`)
+                // 切换页面
+                if (navigationTarget) {
+                    setCurrentPage(navigationTarget)
+                }
                 break
             case 'trigger':
                 console.log(`Button(${id}) 触发`)
@@ -82,6 +105,26 @@
             handleClick()
         }
     }
+    // 当设置为默认首页时，组件挂载后自动切换页面并高亮
+    onMount(() => {
+        if (buttonType === 'navigation' && defaultHome && navigationTarget) {
+            // 若已高亮则跳过
+            if (!toggled) {
+                toggled = true
+                // 维护同父级导航按钮高亮状态
+                const parent = findParentById(domTree, id)
+                if (parent?.children) {
+                    parent.children.forEach((child) => {
+                        if (child.componentType === 'Button' && (child.buttonType === 'navigation' || (child.attributes as any)?.buttonType === 'navigation')) {
+                            ;(child as any).toggled = child.id === id
+                        }
+                    })
+                }
+            }
+            // 切换到目标页面
+            setCurrentPage(navigationTarget)
+        }
+    })
 </script>
 
 <ResponsiveBox {id} {...rest} class={`btn ${hoverEffect} ${externalClass()}`} {disabled} style={mergedStyle()}>

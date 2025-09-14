@@ -184,6 +184,25 @@
                         "label": "导航"
                     }
                 ]
+            },
+            "defaultHome": {
+                "label": "默认首页",
+                "type": "switch",
+                "default": false,
+                "showIf": {
+                    "key": "buttonType",
+                    "value": "navigation"
+                }
+            },
+            "navigationTarget": {
+                "label": "目标页面",
+                "type": "select",
+                "dynamicOptions": "screens",
+                "default": "",
+                "showIf": {
+                    "key": "buttonType",
+                    "value": "navigation"
+                }
             }
         }
     }

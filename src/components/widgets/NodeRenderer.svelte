@@ -256,12 +256,7 @@
 
         // 根据 hidden 属性控制显示/隐藏
         let visibility = ''
-        if (node.componentType === 'Screen') {
-            const cp = get(currentPage)
-            if (cp && node.id !== cp) {
-                visibility = 'display:none !important;'
-            }
-        }
+        // 移除对 Screen 的静态隐藏处理，交由 Screen 组件自身根据 store 状态处理
         const hiddenStyle = node.hidden || (node.attributes as any)?.['cut-mark'] ? 'display:none !important;' : ''
 
         const defaultStyles = `${outlineStyles}; ${hiddenStyle} ${visibility}`
