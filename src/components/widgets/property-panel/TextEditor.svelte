@@ -33,6 +33,7 @@
     import PropertySelect from './PropertySelect.svelte'
     import SizeInput from './SizeInput.svelte'
     import blocksConfig from '../../blocks/blocks.config.json'
+    import fontsConfig from '../../fonts/fonts.config.json'
 
     interface Props {
         selectedId: string | null
@@ -71,19 +72,29 @@
     let textWrapStyle = $state('normal-normal')
 
     // 字体族选项
-    const fontFamilyOptions = [
-        { value: 'Arial, sans-serif', label: 'Arial' },
-        { value: 'Helvetica, sans-serif', label: 'Helvetica' },
-        { value: 'Times, serif', label: 'Times' },
-        { value: 'Times New Roman, serif', label: 'Times New Roman' },
-        { value: 'Courier, monospace', label: 'Courier' },
-        { value: 'Georgia, serif', label: 'Georgia' },
-        { value: 'Verdana, sans-serif', label: 'Verdana' },
-        { value: '微软雅黑, sans-serif', label: '微软雅黑' },
-        { value: '宋体, serif', label: '宋体' },
-        { value: '黑体, sans-serif', label: '黑体' }
-    ]
+    const fonts = fontsConfig as Array<{ name: string; family: string; fallback: string; src: string; weight?: string; style?: string }>
 
+    function ensureFontLoaded(font: { name: string; family: string; fallback: string; src: string; weight?: string; style?: string }) {
+        // 检查是否已加载
+        const check = document.fonts.check(`1em ${font.family}`)
+        if (check) return
+        const face: FontFace = new (window as any).FontFace(font.family, `url(${font.src})`, {
+            style: font.style || 'normal',
+            weight: font.weight || '400'
+        })
+        ;(document as any).fonts.add(face)
+        face.load().catch((err: unknown) => console.error('Font load error', err))
+    }
+
+    const fontFamilyOptions = [{ value: '', label: '默认' }, ...fonts.map((f) => ({ value: `'${f.family}', ${f.fallback}`, label: f.name }))]
+
+    $effect(() => {
+        if (!fontFamily) return
+        const selected = fonts.find((f) => `'${f.family}', ${f.fallback}` === fontFamily)
+        if (selected) {
+            ensureFontLoaded(selected)
+        }
+    })
     // 字体粗细选项
     const fontWeightOptions = [
         { value: '100', label: '100 - 超细' },
