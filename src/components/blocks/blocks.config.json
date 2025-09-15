@@ -21,6 +21,7 @@
         "preview": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><rect x='2' y='6' width='28' height='20' fill='none' stroke='%234ade80' stroke-width='2' rx='2'/><text x='16' y='20' text-anchor='middle' fill='%234ade80' font-size='10' font-weight='bold'>Title</text></svg>",
         "showFeatureTab": false,
         "hideTextContent": true,
+        "positionAtOrigin": true,
         "presetStyles": {
             "width": "100%",
             "height": "100%",
@@ -39,6 +40,7 @@
         "preview": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSczMicgaGVpZ2h0PSczMic+PHJlY3QgeD0nMicgeT0nNCcgd2lkdGg9JzI4JyBoZWlnaHQ9JzI0JyBmaWxsPSdub25lJyBzdHJva2U9JyMzOGJkZjgnIHN0cm9rZS13aWR0aD0nMicgcng9JzInLz48cmVjdCB4PScyJyB5PSc0JyB3aWR0aD0nMjgnIGhlaWdodD0nNicgZmlsbD0nIzM4YmRmOCcgcng9JzInLz48Y2lyY2xlIGN4PSc2JyBjeT0nNycgcj0nMScgZmlsbD0nIzBmMTcyYScvPjxjaXJjbGUgY3g9JzEwJyBjeT0nNycgcj0nMScgZmlsbD0nIzBmMTcyYScvPjxjaXJjbGUgY3g9JzE0JyBjeT0nNycgcj0nMScgZmlsbD0nIzBmMTcyYScvPjwvc3ZnPg==",
         "showFeatureTab": true,
         "dataBindable": true,
+        "positionAtOrigin": true,
         "presetStyles": {
             "width": "100%",
             "height": "100%",
@@ -59,12 +61,13 @@
         "preview": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSczMicgaGVpZ2h0PSczMic+PGNpcmNsZSBjeD0nMTYnIGN5PScxNicgcj0nMTInIGZpbGw9JyNmYWNjMTUnIHN0cm9rZT0nI2I0NTMwOScgc3Ryb2tlLXdpZHRoPScyJy8+PGxpbmUgeDE9JzE2JyB5MT0nMTYnIHgyPScxNicgeTI9JzgnIHN0cm9rZT0nI2I0NTMwOScgc3Ryb2tlLXdpZHRoPScyJy8+PGxpbmUgeDE9JzE2JyB5MT0nMTYnIHgyPScyMicgeTI9JzE2JyBzdHJva2U9JyNiNDUzMDknIHN0cm9rZS13aWR0aD0nMicvPjxjaXJjbGUgY3g9JzE2JyBjeT0nMTYnIHI9JzEuNScgZmlsbD0nI2I0NTMwOScvPjwvc3ZnPg==",
         "showFeatureTab": true,
         "hideTextContent": true,
+        "positionAtOrigin": true,
         "presetStyles": {
             "display": "flex",
             "justifyContent": "center",
             "alignItems": "center",
-            "width": "200px",
-            "height": "30px"
+            "width": "100%",
+            "height": "100%"
         },
         "featureProps": {
             "displayType": {
@@ -109,8 +112,9 @@
         "path": "../blocks/ButtonGroup.svelte",
         "preview": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSczMicgaGVpZ2h0PSczMic+PHJlY3QgeD0nMicgeT0nMTAnIHdpZHRoPSc4JyBoZWlnaHQ9JzEyJyBmaWxsPScjM2I4MmY2JyByeD0nMicvPjxyZWN0IHg9JzEyJyB5PScxMCcgd2lkdGg9JzgnIGhlaWdodD0nMTInIGZpbGw9JyMzYjgyZjYnIHJ4PScyJy8+PHJlY3QgeD0nMjInIHk9JzEwJyB3aWR0aD0nOCcgaGVpZ2h0PScxMicgZmlsbD0nIzNiODJmNicgcng9JzInLz48L3N2Zz4=",
         "showFeatureTab": true,
+        "positionAtOrigin": true,
         "presetStyles": {
-            "width": "70%",
+            "width": "100%",
             "height": "10%",
             "display": "flex",
             "justifyContent": "center",
@@ -139,8 +143,8 @@
             "justifyContent": "center",
             "alignItems": "center",
             "cursor": "pointer",
-            "width": "150px",
-            "height": "30px",
+            "width": "10%",
+            "height": "50%",
             "backgroundColor": "rgba(99, 102, 241, 0.15)"
         },
         "featureProps": {
@@ -231,6 +235,7 @@
         "preview": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><rect x='2' y='2' width='28' height='28' fill='none' stroke='%239d4edd' stroke-width='2' rx='2'/><polyline points='6,24 12,16 18,20 24,10' fill='none' stroke='%239d4edd' stroke-width='2'/><circle cx='6' cy='24' r='1.5' fill='%239d4edd'/><circle cx='12' cy='16' r='1.5' fill='%239d4edd'/><circle cx='18' cy='20' r='1.5' fill='%239d4edd'/><circle cx='24' cy='10' r='1.5' fill='%239d4edd'/></svg>",
         "showFeatureTab": true,
         "dataBindable": true,
+        "positionAtOrigin": true,
         "presetStyles": {
             "position": "absolute",
             "width": "100%",
@@ -241,9 +246,18 @@
                 "label": "图表类型",
                 "type": "select",
                 "options": [
-                    { "value": "bar", "label": "柱形" },
-                    { "value": "line", "label": "折线" },
-                    { "value": "pie", "label": "饼形" }
+                    {
+                        "value": "bar",
+                        "label": "柱形"
+                    },
+                    {
+                        "value": "line",
+                        "label": "折线"
+                    },
+                    {
+                        "value": "pie",
+                        "label": "饼形"
+                    }
                 ],
                 "default": "bar"
             },
@@ -252,23 +266,50 @@
                 "type": "json",
                 "default": {
                     "bar": {
-                        "title": { "text": "示例柱状图" },
+                        "title": {
+                            "text": "示例柱状图"
+                        },
                         "tooltip": {},
-                        "xAxis": { "type": "category" },
-                        "yAxis": { "type": "value" },
-                        "series": [{ "type": "bar" }]
+                        "xAxis": {
+                            "type": "category"
+                        },
+                        "yAxis": {
+                            "type": "value"
+                        },
+                        "series": [
+                            {
+                                "type": "bar"
+                            }
+                        ]
                     },
                     "line": {
-                        "title": { "text": "示例折线图" },
+                        "title": {
+                            "text": "示例折线图"
+                        },
                         "tooltip": {},
-                        "xAxis": { "type": "category" },
-                        "yAxis": { "type": "value" },
-                        "series": [{ "type": "line" }]
+                        "xAxis": {
+                            "type": "category"
+                        },
+                        "yAxis": {
+                            "type": "value"
+                        },
+                        "series": [
+                            {
+                                "type": "line"
+                            }
+                        ]
                     },
                     "pie": {
-                        "title": { "text": "示例饼图" },
-                        "tooltip": { "trigger": "item" },
-                        "legend": { "orient": "vertical", "left": "left" },
+                        "title": {
+                            "text": "示例饼图"
+                        },
+                        "tooltip": {
+                            "trigger": "item"
+                        },
+                        "legend": {
+                            "orient": "vertical",
+                            "left": "left"
+                        },
                         "series": [
                             {
                                 "type": "pie",
@@ -287,10 +328,24 @@
                 },
                 "type": "json",
                 "x": {
-                    "default": ["1", "2", "3", "4", "5", "6"]
+                    "default": [
+                        "1",
+                        "2",
+                        "3",
+                        "4",
+                        "5",
+                        "6"
+                    ]
                 },
                 "y": {
-                    "default": [1, 2, 3, 4, 5, 6]
+                    "default": [
+                        1,
+                        2,
+                        3,
+                        4,
+                        5,
+                        6
+                    ]
                 }
             },
             "line": {
@@ -300,10 +355,24 @@
                 },
                 "type": "json",
                 "x": {
-                    "default": ["6", "5", "4", "3", "2", "1"]
+                    "default": [
+                        "6",
+                        "5",
+                        "4",
+                        "3",
+                        "2",
+                        "1"
+                    ]
                 },
                 "y": {
-                    "default": [6, 5, 4, 3, 2, 1]
+                    "default": [
+                        6,
+                        5,
+                        4,
+                        3,
+                        2,
+                        1
+                    ]
                 }
             },
             "pie": {
@@ -313,10 +382,22 @@
                 },
                 "type": "json",
                 "name": {
-                    "default": ["A", "B", "C", "D", "E"]
+                    "default": [
+                        "A",
+                        "B",
+                        "C",
+                        "D",
+                        "E"
+                    ]
                 },
                 "value": {
-                    "default": [11, 22, 33, 44, 55]
+                    "default": [
+                        11,
+                        22,
+                        33,
+                        44,
+                        55
+                    ]
                 }
             }
         }

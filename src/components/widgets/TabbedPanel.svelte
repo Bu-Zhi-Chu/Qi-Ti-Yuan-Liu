@@ -260,8 +260,9 @@
                 previewEl = null
             }
             if (addNode && pendingNode) {
-                // Screen、ECharts 等特殊组件始终居父容器左上角
-                if (pendingNode.componentType === 'Screen' || pendingNode.componentType === 'ECharts') {
+                // 根据配置决定是否将组件放置在父容器左上角
+                const blockConfig = blocksConfig.find((b: any) => b.type === pendingNode.componentType)
+                if (blockConfig?.positionAtOrigin) {
                     pendingNode.styles.left = '0%'
                     pendingNode.styles.top = '0%'
                 }
