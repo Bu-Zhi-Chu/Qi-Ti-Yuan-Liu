@@ -815,17 +815,17 @@
                                 const writable = await handle.createWritable()
                                 await writable.write(blob)
                                 await writable.close()
-                                button.textContent = '保存为'
+                                button.textContent = '保存'
                             } catch (e) {
                                 console.error('另存失败', e)
-                                button.textContent = '保存为'
+                                button.textContent = '保存'
                             } finally {
                                 button.disabled = false
                             }
                         }}
                         style="padding: calc(4px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));background: none;border: none;color: white;cursor: pointer;font-size: calc(12px * var(--scale-ratio, 1));"
                     >
-                        保存为
+                        保存
                     </button>
                 {/if}
             {/if}
