@@ -21,9 +21,9 @@
     import { onMount, onDestroy } from 'svelte'
     import { filterDomTreeBySearch } from '../../services/repository/dom-tree.store.svelte'
     import { addNodeToParent } from '../../services/repository/dom-tree.store.svelte'
-import { projectId } from '../../services/repository/dom-tree.store.svelte'
-import DexieService from '../../services/database/dexie-service'
-import { get } from 'svelte/store'
+    import { projectId } from '../../services/repository/dom-tree.store.svelte'
+    import DexieService from '../../services/database/dexie-service'
+    import { get } from 'svelte/store'
 
     // 当前激活的页签
     let activeTab = $state<'nodes' | 'warehouse'>('nodes')

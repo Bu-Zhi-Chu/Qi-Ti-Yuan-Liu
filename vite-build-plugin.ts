@@ -1,7 +1,7 @@
 import type { Plugin } from 'vite'
 import { build as viteBuild } from 'vite';
 import { resolve } from 'path';
-import { writeFileSync, existsSync, mkdirSync } from 'fs';
+import { writeFileSync, existsSync, mkdirSync, rmSync, renameSync } from 'fs';
 import { createHash } from 'crypto';
 import formidable from 'formidable';
 import { createServer, Server } from 'http';
@@ -373,10 +373,31 @@ async function performRealBuild(request: BuildRequest): Promise<BuildResponse> {
   try {
     const { liteData, outputDir = 'dist-lite' } = request;
 
-    // 确保输出目录存在
+    // 确保输出目录存在，先删除确保干净
     const outputPath = resolve(process.cwd(), outputDir);
+    // 让 Vite 的 emptyOutDir 负责清理，避免 Windows 锁文件导致 ENOTEMPTY
     if (!existsSync(outputPath)) {
       mkdirSync(outputPath, { recursive: true });
+    }
+
+    // 避免历史残留文件与未来目录冲突，例如 dist-lite/fonts 被当作文件
+    try {
+      const fontsPath = resolve(outputPath, 'fonts');
+      if (existsSync(fontsPath)) {
+        try {
+          rmSync(fontsPath, { recursive: true, force: true });
+        } catch (e) {
+          // 最后尝试重命名，避免锁定造成的阻塞
+          try {
+            const tempName = fontsPath + '_old_' + Date.now();
+            renameSync(fontsPath, tempName);
+          } catch (_) {
+            /* 仍失败时忽略，让后续 emptyOutDir 继续 */
+          }
+        }
+      }
+    } catch (_) {
+      /* 忽略删除失败 */
     }
 
     // 设置环境变量供 Vite 使用（例如在配置或插件中读取）

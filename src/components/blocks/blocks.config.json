@@ -254,14 +254,14 @@
                         "tooltip": {},
                         "xAxis": { "type": "category" },
                         "yAxis": { "type": "value" },
-                        "series": [ { "type": "bar" } ]
+                        "series": [{ "type": "bar" }]
                     },
                     "line": {
                         "title": { "text": "示例折线图" },
                         "tooltip": {},
                         "xAxis": { "type": "category" },
                         "yAxis": { "type": "value" },
-                        "series": [ { "type": "line" } ]
+                        "series": [{ "type": "line" }]
                     },
                     "pie": {
                         "title": { "text": "示例饼图" },

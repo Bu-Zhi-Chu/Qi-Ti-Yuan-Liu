@@ -211,16 +211,16 @@ export class BuildService {
           throw new Error('缺少项目数据 Blob');
         }
         const fd = new FormData();
-        fd.append('mode', options.mode || 'pr oduction');
+        fd.append('mode', options.mode || 'production');
         fd.append('outputDir', 'dist-lite');
         fd.append('projectBlob', projectBlob, options.liteData?.filename || 'project-data.json');
         requestBody = fd;
         headers = undefined; // 让浏览器自动设置 multipart 边界
         console.log('准备发送构建请求，使用multipart/form-data，Blob大小:', projectBlob.size);
 
-        // 增加超时时间到30秒
+        // 将超时时间延长到120秒，避免大项目构建超时
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000);
+        const timeoutId = setTimeout(() => controller.abort(), 120000);
 
         // 调用后端API执行构建
         const response = await fetch('/api/build', {
