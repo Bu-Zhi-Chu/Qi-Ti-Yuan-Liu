@@ -66,8 +66,20 @@
     // 最终 ECharts option，对 config 与 data 的响应式派生
     const option = $derived(
         (() => {
-            // 当 config 为空时使用默认模板
-            let base: any = config && Object.keys(config).length ? JSON.parse(JSON.stringify(config)) : JSON.parse(JSON.stringify(chartDefaults[chartType] ?? chartDefaults['bar']))
+            // 兼容两种 config 结构：
+            // 1. 直接是 ECharts option
+            // 2. 是一个以 chartType 为 key 的模板映射（来自 blocks.config.json 默认值）
+            let base: any
+            if (config && ['bar', 'line', 'pie'].every((k) => k in config)) {
+                // 模板映射，取对应图表类型的子配置
+                base = JSON.parse(JSON.stringify((config as any)[chartType] ?? chartDefaults[chartType] ?? chartDefaults['bar']))
+            } else if (config && Object.keys(config).length) {
+                // 直接配置
+                base = JSON.parse(JSON.stringify(config))
+            } else {
+                // 回退默认模板
+                base = JSON.parse(JSON.stringify(chartDefaults[chartType] ?? chartDefaults['bar']))
+            }
 
             // 提取 x / y 轴数据
             let xData: any[] = []
@@ -118,6 +130,33 @@
     $effect(() => {
         if (!config || Object.keys(config).length === 0) config = chartDefaults[chartType] ?? chartDefaults['bar']
         if (!data || (Array.isArray(data) && data.length === 0)) data = defaultData
+    })
+
+    // 当图表类型切换且当前 config 与之前默认模板引用相同，自动替换为新类型默认模板，保证标题等同步
+    let prevChartType = chartType
+    $effect(() => {
+        if (chartType !== prevChartType) {
+            const prevDefaultRef = chartDefaults[prevChartType]
+            const cfgObj: any = config
+            const prevSeriesType = Array.isArray(cfgObj?.series) ? cfgObj.series[0]?.type : undefined
+
+            // 如果当前 config 是模板映射（包含 chartDefaults 的所有键）
+            const templateKeys = Object.keys(chartDefaults)
+            const isTemplateMap = cfgObj && templateKeys.every((k) => k in cfgObj)
+            if (isTemplateMap) {
+                // 直接提取当前类型子配置作为新的 config，便于属性面板只显示当前图表配置
+                config = JSON.parse(JSON.stringify(cfgObj[chartType] ?? chartDefaults[chartType] ?? chartDefaults['bar']))
+            } else if (config === prevDefaultRef || prevSeriesType === prevChartType) {
+                // 或者 config 与旧默认一致，也替换
+                config = chartDefaults[chartType] ?? chartDefaults['bar']
+            }
+
+            // 如果 data 仍是默认数据引用，则重置为默认 (保留示例数据)
+            if (data === defaultData) {
+                data = defaultData
+            }
+            prevChartType = chartType
+        }
     })
 </script>
 

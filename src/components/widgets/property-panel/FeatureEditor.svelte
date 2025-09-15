@@ -98,6 +98,17 @@
     $effect(() => {
         const attrs = propsSnapshot?.attributes || {}
         const styles = propsSnapshot?.styles || {}
+        // 若为 ECharts 且 config 为模板映射，默认展开当前 chartType 子配置，避免面板显示整体映射 JSON
+        const ct = attrs['chartType']
+        const cfg = attrs['config']
+        if (ct && cfg && typeof cfg === 'object') {
+            const templateMap = featureProps()?.config?.default
+            const templateKeys: string[] = templateMap ? Object.keys(templateMap) : []
+            if (templateKeys.length && templateKeys.every((k) => k in cfg)) {
+                // 模板映射 -> 展开子配置
+                attrs['config'] = cfg[ct] ?? cfg[templateKeys[0]]
+            }
+        }
         // 属性与样式合并，样式优先（避免同名冲突）
         currentValues = { ...attrs, ...styles }
     })
@@ -136,6 +147,26 @@
         if (entry?.type === 'size') {
             updateNodeProps(selectedId, { styles: { [key]: value } })
         } else {
+            // 若切换图表类型，同时根据默认模板更新 config 字段，提升编辑体验
+            if (key === 'chartType') {
+                // 获取 ECharts 组件默认模板映射
+                const cfgEntry = featureProps()?.config
+                const defaultMap = cfgEntry?.default as any
+                const currentCfg = currentValues['config']
+                let newCfg = currentCfg
+                const templateKeys = Object.keys(defaultMap ?? {}).length ? Object.keys(defaultMap) : Object.keys(currentCfg ?? {})
+                if (currentCfg && templateKeys.every((k) => k in currentCfg)) {
+                    // 当前为模板映射，直接取目标子配置
+                    newCfg = JSON.parse(JSON.stringify((currentCfg as any)[value] ?? (currentCfg as any)[templateKeys[0]]))
+                } else if (defaultMap && defaultMap[value]) {
+                    // 使用 blocks.config.json 中的默认模板
+                    newCfg = JSON.parse(JSON.stringify(defaultMap[value]))
+                }
+                if (newCfg !== currentCfg) {
+                    currentValues = { ...currentValues, config: newCfg }
+                    updateNodeProps(selectedId, { attributes: { config: newCfg } })
+                }
+            }
             updateNodeProps(selectedId, { attributes: { [key]: value } })
 
             // 额外逻辑：同级导航按钮唯一默认首页
