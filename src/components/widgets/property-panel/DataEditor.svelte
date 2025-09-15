@@ -58,24 +58,24 @@
         const globalType: string = dp.type || 'json'
 
         for (const [key, cfg] of Object.entries(dp)) {
-            if (["label", "type"].includes(key)) continue
+            if (['label', 'type'].includes(key)) continue
             // 新增 name/value 字段支持
-            if (key === "name" || key === "value") {
-                const labelKey = key === "name" ? "name" : "value"
-                const labelText = globalLabelMap[labelKey] || (key === "name" ? "名称" : "数值")
-                const defVal = cfg && typeof cfg === "object" && "default" in cfg ? (cfg as any).default : cfg
-                const isPrimitiveArray = Array.isArray(defVal) && defVal.every((v) => ["string", "number", "boolean"].includes(typeof v))
-                entries.push({ key, label: labelText, type: isPrimitiveArray ? "array" : globalType, default: defVal })
+            if (key === 'name' || key === 'value') {
+                const labelKey = key === 'name' ? 'name' : 'value'
+                const labelText = globalLabelMap[labelKey] || (key === 'name' ? '名称' : '数值')
+                const defVal = cfg && typeof cfg === 'object' && 'default' in cfg ? (cfg as any).default : cfg
+                const isPrimitiveArray = Array.isArray(defVal) && defVal.every((v) => ['string', 'number', 'boolean'].includes(typeof v))
+                entries.push({ key, label: labelText, type: isPrimitiveArray ? 'array' : globalType, default: defVal })
                 continue
             }
-            if (key === "default") {
+            if (key === 'default') {
                 // 其他图表使用 data 字段
-                entries.push({ key: "data", label: globalLabelMap.name ?? "数据", type: globalType, default: cfg })
+                entries.push({ key: 'data', label: globalLabelMap.name ?? '数据', type: globalType, default: cfg })
             } else {
                 const label = globalLabelMap && globalLabelMap[key] ? globalLabelMap[key] : key
-                const defVal = cfg && typeof cfg === "object" && "default" in cfg ? (cfg as any).default : cfg
-                const isPrimitiveArray = Array.isArray(defVal) && defVal.every((v) => ["string", "number", "boolean"].includes(typeof v))
-                entries.push({ key, label, type: isPrimitiveArray ? "array" : globalType, default: defVal })
+                const defVal = cfg && typeof cfg === 'object' && 'default' in cfg ? (cfg as any).default : cfg
+                const isPrimitiveArray = Array.isArray(defVal) && defVal.every((v) => ['string', 'number', 'boolean'].includes(typeof v))
+                entries.push({ key, label, type: isPrimitiveArray ? 'array' : globalType, default: defVal })
             }
         }
         return entries
