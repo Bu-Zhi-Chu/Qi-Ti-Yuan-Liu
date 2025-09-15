@@ -43,9 +43,9 @@
         { key: 'background', icon: 'Image', title: '背景样式' },
         { key: 'text', icon: 'Type', title: '文字样式' },
         { key: 'border', icon: 'SquareDashed', title: '边框样式' },
-        { key: 'event', icon: 'Activity', title: '事件处理' },
+        { key: 'feature', icon: 'Puzzle', title: '特性样式' },
         { key: 'data', icon: 'Database', title: '数据绑定' },
-        { key: 'feature', icon: 'Puzzle', title: '特性设置' }
+        { key: 'event', icon: 'Activity', title: '事件处理' }
     ] as const
 
     // 根据组件类型判断是否展示特性页签
@@ -416,7 +416,7 @@
             if (!showWorkspace) return
             window.location.href = '/'
         })
-        unregisterTabShortcuts = tabs.slice(0, 8).map((t, idx) =>
+        unregisterTabShortcuts = tabs.slice(0, 9).map((t, idx) =>
             registerShortcut(`Alt+${idx + 1}`, () => {
                 // 如果是特性设置页签且当前不显示，则忽略
                 if ((t.key === 'feature' && !showFeatureTab) || (t.key === 'data' && !showDataTab)) return
