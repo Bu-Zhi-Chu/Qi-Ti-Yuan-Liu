@@ -377,6 +377,9 @@
                     val = `${p.default}px`
                 } else if (p.type === 'switch') {
                     val = p.default !== undefined ? p.default : false
+                } // add
+                else if ((p.type === 'text' || p.type === 'json') && p.default !== undefined) {
+                    val = p.default
                 }
                 if (val !== undefined) {
                     if (p.type === 'size') {
@@ -468,6 +471,23 @@
                         </div>
                     {:else if p.type === 'switch'}
                         <ToggleSwitch checked={currentValues[p.key] ?? false} on:change={(e) => handleAttrChange(p.key, e.detail)} />
+                    {:else if p.type === 'text'}
+                        <input type="text" class="text-input" value={currentValues[p.key] ?? ''} oninput={(e) => handleAttrChange(p.key, (e.currentTarget as HTMLInputElement).value)} />
+                    {:else if p.type === 'json'}
+                        <textarea
+                            rows="6"
+                            class="json-input"
+                            oninput={(e) => {
+                                const str = (e.currentTarget as HTMLTextAreaElement).value
+                                try {
+                                    handleAttrChange(p.key, JSON.parse(str))
+                                } catch (err) {
+                                    /* ignore parse error */
+                                }
+                            }}
+                        >
+                            {JSON.stringify(currentValues[p.key] ?? p.default ?? {}, null, 2)}
+                        </textarea>
                     {/if}
                     <!-- 其他类型控件可在此扩展 -->
                 </PropertyRow>
@@ -546,5 +566,27 @@
         font-size: calc(16px * var(--scale-ratio, 1));
         font-weight: 600;
         color: #cbd5e1;
+    }
+
+    /* 统一输入控件样式（与 AttrEditor 保持一致） */
+    .text-input,
+    .number-input,
+    .json-input,
+    input[type='number'] {
+        flex: 1;
+        padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
+        border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.2);
+        border-radius: calc(6px * var(--scale-ratio, 1));
+        font-size: calc(13px * var(--scale-ratio, 1));
+        background: rgba(255, 255, 255, 0.1);
+        color: #e2e8f0;
+        transition: all 0.3s ease;
+        appearance: none;
+    }
+
+    .text-input::placeholder,
+    .number-input::placeholder,
+    .json-input::placeholder {
+        color: #9ca3af;
     }
 </style>

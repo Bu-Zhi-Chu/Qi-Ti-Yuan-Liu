@@ -260,8 +260,8 @@ import { get } from 'svelte/store'
                 previewEl = null
             }
             if (addNode && pendingNode) {
-                // Screen 页容器始终居父容器左上角
-                if (pendingNode.componentType === 'Screen') {
+                // Screen、ECharts 等特殊组件始终居父容器左上角
+                if (pendingNode.componentType === 'Screen' || pendingNode.componentType === 'ECharts') {
                     pendingNode.styles.left = '0%'
                     pendingNode.styles.top = '0%'
                 }

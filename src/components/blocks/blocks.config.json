@@ -222,5 +222,68 @@
                 }
             }
         }
+    },
+    {
+        "type": "ECharts",
+        "nameZh": "图表(ECharts)",
+        "path": "../blocks/ECharts.svelte",
+        "preview": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><rect x='2' y='2' width='28' height='28' fill='none' stroke='%239d4edd' stroke-width='2' rx='2'/><polyline points='6,24 12,16 18,20 24,10' fill='none' stroke='%239d4edd' stroke-width='2'/><circle cx='6' cy='24' r='1.5' fill='%239d4edd'/><circle cx='12' cy='16' r='1.5' fill='%239d4edd'/><circle cx='18' cy='20' r='1.5' fill='%239d4edd'/><circle cx='24' cy='10' r='1.5' fill='%239d4edd'/></svg>",
+        "showFeatureTab": true,
+        "presetStyles": {
+            "position": "absolute",
+            "width": "100%",
+            "height": "100%"
+        },
+        "featureProps": {
+            "chartType": {
+                "label": "图表类型",
+                "type": "select",
+                "options": [
+                    { "value": "bar", "label": "柱形" },
+                    { "value": "line", "label": "折线" },
+                    { "value": "pie", "label": "饼形" }
+                ],
+                "default": "bar"
+            },
+            "config": {
+                "label": "图表配置",
+                "type": "json",
+                "default": {
+                    "bar": {
+                        "title": { "text": "示例柱状图" },
+                        "tooltip": {},
+                        "xAxis": { "type": "category" },
+                        "yAxis": { "type": "value" },
+                        "series": [ { "type": "bar" } ]
+                    },
+                    "line": {
+                        "title": { "text": "示例折线图" },
+                        "tooltip": {},
+                        "xAxis": { "type": "category" },
+                        "yAxis": { "type": "value" },
+                        "series": [ { "type": "line" } ]
+                    },
+                    "pie": {
+                        "title": { "text": "示例饼图" },
+                        "tooltip": { "trigger": "item" },
+                        "legend": { "orient": "vertical", "left": "left" },
+                        "series": [
+                            {
+                                "type": "pie",
+                                "radius": "50%"
+                            }
+                        ]
+                    }
+                }
+            },
+            "data": {
+                "label": "数据填充",
+                "type": "json",
+                "default": {
+                    "x": ["A", "B", "C", "D", "E", "F"],
+                    "y": [23, 45, 56, 13, 22, 36]
+                }
+            }
+        }
     }
 ]
