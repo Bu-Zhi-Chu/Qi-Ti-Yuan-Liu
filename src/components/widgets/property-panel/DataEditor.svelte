@@ -44,9 +44,41 @@
     // 属性条目
     type PropEntry = { key: string; label: string; type: string; options?: any[]; min?: number; max?: number; default?: any }
     const propEntries: () => PropEntry[] = $derived(() => {
-        const dp = dataPropsDef()
+        let dp: any = dataPropsDef()
         if (!dp) return []
-        return Object.entries(dp).map(([key, cfg]: [string, any]) => ({ key, ...cfg }))
+
+        // 若按图表类型区分，则根据当前节点属性中的 chartType 选择
+        if (dp && typeof dp === 'object' && !Array.isArray(dp)) {
+            const ct = dataSnapshot?.attributes?.chartType ?? 'bar'
+            if (dp[ct]) dp = dp[ct]
+        }
+
+        const entries: PropEntry[] = []
+        const globalLabelMap: any = dp.label || {}
+        const globalType: string = dp.type || 'json'
+
+        for (const [key, cfg] of Object.entries(dp)) {
+            if (["label", "type"].includes(key)) continue
+            // 新增 name/value 字段支持
+            if (key === "name" || key === "value") {
+                const labelKey = key === "name" ? "name" : "value"
+                const labelText = globalLabelMap[labelKey] || (key === "name" ? "名称" : "数值")
+                const defVal = cfg && typeof cfg === "object" && "default" in cfg ? (cfg as any).default : cfg
+                const isPrimitiveArray = Array.isArray(defVal) && defVal.every((v) => ["string", "number", "boolean"].includes(typeof v))
+                entries.push({ key, label: labelText, type: isPrimitiveArray ? "array" : globalType, default: defVal })
+                continue
+            }
+            if (key === "default") {
+                // 其他图表使用 data 字段
+                entries.push({ key: "data", label: globalLabelMap.name ?? "数据", type: globalType, default: cfg })
+            } else {
+                const label = globalLabelMap && globalLabelMap[key] ? globalLabelMap[key] : key
+                const defVal = cfg && typeof cfg === "object" && "default" in cfg ? (cfg as any).default : cfg
+                const isPrimitiveArray = Array.isArray(defVal) && defVal.every((v) => ["string", "number", "boolean"].includes(typeof v))
+                entries.push({ key, label, type: isPrimitiveArray ? "array" : globalType, default: defVal })
+            }
+        }
+        return entries
     })
 
     // 当前值
@@ -66,7 +98,7 @@
         <PropertySelect
             value={currentValues.dataSource ?? 'json'}
             options={[
-                { value: 'json', label: 'JSON配置' },
+                { value: 'json', label: '临时数据' },
                 { value: 'mock', label: '虚拟接口' },
                 { value: 'real', label: '真实请求' }
             ]}
@@ -76,7 +108,7 @@
 
     {#if selectedId && propEntries().length}
         {#each propEntries() as p (p.key)}
-            {#if p.key !== 'data' || (currentValues.dataSource ?? 'json') === 'json'}
+            {#if (currentValues.dataSource ?? 'json') === 'json'}
                 <PropertyRow label={p.label}>
                     {#if p.type === 'select'}
                         <PropertySelect value={currentValues[p.key]} options={p.options} change={(v) => handleAttrChange(p.key, v)} />
@@ -84,6 +116,23 @@
                         <input type="number" min={p.min} max={p.max} value={currentValues[p.key] ?? ''} oninput={(e) => handleAttrChange(p.key, +(e.currentTarget as HTMLInputElement).value)} />
                     {:else if p.type === 'size'}
                         <SizeInput value={currentValues[p.key] ?? ''} unit="px" unitOptions={['px']} convert={(v) => v} on:change={({ detail }) => handleAttrChange(p.key, detail.value)} />
+                    {:else if p.type === 'array'}
+                        <textarea
+                            rows="4"
+                            oninput={(e) => {
+                                const txt = (e.currentTarget as HTMLTextAreaElement).value
+                                try {
+                                    const val = JSON.parse(txt)
+                                    if (Array.isArray(val)) {
+                                        handleAttrChange(p.key, val)
+                                    }
+                                } catch {
+                                    // ignore parse errors
+                                }
+                            }}
+                        >
+                            {JSON.stringify(currentValues[p.key] ?? p.default)}
+                        </textarea>
                     {:else if p.type === 'json'}
                         <textarea
                             rows="6"
@@ -104,9 +153,9 @@
         {/each}
 
         {#if (currentValues.dataSource ?? 'json') === 'real'}
-        <PropertyRow label="请求路径">
-            <input type="text" value={currentValues.requestPath ?? ''} oninput={(e) => handleAttrChange('requestPath', (e.currentTarget as HTMLInputElement).value)} placeholder="/api/chart-data" />
-        </PropertyRow>
+            <PropertyRow label="请求路径">
+                <input type="text" value={currentValues.requestPath ?? ''} oninput={(e) => handleAttrChange('requestPath', (e.currentTarget as HTMLInputElement).value)} placeholder="/api/chart-data" />
+            </PropertyRow>
         {/if}
     {:else}
         <p class="placeholder">{selectedId ? '当前组件没有可绑定的数据项' : '请选择一个节点'}</p>

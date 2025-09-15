@@ -36,10 +36,33 @@
         }
     }
 
-    // 默认数据
-    const defaultData = {
-        x: ['A', 'B', 'C', 'D', 'E', 'F'],
-        y: [23, 45, 56, 13, 22, 36]
+    // 默认数据：运行时从 blocks.config.json 提取，避免在代码里硬编码
+    import blocksConfig from './blocks.config.json'
+
+    function buildDefaultDataMap() {
+        const map: Record<string, any> = {}
+        const chartCfg: any = (blocksConfig as any[]).find((c) => c.type === 'ECharts')?.dataProps ?? {}
+        for (const [ct, def] of Object.entries(chartCfg)) {
+            const d: any = def
+            if (ct === 'pie') {
+                map[ct] = {
+                    name: d?.name?.default ?? [],
+                    value: d?.value?.default ?? []
+                }
+            } else {
+                map[ct] = {
+                    x: d?.x?.default ?? [],
+                    y: d?.y?.default ?? []
+                }
+            }
+        }
+        return map
+    }
+
+    const defaultDataMap: Record<string, any> = buildDefaultDataMap()
+
+    function getDefaultData(ct: string) {
+        return defaultDataMap[ct] ?? defaultDataMap['bar']
     }
 
     /**
@@ -56,7 +79,13 @@
         id?: string
         chartType?: 'bar' | 'line' | 'pie'
         config?: any
+        x?: any
+        y?: any
         data?: any
+        /** 饼图专用：名称数组 */
+        name?: any
+        /** 饼图专用：数值数组，与 name 对应 */
+        value?: any
         dataSource?: 'json' | 'mock' | 'real'
         requestPath?: string
         theme?: any
@@ -65,7 +94,7 @@
     }
 
     // Svelte 5 runes写法：直接在解构中初始化默认值
-    let { id = crypto.randomUUID(), chartType = 'bar', config = chartDefaults[chartType] ?? chartDefaults['bar'], data = defaultData, dataSource = 'json', requestPath = '', theme = 'light', style = '', ...rest } = $props() as Props
+    let { id = crypto.randomUUID(), chartType = 'bar', config = chartDefaults[chartType] ?? chartDefaults['bar'], x = undefined, y = undefined, data = undefined, name = undefined, value = undefined, dataSource = 'json', requestPath = '', theme = 'light', style = '', ...rest } = $props() as Props
     // 当 dataSource 为 mock 或 real 时，尝试根据 requestPath 发起网络请求获取数据
     $effect(() => {
         console.debug('[ECharts] effect', { dataSource, requestPath })
@@ -103,13 +132,46 @@
             let xData: any[] = []
             let yData: any[] = []
 
-            if (Array.isArray(data)) {
-                // 仅提供 y 数据数组
-                yData = data
-                xData = data.map((_, idx) => String(idx + 1))
-            } else if (data && typeof data === 'object') {
-                xData = Array.isArray((data as any).x) ? (data as any).x : []
-                yData = Array.isArray((data as any).y) ? (data as any).y : []
+            const isPieChart = chartType === 'pie'
+
+            // 首先如果组件显式传入 x/y 则优先使用
+            if (x && Array.isArray(x)) xData = x
+            if (y && Array.isArray(y)) yData = y
+
+            // 若未显式传入，则回退到 data 结构解析
+            let effectiveData: any = data
+            if (!xData.length && !yData.length) {
+                if (data == null) {
+                    effectiveData = getDefaultData(chartType)
+                }
+                if (data && typeof data === 'object' && ['bar', 'line', 'pie'].every((k) => k in data)) {
+                    effectiveData = (data as any)[chartType]
+                }
+            }
+
+            const fillFromEffective = () => {
+                if (isPieChart) {
+                    if (Array.isArray(name) && Array.isArray(value)) {
+                        yData = name.map((n: string, idx: number) => ({ name: n, value: value[idx] ?? 0 }))
+                    } else if (effectiveData && typeof effectiveData === 'object') {
+                        const names = Array.isArray((effectiveData as any).name) ? (effectiveData as any).name : []
+                        const values = Array.isArray((effectiveData as any).value) ? (effectiveData as any).value : []
+                        yData = names.map((n: string, idx: number) => ({ name: n, value: values[idx] ?? 0 }))
+                    } else if (Array.isArray(effectiveData)) {
+                        yData = effectiveData as any[]
+                    }
+                } else if (Array.isArray(effectiveData)) {
+                    yData = effectiveData
+                    xData = effectiveData.map((_, idx) => String(idx + 1))
+                } else if (effectiveData && typeof effectiveData === 'object') {
+                    if (!xData.length) xData = Array.isArray((effectiveData as any).x) ? (effectiveData as any).x : []
+                    if (!yData.length) yData = Array.isArray((effectiveData as any).y) ? (effectiveData as any).y : []
+                }
+            }
+
+            // 若两者皆空或有一方为空，则尝试补齐
+            if (!xData.length || !yData.length) {
+                fillFromEffective()
             }
 
             // 处理 xAxis / yAxis
@@ -147,7 +209,7 @@
     // 若外部传入空数据或配置，自动回退
     $effect(() => {
         if (!config || Object.keys(config).length === 0) config = chartDefaults[chartType] ?? chartDefaults['bar']
-        if (!data || (Array.isArray(data) && data.length === 0)) data = defaultData
+        if (!data || (Array.isArray(data) && data.length === 0)) data = getDefaultData(chartType)
     })
 
     // 当图表类型切换且当前 config 与之前默认模板引用相同，自动替换为新类型默认模板，保证标题等同步
@@ -170,9 +232,16 @@
             }
 
             // 如果 data 仍是默认数据引用，则重置为默认 (保留示例数据)
-            if (data === defaultData) {
-                data = defaultData
+            if (data && ['bar', 'line', 'pie'].every((k) => k in defaultDataMap) && Object.values(defaultDataMap).some((v) => v === data)) {
+                data = getDefaultData(chartType)
             }
+
+            // 清理上一类型专属的数据字段，避免沿用到新类型
+            x = undefined
+            y = undefined
+            name = undefined
+            value = undefined
+
             prevChartType = chartType
         }
     })
