@@ -46,6 +46,33 @@ let domTreeVersionData = $state(0);
 /** 可订阅的 domTree 版本号 store */
 export const domTreeVersionStore = writable(0);
 
+/**
+ * 获取全局 Mock 设置：从 DOM 树中任意一个开启 useMock 的节点读取。
+ * 有一个节点开启即认为全局启用；若都未开启，则关闭。
+ */
+export function getMockSettingsFromDomTree() {
+  const defaultSettings = { useMock: false, mockBase: '/mock-api/' } as { useMock: boolean; mockBase: string };
+
+  function dfs(node: DomNode): { useMock: boolean; mockBase: string } | null {
+    if (node.attributes && node.attributes.dataSource === 'mock') {
+      return {
+        useMock: true,
+        mockBase: (node.attributes.mockBase as string | undefined) ?? '/mock-api/'
+      };
+    }
+    if (node.children) {
+      for (const child of node.children) {
+        const found = dfs(child);
+        if (found) return found;
+      }
+    }
+    return null;
+  }
+
+  const found = dfs(domTree);
+  return found ?? defaultSettings;
+}
+
 /** 内部工具：递增版本号 */
 function bumpDomTreeVersion() {
   domTreeVersionData = domTreeVersionData + 1;

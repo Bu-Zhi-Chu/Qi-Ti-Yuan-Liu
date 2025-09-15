@@ -62,31 +62,52 @@
 </script>
 
 <div class="data-editor">
+    <PropertyRow label="数据接入">
+        <PropertySelect
+            value={currentValues.dataSource ?? 'json'}
+            options={[
+                { value: 'json', label: 'JSON配置' },
+                { value: 'mock', label: '虚拟接口' },
+                { value: 'real', label: '真实请求' }
+            ]}
+            change={(v) => handleAttrChange('dataSource', v)}
+        />
+    </PropertyRow>
+
     {#if selectedId && propEntries().length}
-        <h3>数据绑定</h3>
         {#each propEntries() as p (p.key)}
-            <PropertyRow label={p.label}>
-                {#if p.type === 'select'}
-                    <PropertySelect value={currentValues[p.key]} options={p.options} change={(v) => handleAttrChange(p.key, v)} />
-                {:else if p.type === 'number'}
-                    <input type="number" min={p.min} max={p.max} value={currentValues[p.key] ?? ''} oninput={(e) => handleAttrChange(p.key, +(e.currentTarget as HTMLInputElement).value)} />
-                {:else if p.type === 'size'}
-                    <SizeInput value={currentValues[p.key] ?? ''} unit="px" unitOptions={['px']} convert={(v) => v} on:change={({ detail }) => handleAttrChange(p.key, detail.value)} />
-                {:else if p.type === 'json'}
-                    <textarea
-                        rows="6"
-                        oninput={(e) => {
-                            try {
-                                const val = JSON.parse((e.currentTarget as HTMLTextAreaElement).value)
-                                handleAttrChange(p.key, val)
-                            } catch {}
-                        }}
-                    >{JSON.stringify(currentValues[p.key] ?? p.default, null, 2)}</textarea>
-                {:else}
-                    <input type="text" value={currentValues[p.key] ?? ''} oninput={(e) => handleAttrChange(p.key, (e.currentTarget as HTMLInputElement).value)} />
-                {/if}
-            </PropertyRow>
+            {#if p.key !== 'data' || (currentValues.dataSource ?? 'json') === 'json'}
+                <PropertyRow label={p.label}>
+                    {#if p.type === 'select'}
+                        <PropertySelect value={currentValues[p.key]} options={p.options} change={(v) => handleAttrChange(p.key, v)} />
+                    {:else if p.type === 'number'}
+                        <input type="number" min={p.min} max={p.max} value={currentValues[p.key] ?? ''} oninput={(e) => handleAttrChange(p.key, +(e.currentTarget as HTMLInputElement).value)} />
+                    {:else if p.type === 'size'}
+                        <SizeInput value={currentValues[p.key] ?? ''} unit="px" unitOptions={['px']} convert={(v) => v} on:change={({ detail }) => handleAttrChange(p.key, detail.value)} />
+                    {:else if p.type === 'json'}
+                        <textarea
+                            rows="6"
+                            oninput={(e) => {
+                                try {
+                                    const val = JSON.parse((e.currentTarget as HTMLTextAreaElement).value)
+                                    handleAttrChange(p.key, val)
+                                } catch {}
+                            }}
+                        >
+                            {JSON.stringify(currentValues[p.key] ?? p.default, null, 2)}
+                        </textarea>
+                    {:else}
+                        <input type="text" value={currentValues[p.key] ?? ''} oninput={(e) => handleAttrChange(p.key, (e.currentTarget as HTMLInputElement).value)} />
+                    {/if}
+                </PropertyRow>
+            {/if}
         {/each}
+
+        {#if (currentValues.dataSource ?? 'json') === 'real'}
+        <PropertyRow label="请求路径">
+            <input type="text" value={currentValues.requestPath ?? ''} oninput={(e) => handleAttrChange('requestPath', (e.currentTarget as HTMLInputElement).value)} placeholder="/api/chart-data" />
+        </PropertyRow>
+        {/if}
     {:else}
         <p class="placeholder">{selectedId ? '当前组件没有可绑定的数据项' : '请选择一个节点'}</p>
     {/if}
@@ -98,11 +119,9 @@
         color: #e2e8f0;
     }
 
-    h3 {
-        margin: 0 0 calc(16px * var(--scale-ratio, 1)) 0;
-        font-size: calc(16px * var(--scale-ratio, 1));
-        font-weight: 600;
-        color: #cbd5e1;
+    /* 行间距：仅作用于本页签，其他面板已自带 */
+    :global(.data-editor .property-row:not(:last-child)) {
+        margin-bottom: calc(12px * var(--scale-ratio, 1));
     }
 
     .placeholder {

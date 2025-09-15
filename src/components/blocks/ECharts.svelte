@@ -1,6 +1,7 @@
 <script lang="ts">
     import { Chart as ECharts } from 'svelte-echarts'
     import echartsInit from './echarts-core'
+    import { request } from '../../services/request'
 
     // 默认基础配置，不含具体数据
     const defaultConfig = {
@@ -56,13 +57,30 @@
         chartType?: 'bar' | 'line' | 'pie'
         config?: any
         data?: any
+        dataSource?: 'json' | 'mock' | 'real'
+        requestPath?: string
         theme?: any
         style?: string
         [key: string]: any
     }
 
     // Svelte 5 runes写法：直接在解构中初始化默认值
-    let { id = crypto.randomUUID(), chartType = 'bar', config = chartDefaults[chartType] ?? chartDefaults['bar'], data = defaultData, theme = 'light', style = '', ...rest } = $props() as Props
+    let { id = crypto.randomUUID(), chartType = 'bar', config = chartDefaults[chartType] ?? chartDefaults['bar'], data = defaultData, dataSource = 'json', requestPath = '', theme = 'light', style = '', ...rest } = $props() as Props
+    // 当 dataSource 为 mock 或 real 时，尝试根据 requestPath 发起网络请求获取数据
+    $effect(() => {
+        console.debug('[ECharts] effect', { dataSource, requestPath })
+        if (dataSource !== 'json' && requestPath) {
+            const url = requestPath
+            request<any>(url)
+                .then((resp) => {
+                    data = resp
+                })
+                .catch((e) => {
+                    console.error('[ECharts] 数据请求失败', e)
+                })
+        }
+    })
+
     // 最终 ECharts option，对 config 与 data 的响应式派生
     const option = $derived(
         (() => {
