@@ -38,6 +38,7 @@
         "path": "../blocks/Screen.svelte",
         "preview": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSczMicgaGVpZ2h0PSczMic+PHJlY3QgeD0nMicgeT0nNCcgd2lkdGg9JzI4JyBoZWlnaHQ9JzI0JyBmaWxsPSdub25lJyBzdHJva2U9JyMzOGJkZjgnIHN0cm9rZS13aWR0aD0nMicgcng9JzInLz48cmVjdCB4PScyJyB5PSc0JyB3aWR0aD0nMjgnIGhlaWdodD0nNicgZmlsbD0nIzM4YmRmOCcgcng9JzInLz48Y2lyY2xlIGN4PSc2JyBjeT0nNycgcj0nMScgZmlsbD0nIzBmMTcyYScvPjxjaXJjbGUgY3g9JzEwJyBjeT0nNycgcj0nMScgZmlsbD0nIzBmMTcyYScvPjxjaXJjbGUgY3g9JzE0JyBjeT0nNycgcj0nMScgZmlsbD0nIzBmMTcyYScvPjwvc3ZnPg==",
         "showFeatureTab": true,
+        "dataBindable": true,
         "presetStyles": {
             "width": "100%",
             "height": "100%",
@@ -229,6 +230,7 @@
         "path": "../blocks/ECharts.svelte",
         "preview": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><rect x='2' y='2' width='28' height='28' fill='none' stroke='%239d4edd' stroke-width='2' rx='2'/><polyline points='6,24 12,16 18,20 24,10' fill='none' stroke='%239d4edd' stroke-width='2'/><circle cx='6' cy='24' r='1.5' fill='%239d4edd'/><circle cx='12' cy='16' r='1.5' fill='%239d4edd'/><circle cx='18' cy='20' r='1.5' fill='%239d4edd'/><circle cx='24' cy='10' r='1.5' fill='%239d4edd'/></svg>",
         "showFeatureTab": true,
+        "dataBindable": true,
         "presetStyles": {
             "position": "absolute",
             "width": "100%",

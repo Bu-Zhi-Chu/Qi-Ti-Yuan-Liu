@@ -57,10 +57,16 @@
         return cfg?.showFeatureTab === true
     }
 
-    // 根据当前选中节点类型，决定是否展示特性页签
-    let showFeatureTab = $derived.by(() => {
+    function isDataTabEnabledForType(type?: string) {
+        if (!type) return false
+        const cfg = blocksMap.get(type)
+        return cfg?.dataBindable === true
+    }
+
+    // 根据当前选中节点类型，决定是否展示特性与数据页签
+    const computeTabStates = () => {
         const currentSelectedId = selectedId()
-        if (!currentSelectedId) return false
+        if (!currentSelectedId) return { feature: false, data: false }
 
         const findNode = (node: any): any => {
             if (node.id === currentSelectedId) return node
@@ -74,8 +80,14 @@
         }
         const selectedNode = findNode(domTree)
         const type = selectedNode?.componentType || (selectedNode?.attributes as any)?.type
-        return isFeatureTabEnabledForType(type)
-    })
+        return {
+            feature: isFeatureTabEnabledForType(type),
+            data: isDataTabEnabledForType(type)
+        }
+    }
+
+    let showFeatureTab = $derived.by(() => computeTabStates().feature)
+    let showDataTab = $derived.by(() => computeTabStates().data)
 
     // 可见标签数组
     let visibleTabs = $derived.by(() => tabs)
@@ -407,7 +419,7 @@
         unregisterTabShortcuts = tabs.slice(0, 8).map((t, idx) =>
             registerShortcut(`Alt+${idx + 1}`, () => {
                 // 如果是特性设置页签且当前不显示，则忽略
-                if (t.key === 'feature' && !showFeatureTab) return
+                if ((t.key === 'feature' && !showFeatureTab) || (t.key === 'data' && !showDataTab)) return
                 setTab(t.key)
             })
         )
@@ -745,7 +757,7 @@
             let nextIdx = idx
             do {
                 nextIdx = (nextIdx + dir + len) % len
-            } while (visibleTabs[nextIdx].key === 'feature' && !showFeatureTab)
+            } while ((visibleTabs[nextIdx].key === 'feature' && !showFeatureTab) || (visibleTabs[nextIdx].key === 'data' && !showDataTab))
 
             setTab(visibleTabs[nextIdx].key)
         }
@@ -1007,7 +1019,7 @@
                 <!-- 标签切换按钮栏 -->
                 <div class="prop-tabbar" style="width: 12%;height: 100%;display: flex;flex-direction: column;align-items: center;justify-content: flex-start;padding-top: calc(12px * var(--scale-ratio, 1));gap: calc(8px * var(--scale-ratio, 1));pointer-events: auto;background: rgb(15, 20, 29);">
                     {#each visibleTabs as t}
-                        <button disabled={t.key === 'feature' && !showFeatureTab} class:active={activeTab === t.key} onclick={() => setTab(t.key)} title={t.title}>
+                        <button disabled={(t.key === 'feature' && !showFeatureTab) || (t.key === 'data' && !showDataTab)} class:active={activeTab === t.key} onclick={() => setTab(t.key)} title={t.title}>
                             <Icon name={t.icon} size={16} style="width: calc(16px * var(--scale-ratio, 1)); height: calc(16px * var(--scale-ratio, 1))" />
                         </button>
                     {/each}
