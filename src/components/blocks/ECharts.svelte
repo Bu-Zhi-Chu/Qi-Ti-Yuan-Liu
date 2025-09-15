@@ -1,6 +1,6 @@
 <script lang="ts">
     import { Chart as ECharts } from 'svelte-echarts'
-    import { init as echartsInit } from 'echarts'
+    import echartsInit from './echarts-core'
 
     // 默认基础配置，不含具体数据
     const defaultConfig = {

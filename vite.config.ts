@@ -105,6 +105,7 @@ export default defineConfig({
                     if (id.includes('node_modules')) {
                         if (id.includes('svelte')) return 'vendor-svelte';
                         if (id.includes('lucide')) return 'vendor-lucide';
+                        if (id.includes('echarts')) return 'vendor-echarts';
                         return 'vendor';
                     }
                     if (id.includes('src/services/')) {
