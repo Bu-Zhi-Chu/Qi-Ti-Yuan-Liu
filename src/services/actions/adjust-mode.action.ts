@@ -165,16 +165,34 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
       const computedPosStyle = window.getComputedStyle(el)
       isStaticLayoutRef = computedPosStyle.position === 'static'
       if (dir.includes('w')) {
-        const inlineLeftVal = el.style.left
-        initialLeft = inlineLeftVal || computedPosStyle.left
+        if (isStaticLayoutRef) {
+          // 静态定位使用 marginLeft
+          const inlineMarginLeftVal = el.style.marginLeft
+          initialLeft = inlineMarginLeftVal || computedPosStyle.marginLeft || '0px'
+        } else {
+          // 绝对定位使用 left
+          const inlineLeftVal = el.style.left
+          initialLeft = inlineLeftVal || computedPosStyle.left
+        }
         initialLeftUnit = (initialLeft.match(UNIT_REGEX) ?? ['px'])[0]
         if (initialLeftUnit === 'auto') initialLeftUnit = 'px'
+        // 如果是 auto，重置为 0px
+        if (initialLeft === 'auto') initialLeft = '0px'
       }
       if (dir.includes('n')) {
-        const inlineTopVal = el.style.top
-        initialTop = inlineTopVal || computedPosStyle.top
+        if (isStaticLayoutRef) {
+          // 静态定位使用 marginTop
+          const inlineMarginTopVal = el.style.marginTop
+          initialTop = inlineMarginTopVal || computedPosStyle.marginTop || '0px'
+        } else {
+          // 绝对定位使用 top
+          const inlineTopVal = el.style.top
+          initialTop = inlineTopVal || computedPosStyle.top
+        }
         initialTopUnit = (initialTop.match(UNIT_REGEX) ?? ['px'])[0]
         if (initialTopUnit === 'auto') initialTopUnit = 'px'
+        // 如果是 auto，重置为 0px
+        if (initialTop === 'auto') initialTop = '0px'
       }
     }
     startAdjusting({ x: ev.clientX, y: ev.clientY }, selectedId)
@@ -888,8 +906,8 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
           const initHeightPx = initialHeightUnit === '%' ? (initHeightVal / 100) * parentHeight : (initialHeightFromComputed ? initHeightVal / sr : initHeightVal);
           const newHeightPx = initHeightPx - dyDesign;
 
-          const percentBaseH = isStaticLayoutRef && initialHeightUnit === '%' ? parentWidth : parentHeight;
-          const newHeight = initialHeightUnit === '%' ? `${(newHeightPx / percentBaseH) * 100}%` : `calc(${Math.round(newHeightPx)}px * var(--scale-ratio, 1))`;
+          // 修正：与左上角手柄保持一致，高度百分比始终以父容器高度为基准
+          const newHeight = initialHeightUnit === '%' ? `${(newHeightPx / parentHeight) * 100}%` : `calc(${Math.round(newHeightPx)}px * var(--scale-ratio, 1))`;
           targetEl.style.height = newHeight;
 
           // 更新高度
