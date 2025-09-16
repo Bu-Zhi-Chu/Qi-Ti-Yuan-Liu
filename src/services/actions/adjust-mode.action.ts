@@ -265,26 +265,47 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
     handleEls = []
   }
 
+  // 新增：获取/创建全局覆盖层根节点，避免多次查询
+  function getAdjustOverlayRoot() {
+    let root = document.getElementById('adjust-overlay-root') as HTMLElement | null
+    if (!root) {
+      root = document.createElement('div')
+      root.id = 'adjust-overlay-root'
+      Object.assign(root.style, {
+        position: 'absolute',
+        top: '0',
+        left: '0',
+        width: '100%',
+        height: '100%',
+        pointerEvents: 'none',
+        zIndex: '9998'
+      } as CSSStyleDeclaration)
+      document.body.appendChild(root)
+    }
+    return root
+  }
+
+  // 根据目标元素实时更新覆盖层位置与尺寸
+  function updateOverlayPosition() {
+    if (!overlayEl || !targetElRef) return
+    const rect = targetElRef.getBoundingClientRect()
+    Object.assign(overlayEl.style, {
+      width: `${rect.width}px`,
+      height: `${rect.height}px`,
+      transform: `translate(${rect.left + window.scrollX}px, ${rect.top + window.scrollY}px)`
+    } as CSSStyleDeclaration)
+  }
+
   // 创建覆盖层并添加手柄
   function addOverlayWithHandles(targetEl: HTMLElement) {
     // 保证仅存在一个覆盖层
     removeOverlay()
 
-    // 若目标元素无定位上下文，强制设为 relative，确保绝对定位参考
-    if (getComputedStyle(targetEl).position === 'static') {
-      targetEl.style.position = 'relative'
-    }
-
-    // 外层 100% 尺寸绝对容器
+    // 创建外层容器，使用绝对定位挂载到全局覆盖层根节点
     const wrapper = document.createElement('div')
     Object.assign(wrapper.style, {
       position: 'absolute',
-      top: '0',
-      left: '0',
-      width: '100%',
-      height: '100%',
-      pointerEvents: 'none',
-      zIndex: '9998'
+      pointerEvents: 'none'
     } as CSSStyleDeclaration)
 
     // 内层真正可交互的覆盖层
@@ -300,12 +321,18 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
     } as CSSStyleDeclaration)
 
     wrapper.appendChild(overlay)
-    targetEl.appendChild(wrapper)
+    const root = getAdjustOverlayRoot()
+    root.appendChild(wrapper)
+
     overlayEl = wrapper
+    targetElRef = targetEl
     currentOverlayNodeId = targetEl.getAttribute('node-id') || selectedNodeAccessor() || null
 
     // 在覆盖层内部挂载操作手柄
     addHandles(overlay)
+
+    // 初始化一次位置
+    updateOverlayPosition()
   }
 
   // 移除覆盖层及其内部手柄
@@ -389,6 +416,8 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
           removeOverlay()
           if (newEl) addOverlayWithHandles(newEl)
         }
+        // 实时同步覆盖层位置
+        updateOverlayPosition()
         monitorRAF = requestAnimationFrame(monitor)
       }
       monitorRAF = requestAnimationFrame(monitor)

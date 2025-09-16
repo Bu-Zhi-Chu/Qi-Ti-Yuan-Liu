@@ -69,12 +69,16 @@ export function moveDomByOffset(params: MoveDomParams): { x: number; y: number }
   // 2. 若初始单位为 %，先转换为像素，计算时统一使用像素
   const parentEl = targetEl.parentElement as HTMLElement | null
   const parentWidth = parentEl?.offsetWidth || 1
-  const parentHeight = parentEl?.offsetHeight || 1
 
   let initLeftPx = extractNumeric(initialLeft)
   let initTopPx = extractNumeric(initialTop)
-  if (initialLeftUnit === '%') initLeftPx = (initLeftPx / 100) * parentWidth
-  if (initialTopUnit === '%') initTopPx = (initTopPx / 100) * parentHeight
+  if (initialLeftUnit === '%') {
+    initLeftPx = (initLeftPx / 100) * parentWidth
+  }
+  // 关键修复：marginTop 的百分比单位基于父元素的宽度
+  if (initialTopUnit === '%') {
+    initTopPx = (initTopPx / 100) * parentWidth
+  }
 
   // 3. 计算新位置(像素)
   const newLeftPx = initLeftPx + dxDesign
@@ -85,22 +89,24 @@ export function moveDomByOffset(params: MoveDomParams): { x: number; y: number }
     initialLeftUnit === '%'
       ? `${(newLeftPx / parentWidth) * 100}%`
       : `calc(${Math.round(newLeftPx)}px * var(--scale-ratio, 1))`
+
   const newTopStr =
     initialTopUnit === '%'
-      ? `${(newTopPx / parentHeight) * 100}%`
+      // 关键修复：同样使用 parentWidth
+      ? `${(newTopPx / parentWidth) * 100}%`
       : `calc(${Math.round(newTopPx)}px * var(--scale-ratio, 1))`
 
   // 5. 写入 DOM（仅在对应位移非 0 时更新，避免不必要的抖动）
   if (dxScreen !== 0) {
     if (isStaticLayout) {
-      (targetEl.style as any).marginLeft = newLeftStr
+      ;(targetEl.style as any).marginLeft = newLeftStr
     } else {
       targetEl.style.left = newLeftStr
     }
   }
   if (dyScreen !== 0) {
     if (isStaticLayout) {
-      (targetEl.style as any).marginTop = newTopStr
+      ;(targetEl.style as any).marginTop = newTopStr
     } else {
       targetEl.style.top = newTopStr
     }
