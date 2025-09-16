@@ -121,6 +121,7 @@
             "justifyContent": "center",
             "alignItems": "center",
             "cursor": "pointer",
+            "backgroundColor": "rgba(99, 102, 241, 0.75)",
             "gap": "8px"
         },
         "featureProps": {
@@ -146,7 +147,7 @@
             "cursor": "pointer",
             "width": "10%",
             "height": "50%",
-            "backgroundColor": "rgba(99, 102, 241, 0.15)"
+            "backgroundColor": "rgba(222, 1, 22, 0.65)"
         },
         "featureProps": {
             "enableClick": {
