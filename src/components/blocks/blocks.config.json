@@ -1,20 +1,5 @@
 [
     {
-        "type": "SimpleBox",
-        "nameZh": "简单容器",
-        "path": "../blocks/SimpleBox.svelte",
-        "preview": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSczMicgaGVpZ2h0PSczMic+PHJlY3QgeD0nNCcgeT0nNCcgd2lkdGg9JzI0JyBoZWlnaHQ9JzI0JyBmaWxsPSdub25lJyBzdHJva2U9JyM0YWRlODAnIHN0cm9rZS13aWR0aD0nMicgcng9JzInLz48bGluZSB4MT0nNCcgeTE9JzEyJyB4Mj0nMjgnIHkyPScxMicgc3Ryb2tlPScjNGFkZTgwJyBzdHJva2Utd2lkdGg9JzEnLz48bGluZSB4MT0nMTYnIHkxPSc0JyB4Mj0nMTYnIHkyPScyOCcgc3Ryb2tlPScjNGFkZTgwJyBzdHJva2Utd2lkdGg9JzEnLz48L3N2Zz4=",
-        "showFeatureTab": false,
-        "presetStyles": {
-            "display": "flex",
-            "justifyContent": "center",
-            "alignItems": "center",
-            "width": "25%",
-            "height": "25%",
-            "backgroundColor": "rgba(30, 41, 59, 0.15)"
-        }
-    },
-    {
         "type": "TextContent",
         "nameZh": "文本内容",
         "path": "../blocks/SimpleBox.svelte",
@@ -32,27 +17,6 @@
             "alignItems": "center"
         },
         "textContent": "{{projectName}}"
-    },
-    {
-        "type": "Screen",
-        "nameZh": "页面容器",
-        "path": "../blocks/Screen.svelte",
-        "preview": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSczMicgaGVpZ2h0PSczMic+PHJlY3QgeD0nMicgeT0nNCcgd2lkdGg9JzI4JyBoZWlnaHQ9JzI0JyBmaWxsPSdub25lJyBzdHJva2U9JyMzOGJkZjgnIHN0cm9rZS13aWR0aD0nMicgcng9JzInLz48cmVjdCB4PScyJyB5PSc0JyB3aWR0aD0nMjgnIGhlaWdodD0nNicgZmlsbD0nIzM4YmRmOCcgcng9JzInLz48Y2lyY2xlIGN4PSc2JyBjeT0nNycgcj0nMScgZmlsbD0nIzBmMTcyYScvPjxjaXJjbGUgY3g9JzEwJyBjeT0nNycgcj0nMScgZmlsbD0nIzBmMTcyYScvPjxjaXJjbGUgY3g9JzE0JyBjeT0nNycgcj0nMScgZmlsbD0nIzBmMTcyYScvPjwvc3ZnPg==",
-        "showFeatureTab": true,
-        "dataBindable": true,
-        "positionAtOrigin": true,
-        "presetStyles": {
-            "width": "100%",
-            "height": "100%",
-            "position": "absolute"
-        },
-        "featureProps": {
-            "keepMounted": {
-                "label": "保持挂载",
-                "type": "switch",
-                "default": true
-            }
-        }
     },
     {
         "type": "RealTimeClock",
@@ -106,6 +70,43 @@
             }
         }
     },
+    {
+        "type": "SimpleBox",
+        "nameZh": "简单容器",
+        "path": "../blocks/SimpleBox.svelte",
+        "preview": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSczMicgaGVpZ2h0PSczMic+PHJlY3QgeD0nNCcgeT0nNCcgd2lkdGg9JzI0JyBoZWlnaHQ9JzI0JyBmaWxsPSdub25lJyBzdHJva2U9JyM0YWRlODAnIHN0cm9rZS13aWR0aD0nMicgcng9JzInLz48bGluZSB4MT0nNCcgeTE9JzEyJyB4Mj0nMjgnIHkyPScxMicgc3Ryb2tlPScjNGFkZTgwJyBzdHJva2Utd2lkdGg9JzEnLz48bGluZSB4MT0nMTYnIHkxPSc0JyB4Mj0nMTYnIHkyPScyOCcgc3Ryb2tlPScjNGFkZTgwJyBzdHJva2Utd2lkdGg9JzEnLz48L3N2Zz4=",
+        "showFeatureTab": false,
+        "presetStyles": {
+            "display": "flex",
+            "justifyContent": "center",
+            "alignItems": "center",
+            "width": "25%",
+            "height": "25%",
+            "backgroundColor": "rgba(30, 41, 59, 0.15)"
+        }
+    },
+    {
+        "type": "Screen",
+        "nameZh": "页面容器",
+        "path": "../blocks/Screen.svelte",
+        "preview": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSczMicgaGVpZ2h0PSczMic+PHJlY3QgeD0nMicgeT0nNCcgd2lkdGg9JzI4JyBoZWlnaHQ9JzI0JyBmaWxsPSdub25lJyBzdHJva2U9JyMzOGJkZjgnIHN0cm9rZS13aWR0aD0nMicgcng9JzInLz48cmVjdCB4PScyJyB5PSc0JyB3aWR0aD0nMjgnIGhlaWdodD0nNicgZmlsbD0nIzM4YmRmOCcgcng9JzInLz48Y2lyY2xlIGN4PSc2JyBjeT0nNycgcj0nMScgZmlsbD0nIzBmMTcyYScvPjxjaXJjbGUgY3g9JzEwJyBjeT0nNycgcj0nMScgZmlsbD0nIzBmMTcyYScvPjxjaXJjbGUgY3g9JzE0JyBjeT0nNycgcj0nMScgZmlsbD0nIzBmMTcyYScvPjwvc3ZnPg==",
+        "showFeatureTab": true,
+        "dataBindable": true,
+        "positionAtOrigin": true,
+        "presetStyles": {
+            "width": "100%",
+            "height": "100%",
+            "position": "absolute"
+        },
+        "featureProps": {
+            "keepMounted": {
+                "label": "保持挂载",
+                "type": "switch",
+                "default": true
+            }
+        }
+    },
+
     {
         "type": "ButtonGroup",
         "nameZh": "按钮组",
@@ -328,24 +329,10 @@
                 },
                 "type": "json",
                 "x": {
-                    "default": [
-                        "1",
-                        "2",
-                        "3",
-                        "4",
-                        "5",
-                        "6"
-                    ]
+                    "default": ["1", "2", "3", "4", "5", "6"]
                 },
                 "y": {
-                    "default": [
-                        1,
-                        2,
-                        3,
-                        4,
-                        5,
-                        6
-                    ]
+                    "default": [1, 2, 3, 4, 5, 6]
                 }
             },
             "line": {
@@ -355,24 +342,10 @@
                 },
                 "type": "json",
                 "x": {
-                    "default": [
-                        "6",
-                        "5",
-                        "4",
-                        "3",
-                        "2",
-                        "1"
-                    ]
+                    "default": ["6", "5", "4", "3", "2", "1"]
                 },
                 "y": {
-                    "default": [
-                        6,
-                        5,
-                        4,
-                        3,
-                        2,
-                        1
-                    ]
+                    "default": [6, 5, 4, 3, 2, 1]
                 }
             },
             "pie": {
@@ -382,22 +355,10 @@
                 },
                 "type": "json",
                 "name": {
-                    "default": [
-                        "A",
-                        "B",
-                        "C",
-                        "D",
-                        "E"
-                    ]
+                    "default": ["A", "B", "C", "D", "E"]
                 },
                 "value": {
-                    "default": [
-                        11,
-                        22,
-                        33,
-                        44,
-                        55
-                    ]
+                    "default": [11, 22, 33, 44, 55]
                 }
             }
         }
