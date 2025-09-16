@@ -888,7 +888,8 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
           const initHeightPx = initialHeightUnit === '%' ? (initHeightVal / 100) * parentHeight : (initialHeightFromComputed ? initHeightVal / sr : initHeightVal);
           const newHeightPx = initHeightPx - dyDesign;
 
-          const newHeight = initialHeightUnit === '%' ? `${(newHeightPx / parentHeight) * 100}%` : `calc(${Math.round(newHeightPx)}px * var(--scale-ratio, 1))`;
+          const percentBaseH = isStaticLayoutRef && initialHeightUnit === '%' ? parentWidth : parentHeight;
+          const newHeight = initialHeightUnit === '%' ? `${(newHeightPx / percentBaseH) * 100}%` : `calc(${Math.round(newHeightPx)}px * var(--scale-ratio, 1))`;
           targetEl.style.height = newHeight;
 
           // 更新高度
