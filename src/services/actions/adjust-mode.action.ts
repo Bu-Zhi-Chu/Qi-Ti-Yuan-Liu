@@ -317,7 +317,8 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
       height: '100%',
       pointerEvents: 'auto',
       boxSizing: 'border-box',
-      background: 'transparent'
+      background: 'transparent',
+      cursor: 'move' // 确保光标显示在覆盖层上
     } as CSSStyleDeclaration)
 
     wrapper.appendChild(overlay)
@@ -1034,7 +1035,7 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
       isResizing = false
       resizeDir = null
       resetAdjustState()
-      node.style.cursor = keyPressed ? 'move' : ''
+      // cursor handled by overlay
       return
     }
 
@@ -1085,7 +1086,8 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
     // 重置调整状态
     resetAdjustState()
     targetElRef = null
-    node.style.cursor = keyPressed ? 'move' : ''
+    // cursor handled by overlay
+    return
   }
 
   // 注册事件监听
