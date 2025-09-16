@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { currentPage } from '../../services/repository/dom-tree.store.svelte'
+    import { currentPage } from '../../stores/dom-tree.store.svelte'
     export let styles: Record<string, any> = {}
     // 默认全屏定位，可被外部 styles 覆盖
     const defaultStyles: Record<string, any> = {

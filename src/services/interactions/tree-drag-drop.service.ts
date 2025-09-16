@@ -13,7 +13,7 @@
  * const dragService = new TreeDragDropService()
  */
 
-import { domTree, moveNode, insertNodeBefore, insertNodeAfter, findNodeById, hasNodeWithId } from '../repository/dom-tree.store.svelte'
+import { domTree, moveNode, insertNodeBefore, insertNodeAfter, findNodeById, hasNodeWithId } from '../../stores/dom-tree.store.svelte'
 
 export class TreeDragDropService {
   private draggingId: string | null = null

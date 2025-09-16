@@ -5,7 +5,7 @@
 
 import type { DomNode } from '../../types/dom-node.types'
 import blocksConfig from '../../components/blocks/blocks.config.json'
-import { domTree } from '../repository/dom-tree.store.svelte'
+import { domTree } from '../../stores/dom-tree.store.svelte'
 
 export interface RelativeRect {
     left: number

@@ -27,13 +27,13 @@ import {
   startDrawing,
   updateDrawRect,
   resetDrawState,
-} from '../repository/draw-mode.store.svelte'
+} from '../../stores/draw-mode.store.svelte'
 import { registerMouseLeftPressRelease } from '../interactions/shortcut.service'
 import { calculateRelativeRect, createDrawNode, clampPointToRect } from '../utils/draw-mode.util'
 import { getElementByNodeId } from '../utils/dom-geometry.util'
-import { selectedId, addNodeToParent, domTree, findNodeById } from '../repository/dom-tree.store.svelte'
-import type { Guideline } from '../repository/draw-align.store.svelte'
-import { openAlign, closeAlign, setGuidelines, clearGuidelines, isAlignOpen } from '../repository/draw-align.store.svelte'
+import { selectedId, addNodeToParent, domTree, findNodeById } from '../../stores/dom-tree.store.svelte'
+import type { Guideline } from '../../stores/draw-align.store.svelte'
+import { openAlign, closeAlign, setGuidelines, clearGuidelines, isAlignOpen } from '../../stores/draw-align.store.svelte'
 
 export interface DrawModeOptions {
   /** 是否处于编辑模式的 accessor */

@@ -32,9 +32,9 @@
     import useAdjustMode from '../../services/actions/adjust-mode.action'
     import DrawModeOverlay from './DrawModeOverlay.svelte'
     import AlignmentOverlay from './AlignmentOverlay.svelte'
-    import { isDrawMode } from '../../services/repository/draw-mode.store.svelte'
+    import { isDrawMode } from '../../stores/draw-mode.store.svelte'
     import DexieService from '../../services/database/dexie-service'
-    import { canvasScale } from '../../services/repository/canvas-state.store'
+    import { canvasScale } from '../../stores/canvas-state.store.svelte'
     import { screenDetector } from '../../services/screen/screen-detector.service'
 </script>
 
@@ -43,7 +43,7 @@
     let { editing = false } = $props<{ editing?: boolean }>()
 
     import { onMount } from 'svelte'
-    import { domTree, selectedId, setSelectedId, setProjectId, loadDomTreeFromDatabase, projectId, addNodeToParent } from '../../services/repository/dom-tree.store.svelte'
+    import { domTree, selectedId, setSelectedId, setProjectId, loadDomTreeFromDatabase, projectId, addNodeToParent } from '../../stores/dom-tree.store.svelte'
     import { getElementByNodeId } from '../../services/utils/dom-geometry.util'
     import Dexie from 'dexie'
     import { isLiteMode } from '../../services/env/environment.service'

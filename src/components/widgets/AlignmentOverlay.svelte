@@ -14,8 +14,8 @@
 -->
 
 <script lang="ts">
-    import { guidelines, isAlignOpen } from '../../services/repository/draw-align.store.svelte'
-    import { selectedId } from '../../services/repository/dom-tree.store.svelte'
+    import { guidelines, isAlignOpen } from '../../stores/draw-align.store.svelte'
+import { selectedId } from '../../stores/dom-tree.store.svelte'
 
     // 是否处于编辑模式，默认为 false（与 DrawModeOverlay 统一 prop）
     const { editing = false } = $props<{ editing?: boolean }>()

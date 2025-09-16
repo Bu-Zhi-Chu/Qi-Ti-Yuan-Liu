@@ -196,7 +196,7 @@ class ScreenDetector {
      */
     private async applyProjectDesignSize(): Promise<void> {
         // 从dom-tree.store获取当前项目ID
-        const { projectId } = await import('../repository/dom-tree.store.svelte')
+        const { projectId } = await import('../../stores/dom-tree.store.svelte')
         const currentProjectId = get(projectId)
         if (!currentProjectId) return
 

@@ -5,7 +5,7 @@
  */
 
 import type { DomNode } from '../../types/dom-node.types';
-import { domTree, findNodeById, updateNodeProperties, updateNodeStyles } from '../repository/dom-tree.store.svelte';
+import { domTree, findNodeById, updateNodeProperties, updateNodeStyles } from '../../stores/dom-tree.store.svelte';
 
 // -------------------- 类型定义 --------------------
 export interface PropPatch {
@@ -15,7 +15,7 @@ export interface PropPatch {
 }
 
 import { derived } from 'svelte/store';
-import { domTreeVersionStore } from '../repository/dom-tree.store.svelte';
+import { domTreeVersionStore } from '../../stores/dom-tree.store.svelte';
 
 // -------------------- 查询接口 --------------------
 /**

@@ -1,4 +1,4 @@
-import { getMockSettingsFromDomTree } from './repository/dom-tree.store.svelte'
+import { getMockSettingsFromDomTree } from '../stores/dom-tree.store.svelte'
 
 /**
  * 统一请求封装。

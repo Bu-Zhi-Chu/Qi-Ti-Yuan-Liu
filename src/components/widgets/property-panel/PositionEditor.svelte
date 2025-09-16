@@ -16,7 +16,7 @@
 <script lang="ts">
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     import { getNodePropsStore, getNodeProps as _getNodeProps, updateNodeProps } from '../../../services/property-panel/property-panel.service'
-    import { domTree } from '../../../services/repository/dom-tree.store.svelte'
+    import { domTree } from '../../../stores/dom-tree.store.svelte'
     import { getElementByNodeId } from '../../../services/utils/dom-geometry.util'
     import { getScaleRatio } from '../../../services/utils/get-scale-ratio.util'
     import PropertyRow from './PropertyRow.svelte'

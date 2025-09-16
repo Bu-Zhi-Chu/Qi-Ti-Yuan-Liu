@@ -7,8 +7,8 @@
 -->
 
 <script lang="ts">
-    import { isDrawing, drawRect } from '../../services/repository/draw-mode.store.svelte'
-    import { selectedId } from '../../services/repository/dom-tree.store.svelte'
+    import { isDrawing, drawRect } from '../../stores/draw-mode.store.svelte'
+import { selectedId } from '../../stores/dom-tree.store.svelte'
 
     // 外部控制：是否处于编辑状态
     const { editing = false } = $props<{ editing?: boolean }>()

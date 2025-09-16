@@ -8,10 +8,10 @@
 
 <script lang="ts">
     import ResponsiveBox from '../core/ResponsiveBox.svelte'
-    import { currentPage } from '../../services/repository/dom-tree.store.svelte'
-    import { setCurrentPage } from '../../services/repository/dom-tree.store.svelte'
+    import { currentPage } from '../../stores/dom-tree.store.svelte'
+    import { setCurrentPage } from '../../stores/dom-tree.store.svelte'
     import { onMount } from 'svelte'
-    import { findNodeById, domTree, findParentById } from '../../services/repository/dom-tree.store.svelte'
+    import { findNodeById, domTree, findParentById } from '../../stores/dom-tree.store.svelte'
 
     interface Props {
         id?: string
@@ -80,7 +80,7 @@
                 // 清除同父级其他导航按钮高亮
                 const parent = findParentById(domTree, id)
                 if (parent?.children) {
-                    parent.children.forEach((child) => {
+                    parent.children.forEach((child: any) => {
                         if (child.componentType === 'Button' && (child.buttonType === 'navigation' || (child.attributes as any)?.buttonType === 'navigation')) {
                             ;(child as any).toggled = child.id === id
                         }
@@ -114,7 +114,7 @@
                 // 维护同父级导航按钮高亮状态
                 const parent = findParentById(domTree, id)
                 if (parent?.children) {
-                    parent.children.forEach((child) => {
+                    parent.children.forEach((child: any) => {
                         if (child.componentType === 'Button' && (child.buttonType === 'navigation' || (child.attributes as any)?.buttonType === 'navigation')) {
                             ;(child as any).toggled = child.id === id
                         }

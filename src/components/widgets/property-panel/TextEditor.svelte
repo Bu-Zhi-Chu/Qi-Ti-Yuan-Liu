@@ -25,8 +25,8 @@
 <script lang="ts">
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     import { getNodePropsStore, getNodeProps as _getNodeProps, updateNodeProps, getFullNode } from '../../../services/property-panel/property-panel.service'
-    import { updateNodeProperties } from '../../../services/repository/dom-tree.store.svelte'
-    import { projectId } from '../../../services/repository/dom-tree.store.svelte'
+    import { updateNodeProperties } from '../../../stores/dom-tree.store.svelte'
+import { projectId } from '../../../stores/dom-tree.store.svelte'
     import ColorPicker from '../ColorPicker.svelte'
     import { getScaleRatio } from '../../../services/utils/get-scale-ratio.util'
     import PropertyRow from './PropertyRow.svelte'

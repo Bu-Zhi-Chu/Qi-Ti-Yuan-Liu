@@ -31,7 +31,7 @@
     import Icon from './Icon.svelte'
     import ResponsiveBox from '../core/ResponsiveBox.svelte'
     import ColorPaletteService from '../../services/project/color-palette.service'
-    import { domTree, findNodeById } from '../../services/repository/dom-tree.store.svelte'
+    import { domTree, findNodeById } from '../../stores/dom-tree.store.svelte'
 
     import { v4 as uuidv4 } from 'uuid'
 

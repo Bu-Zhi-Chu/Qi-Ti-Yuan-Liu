@@ -13,11 +13,11 @@
  -->
 <script lang="ts">
     import { onMount, onDestroy } from 'svelte'
-    import { perfMonitorEnabled } from '../../services/repository/perf-monitor.store'
+    import { perfMonitorEnabled } from '../../stores/perf-monitor.store.svelte'
     import { get } from 'svelte/store'
     import { registerShortcut } from '../../services/interactions/shortcut.service'
     import { isStandardProdMode, isDevMode, isLiteMode } from '../../services/env/environment.service'
-    import { copySelectedNode, pasteNodeToSelectedParent, cutSelectedNode } from '../../services/repository/dom-tree.store.svelte'
+    import { copySelectedNode, pasteNodeToSelectedParent, cutSelectedNode } from '../../stores/dom-tree.store.svelte'
 
     /* 新增：Dom 区域与 Dom 树列表组件 */
     import DomCanvas from '../widgets/DomCanvas.svelte'
@@ -28,7 +28,7 @@
     import { applyLogConfig } from '../../services/utils/log-switch'
 
     // 引入 DOM 树集中式状态管理
-    import { domTree, selectedId, removeNodeById, projectId, findNodeById } from '../../services/repository/dom-tree.store.svelte'
+    import { domTree, selectedId, removeNodeById, projectId, findNodeById } from '../../stores/dom-tree.store.svelte'
     import DexieService from '../../services/database/dexie-service'
     import StatusBar from '../widgets/StatusBar.svelte'
     import { screenDetector } from '../../services/screen/screen-detector.service'

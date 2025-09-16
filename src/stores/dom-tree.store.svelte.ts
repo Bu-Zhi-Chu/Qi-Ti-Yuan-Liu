@@ -6,14 +6,14 @@
  * 当使用 addNodeToParent 等方法操作数据时，所有订阅该 store 的组件都会自动更新。
  */
 
-import type { DomNode } from '../../types/dom-node.types';
-import DexieService from '../database/dexie-service';
+import type { DomNode } from '../types/dom-node.types';
+import DexieService from '../services/database/dexie-service';
 import Dexie from 'dexie';
 import { writable } from 'svelte/store';
-import { isLiteMode } from '../env/environment.service'
+import { isLiteMode } from '../services/env/environment.service'
 import { get } from 'svelte/store'
-import { getImage, addOrIncrement } from '../database/image-store.service'
-import { decrementOrDelete } from '../database/image-store.service'
+import { getImage, addOrIncrement } from '../services/database/image-store.service'
+import { decrementOrDelete } from '../services/database/image-store.service'
 
 // 初始 domTree 数据结构
 const domTreeData = $state<DomNode>({
@@ -431,7 +431,7 @@ export async function insertNodeBefore(targetId: string, nodeId: string): Promis
   if (isDescendant(movingNode, targetId)) return false;
   // 先从原位置移除（不影响计数）
   await removeNodeByIdForMove(nodeId);
-  const index = parent.children.findIndex(c => c.id === targetId);
+  const index = parent.children.findIndex((c: any) => c.id === targetId);
   parent.children.splice(index, 0, movingNode);
   return true;
 }
@@ -447,7 +447,7 @@ export async function insertNodeAfter(targetId: string, nodeId: string): Promise
   if (isDescendant(movingNode, targetId)) return false;
   // 先从原位置移除（不影响计数）
   await removeNodeByIdForMove(nodeId);
-  const index = parent.children.findIndex(c => c.id === targetId);
+  const index = parent.children.findIndex((c: any) => c.id === targetId);
   parent.children.splice(index + 1, 0, movingNode);
   return true;
 }
@@ -500,7 +500,7 @@ export async function moveNode(nodeId: string, newParentId: string): Promise<boo
   // 从旧父节点移除（不释放资源，不影响计数）
   const oldParent = findParentById(domTreeData, nodeId);
   if (oldParent && oldParent.children) {
-    oldParent.children = oldParent.children.filter(c => c.id !== nodeId);
+    oldParent.children = oldParent.children.filter((c: any) => c.id !== nodeId);
   }
 
   // 添加到新父节点末尾
@@ -605,7 +605,7 @@ export async function removeNodeById(nodeId: string): Promise<boolean> {
   if (nodeId === 'root') return false;
   const parent = findParentById(domTreeData, nodeId);
   if (!parent || !parent.children) return false;
-  const targetNode = parent.children.find(c => c.id === nodeId);
+  const targetNode = parent.children.find((c: any) => c.id === nodeId);
   if (!targetNode) return false;
   // 若自身或子孙节点存在锁定，不允许删除
   if (hasLocked(targetNode)) {
@@ -614,7 +614,7 @@ export async function removeNodeById(nodeId: string): Promise<boolean> {
   }
   releaseNodeResources(targetNode);
   if (selectedNodeId === nodeId) await setSelectedId('root');
-  parent.children = parent.children.filter(c => c.id !== nodeId);
+  parent.children = parent.children.filter((c: any) => c.id !== nodeId);
 
   // 如果父节点是 ButtonGroup 且已无子节点，则一并删除父节点
   if (parent.componentType === 'ButtonGroup' || (parent.attributes as any)?.type === 'ButtonGroup') {
@@ -636,7 +636,7 @@ export async function removeNodeByIdForMove(nodeId: string): Promise<boolean> {
   const parent = findParentById(domTreeData, nodeId);
   if (!parent || !parent.children) return false;
   if (selectedNodeId === nodeId) await setSelectedId('root');
-  parent.children = parent.children.filter(c => c.id !== nodeId);
+  parent.children = parent.children.filter((c: any) => c.id !== nodeId);
   autoSaveToDomsTable();
   return true;
 }
@@ -787,7 +787,7 @@ function releaseNodeResources(node: DomNode) {
     }
   }
   if (node.children && node.children.length) {
-    node.children.forEach((child) => releaseNodeResources(child))
+    node.children.forEach((child: any) => releaseNodeResources(child))
   }
 }
 
@@ -1013,7 +1013,7 @@ function cloneNodeWithNewIds(node: DomNode, hashes: string[] = []): DomNode {
     hashes.push(bg.trim());
   }
   if (cloned.children?.length) {
-    cloned.children = cloned.children.map((c) => cloneNodeWithNewIds(c, hashes));
+    cloned.children = cloned.children.map((c: any) => cloneNodeWithNewIds(c, hashes));
   }
   return cloned;
 }

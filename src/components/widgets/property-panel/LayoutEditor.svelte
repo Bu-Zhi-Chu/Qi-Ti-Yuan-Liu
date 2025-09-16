@@ -10,7 +10,7 @@
     import PropertyRow from './PropertyRow.svelte'
     import PropertySelect from './PropertySelect.svelte'
     import SizeInput from './SizeInput.svelte'
-    import { addNodeToParent, removeNodeById } from '../../../services/repository/dom-tree.store.svelte'
+    import { addNodeToParent, removeNodeById } from '../../../stores/dom-tree.store.svelte'
     import { getFullNode } from '../../../services/property-panel/property-panel.service'
 
     interface Props {

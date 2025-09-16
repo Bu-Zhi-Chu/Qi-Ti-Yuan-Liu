@@ -12,9 +12,9 @@
     import PropertySelect from './PropertySelect.svelte'
     import SizeInput from './SizeInput.svelte'
     import NativeRange from './NativeRange.svelte'
-    import { updateNodeProperties } from '../../../services/repository/dom-tree.store.svelte'
+    import { updateNodeProperties } from '../../../stores/dom-tree.store.svelte'
     import blocksConfig from '../../blocks/blocks.config.json'
-    import { addNodeToParent, removeNodeById, domTree } from '../../../services/repository/dom-tree.store.svelte'
+    import { addNodeToParent, removeNodeById, domTree } from '../../../stores/dom-tree.store.svelte'
     interface BlockItem {
         type: string
         nameZh: string

@@ -16,7 +16,7 @@
     import EventEditor from './EventEditor.svelte'
     import DataEditor from './DataEditor.svelte'
     import FeatureEditor from './FeatureEditor.svelte'
-    import { selectedId as getSelectedId } from '../../../services/repository/dom-tree.store.svelte'
+    import { selectedId as getSelectedId } from '../../../stores/dom-tree.store.svelte'
     import { getFullNode } from '../../../services/property-panel/property-panel.service'
 
     // Runes props - 使用 $props 代替 export let

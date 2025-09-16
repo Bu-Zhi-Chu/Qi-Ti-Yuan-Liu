@@ -3,7 +3,7 @@
 -->
 <script lang="ts">
     import { getNodePropsStore, getNodeProps as _getNodeProps, getFullNode, updateNodeProps } from '../../../services/property-panel/property-panel.service'
-    import { addNodeToParent, removeNodeById } from '../../../services/repository/dom-tree.store.svelte'
+    import { addNodeToParent, removeNodeById } from '../../../stores/dom-tree.store.svelte'
     import blocksConfig from '../../blocks/blocks.config.json'
     import PropertyRow from './PropertyRow.svelte'
     import PropertySelect from './PropertySelect.svelte'
@@ -14,10 +14,10 @@
     import { hashBlob, canDecode, convertTo } from '../../../services/image/image-utils'
     import { getImage, addOrIncrement, decrementOrDelete } from '../../../services/database/image-store.service'
     import { getImageSize } from '../../../services/image/upload-image.service'
-    import { projectId } from '../../../services/repository/dom-tree.store.svelte'
-    import { domTree } from '../../../services/repository/dom-tree.store.svelte'
-    import { setCurrentPage } from '../../../services/repository/dom-tree.store.svelte'
-    import { findParentById } from '../../../services/repository/dom-tree.store.svelte'
+    import { projectId } from '../../../stores/dom-tree.store.svelte'
+    import { domTree } from '../../../stores/dom-tree.store.svelte'
+    import { setCurrentPage } from '../../../stores/dom-tree.store.svelte'
+    import { findParentById } from '../../../stores/dom-tree.store.svelte'
 
     // 派生当前选中节点的 featureProps
     const featureProps = $derived(() => {

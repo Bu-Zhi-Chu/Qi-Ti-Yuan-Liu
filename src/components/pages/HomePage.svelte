@@ -15,7 +15,7 @@
     import NewProjectDialog from '../widgets/NewProjectDialog.svelte'
     import { onMount } from 'svelte'
     import DexieService from '../../services/database/dexie-service'
-    import { clearMemoryState } from '../../services/repository/dom-tree.store.svelte'
+    import { clearMemoryState } from '../../stores/dom-tree.store.svelte'
 
     interface Project {
         id: string

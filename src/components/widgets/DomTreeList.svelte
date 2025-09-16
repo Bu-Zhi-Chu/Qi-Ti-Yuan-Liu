@@ -28,7 +28,7 @@
 </script>
 
 <script lang="ts">
-    import { domTree, selectedId, setSelectedId, toggleExpanded, toggleHidden, toggleLocked, removeNodeById, moveNode, insertNodeBefore, insertNodeAfter, updateNodeName } from '../../services/repository/dom-tree.store.svelte'
+    import { domTree, selectedId, setSelectedId, toggleExpanded, toggleHidden, toggleLocked, removeNodeById, moveNode, insertNodeBefore, insertNodeAfter, updateNodeName } from '../../stores/dom-tree.store.svelte'
 
     import { TreeDragDropService } from '../../services/interactions/tree-drag-drop.service'
 

@@ -23,12 +23,12 @@
     import NodeRenderer from './NodeRenderer.svelte'
     import { onMount, onDestroy } from 'svelte'
     import { get } from 'svelte/store'
-    import { projectId } from '../../services/repository/dom-tree.store.svelte'
+    import { projectId } from '../../stores/dom-tree.store.svelte'
     import { getImage } from '../../services/database/image-store.service'
     import { decrementOrDelete } from '../../services/database/image-store.service'
     import { LRUMap } from 'lru_map'
     import { registerBlobUrl } from '../../services/utils/blob-url-manager'
-    import { currentPage } from '../../services/repository/dom-tree.store.svelte'
+    import { currentPage } from '../../stores/dom-tree.store.svelte'
 
     // 40+位十六进制哈希
     const hashRegex = /^[a-f0-9]{40,}$/

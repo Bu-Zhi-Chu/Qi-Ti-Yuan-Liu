@@ -31,13 +31,13 @@ import {
   startAdjusting,
   resetAdjustState,
   setOperationSource
-} from '../repository/adjust-mode.store.svelte'
+} from '../../stores/adjust-mode.store.svelte'
 import { registerMouseLeftPressRelease } from '../interactions/shortcut.service'
 import { getScaleRatio } from '../utils/get-scale-ratio.util'
 import { moveDomByOffset } from '../utils/move-dom.util'
 import { getElementByNodeId } from '../utils/dom-geometry.util'
-import { domTree, findNodeById } from '../repository/dom-tree.store.svelte'
-import { copySelectedNode, pasteNodeToSelectedParent } from '../repository/dom-tree.store.svelte'
+import { domTree, findNodeById } from '../../stores/dom-tree.store.svelte'
+import { copySelectedNode, pasteNodeToSelectedParent } from '../../stores/dom-tree.store.svelte'
 
 
 // 提取数值工具函数，兼容 calc(...) 表达式，文件级复用

@@ -2,7 +2,7 @@
  * 用于显示实时画布缩放百分比
 -->
 <script lang="ts">
-    import { canvasScale } from '../../services/repository/canvas-state.store'
+    import { canvasScale } from '../../stores/canvas-state.store.svelte'
     import { onMount, onDestroy } from 'svelte'
     $: percent = Math.round($canvasScale * 100)
     let fps = 0
@@ -10,7 +10,7 @@
     // 浏览器支持时显示已用 JS 堆内存（MB）
     let memoryMB: string = '--'
     // 监控开关
-    import { perfMonitorEnabled } from '../../services/repository/perf-monitor.store'
+    import { perfMonitorEnabled } from '../../stores/perf-monitor.store.svelte'
     let fpsEnabled = $perfMonitorEnabled
     let memoryEnabled = $perfMonitorEnabled
 

@@ -20,7 +20,7 @@
     import { getNodePropsStore, getNodeProps as _getNodeProps, updateNodeProps, getFullNode } from '../../../services/property-panel/property-panel.service'
     import { getElementByNodeId } from '../../../services/utils/dom-geometry.util'
     import { getScaleRatio } from '../../../services/utils/get-scale-ratio.util'
-    import { projectId } from '../../../services/repository/dom-tree.store.svelte'
+    import { projectId } from '../../../stores/dom-tree.store.svelte'
     import { ProjectThumbnailService } from '../../../services/project/project-thumbnail.service'
     import ColorPaletteService from '../../../services/project/color-palette.service'
     import ColorPicker from '../ColorPicker.svelte'

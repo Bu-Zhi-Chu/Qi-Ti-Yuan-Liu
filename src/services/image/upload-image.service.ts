@@ -1,28 +1,7 @@
 // 图片上传处理工具函数，聚合 WebP 转换 + 图片尺寸读取
 // 仅处理逻辑，不涉及任何 UI 代码
 
-export async function convertToWebp(file: File, quality = 0.85): Promise<Blob> {
-    const bitmap = await createImageBitmap(file)
-    const canvas = document.createElement('canvas')
-    canvas.width = bitmap.width
-    canvas.height = bitmap.height
-    const ctx = canvas.getContext('2d')
-    if (!ctx) throw new Error('无法获取 Canvas 2D 上下文')
-    ctx.drawImage(bitmap, 0, 0)
-    return new Promise((resolve, reject) => {
-        canvas.toBlob(
-            (blob) => {
-                if (blob) {
-                    resolve(blob)
-                } else {
-                    reject(new Error('WebP 转换失败'))
-                }
-            },
-            'image/webp',
-            quality
-        )
-    })
-}
+import { convertTo } from './image-utils'
 
 export async function getImageSize(blob: Blob): Promise<{ width: number; height: number }> {
     return new Promise<{ width: number; height: number }>((resolve, reject) => {
@@ -48,7 +27,7 @@ export async function getImageSize(blob: Blob): Promise<{ width: number; height:
 export async function processImageUpload(file: File, quality = 0.85): Promise<{ blob: Blob; imageSize: { width: number; height: number } | null }> {
     let finalBlob: Blob = file
     try {
-        const webpBlob = await convertToWebp(file, quality)
+        const webpBlob = await convertTo(file, 'webp', quality)
         if (webpBlob.size < file.size) {
             finalBlob = webpBlob
         }

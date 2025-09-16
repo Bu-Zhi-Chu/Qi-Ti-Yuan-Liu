@@ -14,14 +14,14 @@
  -->
 
 <script lang="ts">
-    import { domTree, selectedId, setSelectedId } from '../../services/repository/dom-tree.store.svelte'
+    import { domTree, selectedId, setSelectedId } from '../../stores/dom-tree.store.svelte'
     import DomTreeList from './DomTreeList.svelte'
     import blocksConfig from '../blocks/blocks.config.json'
     import { getElementByNodeId } from '../../services/utils/dom-geometry.util'
     import { onMount, onDestroy } from 'svelte'
-    import { filterDomTreeBySearch } from '../../services/repository/dom-tree.store.svelte'
-    import { addNodeToParent } from '../../services/repository/dom-tree.store.svelte'
-    import { projectId } from '../../services/repository/dom-tree.store.svelte'
+    import { filterDomTreeBySearch } from '../../stores/dom-tree.store.svelte'
+    import { addNodeToParent } from '../../stores/dom-tree.store.svelte'
+    import { projectId } from '../../stores/dom-tree.store.svelte'
     import DexieService from '../../services/database/dexie-service'
     import { get } from 'svelte/store'
 
