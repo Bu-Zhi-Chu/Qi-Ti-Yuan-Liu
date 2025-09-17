@@ -7,6 +7,7 @@ import DexieService from './services/database/dexie-service'
 import { isLiteMode } from './services/env/environment.service'
 import { importInto } from 'dexie-export-import'
 import { applyLogConfig } from './services/utils/log-switch'
+import { authService } from './services/auth/auth.service'
 
 
 // 根据环境初始化日志：开发环境默认开启，其余环境默认关闭
@@ -335,9 +336,15 @@ let app: ReturnType<typeof mount> | undefined // 提前声明，供导出使用
                 } catch { }
             }
 
-            // 挂载 Svelte 应用 - 精简模式也启用PWA功能
+            // 初始化PWA
             await PWAChecker.checkEnvironment()
             await PWAChecker.initPWA()
+            
+            // 启动令牌验证（异步执行，不阻塞应用启动）
+            authService.verifyToken().catch(error => {
+                console.error('令牌验证失败:', error)
+            })
+            
             app = mount(App, {
                 target: document.getElementById('app')!
             })

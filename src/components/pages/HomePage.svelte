@@ -13,10 +13,10 @@
     import logoImage from '/icon-192.png'
     import WindowBox from '../widgets/WindowBox.svelte'
     import NewProjectDialog from '../widgets/NewProjectDialog.svelte'
-    import { onMount } from 'svelte'
+    import { onMount, onDestroy } from 'svelte'
     import DexieService from '../../services/database/dexie-service'
     import { clearMemoryState } from '../../stores/dom-tree.store.svelte'
-    import { getStableDeviceKey, getStableDeviceKeyHash } from '../../services/fingerprint/browser-fingerprint.service'
+    import { subscribeToAuth, type AuthStatus } from '../../services/auth/auth.service'
 
     interface Project {
         id: string
@@ -28,68 +28,17 @@
     // 历史项目数据，由 IndexedDB 实时加载
     let projects: Project[] = $state([])
 
-    // 授权状态管理
+    // 授权状态管理 - 使用全局授权服务
     let isAuthorized = $state(false)
-    let authStatus = $state<'checking' | 'authorized' | 'unauthorized' | 'error'>('checking')
+    let authStatus = $state<AuthStatus>('checking')
+    let unsubscribe: (() => void) | null = null
 
     onMount(async () => {
-        // 获取并打印设备密钥哈希值
-        try {
-            const deviceKeyHash = await getStableDeviceKeyHash()
-
-            // 获取远程JSON数据并对比密钥
-            try {
-                console.log('🌐【远程验证】开始获取远程密钥数据...')
-
-                // 使用CORS代理来解决跨域问题
-                const proxyUrl = 'https://api.allorigins.win/get?url='
-                const targetUrl = encodeURIComponent('https://buzhichu.netlify.app/societies/99%20asset/json/qi-qiao-ban.json')
-                const response = await fetch(proxyUrl + targetUrl)
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`)
-                }
-
-                const proxyData = await response.json()
-                const remoteData = JSON.parse(proxyData.contents)
-
-                // 对比密钥 - 只考虑值，不关注键名
-                const remoteValues = Object.values(remoteData)
-
-                if (remoteValues.length > 0) {
-                    // 遍历所有远程密钥值，进行精确匹配
-                    let keyMatched = false
-                    for (const remoteValue of remoteValues) {
-                        if (remoteValue === deviceKeyHash) {
-                            keyMatched = true
-                            break
-                        }
-                    }
-
-                    if (keyMatched) {
-                        console.log('✅【密钥验证】密钥匹配成功！本设备已授权')
-                        isAuthorized = true
-                        authStatus = 'authorized'
-                    } else {
-                        console.log('❌【密钥验证】密钥不匹配')
-                        isAuthorized = false
-                        authStatus = 'unauthorized'
-                    }
-                } else {
-                    console.log('⚠️【远程验证】远程数据中没有找到任何密钥值')
-                    isAuthorized = false
-                    authStatus = 'unauthorized'
-                }
-            } catch (fetchError) {
-                console.error('🌐【远程验证】获取远程数据失败:', fetchError)
-                isAuthorized = false
-                authStatus = 'error'
-            }
-        } catch (error) {
-            console.error('🔑【设备密钥】获取失败:', error)
-            isAuthorized = false
-            authStatus = 'error'
-        }
+        // 订阅全局授权状态
+        unsubscribe = subscribeToAuth((status, authorized) => {
+            authStatus = status
+            isAuthorized = authorized
+        })
 
         const dbName = 'qi-qiao-ban'
         console.log('【数据库交互】检查项目列表页面数据库状态')
@@ -107,6 +56,12 @@
             createTime: new Date(r.createdAt).toLocaleString(),
             thumbnail: r.thumbnail
         }))
+    })
+
+    onDestroy(() => {
+        if (unsubscribe) {
+            unsubscribe()
+        }
     })
 
     let showWindow = $state(false)
