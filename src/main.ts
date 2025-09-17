@@ -372,9 +372,9 @@ async function initializeApp() {
 // 主初始化流程 - 授权验证优先
 ; (async () => {
     try {
-        console.log('🚀【应用启动】开始初始化流程')
+        console.log('🚀【应用启动】开始流程')
 
-        // 首次验证 - 不启动定期验证
+        // 授权验证 - 不启动定期验证
         await authService.verifyToken()
 
         // 等待授权验证完成
@@ -384,7 +384,7 @@ async function initializeApp() {
             unsubscribe = authService.subscribe((status, isAuthorized) => {
                 if (status === 'authorized' && isAuthorized) {
 
-                    // 只有首次验证成功后才启动定期验证
+                    // 只有授权验证成功后才启动定期验证
                     authService.startPeriodicVerification()
                     unsubscribe?.()
                     resolve()

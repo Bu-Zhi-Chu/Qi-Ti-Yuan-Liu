@@ -82,20 +82,3 @@ export const routerOptions = {
     hash: true
 } as const
 
-/**
- * 全局路由守卫钩子
- * 可用于权限验证、日志记录等全局处理
- */
-let navigationCount = 0
-
-export const globalHooks = {
-    pre: async (route: any) => {
-        // 路由切换前清理所有临时 Blob URL，防止内存泄漏
-        cleanupBlobUrls()
-        navigationCount++
-        if (navigationCount % 2 === 1) {
-        } else {
-        }
-        return true // 返回true继续导航
-    }
-}

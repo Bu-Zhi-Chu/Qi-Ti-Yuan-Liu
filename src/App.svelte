@@ -2,15 +2,16 @@
     import { RouterView } from '@dvcol/svelte-simple-router/components'
     import { routerOptions } from './router/routes'
     import { isLiteMode } from './services/env/environment.service'
+    import RouterGuard from './components/core/RouterGuard.svelte'
 
     // 静态导入 EditorPage 组件，避免动态/静态混用
-    import EditorPage from './components/pages/EditorPage.svelte';
+    import EditorPage from './components/pages/EditorPage.svelte'
 
     /**
      * 应用主组件
      *
      * 作为应用的入口点，负责初始化路由系统
-     * 使用@mateothegreat/svelte5-router实现客户端路由
+     * 使用@dvcol/svelte-simple-router实现客户端路由
      *
      * 在生产精简模式下，直接加载编辑页面，跳过路由系统
      */
@@ -29,5 +30,8 @@
 {#if isLiteMode()}
     <EditorPage />
 {:else}
-    <RouterView options={routerOptions} />
+    <RouterView options={routerOptions}>
+        <!-- 在RouterView内部使用路由守卫组件 -->
+        <RouterGuard />
+    </RouterView>
 {/if}
