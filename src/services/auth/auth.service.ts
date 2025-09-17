@@ -17,10 +17,12 @@ class AuthService {
     private readonly VERIFICATION_INTERVAL = 10 * 60 * 1000
     private readonly CACHE_KEY = 'qi-qiao-ban-auth-cache'
 
-
     // 定期验证失败计数器
     private _periodicFailureCount = 0
     private readonly MAX_PERIODIC_FAILURES = 3
+
+    // 缓存篡改检测标志
+    private _cacheTempered = false
 
 
 
@@ -44,8 +46,13 @@ class AuthService {
 
             // 比较密钥
             if (currentDeviceKeyHash === cachedDeviceKeyHash) {
+                // 密钥匹配，重置缓存篡改标志
+                this._cacheTempered = false
                 return true
             } else {
+                // 密钥不匹配，标记为缓存篡改
+                this._cacheTempered = true
+                console.log('🚨【缓存检测】检测到缓存篡改行为，缓存密钥与当前设备密钥不匹配')
                 // 密钥不匹配时清除缓存
                 this.clearCache()
                 return false
@@ -238,9 +245,10 @@ class AuthService {
                         }
                         // 验证成功时保存到本地缓存
                         this.saveToCache(deviceKeyHash, Date.now())
-                        // 重置定期验证失败计数器
+                        // 重置定期验证失败计数器和缓存篡改标志
                         if (isPeriodicCheck) {
                             this._periodicFailureCount = 0
+                            this._cacheTempered = false
                         }
                         this.updateStatus('authorized', true)
                     } else {
@@ -255,10 +263,20 @@ class AuthService {
                         if (isPeriodicCheck) {
                             this._periodicFailureCount++
 
-                            // 连续3次失败才清空数据库
-                            if (this._periodicFailureCount >= this.MAX_PERIODIC_FAILURES) {
+                            // 区分缓存篡改和权限撤销的处理逻辑
+                            if (this._cacheTempered) {
+                                // 缓存篡改：立即执行数据库清空惩罚
+                                console.log('🚨【作弊惩罚】检测到缓存篡改，执行数据库清空惩罚')
                                 await this.clearIndexedDB()
                                 this._periodicFailureCount = 0 // 重置计数器
+                                this._cacheTempered = false // 重置篡改标志
+                            } else {
+                                // 权限撤销：连续3次失败才清空数据库（保持原有逻辑）
+                                if (this._periodicFailureCount >= this.MAX_PERIODIC_FAILURES) {
+                                    console.log('⚠️【权限撤销】连续验证失败，可能权限已被撤销，仅清除缓存')
+                                    // 权限撤销时不清空数据库，只清除缓存
+                                    this._periodicFailureCount = 0 // 重置计数器
+                                }
                             }
                         }
 
@@ -273,10 +291,20 @@ class AuthService {
                     if (isPeriodicCheck) {
                         this._periodicFailureCount++
 
-                        // 连续3次失败才清空数据库
-                        if (this._periodicFailureCount >= this.MAX_PERIODIC_FAILURES) {
+                        // 区分缓存篡改和权限撤销的处理逻辑
+                        if (this._cacheTempered) {
+                            // 缓存篡改：立即执行数据库清空惩罚
+                            console.log('🚨【作弊惩罚】检测到缓存篡改，执行数据库清空惩罚')
                             await this.clearIndexedDB()
                             this._periodicFailureCount = 0 // 重置计数器
+                            this._cacheTempered = false // 重置篡改标志
+                        } else {
+                            // 权限撤销：连续3次失败才清空数据库（保持原有逻辑）
+                            if (this._periodicFailureCount >= this.MAX_PERIODIC_FAILURES) {
+                                console.log('⚠️【权限撤销】连续验证失败，可能权限已被撤销，仅清除缓存')
+                                // 权限撤销时不清空数据库，只清除缓存
+                                this._periodicFailureCount = 0 // 重置计数器
+                            }
                         }
                     }
 
@@ -336,8 +364,12 @@ class AuthService {
      * 重置授权状态
      */
     reset() {
+        this._isAuthorized = false
+        this._authStatus = 'checking'
+        this._periodicFailureCount = 0
+        this._cacheTempered = false
+        this.clearCache()
         this.stopPeriodicVerification()
-        this.updateStatus('checking', false)
     }
 
     /**
