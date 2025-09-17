@@ -102,5 +102,11 @@ input[type='search']::-moz-search-clear-button {
     background-position: var(--bg-pos, center center);
     background-repeat: var(--bg-repeat, no-repeat);
     opacity: var(--bg-opacity, 1);
-    z-index: -1; /* 将伪元素放到背景层，避免遮挡文字内容 */
+    z-index: 0; /* 调整层级，确保背景图片可见但不遮挡文字内容 */
+}
+
+/* 确保文字内容在背景图片之上 */
+.use-pseudo-bg > * {
+    position: relative;
+    z-index: 1;
 }

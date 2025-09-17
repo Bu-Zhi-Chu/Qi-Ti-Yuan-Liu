@@ -234,16 +234,16 @@
     function handleNameChange(newName: string) {
         if (!selectedId) return
         currentName = newName
-        
+
         // 获取当前节点信息
         const node = getFullNode(selectedId)
         const isButtonComponent = node?.componentType === 'Button'
-        
+
         // 更新节点名称
         updateNodeProps(selectedId, {
             attributes: { 'data-name': newName }
         })
-        
+
         // 如果是Button组件，同步更新textContent
         if (isButtonComponent) {
             updateNodeProperties(selectedId, { textContent: newName })
