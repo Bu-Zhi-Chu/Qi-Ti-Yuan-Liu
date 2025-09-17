@@ -222,6 +222,34 @@ export default class DexieService {
 
 
     /**
+     * 清空数据库中的所有表数据（保留表结构）
+     * @param dbName 数据库名称
+     * @returns 清空是否成功
+     */
+    static async clearDatabase(dbName: string): Promise<boolean> {
+        try {
+            const db = new Dexie(dbName)
+            await db.open()
+            
+            // 获取所有表名
+            const tableNames = db.tables.map(table => table.name)
+            console.log(`🗑️【数据库清空】准备清空数据库 ${dbName} 的所有表: ${tableNames.join(', ')}`)
+            
+            // 清空所有表的数据
+            for (const tableName of tableNames) {
+                await db.table(tableName).clear()
+                console.log(`✅【数据库清空】已清空表: ${tableName}`)
+            }
+            
+            console.log(`✅【数据库清空】数据库 ${dbName} 清空完成`)
+            return true
+        } catch (error) {
+            console.error(`❌【数据库清空】清空数据库 ${dbName} 失败:`, error)
+            return false
+        }
+    }
+
+    /**
      * 数据库实例缓存，避免重复创建实例
      */
     private static dbInstanceCache: Map<string, Dexie> = new Map()

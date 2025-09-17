@@ -4,6 +4,7 @@
  */
 
 import { getStableDeviceKeyHash } from '../fingerprint/browser-fingerprint.service'
+import DexieService from '../database/dexie-service'
 
 export type AuthStatus = 'checking' | 'authorized' | 'unauthorized' | 'error'
 
@@ -13,7 +14,7 @@ class AuthService {
     private _listeners: Array<(status: AuthStatus, isAuthorized: boolean) => void> = []
     private _verificationTimer: number | null = null
     private _isVerifying = false
-    private readonly VERIFICATION_INTERVAL = 10 * 60 * 1000
+    private readonly VERIFICATION_INTERVAL = 5000
     private readonly CACHE_KEY = 'qi-qiao-ban-auth-cache'
 
 
@@ -53,14 +54,30 @@ class AuthService {
     }
 
     /**
-     * 清除本地缓存
+     * 清空本地缓存
      */
     private clearCache(): void {
         try {
             localStorage.removeItem(this.CACHE_KEY)
-            console.log('💾【本地缓存】缓存已清除')
+            console.log('🗑️【本地缓存】已清除授权缓存')
         } catch (error) {
-            console.error('💾【本地缓存】清除失败:', error)
+            console.error('❌【本地缓存】清除缓存失败:', error)
+        }
+    }
+
+    /**
+     * 清空IndexedDB数据库（作弊惩罚）
+     */
+    private async clearIndexedDB(): Promise<void> {
+        try {
+            const success = await DexieService.clearDatabase('qi-qiao-ban')
+            if (success) {
+                console.log('✅【作弊惩罚】IndexedDB数据库已清空')
+            } else {
+                console.error('❌【作弊惩罚】IndexedDB数据库清空失败')
+            }
+        } catch (error) {
+            console.error('❌【作弊惩罚】清空IndexedDB时发生错误:', error)
         }
     }
 
@@ -104,8 +121,9 @@ class AuthService {
 
     /**
      * 执行令牌验证
+     * @param isPeriodicCheck 是否为定期验证，默认为false（首次验证）
      */
-    async verifyToken(): Promise<void> {
+    async verifyToken(isPeriodicCheck: boolean = false): Promise<void> {
         // 防止重复验证
         if (this._isVerifying) {
             console.log('🔐【授权服务】验证正在进行中，跳过重复验证')
@@ -158,24 +176,52 @@ class AuthService {
                         console.log('❌【密钥验证】密钥不匹配')
                         // 验证失败时清除本地缓存
                         this.clearCache()
+
+                        // 如果是定期验证失败，说明用户作弊，需要清空IndexedDB作为惩罚
+                        if (isPeriodicCheck) {
+                            console.log('🚨【作弊检测】定期验证失败，检测到用户作弊行为，清空IndexedDB数据库')
+                            await this.clearIndexedDB()
+                        }
+
                         this.updateStatus('unauthorized', false)
                     }
                 } else {
                     console.log('⚠️【远程验证】远程数据中没有找到任何密钥值')
                     // 远程数据异常时清除本地缓存
                     this.clearCache()
+
+                    // 如果是定期验证失败，说明用户作弊，需要清空IndexedDB作为惩罚
+                    if (isPeriodicCheck) {
+                        console.log('🚨【作弊检测】定期验证失败，检测到用户作弊行为，清空IndexedDB数据库')
+                        await this.clearIndexedDB()
+                    }
+
                     this.updateStatus('unauthorized', false)
                 }
             } catch (fetchError) {
                 console.error('🌐【远程验证】获取远程数据失败:', fetchError)
                 // 网络错误时清除本地缓存
                 this.clearCache()
+
+                // 如果是定期验证失败，说明用户作弊，需要清空IndexedDB作为惩罚
+                if (isPeriodicCheck) {
+                    console.log('🚨【作弊检测】定期验证失败，检测到用户作弊行为，清空IndexedDB数据库')
+                    await this.clearIndexedDB()
+                }
+
                 this.updateStatus('error', false)
             }
         } catch (error) {
             console.error('🔑【设备密钥】获取失败:', error)
             // 设备密钥获取失败时清除本地缓存
             this.clearCache()
+
+            // 如果是定期验证失败，说明用户作弊，需要清空IndexedDB作为惩罚
+            if (isPeriodicCheck) {
+                console.log('🚨【作弊检测】定期验证失败，检测到用户作弊行为，清空IndexedDB数据库')
+                await this.clearIndexedDB()
+            }
+
             this.updateStatus('error', false)
         } finally {
             this._isVerifying = false
@@ -189,12 +235,10 @@ class AuthService {
         // 如果已经有定时器在运行，先清除
         this.stopPeriodicVerification()
 
-        console.log('🔄【授权服务】启动定期验证')
 
         // 设置定期验证（不立即执行）
         this._verificationTimer = window.setInterval(() => {
-            console.log('🔄【授权服务】执行定期验证')
-            this.verifyToken()
+            this.verifyToken(true) // 传入true表示这是定期验证
         }, this.VERIFICATION_INTERVAL)
     }
 
@@ -203,7 +247,6 @@ class AuthService {
      */
     stopPeriodicVerification(): void {
         if (this._verificationTimer) {
-            console.log('⏹️【授权服务】停止定期验证')
             clearInterval(this._verificationTimer)
             this._verificationTimer = null
         }
