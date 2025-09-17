@@ -291,41 +291,76 @@ export class BrowserFingerprintService {
      * 获取音频上下文指纹
      */
     private async getAudioContextFingerprint(): Promise<string> {
+    try {
+      // 检查是否支持AudioContext
+      if (!window.AudioContext && !(window as any).webkitAudioContext) {
+        return 'no-audio-context';
+      }
+
+      // 不创建AudioContext，而是获取音频相关的静态信息
+      // 这样可以避免权限问题，同时仍能获得设备特征
+      const audioInfo = [];
+      
+      // 获取媒体设备信息（如果支持）
+      if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
         try {
-            const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-            const oscillator = audioContext.createOscillator();
-            const analyser = audioContext.createAnalyser();
-            const gainNode = audioContext.createGain();
-            const scriptProcessor = audioContext.createScriptProcessor(4096, 1, 1);
-
-            oscillator.type = 'triangle';
-            oscillator.frequency.setValueAtTime(10000, audioContext.currentTime);
-
-            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-
-            oscillator.connect(analyser);
-            analyser.connect(scriptProcessor);
-            scriptProcessor.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-
-            oscillator.start(0);
-
-            return new Promise((resolve) => {
-                scriptProcessor.onaudioprocess = function (bins) {
-                    const samples = bins.inputBuffer.getChannelData(0);
-                    let sum = 0;
-                    for (let i = 0; i < samples.length; i++) {
-                        sum += Math.abs(samples[i]);
-                    }
-                    oscillator.stop();
-                    scriptProcessor.disconnect();
-                    resolve(sum.toString());
-                };
-            });
+          const devices = await navigator.mediaDevices.enumerateDevices();
+          const audioInputs = devices.filter(device => device.kind === 'audioinput').length;
+          const audioOutputs = devices.filter(device => device.kind === 'audiooutput').length;
+          audioInfo.push(`inputs:${audioInputs}`, `outputs:${audioOutputs}`);
         } catch (error) {
-            return '';
+          audioInfo.push('media-devices-error');
         }
+      }
+
+      // 获取音频相关的浏览器特性
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioContextClass) {
+        // 获取AudioContext构造函数的特征
+        const contextString = AudioContextClass.toString();
+        const contextHash = this.simpleHash(contextString);
+        audioInfo.push(`context-hash:${contextHash}`);
+      }
+
+      // 检查Web Audio API支持的特性
+      const features = [];
+      if (typeof OfflineAudioContext !== 'undefined') features.push('offline');
+      if (typeof AudioWorkletNode !== 'undefined') features.push('worklet');
+      if (typeof ScriptProcessorNode !== 'undefined') features.push('script-processor');
+      if (typeof AnalyserNode !== 'undefined') features.push('analyser');
+      if (typeof GainNode !== 'undefined') features.push('gain');
+      if (typeof OscillatorNode !== 'undefined') features.push('oscillator');
+      
+      audioInfo.push(`features:${features.join(',')}`);
+
+      // 检查音频编解码器支持
+      const audio = document.createElement('audio');
+      const codecs: string[] = [];
+      if (audio.canPlayType) {
+        const testCodecs = [
+          'audio/mpeg',
+          'audio/ogg',
+          'audio/wav',
+          'audio/aac',
+          'audio/webm'
+        ];
+        
+        testCodecs.forEach(codec => {
+          const support = audio.canPlayType(codec);
+          if (support) {
+            codecs.push(`${codec}:${support}`);
+          }
+        });
+      }
+      audioInfo.push(`codecs:${codecs.join(',')}`);
+
+      // 返回组合的音频特征字符串
+      return audioInfo.join('|') || 'no-audio-features';
+      
+    } catch (error) {
+      return `error-${error instanceof Error ? error.message.substring(0, 20) : 'unknown'}`;
     }
+  }
 
     /**
      * 检查存储是否可用

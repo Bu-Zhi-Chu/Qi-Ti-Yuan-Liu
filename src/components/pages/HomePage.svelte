@@ -29,17 +29,48 @@
     let projects: Project[] = $state([])
 
     onMount(async () => {
-        // 获取并打印设备密钥
+        // 获取并打印设备密钥哈希值
         try {
-            console.log('🔑【设备密钥】开始获取浏览器指纹密钥...')
-            
-            const deviceKey = await getStableDeviceKey()
-            console.log('🔑【设备密钥】稳定密钥字符串:', deviceKey)
-            
             const deviceKeyHash = await getStableDeviceKeyHash()
-            console.log('🔑【设备密钥】密钥哈希值:', deviceKeyHash)
-            
-            console.log('🔑【设备密钥】密钥获取完成')
+
+            // 获取远程JSON数据并对比密钥
+            try {
+                console.log('🌐【远程验证】开始获取远程密钥数据...')
+
+                // 使用CORS代理来解决跨域问题
+                const proxyUrl = 'https://api.allorigins.win/get?url='
+                const targetUrl = encodeURIComponent('https://buzhichu.netlify.app/societies/99%20asset/json/qi-qiao-ban.json')
+                const response = await fetch(proxyUrl + targetUrl)
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`)
+                }
+
+                const proxyData = await response.json()
+                const remoteData = JSON.parse(proxyData.contents)
+
+
+                // 对比密钥 - 只考虑值，不关注键名
+                const remoteValues = Object.values(remoteData)
+
+
+                if (remoteValues.length > 0) {
+                    // 检查本地密钥是否在远程值列表中
+                    const isAuthorized = remoteValues.includes(deviceKeyHash)
+
+                    if (isAuthorized) {
+                        console.log('✅【密钥验证】密钥匹配成功！本设备已授权')
+
+                    } else {
+                        console.log('❌【密钥验证】密钥不匹配')
+
+                    }
+                } else {
+                    console.log('⚠️【远程验证】远程数据中没有找到任何密钥值')
+                }
+            } catch (fetchError) {
+                console.error('🌐【远程验证】获取远程数据失败:', fetchError)
+            }
         } catch (error) {
             console.error('🔑【设备密钥】获取失败:', error)
         }
