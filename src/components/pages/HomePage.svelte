@@ -16,6 +16,7 @@
     import { onMount } from 'svelte'
     import DexieService from '../../services/database/dexie-service'
     import { clearMemoryState } from '../../stores/dom-tree.store.svelte'
+    import { getStableDeviceKey, getStableDeviceKeyHash } from '../../services/fingerprint/browser-fingerprint.service'
 
     interface Project {
         id: string
@@ -28,6 +29,21 @@
     let projects: Project[] = $state([])
 
     onMount(async () => {
+        // 获取并打印设备密钥
+        try {
+            console.log('🔑【设备密钥】开始获取浏览器指纹密钥...')
+            
+            const deviceKey = await getStableDeviceKey()
+            console.log('🔑【设备密钥】稳定密钥字符串:', deviceKey)
+            
+            const deviceKeyHash = await getStableDeviceKeyHash()
+            console.log('🔑【设备密钥】密钥哈希值:', deviceKeyHash)
+            
+            console.log('🔑【设备密钥】密钥获取完成')
+        } catch (error) {
+            console.error('🔑【设备密钥】获取失败:', error)
+        }
+
         const dbName = 'qi-qiao-ban'
         console.log('【数据库交互】检查项目列表页面数据库状态')
         // 确保数据库存在
