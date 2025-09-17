@@ -168,16 +168,16 @@ class AuthService {
             return
         }
 
-        // 初次验证逻辑：优先使用本地缓存验证
+        // 首次验证逻辑：优先使用本地缓存验证
         if (!isPeriodicCheck && !forceVerification) {
             // 尝试本地验证
             const localAuthResult = await this.quickLocalAuthCheck()
             if (localAuthResult) {
-                console.log('✅【初次验证】授权成功')
+                console.log('✅【首次验证】授权成功')
                 this.updateStatus('authorized', true)
                 return
             } else {
-                console.log('❌【初次验证】授权失败，进行远程验证')
+                console.log('❌【首次验证】授权失败，进行远程验证')
             }
         }
 
@@ -206,7 +206,7 @@ class AuthService {
                     fetchUrl += cacheBuster
                     fetchOptions.cache = 'no-cache'
                 } else {
-                    // 初次验证：允许使用缓存，提高加载速度
+                    // 首次验证：允许使用缓存，提高加载速度
                 }
 
                 const response = await fetch(fetchUrl, fetchOptions)
@@ -232,9 +232,9 @@ class AuthService {
                     }
 
                     if (keyMatched) {
-                        // 只在初次验证时打印成功信息
+                        // 只在首次验证时打印成功信息
                         if (!isPeriodicCheck) {
-                            console.log('✅【初次验证】远程验证成功')
+                            console.log('✅【首次验证】远程验证成功')
                         }
                         // 验证成功时保存到本地缓存
                         this.saveToCache(deviceKeyHash, Date.now())
@@ -244,9 +244,9 @@ class AuthService {
                         }
                         this.updateStatus('authorized', true)
                     } else {
-                        // 只在初次验证时打印失败信息
+                        // 只在首次验证时打印失败信息
                         if (!isPeriodicCheck) {
-                            console.log('❌【初次验证】远程验证失败')
+                            console.log('❌【首次验证】远程验证失败')
                         }
                         // 验证失败时清除本地缓存
                         this.clearCache()

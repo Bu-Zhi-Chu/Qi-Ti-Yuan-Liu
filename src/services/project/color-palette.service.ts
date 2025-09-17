@@ -28,12 +28,12 @@ export default class ColorPaletteService {
      */
     // 颜色写入逻辑不再单独持久化到 colorPalette 表，而是直接同步到 doms 表。
     static async saveColor(projectId: string, componentId: string, color: string): Promise<void> {
-        console.log(`【数据库交互】保存颜色到颜色卡: 项目ID=${projectId}, 组件ID=${componentId}, 颜色=${color}`)
+        console.log(`💾【数据交互】保存颜色到颜色卡: 项目ID=${projectId}, 组件ID=${componentId}, 颜色=${color}`)
         try {
             // 检查数据库是否存在
             const dbExists = await DexieService.databaseExists(DEFAULT_DB_NAME)
             if (!dbExists) {
-                console.warn('【数据库交互】数据库不存在，无法保存颜色')
+                console.warn('⚠️【数据交互】数据库不存在，无法保存颜色')
                 return
             }
 
@@ -42,7 +42,7 @@ export default class ColorPaletteService {
             // 删除缓存，下一次读取重新统计
             ColorPaletteService.componentColorCache.delete(projectId)
         } catch (error) {
-            console.error('【数据库交互】保存颜色卡失败:', error)
+            console.error('❌【数据交互】保存颜色卡失败:', error)
         }
     }
 
@@ -57,12 +57,12 @@ export default class ColorPaletteService {
      * @returns 颜色值（RGBA格式）
      */
     static async getColorFromDoms(projectId: string, componentId: string): Promise<string | null> {
-        console.log(`【数据库交互】从doms表获取节点颜色: 项目ID=${projectId}, 组件ID=${componentId}`)
+        console.log(`🎨【数据交互】从doms表获取节点颜色: 项目ID=${projectId}, 组件ID=${componentId}`)
         try {
             // 检查数据库是否存在
             const dbExists = await DexieService.databaseExists(DEFAULT_DB_NAME)
             if (!dbExists) {
-                console.warn('【数据库交互】数据库不存在，无法获取节点颜色')
+                console.warn('⚠️【数据交互】数据库不存在，无法获取节点颜色')
                 return null
             }
 
@@ -109,7 +109,7 @@ export default class ColorPaletteService {
 
             return null
         } catch (error) {
-            console.error('【数据库交互】从doms表获取颜色值失败:', error)
+            console.error('❌【数据交互】从doms表获取颜色值失败:', error)
             return null
         }
     }
@@ -121,12 +121,12 @@ export default class ColorPaletteService {
      * @param color 颜色值（RGBA格式）
      */
     static async updateColorInDoms(projectId: string, componentId: string, color: string): Promise<void> {
-        console.log(`【数据库交互】更新doms表节点颜色: 项目ID=${projectId}, 组件ID=${componentId}, 颜色=${color}`)
+        console.log(`🎨【数据交互】更新doms表节点颜色: 项目ID=${projectId}, 组件ID=${componentId}, 颜色=${color}`)
         try {
             // 检查数据库是否存在
             const dbExists = await DexieService.databaseExists(DEFAULT_DB_NAME)
             if (!dbExists) {
-                console.warn('【数据库交互】数据库不存在，无法更新节点颜色')
+                console.warn('⚠️【数据交互】数据库不存在，无法更新节点颜色')
                 return
             }
 
@@ -176,7 +176,7 @@ export default class ColorPaletteService {
             // 检查数据库是否存在
             const dbExists = await DexieService.databaseExists(DEFAULT_DB_NAME)
             if (!dbExists) {
-                console.warn('【数据库交互】数据库不存在，无法删除颜色')
+                console.warn('⚠️【数据交互】数据库不存在，无法删除颜色')
                 return
             }
 

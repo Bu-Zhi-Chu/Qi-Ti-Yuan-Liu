@@ -30,13 +30,12 @@
     // 数据库初始化函数
     async function initializeDatabase() {
         const dbName = 'qi-qiao-ban'
-        console.log('【数据库交互】检查项目列表页面数据库状态')
         // 确保数据库存在
         if (!(await DexieService.databaseExists(dbName))) {
-            console.log('【数据库交互】数据库不存在，开始创建数据库')
+            console.log('🏗️【数据交互】数据库不存在，开始创建数据库')
             await DexieService.createDatabase(dbName)
         } else {
-            console.log('【数据库交互】数据库已存在')
+            console.log('✅【数据交互】数据库已存在')
         }
         const rows = await DexieService.queryRecords<any>(dbName, 'projects')
         projects = rows.map((r: any) => ({
@@ -73,11 +72,11 @@
 
         // 先删除doms表中对应项目ID的所有记录
         const dbName = 'qi-qiao-ban'
-        console.log(`【数据库交互】删除项目: 项目ID=${projectId}`)
+        console.log(`🗑️【数据交互】删除项目: 项目ID=${projectId}`)
         try {
             const db = await DexieService.getDatabase(dbName)
             if (db) {
-                console.log(`【数据库交互】删除项目相关DOM节点: 项目ID=${projectId}`)
+                console.log(`🗑️【数据交互】删除项目相关DOM节点: 项目ID=${projectId}`)
                 await db.table('doms').where('projectId').equals(String(projectId)).delete()
             }
         } catch (error) {
@@ -88,7 +87,7 @@
         try {
             const db = await DexieService.getDatabase(dbName)
             if (db) {
-                console.log(`【数据库交互】删除项目图片记录: 项目ID=${projectId}`)
+                console.log(`🗑️【数据交互】删除项目图片记录: 项目ID=${projectId}`)
                 await db.table('imageStore').where('projectId').equals(String(projectId)).delete()
             }
         } catch (error) {
@@ -96,11 +95,12 @@
         }
 
         // 删除projects表中的项目记录
-        console.log(`【数据库交互】删除项目记录: 项目ID=${projectId}`)
-        const ok = await DexieService.deleteRecord(dbName, 'projects', projectId)
-        if (ok) {
+        try {
+            console.log(`🗑️【数据交互】删除项目记录: 项目ID=${projectId}`)
+            await DexieService.deleteRecord(dbName, 'projects', projectId)
             projects = projects.filter((p) => p.id !== String(projectId))
-        } else {
+        } catch (error) {
+            console.error('删除项目记录失败:', error)
             alert('删除失败，请重试')
         }
     }

@@ -29,7 +29,7 @@ const FOCUS_CHANGE_DEBOUNCE = 50 // 防抖时间50ms
 
 function checkAltKeyState() {
     // 同步释放Alt键，避免异步延迟
-    console.log('释放Alt键...')
+
 
     // 快速释放左右Alt键
     const leftAltEvent = new KeyboardEvent('keyup', {
@@ -77,14 +77,14 @@ function handleVisibilityChange(isVisible: boolean, source: string) {
 
     try {
         if (isVisible) {
-            console.log(`[${source}] TAB+ALT切换回来浏览器了 (${now - lastActivity}ms)`)
+
             isHidden = false
 
             // 同步释放Alt键，避免延迟
             checkAltKeyState()
 
         } else {
-            console.log(`[${source}] TAB+ALT切换离开浏览器了`)
+
             isHidden = true
         }
 
@@ -151,13 +151,12 @@ function initFocusDetection() {
     const initialHasFocus = document.hasFocus()
     const initialIsVisible = !document.hidden
 
-    console.log(`初始化焦点检测: hasFocus=${initialHasFocus}, visible=${initialIsVisible}`)
     isHidden = !initialHasFocus || !initialIsVisible
 
     if (isHidden) {
-        console.log('页面初始状态：未聚焦')
+
     } else {
-        console.log('页面初始状态：已聚焦')
+
     }
 }
 
@@ -186,7 +185,7 @@ setTimeout(() => {
     try {
         initFocusDetection()
     } catch (error) {
-        console.warn('初始化焦点检测失败:', error)
+
     }
 }, 100)
 
@@ -199,7 +198,7 @@ async function initializeDatabase() {
         if (isLiteMode()) {
             // 精简模式先清空网页标题，防止显示旧项目名称或默认标题
             document.title = ''
-            console.log('【数据库交互】精简模式：从project-data.json导入数据')
+            console.log('【数据交互】精简模式：从project-data.json导入数据')
             try {
                 // 导入项目数据
                 const response = await fetch('./data/project-data.json')
@@ -243,7 +242,7 @@ async function initializeDatabase() {
                             dbExportTime = existingProjects[0].exportTime
                         }
                     } catch (error) {
-                        console.warn('【数据库交互】无法获取现有导出时间', error)
+                        console.warn('【数据交互】无法获取现有导出时间', error)
                     }
 
                     // 对于dexie-export-import格式，尝试从元数据中获取导出时间
@@ -265,14 +264,14 @@ async function initializeDatabase() {
                     if (!jsonExportTime && tablesArray) {
                         // 查找projects表中是否有exportTime字段
                         const projectsTable = tablesArray.find((item: any) => item.tableName === 'projects')
-                        console.log('【数据库交互】projectsTable', projectsTable)
+                        console.log('📊【数据交互】projectsTable', projectsTable)
                         if (projectsTable && projectsTable.rows && projectsTable.rows.length > 0) {
                             jsonExportTime = projectsTable.rows[0].exportTime
                         }
                     }
 
                     // 打印两侧时间戳以便调试
-                    console.log(`【数据库交互】时间对比 - JSON时间: ${jsonExportTime || '未提供'}, 数据库时间: ${dbExportTime || '无'}`)
+                    console.log(`⏰【数据交互】时间对比 - JSON时间: ${jsonExportTime || '未提供'}, 数据库时间: ${dbExportTime || '无'}`)
 
                     // 比较导出时间，决定是否导入
                     const shouldImport = existingProjectCount === 0 ||
@@ -282,11 +281,11 @@ async function initializeDatabase() {
                     if (shouldImport) {
 
                         // 清空旧数据，避免数据污染
-                        console.log('【数据库交互】清空数据库旧数据')
+                        console.log('【数据交互】清空数据库旧数据')
                         await db.table('projects').clear()
                         await db.table('doms').clear()
 
-                        console.log('【数据库交互】使用dexie-export-import导入数据')
+                        console.log('📦【数据交互】使用dexie-export-import导入数据')
 
                         // 将JSON数据转换为Blob，然后使用importInto导入
                         const jsonString = JSON.stringify(projectData)
@@ -294,19 +293,19 @@ async function initializeDatabase() {
                         await importInto(db, blob, { overwriteValues: true })
 
 
-                        console.log('【数据库交互】dexie-export-import导入完成')
+                        console.log('【数据交互】dexie-export-import导入完成')
 
                         // 重置所有项目的 canvasState 为默认值，确保初始缩放一致
                         try {
                             await db.table('projects').toCollection().modify((proj: any) => {
                                 proj.canvasState = { x: 0, y: 0, scale: 0.5 }
                             })
-                            console.log('【数据库交互】已重置项目 canvasState 为默认值 (scale=0.5, x=0, y=0)')
+                            console.log('🔄【数据交互】已重置项目 canvasState 为默认值 (scale=0.5, x=0, y=0)')
                         } catch (resetErr) {
-                            console.warn('【数据库交互】重置 canvasState 失败', resetErr)
+                            console.warn('⚠️【数据交互】重置 canvasState 失败', resetErr)
                         }
                     } else {
-                        console.log(`【数据库交互】跳过导入 - JSON时间: ${jsonExportTime}, 数据库时间: ${dbExportTime || '无'}`)
+                        console.log(`⏭️【数据交互】数据库已是最新，跳过导入 - JSON时间: ${jsonExportTime}, 数据库时间: ${dbExportTime || '无'}`)
                     }
 
 
@@ -318,8 +317,8 @@ async function initializeDatabase() {
                     // 验证导入的数据
                     const finalProjectCount = await db.table('projects').count()
                     const finalDomCount = await db.table('doms').count()
-                    console.log(`【数据库交互】精简模式：验证完成 - 项目: ${finalProjectCount}个, DOM节点: ${finalDomCount}个`)
-                    console.log(`【数据库交互】默认关闭日志打印`)
+                    console.log(`✅【数据交互】精简模式：验证完成 - 项目: ${finalProjectCount}个, DOM节点: ${finalDomCount}个`)
+                    console.log(`🔇【数据交互】默认关闭日志打印`)
                     applyLogConfig(false)
                 } else {
                     throw new Error('无法获取数据库实例')
@@ -327,9 +326,9 @@ async function initializeDatabase() {
 
 
             } catch (error) {
-                console.error('【数据库交互】精简模式：数据库导入失败', error)
+                console.error('❌【数据交互】精简模式：数据库导入失败', error)
                 // 导入失败时不创建空数据库，让应用继续运行
-                console.warn('【数据库交互】精简模式：数据库导入失败，应用将以无数据状态运行')
+                console.warn('⚠️【数据交互】精简模式：数据库导入失败，应用将以无数据状态运行')
             }
         } else {
             if (!(await DexieService.databaseExists('qi-qiao-ban'))) {
@@ -347,7 +346,7 @@ async function initializeDatabase() {
             } catch { }
         }
     } catch (error) {
-        console.error('【数据库交互】数据库初始化失败', error)
+        console.error('【数据交互】数据库初始化失败', error)
         throw error
     }
 }

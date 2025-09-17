@@ -84,7 +84,7 @@ export class ProjectThumbnailService {
       }
 
       // 计算哈希并写入 imageStore，然后将哈希存入 projects 表
-      console.log(`【数据库交互】保存项目缩略图: 项目ID=${projectId}, Blob大小=${thumbnailBlob.size}字节`)
+      console.log(`💾【数据交互】保存项目缩略图: 项目ID=${projectId}, Blob大小=${thumbnailBlob.size}字节`)
 
       // 1. 计算哈希
       const hash = await hashBlob(thumbnailBlob, projectId)
@@ -96,19 +96,18 @@ export class ProjectThumbnailService {
       }
 
       // 3. 更新项目记录为哈希字符串
-      const updateSuccess = await DexieService.updateRecord(
-        'qi-qiao-ban',
-        'projects',
-        projectId,
-        { thumbnail: hash }
-      )
-
-      if (updateSuccess) {
+      try {
+        await DexieService.updateRecord(
+          'qi-qiao-ban',
+          'projects',
+          projectId,
+          { thumbnail: hash }
+        )
         console.log('项目缩略图已更新为哈希:', projectId)
         // 背景图同步后，移除默认缩略图标记，允许后续再次创建默认缩略图
         ProjectThumbnailService.defaultThumbnailCreated.delete(projectId)
-      } else {
-        console.warn('更新项目缩略图失败:', projectId)
+      } catch (updateError) {
+        console.warn('更新项目缩略图失败:', projectId, updateError)
       }
     } catch (error) {
       console.error('同步项目缩略图失败:', error)
@@ -124,7 +123,7 @@ export class ProjectThumbnailService {
   static async autoGenerateThumbnail(projectId: string): Promise<void> {
     try {
       // 从doms表获取根节点数据
-      console.log(`【数据库交互】获取项目缩略图: 项目ID=${projectId}`)
+      console.log(`📸【数据交互】获取项目缩略图: 项目ID=${projectId}`)
       const rootNodes = await DexieService.queryRecords('qi-qiao-ban', 'doms')
       const rootNode = (rootNodes as DomNode[]).find((node) => node.projectId === projectId && node.id === 'root')
 
@@ -205,18 +204,17 @@ export class ProjectThumbnailService {
       const svgBase64 = btoa(unescape(encodeURIComponent(svgContent)))
       const dataUrl = `data:image/svg+xml;base64,${svgBase64}`
 
-      const updateSuccess = await DexieService.updateRecord(
-        'qi-qiao-ban',
-        'projects',
-        projectId,
-        { thumbnail: dataUrl }
-      )
-
-      if (updateSuccess) {
+      try {
+        await DexieService.updateRecord(
+          'qi-qiao-ban',
+          'projects',
+          projectId,
+          { thumbnail: dataUrl }
+        )
         console.log('默认项目缩略图已创建:', projectId)
         ProjectThumbnailService.defaultThumbnailCreated.add(projectId)
-      } else {
-        console.warn('创建默认项目缩略图失败:', projectId)
+      } catch (updateError) {
+        console.warn('创建默认项目缩略图失败:', projectId, updateError)
       }
     } catch (error) {
       console.error('创建默认项目缩略图失败:', error)

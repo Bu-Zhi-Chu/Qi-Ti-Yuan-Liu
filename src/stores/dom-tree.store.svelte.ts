@@ -164,7 +164,7 @@ async function loadDomNodesFromDomsTable(projectId: string): Promise<DomNode | n
 
     return rootNode;
   } catch (error) {
-    console.error('【数据库交互】从doms表加载DOM树失败:', error);
+    console.error('❌【数据交互】从doms表加载DOM树失败:', error);
     return null;
   }
 }
@@ -175,7 +175,7 @@ async function loadDomNodesFromDomsTable(projectId: string): Promise<DomNode | n
 export async function loadDomTreeFromDatabase(projectId: string): Promise<boolean> {
   if (!projectId) {
     console.warn('项目ID为空，无法加载domTree数据');
-    console.log('【数据库交互】项目ID为空，跳过DOM树数据加载');
+    console.log('📥【数据交互】项目ID为空，跳过DOM树数据加载');
     return false;
   }
 
@@ -185,7 +185,7 @@ export async function loadDomTreeFromDatabase(projectId: string): Promise<boolea
     const savedSelectedNodeId = project?.selectedNodeId || null;
 
     // 立即清空旧数据，确保无残影
-    console.log('【数据库交互】立即清空DOM树数据，避免残影');
+    console.log('🧹【数据交互】立即清空DOM树数据，避免残影');
     Object.assign(domTreeData, {
       id: 'root',
       componentType: 'SimpleBox',
@@ -205,7 +205,7 @@ export async function loadDomTreeFromDatabase(projectId: string): Promise<boolea
     const domTreeFromDoms = await loadDomNodesFromDomsTable(projectId);
     if (domTreeFromDoms) {
       Object.assign(domTreeData, domTreeFromDoms);
-      console.log('【数据库交互】已从doms表加载DOM树数据');
+      console.log('✅【数据交互】已从doms表加载DOM树数据');
 
       // 恢复之前保存的选中节点，如果节点存在的话
       const targetSelectedId = savedSelectedNodeId && hasNodeWithId(domTreeData, savedSelectedNodeId)
@@ -216,10 +216,10 @@ export async function loadDomTreeFromDatabase(projectId: string): Promise<boolea
     }
 
     // doms表没有数据时使用默认结构
-    console.log('【数据库交互】未找到domTree数据，使用默认结构');
+    console.log('🏗️【数据交互】未找到domTree数据，使用默认结构');
     return false;
   } catch (error) {
-    console.error('【数据库交互】加载domTree数据失败:', error);
+    console.error('❌【数据交互】加载domTree数据失败:', error);
     return false;
   }
 }
@@ -237,7 +237,7 @@ async function saveDomNodesToDomsTable(projectId: string, domTree: DomNode): Pro
     // 先删除该项目的所有旧节点
     const db = new Dexie('qi-qiao-ban');
     await db.open();
-    console.log('【数据库交互】开始删除项目旧节点，项目ID:', projectId);
+    console.log('🗑️【数据交互】开始删除项目旧节点，项目ID:', projectId);
     await db.table('doms').where({ projectId }).delete();
 
     // 递归保存所有节点到doms表
@@ -286,9 +286,9 @@ async function saveDomNodesToDomsTable(projectId: string, domTree: DomNode): Pro
 
     // 从根节点开始保存
     await saveNode(domTree, null, 0);
-    console.log('【数据库交互】所有DOM节点已保存到doms表');
+    console.log('💾【数据交互】所有DOM节点已保存到doms表');
   } catch (error) {
-    console.error('【数据库交互】保存DOM节点到doms表失败:', error);
+    console.error('❌【数据交互】保存DOM节点到doms表失败:', error);
   }
 }
 
@@ -304,7 +304,7 @@ function autoSaveToDomsTable(): void {
 
   saveTimeout = setTimeout(() => {
     if (!currentProjectId) {
-      console.warn('【数据库交互】项目ID为空，跳过自动保存');
+      console.warn('⚠️【数据交互】项目ID为空，跳过自动保存');
       return;
     }
 
@@ -329,13 +329,13 @@ export async function setSelectedId(id: string | null): Promise<void> {
   // 仅在节点ID变化时更新数据库中的selectedNodeId
   if (currentProjectId) {
     try {
-      console.log(`【数据库交互】更新项目选中节点ID: 项目ID=${currentProjectId}, 选中节点ID=${id}`)
+      console.log(`🎯【数据交互】更新项目选中节点ID: 项目ID=${currentProjectId}, 选中节点ID=${id}`)
       await DexieService.updateRecord('qi-qiao-ban', 'projects', currentProjectId, {
         selectedNodeId: id
       });
-      console.log('【数据库交互】项目选中节点ID已更新到数据库')
+      console.log('✅【数据交互】项目选中节点ID已更新到数据库')
     } catch (error) {
-      console.error('【数据库交互】更新数据库中的selectedNodeId失败:', error);
+      console.error('❌【数据交互】更新数据库中的selectedNodeId失败:', error);
     }
   }
 }
