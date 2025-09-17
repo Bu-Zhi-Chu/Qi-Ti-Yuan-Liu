@@ -16,7 +16,6 @@
     import { onMount, onDestroy } from 'svelte'
     import DexieService from '../../services/database/dexie-service'
     import { clearMemoryState } from '../../stores/dom-tree.store.svelte'
-    import { subscribeToAuth, type AuthStatus } from '../../services/auth/auth.service'
 
     interface Project {
         id: string
@@ -27,11 +26,6 @@
 
     // 历史项目数据，由 IndexedDB 实时加载
     let projects: Project[] = $state([])
-
-    // 授权状态管理 - 使用全局授权服务
-    let isAuthorized = $state(false)
-    let authStatus = $state<AuthStatus>('checking')
-    let unsubscribe: (() => void) | null = null
 
     // 数据库初始化函数
     async function initializeDatabase() {
@@ -54,25 +48,12 @@
     }
 
     onMount(async () => {
-        // 订阅全局授权状态
-        unsubscribe = subscribeToAuth(async (status, authorized) => {
-            authStatus = status
-            isAuthorized = authorized
-
-            // 只有在授权验证成功后才初始化数据库
-            if (status === 'authorized' && authorized) {
-                await initializeDatabase()
-            } else if (status === 'unauthorized' || status === 'error') {
-                // 清空项目列表
-                projects = []
-            }
-        })
+        // 直接初始化数据库，不再依赖授权状态
+        await initializeDatabase()
     })
 
     onDestroy(() => {
-        if (unsubscribe) {
-            unsubscribe()
-        }
+        // 清理资源
     })
 
     let showWindow = $state(false)
@@ -237,42 +218,24 @@
         <ActionButton
             buttons={[
                 {
-                    name: isAuthorized ? '开始创建' : authStatus === 'checking' ? '验证中...' : '未授权',
-                    variant: isAuthorized ? 'primary' : 'secondary',
-                    size: 'large',
-                    disabled: !isAuthorized
+                    name: '开始创建',
+                    variant: 'primary',
+                    size: 'large'
                 }
             ]}
-            style="width: 160px; height: 56px; {!isAuthorized ? 'opacity: 0.5; cursor: not-allowed;' : ''}"
-            onButtonClick={isAuthorized
-                ? createNewProject
-                : () => {
-                      if (authStatus === 'unauthorized') {
-                          alert('设备未授权，无法使用此功能')
-                      } else if (authStatus === 'error') {
-                          alert('验证失败，请检查网络连接后刷新页面')
-                      }
-                  }}
+            style="width: 160px; height: 56px;"
+            onButtonClick={createNewProject}
         />
         <ActionButton
             buttons={[
                 {
-                    name: isAuthorized ? '查看演示' : authStatus === 'checking' ? '验证中...' : '未授权',
+                    name: '查看演示',
                     variant: 'secondary',
-                    size: 'large',
-                    disabled: !isAuthorized
+                    size: 'large'
                 }
             ]}
-            style="width: 160px; height: 56px; {!isAuthorized ? 'opacity: 0.5; cursor: not-allowed;' : ''}"
-            onButtonClick={isAuthorized
-                ? () => (window.location.hash = '#/demo')
-                : () => {
-                      if (authStatus === 'unauthorized') {
-                          alert('设备未授权，无法使用此功能')
-                      } else if (authStatus === 'error') {
-                          alert('验证失败，请检查网络连接后刷新页面')
-                      }
-                  }}
+            style="width: 160px; height: 56px;"
+            onButtonClick={() => (window.location.hash = '#/demo')}
         />
     </ResponsiveBox>
 
@@ -284,31 +247,7 @@
         <ResponsiveBox style="flex: 1; overflow-y: auto; padding: 20px 10px 0 0; ">
             <ResponsiveBox style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 30px; justify-items: center; padding: 10px;">
                 {#each projects as project}
-                    <GenericCard
-                        prop1={project.id}
-                        prop2={project.name}
-                        prop3={project.createTime}
-                        prop4={project.thumbnail}
-                        showDelete={isAuthorized}
-                        onDelete={isAuthorized
-                            ? deleteProject
-                            : () => {
-                                  if (authStatus === 'unauthorized') {
-                                      alert('设备未授权，无法删除项目')
-                                  } else if (authStatus === 'error') {
-                                      alert('验证失败，请检查网络连接后刷新页面')
-                                  }
-                              }}
-                        onClick={isAuthorized
-                            ? () => openProject(project.id)
-                            : () => {
-                                  if (authStatus === 'unauthorized') {
-                                      alert('设备未授权，无法打开项目')
-                                  } else if (authStatus === 'error') {
-                                      alert('验证失败，请检查网络连接后刷新页面')
-                                  }
-                              }}
-                    />
+                    <GenericCard prop1={project.id} prop2={project.name} prop3={project.createTime} prop4={project.thumbnail} showDelete={true} onDelete={deleteProject} onClick={() => openProject(project.id)} />
                 {/each}
             </ResponsiveBox>
 
@@ -317,39 +256,6 @@
             {/if}
         </ResponsiveBox>
     </ResponsiveBox>
-</ResponsiveBox>
-
-<!-- 授权状态指示器 - 右下角浮动 -->
-<ResponsiveBox style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
-    {#if authStatus === 'checking'}
-        <ResponsiveBox
-            style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(59, 130, 246, 0.15); backdrop-filter: blur(10px); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 16px; color: #60a5fa; font-size: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);"
-        >
-            <ResponsiveBox style="width: 8px; height: 8px; border: 1.5px solid #60a5fa; border-top: 1.5px solid transparent; border-radius: 50%; animation: spin 1s linear infinite;"></ResponsiveBox>
-            验证中
-        </ResponsiveBox>
-    {:else if authStatus === 'authorized'}
-        <ResponsiveBox
-            style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(34, 197, 94, 0.15); backdrop-filter: blur(10px); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 16px; color: #4ade80; font-size: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);"
-        >
-            <ResponsiveBox style="width: 8px; height: 8px; background: #4ade80; border-radius: 50%;"></ResponsiveBox>
-            已授权
-        </ResponsiveBox>
-    {:else if authStatus === 'unauthorized'}
-        <ResponsiveBox
-            style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(239, 68, 68, 0.15); backdrop-filter: blur(10px); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 16px; color: #f87171; font-size: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);"
-        >
-            <ResponsiveBox style="width: 8px; height: 8px; background: #f87171; border-radius: 50%;"></ResponsiveBox>
-            未授权
-        </ResponsiveBox>
-    {:else if authStatus === 'error'}
-        <ResponsiveBox
-            style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(245, 158, 11, 0.15); backdrop-filter: blur(10px); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 16px; color: #fbbf24; font-size: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);"
-        >
-            <ResponsiveBox style="width: 8px; height: 8px; background: #fbbf24; border-radius: 50%;"></ResponsiveBox>
-            验证失败
-        </ResponsiveBox>
-    {/if}
 </ResponsiveBox>
 
 {#if showWindow}
