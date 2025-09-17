@@ -28,6 +28,10 @@
     // 历史项目数据，由 IndexedDB 实时加载
     let projects: Project[] = $state([])
 
+    // 授权状态管理
+    let isAuthorized = $state(false)
+    let authStatus = $state<'checking' | 'authorized' | 'unauthorized' | 'error'>('checking')
+
     onMount(async () => {
         // 获取并打印设备密钥哈希值
         try {
@@ -49,30 +53,36 @@
                 const proxyData = await response.json()
                 const remoteData = JSON.parse(proxyData.contents)
 
-
                 // 对比密钥 - 只考虑值，不关注键名
                 const remoteValues = Object.values(remoteData)
 
-
                 if (remoteValues.length > 0) {
                     // 检查本地密钥是否在远程值列表中
-                    const isAuthorized = remoteValues.includes(deviceKeyHash)
+                    const keyMatched = remoteValues.includes(deviceKeyHash)
 
-                    if (isAuthorized) {
+                    if (keyMatched) {
                         console.log('✅【密钥验证】密钥匹配成功！本设备已授权')
-
+                        isAuthorized = true
+                        authStatus = 'authorized'
                     } else {
                         console.log('❌【密钥验证】密钥不匹配')
-
+                        isAuthorized = false
+                        authStatus = 'unauthorized'
                     }
                 } else {
                     console.log('⚠️【远程验证】远程数据中没有找到任何密钥值')
+                    isAuthorized = false
+                    authStatus = 'unauthorized'
                 }
             } catch (fetchError) {
                 console.error('🌐【远程验证】获取远程数据失败:', fetchError)
+                isAuthorized = false
+                authStatus = 'error'
             }
         } catch (error) {
             console.error('🔑【设备密钥】获取失败:', error)
+            isAuthorized = false
+            authStatus = 'error'
         }
 
         const dbName = 'qi-qiao-ban'
@@ -255,24 +265,42 @@
         <ActionButton
             buttons={[
                 {
-                    name: '开始创建',
-                    variant: 'primary',
-                    size: 'large'
+                    name: isAuthorized ? '开始创建' : authStatus === 'checking' ? '验证中...' : '未授权',
+                    variant: isAuthorized ? 'primary' : 'secondary',
+                    size: 'large',
+                    disabled: !isAuthorized
                 }
             ]}
-            style="width: 160px; height: 56px;"
-            onButtonClick={createNewProject}
+            style="width: 160px; height: 56px; {!isAuthorized ? 'opacity: 0.5; cursor: not-allowed;' : ''}"
+            onButtonClick={isAuthorized
+                ? createNewProject
+                : () => {
+                      if (authStatus === 'unauthorized') {
+                          alert('设备未授权，无法使用此功能')
+                      } else if (authStatus === 'error') {
+                          alert('验证失败，请检查网络连接后刷新页面')
+                      }
+                  }}
         />
         <ActionButton
             buttons={[
                 {
-                    name: '查看演示',
+                    name: isAuthorized ? '查看演示' : authStatus === 'checking' ? '验证中...' : '未授权',
                     variant: 'secondary',
-                    size: 'large'
+                    size: 'large',
+                    disabled: !isAuthorized
                 }
             ]}
-            style="width: 160px; height: 56px;"
-            onButtonClick={() => (window.location.hash = '#/demo')}
+            style="width: 160px; height: 56px; {!isAuthorized ? 'opacity: 0.5; cursor: not-allowed;' : ''}"
+            onButtonClick={isAuthorized
+                ? () => (window.location.hash = '#/demo')
+                : () => {
+                      if (authStatus === 'unauthorized') {
+                          alert('设备未授权，无法使用此功能')
+                      } else if (authStatus === 'error') {
+                          alert('验证失败，请检查网络连接后刷新页面')
+                      }
+                  }}
         />
     </ResponsiveBox>
 
@@ -284,7 +312,31 @@
         <ResponsiveBox style="flex: 1; overflow-y: auto; padding: 20px 10px 0 0; ">
             <ResponsiveBox style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 30px; justify-items: center; padding: 10px;">
                 {#each projects as project}
-                    <GenericCard prop1={project.id} prop2={project.name} prop3={project.createTime} prop4={project.thumbnail} showDelete={true} onDelete={deleteProject} onClick={() => openProject(project.id)} />
+                    <GenericCard
+                        prop1={project.id}
+                        prop2={project.name}
+                        prop3={project.createTime}
+                        prop4={project.thumbnail}
+                        showDelete={isAuthorized}
+                        onDelete={isAuthorized
+                            ? deleteProject
+                            : () => {
+                                  if (authStatus === 'unauthorized') {
+                                      alert('设备未授权，无法删除项目')
+                                  } else if (authStatus === 'error') {
+                                      alert('验证失败，请检查网络连接后刷新页面')
+                                  }
+                              }}
+                        onClick={isAuthorized
+                            ? () => openProject(project.id)
+                            : () => {
+                                  if (authStatus === 'unauthorized') {
+                                      alert('设备未授权，无法打开项目')
+                                  } else if (authStatus === 'error') {
+                                      alert('验证失败，请检查网络连接后刷新页面')
+                                  }
+                              }}
+                    />
                 {/each}
             </ResponsiveBox>
 
@@ -294,8 +346,53 @@
         </ResponsiveBox>
     </ResponsiveBox>
 </ResponsiveBox>
+
+<!-- 授权状态指示器 - 右下角浮动 -->
+<ResponsiveBox style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
+    {#if authStatus === 'checking'}
+        <ResponsiveBox
+            style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(59, 130, 246, 0.15); backdrop-filter: blur(10px); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 16px; color: #60a5fa; font-size: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);"
+        >
+            <ResponsiveBox style="width: 8px; height: 8px; border: 1.5px solid #60a5fa; border-top: 1.5px solid transparent; border-radius: 50%; animation: spin 1s linear infinite;"></ResponsiveBox>
+            验证中
+        </ResponsiveBox>
+    {:else if authStatus === 'authorized'}
+        <ResponsiveBox
+            style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(34, 197, 94, 0.15); backdrop-filter: blur(10px); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 16px; color: #4ade80; font-size: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);"
+        >
+            <ResponsiveBox style="width: 8px; height: 8px; background: #4ade80; border-radius: 50%;"></ResponsiveBox>
+            已授权
+        </ResponsiveBox>
+    {:else if authStatus === 'unauthorized'}
+        <ResponsiveBox
+            style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(239, 68, 68, 0.15); backdrop-filter: blur(10px); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 16px; color: #f87171; font-size: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);"
+        >
+            <ResponsiveBox style="width: 8px; height: 8px; background: #f87171; border-radius: 50%;"></ResponsiveBox>
+            未授权
+        </ResponsiveBox>
+    {:else if authStatus === 'error'}
+        <ResponsiveBox
+            style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(245, 158, 11, 0.15); backdrop-filter: blur(10px); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 16px; color: #fbbf24; font-size: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);"
+        >
+            <ResponsiveBox style="width: 8px; height: 8px; background: #fbbf24; border-radius: 50%;"></ResponsiveBox>
+            验证失败
+        </ResponsiveBox>
+    {/if}
+</ResponsiveBox>
+
 {#if showWindow}
     <WindowBox title="新建项目" width={800} height={700} onClose={() => (showWindow = false)} showMaximize={false}>
         <NewProjectDialog onConfirm={(name, templateId, width, height) => confirmNewProject(name, templateId, width, height)} onCancel={() => (showWindow = false)} />
     </WindowBox>
 {/if}
+
+<style>
+    @keyframes spin {
+        from {
+            transform: rotate(0deg);
+        }
+        to {
+            transform: rotate(360deg);
+        }
+    }
+</style>
