@@ -14,6 +14,55 @@ class AuthService {
     private _verificationTimer: number | null = null
     private _isVerifying = false
     private readonly VERIFICATION_INTERVAL = 10 * 60 * 1000
+    private readonly CACHE_KEY = 'qi-qiao-ban-auth-cache'
+
+
+
+    /**
+     * 写入本地缓存
+     */
+    private saveToCache(deviceKeyHash: string, timestamp: number): void {
+        try {
+            const cacheData = {
+                deviceKeyHash,
+                timestamp,
+                lastVerified: new Date().toISOString()
+            }
+            localStorage.setItem(this.CACHE_KEY, JSON.stringify(cacheData))
+
+        } catch (error) {
+
+        }
+    }
+
+    /**
+     * 读取本地缓存
+     */
+    private readFromCache(): { deviceKeyHash: string; timestamp: number; lastVerified: string } | null {
+        try {
+            const cacheData = localStorage.getItem(this.CACHE_KEY)
+            if (cacheData) {
+                const parsed = JSON.parse(cacheData)
+                console.log('💾【本地缓存】读取到缓存数据:', parsed.lastVerified)
+                return parsed
+            }
+        } catch (error) {
+            console.error('💾【本地缓存】读取失败:', error)
+        }
+        return null
+    }
+
+    /**
+     * 清除本地缓存
+     */
+    private clearCache(): void {
+        try {
+            localStorage.removeItem(this.CACHE_KEY)
+            console.log('💾【本地缓存】缓存已清除')
+        } catch (error) {
+            console.error('💾【本地缓存】清除失败:', error)
+        }
+    }
 
     get isAuthorized(): boolean {
         return this._isAuthorized
@@ -102,21 +151,31 @@ class AuthService {
 
                     if (keyMatched) {
                         console.log('✅【密钥验证】密钥匹配成功！本设备已授权')
+                        // 验证成功时保存到本地缓存
+                        this.saveToCache(deviceKeyHash, Date.now())
                         this.updateStatus('authorized', true)
                     } else {
                         console.log('❌【密钥验证】密钥不匹配')
+                        // 验证失败时清除本地缓存
+                        this.clearCache()
                         this.updateStatus('unauthorized', false)
                     }
                 } else {
                     console.log('⚠️【远程验证】远程数据中没有找到任何密钥值')
+                    // 远程数据异常时清除本地缓存
+                    this.clearCache()
                     this.updateStatus('unauthorized', false)
                 }
             } catch (fetchError) {
                 console.error('🌐【远程验证】获取远程数据失败:', fetchError)
+                // 网络错误时清除本地缓存
+                this.clearCache()
                 this.updateStatus('error', false)
             }
         } catch (error) {
             console.error('🔑【设备密钥】获取失败:', error)
+            // 设备密钥获取失败时清除本地缓存
+            this.clearCache()
             this.updateStatus('error', false)
         } finally {
             this._isVerifying = false
