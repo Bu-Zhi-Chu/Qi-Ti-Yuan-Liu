@@ -8,6 +8,7 @@
 
 import Dexie from 'dexie'
 import { DB_VERSION } from './database.config'
+import { getStableDeviceKeyHash } from '../fingerprint/browser-fingerprint.service'
 
 export default class DexieService {
     /**
@@ -15,6 +16,45 @@ export default class DexieService {
      * key 为数据库名，value 为是否存在
      */
     private static dbExistenceCache: Map<string, boolean> = new Map()
+
+    /**
+     * 授权缓存键名
+     */
+    private static readonly AUTH_CACHE_KEY = 'qi-qiao-ban-auth-cache'
+
+    /**
+     * 快速本地授权验证
+     * 通过比较当前设备密钥与缓存中的密钥来验证授权
+     * @returns 是否通过本地验证
+     */
+    private static async quickLocalAuthCheck(): Promise<boolean> {
+        try {
+            // 获取当前设备密钥哈希
+            const currentDeviceKeyHash = await getStableDeviceKeyHash()
+            
+            // 读取缓存中的授权信息
+            const cacheData = localStorage.getItem(DexieService.AUTH_CACHE_KEY)
+            if (!cacheData) {
+                console.warn('⚠️【本地授权】缓存为空，需要远程验证')
+                return false
+            }
+
+            const parsed = JSON.parse(cacheData)
+            const cachedDeviceKeyHash = parsed.deviceKeyHash
+
+            // 比较密钥
+            if (currentDeviceKeyHash === cachedDeviceKeyHash) {
+                console.log('✅【本地授权】密钥匹配，授权通过')
+                return true
+            } else {
+                console.warn('❌【本地授权】密钥不匹配，拒绝访问')
+                return false
+            }
+        } catch (error) {
+            console.error('❌【本地授权】验证失败:', error)
+            return false
+        }
+    }
     /**
      * 判断数据库是否存在
      */
@@ -137,6 +177,13 @@ export default class DexieService {
      * 查询表数据
      */
     static async queryRecords<T>(dbName: string, tableName: string): Promise<T[]> {
+        // 先进行本地授权验证
+        const isAuthorized = await DexieService.quickLocalAuthCheck()
+        if (!isAuthorized) {
+            console.error('❌【数据库访问】授权验证失败，拒绝查询操作')
+            throw new Error('Unauthorized: Local auth check failed')
+        }
+
         // // // // // DatabaseLogger.queryingRecords(dbName, tableName)
         const db = new Dexie(dbName)
         await db.open()
@@ -149,6 +196,13 @@ export default class DexieService {
      * 获取表中的所有记录
      */
     static async getAllRecords<T>(dbName: string, tableName: string): Promise<T[]> {
+        // 先进行本地授权验证
+        const isAuthorized = await DexieService.quickLocalAuthCheck()
+        if (!isAuthorized) {
+            console.error('❌【数据库访问】授权验证失败，拒绝获取记录操作')
+            throw new Error('Unauthorized: Local auth check failed')
+        }
+
         const db = new Dexie(dbName)
         await db.open()
         const result = await db.table(tableName).toArray()
@@ -159,6 +213,13 @@ export default class DexieService {
      * 获取指定主键的记录
      */
     static async getRecord<T>(dbName: string, tableName: string, key: any): Promise<T | undefined> {
+        // 先进行本地授权验证
+        const isAuthorized = await DexieService.quickLocalAuthCheck()
+        if (!isAuthorized) {
+            console.error('❌【数据库访问】授权验证失败，拒绝获取单条记录操作')
+            throw new Error('Unauthorized: Local auth check failed')
+        }
+
         // DatabaseLogger.gettingRecord(dbName, tableName, key)
         const db = await DexieService.getDatabase(dbName)
         const result = await db.table(tableName).get(key)
@@ -174,6 +235,13 @@ export default class DexieService {
      * @returns 删除是否成功
      */
     static async deleteRecord(dbName: string, tableName: string, key: any): Promise<boolean> {
+        // 先进行本地授权验证
+        const isAuthorized = await DexieService.quickLocalAuthCheck()
+        if (!isAuthorized) {
+            console.error('❌【数据库访问】授权验证失败，拒绝删除记录操作')
+            return false
+        }
+
         // DatabaseLogger.deletingRecord(dbName, tableName, key)
         try {
             const db = new Dexie(dbName)
@@ -188,6 +256,13 @@ export default class DexieService {
     }
 
     static async addRecord<T>(dbName: string, tableName: string, data: T): Promise<any> {
+        // 先进行本地授权验证
+        const isAuthorized = await DexieService.quickLocalAuthCheck()
+        if (!isAuthorized) {
+            console.error('❌【数据库访问】授权验证失败，拒绝添加记录操作')
+            throw new Error('Unauthorized: Local auth check failed')
+        }
+
         // DatabaseLogger.addingRecord(dbName, tableName)
         try {
             const db = new Dexie(dbName)
@@ -210,6 +285,13 @@ export default class DexieService {
      * @returns 更新是否成功
      */
     static async updateRecord<T>(dbName: string, tableName: string, key: any, data: Partial<T>): Promise<boolean> {
+        // 先进行本地授权验证
+        const isAuthorized = await DexieService.quickLocalAuthCheck()
+        if (!isAuthorized) {
+            console.error('❌【数据库访问】授权验证失败，拒绝更新记录操作')
+            return false
+        }
+
         try {
             const db = new Dexie(dbName)
             await db.open()

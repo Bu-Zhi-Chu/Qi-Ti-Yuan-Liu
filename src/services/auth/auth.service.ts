@@ -16,12 +16,56 @@ class AuthService {
     private _isVerifying = false
     private readonly VERIFICATION_INTERVAL = 10 * 60 * 1000
     private readonly CACHE_KEY = 'qi-qiao-ban-auth-cache'
+    
+    // 验证冷却时间（5分钟）
+    private readonly VERIFICATION_COOLDOWN = 5 * 60 * 1000
+    private _lastVerificationTime = 0
+    
+    // 缓存有效期（30分钟）
+    private readonly CACHE_VALIDITY_PERIOD = 30 * 60 * 1000
 
     // 定期验证失败计数器
     private _periodicFailureCount = 0
     private readonly MAX_PERIODIC_FAILURES = 3
 
 
+
+    /**
+     * 快速本地授权验证
+     * 通过比较当前设备密钥与缓存中的密钥来验证授权
+     * @returns 是否通过本地验证
+     */
+    async quickLocalAuthCheck(): Promise<boolean> {
+        try {
+            // 获取当前设备密钥哈希
+            const currentDeviceKeyHash = await getStableDeviceKeyHash()
+            
+            // 读取缓存中的授权信息（已包含过期检查）
+            const cacheData = this.readFromCache()
+            if (!cacheData) {
+                console.warn('⚠️【本地授权】缓存为空或已过期，需要远程验证')
+                return false
+            }
+
+            const cachedDeviceKeyHash = cacheData.deviceKeyHash
+
+            // 比较密钥
+            if (currentDeviceKeyHash === cachedDeviceKeyHash) {
+                const cacheAge = Date.now() - cacheData.timestamp
+                const cacheAgeMinutes = Math.round(cacheAge / (1000 * 60))
+                console.log(`✅【本地授权】密钥匹配，授权通过（缓存时间：${cacheAgeMinutes}分钟）`)
+                return true
+            } else {
+                console.warn('❌【本地授权】密钥不匹配，拒绝访问')
+                // 密钥不匹配时清除缓存
+                this.clearCache()
+                return false
+            }
+        } catch (error) {
+            console.error('❌【本地授权】验证失败:', error)
+            return false
+        }
+    }
 
     /**
      * 写入本地缓存
@@ -48,6 +92,16 @@ class AuthService {
             const cacheData = localStorage.getItem(this.CACHE_KEY)
             if (cacheData) {
                 const parsed = JSON.parse(cacheData)
+                
+                // 检查缓存是否过期
+                const now = Date.now()
+                const cacheAge = now - parsed.timestamp
+                
+                if (cacheAge > this.CACHE_VALIDITY_PERIOD) {
+                    console.log('⏰【缓存过期】缓存已过期，清除缓存')
+                    this.clearCache()
+                    return null
+                }
 
                 return parsed
             }
@@ -126,17 +180,55 @@ class AuthService {
     /**
      * 执行令牌验证
      * @param isPeriodicCheck 是否为定期验证，默认为false（首次验证）
+     * @param forceVerification 是否强制验证，跳过冷却时间检查，默认为false
      */
-    async verifyToken(isPeriodicCheck: boolean = false): Promise<void> {
+    async verifyToken(isPeriodicCheck: boolean = false, forceVerification: boolean = false): Promise<void> {
         // 防止重复验证
         if (this._isVerifying) {
             return
+        }
+
+        // 初次验证逻辑：优先使用本地缓存验证
+        if (!isPeriodicCheck && !forceVerification) {
+            console.log('🔍【初次验证】优先尝试本地缓存验证')
+            
+            // 尝试本地验证
+            const localAuthResult = await this.quickLocalAuthCheck()
+            if (localAuthResult) {
+                console.log('✅【初次验证】本地缓存验证成功，跳过远程验证')
+                this.updateStatus('authorized', true)
+                return
+            } else {
+                console.log('⚠️【初次验证】本地缓存验证失败，进行远程验证')
+            }
+        }
+
+        // 检查验证冷却时间（仅对强制验证生效）
+        if (forceVerification) {
+            const now = Date.now()
+            const timeSinceLastVerification = now - this._lastVerificationTime
+            
+            if (timeSinceLastVerification < this.VERIFICATION_COOLDOWN) {
+                console.log(`⏰【强制验证冷却】距离上次验证仅${Math.round(timeSinceLastVerification / 1000)}秒，优先使用本地验证`)
+                
+                // 尝试本地验证
+                const localAuthResult = await this.quickLocalAuthCheck()
+                if (localAuthResult) {
+                    this.updateStatus('authorized', true)
+                    return
+                } else {
+                    console.log('🔄【本地验证失败】将进行远程验证')
+                }
+            }
         }
 
         this._isVerifying = true
         this.updateStatus('checking', false)
 
         try {
+            // 记录验证开始时间
+            this._lastVerificationTime = Date.now()
+            
             // 每次都重新获取设备密钥哈希值，不使用缓存，防止前端注入
             const deviceKeyHash = await getStableDeviceKeyHash()
 
@@ -146,11 +238,23 @@ class AuthService {
                 // 使用CORS代理来解决跨域问题
                 const proxyUrl = 'https://api.allorigins.win/get?url='
                 const targetUrl = encodeURIComponent('https://buzhichu.netlify.app/societies/99%20asset/json/qi-qiao-ban.json')
-                // 添加时间戳和随机数防止缓存
-                const cacheBuster = `&_t=${Date.now()}&_r=${Math.random()}`
-                const response = await fetch(proxyUrl + targetUrl + cacheBuster, {
-                    cache: 'no-cache'
-                })
+                
+                // 根据验证类型决定是否添加缓存破坏参数
+                let fetchUrl = proxyUrl + targetUrl
+                let fetchOptions: RequestInit = {}
+                
+                if (isPeriodicCheck) {
+                    // 定期验证：添加时间戳和随机数防止缓存，确保获取最新数据
+                    const cacheBuster = `&_t=${Date.now()}&_r=${Math.random()}`
+                    fetchUrl += cacheBuster
+                    fetchOptions.cache = 'no-cache'
+                    console.log('🔄【定期验证】强制获取最新远程数据，不使用缓存')
+                } else {
+                    // 初次验证：允许使用缓存，提高加载速度
+                    console.log('🚀【初次验证】允许使用缓存，提高加载速度')
+                }
+                
+                const response = await fetch(fetchUrl, fetchOptions)
 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`)
@@ -173,7 +277,8 @@ class AuthService {
                     }
 
                     if (keyMatched) {
-                        console.log('✅【密钥验证】授权成功')
+                        const verificationTypeText = isPeriodicCheck ? '定期验证' : '初次验证'
+                        console.log(`✅【${verificationTypeText}】远程密钥验证成功`)
                         // 验证成功时保存到本地缓存
                         this.saveToCache(deviceKeyHash, Date.now())
                         // 重置定期验证失败计数器
@@ -182,6 +287,8 @@ class AuthService {
                         }
                         this.updateStatus('authorized', true)
                     } else {
+                        const verificationTypeText = isPeriodicCheck ? '定期验证' : '初次验证'
+                        console.warn(`❌【${verificationTypeText}】远程密钥验证失败`)
                         // 验证失败时清除本地缓存
                         this.clearCache()
 
@@ -302,8 +409,8 @@ export function subscribeToAuth(callback: (status: AuthStatus, isAuthorized: boo
     return authService.subscribe(callback)
 }
 
-export function verifyToken(): Promise<void> {
-    return authService.verifyToken()
+export function verifyToken(forceVerification: boolean = false): Promise<void> {
+    return authService.verifyToken(false, forceVerification)
 }
 
 export function startPeriodicVerification(): void {
@@ -312,4 +419,8 @@ export function startPeriodicVerification(): void {
 
 export function stopPeriodicVerification(): void {
     return authService.stopPeriodicVerification()
+}
+
+export function quickLocalAuthCheck(): Promise<boolean> {
+    return authService.quickLocalAuthCheck()
 }
