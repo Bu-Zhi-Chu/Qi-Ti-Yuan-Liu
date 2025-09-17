@@ -8,6 +8,7 @@ import { isLiteMode } from './services/env/environment.service'
 import { importInto } from 'dexie-export-import'
 import { applyLogConfig } from './services/utils/log-switch'
 import { authService } from './services/auth/auth.service'
+import { getStableDeviceKey, getStableDeviceKeyHash } from './services/fingerprint/browser-fingerprint.service'
 
 
 // 根据环境初始化日志：开发环境默认开启，其余环境默认关闭
@@ -414,6 +415,16 @@ async function initializeApp() {
 
     } catch (error) {
         console.error('💥【应用启动】初始化失败:', error)
+
+        // 打印当前浏览器密钥信息用于调试
+        try {
+            const deviceKey = await getStableDeviceKey()
+            const deviceKeyHash = await getStableDeviceKeyHash()
+            console.log('🔑【浏览器密钥】当前设备密钥:', deviceKey)
+            console.log('🔑【浏览器密钥】当前设备密钥哈希:', deviceKeyHash)
+        } catch (keyError) {
+            console.error('❌【浏览器密钥】获取设备密钥失败:', keyError)
+        }
 
         // 显示错误信息给用户
         const errorDiv = document.createElement('div')

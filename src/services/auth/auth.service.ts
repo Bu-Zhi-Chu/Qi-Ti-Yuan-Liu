@@ -202,17 +202,11 @@ class AuthService {
                 const proxyUrl = 'https://api.allorigins.win/get?url='
                 const targetUrl = encodeURIComponent('https://buzhichu.netlify.app/societies/99%20asset/json/qi-qiao-ban.json')
 
-                // 根据验证类型决定是否添加缓存破坏参数
-                let fetchUrl = proxyUrl + targetUrl
-                let fetchOptions: RequestInit = {}
-
-                if (isPeriodicCheck) {
-                    // 定期验证：添加时间戳和随机数防止缓存，确保获取最新数据
-                    const cacheBuster = `&_t=${Date.now()}&_r=${Math.random()}`
-                    fetchUrl += cacheBuster
-                    fetchOptions.cache = 'no-cache'
-                } else {
-                    // 授权验证：允许使用缓存，提高加载速度
+                // 为所有验证类型都添加缓存破坏参数，确保获取最新数据
+                const cacheBuster = `&_t=${Date.now()}&_r=${Math.random()}`
+                const fetchUrl = proxyUrl + targetUrl + cacheBuster
+                const fetchOptions: RequestInit = {
+                    cache: 'no-cache'
                 }
 
                 const response = await fetch(fetchUrl, fetchOptions)
