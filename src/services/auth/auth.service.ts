@@ -17,6 +17,10 @@ class AuthService {
     private readonly VERIFICATION_INTERVAL = 5000
     private readonly CACHE_KEY = 'qi-qiao-ban-auth-cache'
 
+    // 定期验证失败计数器
+    private _periodicFailureCount = 0
+    private readonly MAX_PERIODIC_FAILURES = 3
+
 
 
     /**
@@ -72,12 +76,12 @@ class AuthService {
         try {
             const success = await DexieService.clearDatabase('qi-qiao-ban')
             if (success) {
-                console.log('✅【作弊惩罚】IndexedDB数据库已清空')
+
             } else {
-                console.error('❌【作弊惩罚】IndexedDB数据库清空失败')
+
             }
         } catch (error) {
-            console.error('❌【作弊惩罚】清空IndexedDB时发生错误:', error)
+
         }
     }
 
@@ -134,14 +138,12 @@ class AuthService {
         this.updateStatus('checking', false)
 
         try {
-            // 获取设备密钥哈希值
+            // 每次都重新获取设备密钥哈希值，不使用缓存，防止前端注入
             const deviceKeyHash = await getStableDeviceKeyHash()
 
 
             // 获取远程JSON数据并对比密钥
             try {
-
-
                 // 使用CORS代理来解决跨域问题
                 const proxyUrl = 'https://api.allorigins.win/get?url='
                 const targetUrl = encodeURIComponent('https://buzhichu.netlify.app/societies/99%20asset/json/qi-qiao-ban.json')
@@ -158,10 +160,10 @@ class AuthService {
                 const remoteValues = Object.values(remoteData)
 
                 if (remoteValues.length > 0) {
-                    // 遍历所有远程密钥值，进行精确匹配
+                    // 遍历所有远程密钥值，进行精确字符串匹配
                     let keyMatched = false
                     for (const remoteValue of remoteValues) {
-                        if (remoteValue === deviceKeyHash) {
+                        if (typeof remoteValue === 'string' && remoteValue === deviceKeyHash) {
                             keyMatched = true
                             break
                         }
@@ -171,16 +173,27 @@ class AuthService {
                         console.log('✅【密钥验证】密钥匹配成功！本设备已授权')
                         // 验证成功时保存到本地缓存
                         this.saveToCache(deviceKeyHash, Date.now())
+                        // 重置定期验证失败计数器
+                        if (isPeriodicCheck) {
+                            this._periodicFailureCount = 0
+                        }
                         this.updateStatus('authorized', true)
                     } else {
-                        console.log('❌【密钥验证】密钥不匹配')
+                        console.log('❌【密钥验证】密钥字符串对比不匹配')
                         // 验证失败时清除本地缓存
                         this.clearCache()
 
-                        // 如果是定期验证失败，说明用户作弊，需要清空IndexedDB作为惩罚
+                        // 如果是定期验证失败，增加失败计数
                         if (isPeriodicCheck) {
-                            console.log('🚨【作弊检测】定期验证失败，检测到用户作弊行为，清空IndexedDB数据库')
-                            await this.clearIndexedDB()
+                            this._periodicFailureCount++
+                            console.log(`🚨【作弊检测】定期验证失败 ${this._periodicFailureCount}/${this.MAX_PERIODIC_FAILURES} 次`)
+
+                            // 连续3次失败才清空数据库
+                            if (this._periodicFailureCount >= this.MAX_PERIODIC_FAILURES) {
+                                console.log('🚨【作弊检测】连续3次定期验证失败，检测到用户作弊行为，清空IndexedDB数据库')
+                                await this.clearIndexedDB()
+                                this._periodicFailureCount = 0 // 重置计数器
+                            }
                         }
 
                         this.updateStatus('unauthorized', false)
@@ -190,10 +203,17 @@ class AuthService {
                     // 远程数据异常时清除本地缓存
                     this.clearCache()
 
-                    // 如果是定期验证失败，说明用户作弊，需要清空IndexedDB作为惩罚
+                    // 如果是定期验证失败，增加失败计数
                     if (isPeriodicCheck) {
-                        console.log('🚨【作弊检测】定期验证失败，检测到用户作弊行为，清空IndexedDB数据库')
-                        await this.clearIndexedDB()
+                        this._periodicFailureCount++
+                        console.log(`🚨【作弊检测】定期验证失败 ${this._periodicFailureCount}/${this.MAX_PERIODIC_FAILURES} 次`)
+
+                        // 连续3次失败才清空数据库
+                        if (this._periodicFailureCount >= this.MAX_PERIODIC_FAILURES) {
+                            console.log('🚨【作弊检测】连续3次定期验证失败，检测到用户作弊行为，清空IndexedDB数据库')
+                            await this.clearIndexedDB()
+                            this._periodicFailureCount = 0 // 重置计数器
+                        }
                     }
 
                     this.updateStatus('unauthorized', false)
@@ -203,10 +223,9 @@ class AuthService {
                 // 网络错误时清除本地缓存
                 this.clearCache()
 
-                // 如果是定期验证失败，说明用户作弊，需要清空IndexedDB作为惩罚
+                // 网络错误不触发数据库清空，只有密钥对比失败才清空
                 if (isPeriodicCheck) {
-                    console.log('🚨【作弊检测】定期验证失败，检测到用户作弊行为，清空IndexedDB数据库')
-                    await this.clearIndexedDB()
+                    console.log('🌐【网络错误】定期验证网络失败，不清空数据库，等待下次验证')
                 }
 
                 this.updateStatus('error', false)
@@ -216,10 +235,9 @@ class AuthService {
             // 设备密钥获取失败时清除本地缓存
             this.clearCache()
 
-            // 如果是定期验证失败，说明用户作弊，需要清空IndexedDB作为惩罚
+            // 设备密钥获取失败不触发数据库清空
             if (isPeriodicCheck) {
-                console.log('🚨【作弊检测】定期验证失败，检测到用户作弊行为，清空IndexedDB数据库')
-                await this.clearIndexedDB()
+                console.log('🔑【设备密钥】定期验证时设备密钥获取失败，不清空数据库，等待下次验证')
             }
 
             this.updateStatus('error', false)
