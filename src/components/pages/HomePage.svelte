@@ -57,8 +57,14 @@
                 const remoteValues = Object.values(remoteData)
 
                 if (remoteValues.length > 0) {
-                    // 检查本地密钥是否在远程值列表中
-                    const keyMatched = remoteValues.includes(deviceKeyHash)
+                    // 遍历所有远程密钥值，进行精确匹配
+                    let keyMatched = false
+                    for (const remoteValue of remoteValues) {
+                        if (remoteValue === deviceKeyHash) {
+                            keyMatched = true
+                            break
+                        }
+                    }
 
                     if (keyMatched) {
                         console.log('✅【密钥验证】密钥匹配成功！本设备已授权')
