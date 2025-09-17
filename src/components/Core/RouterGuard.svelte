@@ -10,34 +10,24 @@
     onMount(() => {
         // 注册路由守卫
         const unsubscribe = beforeEach(async (event) => {
-            console.log('🚀 路由切换开始:', event)
-
             // 使用封装好的 Blob URL 清理函数
             cleanupBlobUrls()
 
             // 跳过第一次进入路由的验证
             if (isFirstNavigation) {
                 isFirstNavigation = false
-                console.log('🔄 首次路由加载，跳过缓存验证')
             } else {
                 // 执行缓存验证以检测作弊行为
                 try {
                     const isValid = await authService.quickLocalAuthCheck()
-                    console.log('✅ 缓存验证完成:', isValid ? '通过' : '失败')
 
                     if (!isValid) {
-                        console.warn('⚠️ 检测到潜在的作弊行为，缓存验证失败')
                     }
-                } catch (error) {
-                    console.error('❌ 缓存验证过程中发生错误:', error)
-                }
+                } catch (error) {}
             }
 
             // 增加导航计数
             navigationCount++
-            console.log('📊 导航计数:', navigationCount)
-
-            console.log('✅ 路由切换验证完成')
         })
 
         // 组件销毁时取消订阅
