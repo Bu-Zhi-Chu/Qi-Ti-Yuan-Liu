@@ -146,7 +146,11 @@ class AuthService {
                 // 使用CORS代理来解决跨域问题
                 const proxyUrl = 'https://api.allorigins.win/get?url='
                 const targetUrl = encodeURIComponent('https://buzhichu.netlify.app/societies/99%20asset/json/qi-qiao-ban.json')
-                const response = await fetch(proxyUrl + targetUrl)
+                // 添加时间戳和随机数防止缓存
+                const cacheBuster = `&_t=${Date.now()}&_r=${Math.random()}`
+                const response = await fetch(proxyUrl + targetUrl + cacheBuster, {
+                    cache: 'no-cache'
+                })
 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`)
