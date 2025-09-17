@@ -16,13 +16,20 @@ class AuthService {
     private _isVerifying = false
     private readonly VERIFICATION_INTERVAL = 10 * 60 * 1000
     private readonly CACHE_KEY = 'qi-qiao-ban-auth-cache'
-
-
+    private readonly CACHE_EXPIRY_TIME = 10 * 1000 // 10秒缓存有效期
 
     // 缓存篡改检测标志
     private _cacheTempered = false
 
 
+
+    /**
+     * 检查缓存是否过期
+     */
+    private isCacheExpired(cacheData: { deviceKeyHash: string; timestamp: number; lastVerified: string }): boolean {
+        const now = Date.now()
+        return (now - cacheData.timestamp) > this.CACHE_EXPIRY_TIME
+    }
 
     /**
      * 快速本地授权验证
@@ -34,9 +41,17 @@ class AuthService {
             // 获取当前设备密钥哈希
             const currentDeviceKeyHash = await getStableDeviceKeyHash()
 
-            // 读取缓存中的授权信息（已包含过期检查）
+            // 读取缓存中的授权信息
             const cacheData = this.readFromCache()
             if (!cacheData) {
+                console.log('🚨【令牌检测】无缓存数据')
+                return false
+            }
+
+            // 检查缓存是否过期
+            if (this.isCacheExpired(cacheData)) {
+                console.log('🚨【令牌检测】缓存已过期，需要重新验证')
+                this.clearCache()
                 return false
             }
 
@@ -44,14 +59,14 @@ class AuthService {
 
             // 比较密钥
             if (currentDeviceKeyHash === cachedDeviceKeyHash) {
-                console.log('🚨【缓存检测】检测通过')
+                console.log('🚨【令牌检测】检测通过')
                 // 密钥匹配，重置缓存篡改标志
                 this._cacheTempered = false
                 return true
             } else {
                 // 密钥不匹配，标记为缓存篡改
                 this._cacheTempered = true
-                console.log('🚨【缓存检测】检测到缓存篡改行为，缓存密钥与当前设备密钥不匹配')
+                console.log('🚨【令牌检测】检测到缓存篡改行为，缓存密钥与当前设备密钥不匹配')
                 // 密钥不匹配时清除缓存
                 this.clearCache()
                 return false
