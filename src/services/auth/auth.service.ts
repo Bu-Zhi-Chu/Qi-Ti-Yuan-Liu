@@ -17,12 +17,6 @@ class AuthService {
     private readonly VERIFICATION_INTERVAL = 10 * 60 * 1000
     private readonly CACHE_KEY = 'qi-qiao-ban-auth-cache'
 
-    // 验证冷却时间（5分钟）
-    private readonly VERIFICATION_COOLDOWN = 5 * 60 * 1000
-    private _lastVerificationTime = 0
-
-    // 缓存有效期（30分钟）
-    private readonly CACHE_VALIDITY_PERIOD = 30 * 60 * 1000
 
     // 定期验证失败计数器
     private _periodicFailureCount = 0
@@ -62,7 +56,9 @@ class AuthService {
     }
 
     /**
-     * 写入本地缓存
+     * 保存验证结果到本地缓存
+     * @param deviceKeyHash 设备密钥哈希
+     * @param timestamp 时间戳
      */
     private saveToCache(deviceKeyHash: string, timestamp: number): void {
         try {
@@ -86,16 +82,6 @@ class AuthService {
             const cacheData = localStorage.getItem(this.CACHE_KEY)
             if (cacheData) {
                 const parsed = JSON.parse(cacheData)
-
-                // 检查缓存是否过期
-                const now = Date.now()
-                const cacheAge = now - parsed.timestamp
-
-                if (cacheAge > this.CACHE_VALIDITY_PERIOD) {
-                    this.clearCache()
-                    return null
-                }
-
                 return parsed
             }
         } catch (error) {
@@ -195,30 +181,11 @@ class AuthService {
             }
         }
 
-        // 检查验证冷却时间（仅对强制验证生效）
-        if (forceVerification) {
-            const now = Date.now()
-            const timeSinceLastVerification = now - this._lastVerificationTime
-
-            if (timeSinceLastVerification < this.VERIFICATION_COOLDOWN) {
-                // 尝试本地验证
-                const localAuthResult = await this.quickLocalAuthCheck()
-                if (localAuthResult) {
-                    this.updateStatus('authorized', true)
-                    return
-                } else {
-                    // 本地验证失败，继续远程验证
-                }
-            }
-        }
-
+        // 定期验证和强制验证直接进行远程验证，不使用缓存
         this._isVerifying = true
         this.updateStatus('checking', false)
 
         try {
-            // 记录验证开始时间
-            this._lastVerificationTime = Date.now()
-
             // 每次都重新获取设备密钥哈希值，不使用缓存，防止前端注入
             const deviceKeyHash = await getStableDeviceKeyHash()
 
