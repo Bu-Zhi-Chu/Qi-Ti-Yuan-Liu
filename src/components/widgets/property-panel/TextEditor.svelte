@@ -26,7 +26,7 @@
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     import { getNodePropsStore, getNodeProps as _getNodeProps, updateNodeProps, getFullNode } from '../../../services/property-panel/property-panel.service'
     import { updateNodeProperties } from '../../../stores/dom-tree.store.svelte'
-import { projectId } from '../../../stores/dom-tree.store.svelte'
+    import { projectId } from '../../../stores/dom-tree.store.svelte'
     import ColorPicker from '../ColorPicker.svelte'
     import { getScaleRatio } from '../../../services/utils/get-scale-ratio.util'
     import PropertyRow from './PropertyRow.svelte'
@@ -453,8 +453,20 @@ import { projectId } from '../../../stores/dom-tree.store.svelte'
                 filteredStyles[key] = undefined
             }
         })
+
+        // 获取当前节点信息
+        const node = getFullNode(selectedId)
+        const isButtonComponent = node?.componentType === 'Button'
+
         // 单独更新文本内容 - 必须先执行，避免订阅回调覆盖输入
         updateNodeProperties(selectedId, { textContent })
+
+        // 如果是Button组件，同步更新data-name
+        if (isButtonComponent) {
+            updateNodeProps(selectedId, {
+                attributes: { 'data-name': textContent }
+            })
+        }
 
         // 更新样式
         updateNodeProps(selectedId, { styles: filteredStyles })

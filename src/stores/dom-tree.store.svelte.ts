@@ -698,6 +698,12 @@ export async function updateNodeName(nodeId: string, newName: string): Promise<b
   if (!node.attributes) node.attributes = {};
   node.attributes['data-name'] = newName;
 
+  // 如果是Button组件，同步更新textContent
+  if (node.componentType === 'Button') {
+    node.textContent = newName;
+    console.log('【updateNodeName】Button组件同步更新textContent', { nodeId, textContent: newName });
+  }
+
   // 递增版本号并自动保存
   bumpDomTreeVersion();
   await autoSaveToDomsTable();
