@@ -376,7 +376,6 @@ async function initializeApp() {
         console.log('🚀【应用启动】开始初始化流程')
 
         // 首次验证 - 不启动定期验证
-        console.log('🔐【授权验证】执行首次验证')
         await authService.verifyToken()
 
         // 等待授权验证完成
@@ -391,11 +390,9 @@ async function initializeApp() {
                     unsubscribe?.()
                     resolve()
                 } else if (status === 'unauthorized') {
-                    console.log('❌【授权验证】设备未授权，停止初始化')
                     unsubscribe?.()
                     reject(new Error('设备未授权'))
                 } else if (status === 'error') {
-                    console.log('⚠️【授权验证】验证失败，停止初始化')
                     unsubscribe?.()
                     reject(new Error('授权验证失败'))
                 }
@@ -404,7 +401,6 @@ async function initializeApp() {
 
             // 设置超时，避免无限等待
             setTimeout(() => {
-                console.log('⏰【授权验证】验证超时，停止初始化')
                 unsubscribe?.()
                 reject(new Error('授权验证超时'))
             }, 30000) // 30秒超时

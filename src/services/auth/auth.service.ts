@@ -16,11 +16,11 @@ class AuthService {
     private _isVerifying = false
     private readonly VERIFICATION_INTERVAL = 10 * 60 * 1000
     private readonly CACHE_KEY = 'qi-qiao-ban-auth-cache'
-    
+
     // 验证冷却时间（5分钟）
     private readonly VERIFICATION_COOLDOWN = 5 * 60 * 1000
     private _lastVerificationTime = 0
-    
+
     // 缓存有效期（30分钟）
     private readonly CACHE_VALIDITY_PERIOD = 30 * 60 * 1000
 
@@ -39,11 +39,10 @@ class AuthService {
         try {
             // 获取当前设备密钥哈希
             const currentDeviceKeyHash = await getStableDeviceKeyHash()
-            
+
             // 读取缓存中的授权信息（已包含过期检查）
             const cacheData = this.readFromCache()
             if (!cacheData) {
-                console.warn('⚠️【本地授权】缓存为空或已过期，需要远程验证')
                 return false
             }
 
@@ -51,18 +50,13 @@ class AuthService {
 
             // 比较密钥
             if (currentDeviceKeyHash === cachedDeviceKeyHash) {
-                const cacheAge = Date.now() - cacheData.timestamp
-                const cacheAgeMinutes = Math.round(cacheAge / (1000 * 60))
-                console.log(`✅【本地授权】密钥匹配，授权通过（缓存时间：${cacheAgeMinutes}分钟）`)
                 return true
             } else {
-                console.warn('❌【本地授权】密钥不匹配，拒绝访问')
                 // 密钥不匹配时清除缓存
                 this.clearCache()
                 return false
             }
         } catch (error) {
-            console.error('❌【本地授权】验证失败:', error)
             return false
         }
     }
@@ -92,13 +86,12 @@ class AuthService {
             const cacheData = localStorage.getItem(this.CACHE_KEY)
             if (cacheData) {
                 const parsed = JSON.parse(cacheData)
-                
+
                 // 检查缓存是否过期
                 const now = Date.now()
                 const cacheAge = now - parsed.timestamp
-                
+
                 if (cacheAge > this.CACHE_VALIDITY_PERIOD) {
-                    console.log('⏰【缓存过期】缓存已过期，清除缓存')
                     this.clearCache()
                     return null
                 }
@@ -128,14 +121,15 @@ class AuthService {
      */
     private async clearIndexedDB(): Promise<void> {
         try {
+
             const success = await DexieService.clearDatabase('qi-qiao-ban')
             if (success) {
-                console.error('❌【IndexedDB】清除数据库成功')
+                console.log('✅【作弊检测】执行惩罚，清空数据库')
             } else {
-                console.error('❌【IndexedDB】清除数据库失败')
+                console.error('❌【作弊检测】惩罚执行失败')
             }
         } catch (error) {
-            console.error('❌【IndexedDB】清除数据库失败:', error)
+            console.error('❌【作弊检测】惩罚执行异常:', error)
         }
     }
 
@@ -190,16 +184,14 @@ class AuthService {
 
         // 初次验证逻辑：优先使用本地缓存验证
         if (!isPeriodicCheck && !forceVerification) {
-            console.log('🔍【初次验证】优先尝试本地缓存验证')
-            
             // 尝试本地验证
             const localAuthResult = await this.quickLocalAuthCheck()
             if (localAuthResult) {
-                console.log('✅【初次验证】本地缓存验证成功，跳过远程验证')
+                console.log('✅【初次验证】授权成功')
                 this.updateStatus('authorized', true)
                 return
             } else {
-                console.log('⚠️【初次验证】本地缓存验证失败，进行远程验证')
+                console.log('❌【初次验证】授权失败，进行远程验证')
             }
         }
 
@@ -207,17 +199,15 @@ class AuthService {
         if (forceVerification) {
             const now = Date.now()
             const timeSinceLastVerification = now - this._lastVerificationTime
-            
+
             if (timeSinceLastVerification < this.VERIFICATION_COOLDOWN) {
-                console.log(`⏰【强制验证冷却】距离上次验证仅${Math.round(timeSinceLastVerification / 1000)}秒，优先使用本地验证`)
-                
                 // 尝试本地验证
                 const localAuthResult = await this.quickLocalAuthCheck()
                 if (localAuthResult) {
                     this.updateStatus('authorized', true)
                     return
                 } else {
-                    console.log('🔄【本地验证失败】将进行远程验证')
+                    // 本地验证失败，继续远程验证
                 }
             }
         }
@@ -228,7 +218,7 @@ class AuthService {
         try {
             // 记录验证开始时间
             this._lastVerificationTime = Date.now()
-            
+
             // 每次都重新获取设备密钥哈希值，不使用缓存，防止前端注入
             const deviceKeyHash = await getStableDeviceKeyHash()
 
@@ -238,22 +228,20 @@ class AuthService {
                 // 使用CORS代理来解决跨域问题
                 const proxyUrl = 'https://api.allorigins.win/get?url='
                 const targetUrl = encodeURIComponent('https://buzhichu.netlify.app/societies/99%20asset/json/qi-qiao-ban.json')
-                
+
                 // 根据验证类型决定是否添加缓存破坏参数
                 let fetchUrl = proxyUrl + targetUrl
                 let fetchOptions: RequestInit = {}
-                
+
                 if (isPeriodicCheck) {
                     // 定期验证：添加时间戳和随机数防止缓存，确保获取最新数据
                     const cacheBuster = `&_t=${Date.now()}&_r=${Math.random()}`
                     fetchUrl += cacheBuster
                     fetchOptions.cache = 'no-cache'
-                    console.log('🔄【定期验证】强制获取最新远程数据，不使用缓存')
                 } else {
                     // 初次验证：允许使用缓存，提高加载速度
-                    console.log('🚀【初次验证】允许使用缓存，提高加载速度')
                 }
-                
+
                 const response = await fetch(fetchUrl, fetchOptions)
 
                 if (!response.ok) {
@@ -277,8 +265,10 @@ class AuthService {
                     }
 
                     if (keyMatched) {
-                        const verificationTypeText = isPeriodicCheck ? '定期验证' : '初次验证'
-                        console.log(`✅【${verificationTypeText}】远程密钥验证成功`)
+                        // 只在初次验证时打印成功信息
+                        if (!isPeriodicCheck) {
+                            console.log('✅【初次验证】远程验证成功')
+                        }
                         // 验证成功时保存到本地缓存
                         this.saveToCache(deviceKeyHash, Date.now())
                         // 重置定期验证失败计数器
@@ -287,8 +277,10 @@ class AuthService {
                         }
                         this.updateStatus('authorized', true)
                     } else {
-                        const verificationTypeText = isPeriodicCheck ? '定期验证' : '初次验证'
-                        console.warn(`❌【${verificationTypeText}】远程密钥验证失败`)
+                        // 只在初次验证时打印失败信息
+                        if (!isPeriodicCheck) {
+                            console.log('❌【初次验证】远程验证失败')
+                        }
                         // 验证失败时清除本地缓存
                         this.clearCache()
 
@@ -306,7 +298,7 @@ class AuthService {
                         this.updateStatus('unauthorized', false)
                     }
                 } else {
-
+                    console.log('❌【远程数据】数据格式异常或为空')
                     // 远程数据异常时清除本地缓存
                     this.clearCache()
 
@@ -324,7 +316,6 @@ class AuthService {
                     this.updateStatus('unauthorized', false)
                 }
             } catch (fetchError) {
-                console.error('🌐【远程验证】获取远程数据失败:', fetchError)
                 // 网络错误时清除本地缓存
                 this.clearCache()
 
@@ -336,7 +327,6 @@ class AuthService {
                 this.updateStatus('error', false)
             }
         } catch (error) {
-            console.error('🔑【设备密钥】获取失败:', error)
             // 设备密钥获取失败时清除本地缓存
             this.clearCache()
 
