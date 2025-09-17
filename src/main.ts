@@ -192,176 +192,286 @@ setTimeout(() => {
 
 let app: ReturnType<typeof mount> | undefined // 提前声明，供导出使用
 
-    // 初始化 Dexie 数据库并随后挂载应用
-    ; (async () => {
-        try {
-            // 精简模式下从project-data.json导入数据并还原数据库
-            if (isLiteMode()) {
-                // 精简模式先清空网页标题，防止显示旧项目名称或默认标题
-                document.title = ''
-                console.log('【数据库交互】精简模式：从project-data.json导入数据')
+// 数据库初始化函数
+async function initializeDatabase() {
+    try {
+        // 精简模式下从project-data.json导入数据并还原数据库
+        if (isLiteMode()) {
+            // 精简模式先清空网页标题，防止显示旧项目名称或默认标题
+            document.title = ''
+            console.log('【数据库交互】精简模式：从project-data.json导入数据')
+            try {
+                // 导入项目数据
+                const response = await fetch('./data/project-data.json')
+                let projectData: any
                 try {
-                    // 导入项目数据
-                    const response = await fetch('./data/project-data.json')
-                    let projectData: any
-                    try {
-                        const ct = response.headers.get('content-type') || ''
-                        if (ct.includes('application/json')) {
-                            projectData = await response.json()
-                        } else {
-                            const blob = await response.blob()
-                            const text = await blob.text()
-                            projectData = JSON.parse(text)
-                        }
-                    } catch (parseErr) {
+                    const ct = response.headers.get('content-type') || ''
+                    if (ct.includes('application/json')) {
+                        projectData = await response.json()
+                    } else {
                         const blob = await response.blob()
                         const text = await blob.text()
                         projectData = JSON.parse(text)
                     }
-
-
-                    // 检查数据库是否存在，不存在则创建
-                    const dbExists = await DexieService.databaseExists('qi-qiao-ban')
-                    if (!dbExists) {
-                        await DexieService.createDatabase('qi-qiao-ban', true)
-                    }
-
-                    const db = await DexieService.getDatabase('qi-qiao-ban')
-                    if (db) {
-                        // 读取并应用日志配置
-                        try {
-                            const cfgRecord = (await db.table('config').toArray())[0]
-                            applyLogConfig(cfgRecord ? (cfgRecord.showLogs ?? cfgRecord.value) === true : import.meta.env.DEV === true)
-                        } catch { }
-                        // 获取数据库中最新项目的导出时间
-                        let dbExportTime: string | null = null
-                        let existingProjectCount = 0
-                        try {
-                            const existingProjects = await db.table('projects').toArray()
-                            existingProjectCount = existingProjects.length
-                            if (existingProjectCount > 0 && existingProjects[0].exportTime) {
-                                dbExportTime = existingProjects[0].exportTime
-                            }
-                        } catch (error) {
-                            console.warn('【数据库交互】无法获取现有导出时间', error)
-                        }
-
-                        // 对于dexie-export-import格式，尝试从元数据中获取导出时间
-                        let jsonExportTime = projectData.exportTime
-                        // 兼容 projectData.rows 结构提取 exportTime
-                        // 兼容 projectData.rows 直接包含数据的结构
-                        if (!jsonExportTime && Array.isArray((projectData as any).rows)) {
-                            jsonExportTime = (projectData as any).rows[0]?.exportTime
-                        }
-                        // 兼容不同导出结构，获取 tables 数组
-                        let tablesArray: any[] | undefined
-                        if (projectData.data) {
-                            if (Array.isArray(projectData.data)) {
-                                tablesArray = projectData.data
-                            } else if (Array.isArray((projectData.data as any).data)) {
-                                tablesArray = (projectData.data as any).data
-                            }
-                        }
-                        if (!jsonExportTime && tablesArray) {
-                            // 查找projects表中是否有exportTime字段
-                            const projectsTable = tablesArray.find((item: any) => item.tableName === 'projects')
-                            console.log('【数据库交互】projectsTable', projectsTable)
-                            if (projectsTable && projectsTable.rows && projectsTable.rows.length > 0) {
-                                jsonExportTime = projectsTable.rows[0].exportTime
-                            }
-                        }
-
-                        // 打印两侧时间戳以便调试
-                        console.log(`【数据库交互】时间对比 - JSON时间: ${jsonExportTime || '未提供'}, 数据库时间: ${dbExportTime || '无'}`)
-
-                        // 比较导出时间，决定是否导入
-                        const shouldImport = existingProjectCount === 0 ||
-                            !dbExportTime ||
-                            (jsonExportTime && new Date(jsonExportTime) > new Date(dbExportTime))
-
-                        if (shouldImport) {
-
-                            // 清空旧数据，避免数据污染
-                            console.log('【数据库交互】清空数据库旧数据')
-                            await db.table('projects').clear()
-                            await db.table('doms').clear()
-
-                            console.log('【数据库交互】使用dexie-export-import导入数据')
-
-                            // 将JSON数据转换为Blob，然后使用importInto导入
-                            const jsonString = JSON.stringify(projectData)
-                            const blob = new Blob([jsonString], { type: 'application/json' })
-                            await importInto(db, blob, { overwriteValues: true })
-
-
-                            console.log('【数据库交互】dexie-export-import导入完成')
-
-                            // 重置所有项目的 canvasState 为默认值，确保初始缩放一致
-                            try {
-                                await db.table('projects').toCollection().modify((proj: any) => {
-                                    proj.canvasState = { x: 0, y: 0, scale: 0.5 }
-                                })
-                                console.log('【数据库交互】已重置项目 canvasState 为默认值 (scale=0.5, x=0, y=0)')
-                            } catch (resetErr) {
-                                console.warn('【数据库交互】重置 canvasState 失败', resetErr)
-                            }
-                        } else {
-                            console.log(`【数据库交互】跳过导入 - JSON时间: ${jsonExportTime}, 数据库时间: ${dbExportTime || '无'}`)
-                        }
-
-
-                        await db.table('config').clear()
-                        await db.table('config').put({ showLogs: false })
-
-
-
-                        // 验证导入的数据
-                        const finalProjectCount = await db.table('projects').count()
-                        const finalDomCount = await db.table('doms').count()
-                        console.log(`【数据库交互】精简模式：验证完成 - 项目: ${finalProjectCount}个, DOM节点: ${finalDomCount}个`)
-                        console.log(`【数据库交互】默认关闭日志打印`)
-                        applyLogConfig(false)
-                    } else {
-                        throw new Error('无法获取数据库实例')
-                    }
-
-
-                } catch (error) {
-                    console.error('【数据库交互】精简模式：数据库导入失败', error)
-                    // 导入失败时不创建空数据库，让应用继续运行
-                    console.warn('【数据库交互】精简模式：数据库导入失败，应用将以无数据状态运行')
-                }
-            } else {
-                if (!(await DexieService.databaseExists('qi-qiao-ban'))) {
-                    await DexieService.createDatabase('qi-qiao-ban', false)
-                } else {
+                } catch (parseErr) {
+                    const blob = await response.blob()
+                    const text = await blob.text()
+                    projectData = JSON.parse(text)
                 }
 
-                // 再次读取并应用日志配置（数据库已存在场景）
-                try {
-                    const db = await DexieService.getDatabase('qi-qiao-ban')
-                    if (db) {
+
+                // 检查数据库是否存在，不存在则创建
+                const dbExists = await DexieService.databaseExists('qi-qiao-ban')
+                if (!dbExists) {
+                    await DexieService.createDatabase('qi-qiao-ban', true)
+                }
+
+                const db = await DexieService.getDatabase('qi-qiao-ban')
+                if (db) {
+                    // 读取并应用日志配置
+                    try {
                         const cfgRecord = (await db.table('config').toArray())[0]
                         applyLogConfig(cfgRecord ? (cfgRecord.showLogs ?? cfgRecord.value) === true : import.meta.env.DEV === true)
+                    } catch { }
+                    // 获取数据库中最新项目的导出时间
+                    let dbExportTime: string | null = null
+                    let existingProjectCount = 0
+                    try {
+                        const existingProjects = await db.table('projects').toArray()
+                        existingProjectCount = existingProjects.length
+                        if (existingProjectCount > 0 && existingProjects[0].exportTime) {
+                            dbExportTime = existingProjects[0].exportTime
+                        }
+                    } catch (error) {
+                        console.warn('【数据库交互】无法获取现有导出时间', error)
                     }
-                } catch { }
+
+                    // 对于dexie-export-import格式，尝试从元数据中获取导出时间
+                    let jsonExportTime = projectData.exportTime
+                    // 兼容 projectData.rows 结构提取 exportTime
+                    // 兼容 projectData.rows 直接包含数据的结构
+                    if (!jsonExportTime && Array.isArray((projectData as any).rows)) {
+                        jsonExportTime = (projectData as any).rows[0]?.exportTime
+                    }
+                    // 兼容不同导出结构，获取 tables 数组
+                    let tablesArray: any[] | undefined
+                    if (projectData.data) {
+                        if (Array.isArray(projectData.data)) {
+                            tablesArray = projectData.data
+                        } else if (Array.isArray((projectData.data as any).data)) {
+                            tablesArray = (projectData.data as any).data
+                        }
+                    }
+                    if (!jsonExportTime && tablesArray) {
+                        // 查找projects表中是否有exportTime字段
+                        const projectsTable = tablesArray.find((item: any) => item.tableName === 'projects')
+                        console.log('【数据库交互】projectsTable', projectsTable)
+                        if (projectsTable && projectsTable.rows && projectsTable.rows.length > 0) {
+                            jsonExportTime = projectsTable.rows[0].exportTime
+                        }
+                    }
+
+                    // 打印两侧时间戳以便调试
+                    console.log(`【数据库交互】时间对比 - JSON时间: ${jsonExportTime || '未提供'}, 数据库时间: ${dbExportTime || '无'}`)
+
+                    // 比较导出时间，决定是否导入
+                    const shouldImport = existingProjectCount === 0 ||
+                        !dbExportTime ||
+                        (jsonExportTime && new Date(jsonExportTime) > new Date(dbExportTime))
+
+                    if (shouldImport) {
+
+                        // 清空旧数据，避免数据污染
+                        console.log('【数据库交互】清空数据库旧数据')
+                        await db.table('projects').clear()
+                        await db.table('doms').clear()
+
+                        console.log('【数据库交互】使用dexie-export-import导入数据')
+
+                        // 将JSON数据转换为Blob，然后使用importInto导入
+                        const jsonString = JSON.stringify(projectData)
+                        const blob = new Blob([jsonString], { type: 'application/json' })
+                        await importInto(db, blob, { overwriteValues: true })
+
+
+                        console.log('【数据库交互】dexie-export-import导入完成')
+
+                        // 重置所有项目的 canvasState 为默认值，确保初始缩放一致
+                        try {
+                            await db.table('projects').toCollection().modify((proj: any) => {
+                                proj.canvasState = { x: 0, y: 0, scale: 0.5 }
+                            })
+                            console.log('【数据库交互】已重置项目 canvasState 为默认值 (scale=0.5, x=0, y=0)')
+                        } catch (resetErr) {
+                            console.warn('【数据库交互】重置 canvasState 失败', resetErr)
+                        }
+                    } else {
+                        console.log(`【数据库交互】跳过导入 - JSON时间: ${jsonExportTime}, 数据库时间: ${dbExportTime || '无'}`)
+                    }
+
+
+                    await db.table('config').clear()
+                    await db.table('config').put({ showLogs: false })
+
+
+
+                    // 验证导入的数据
+                    const finalProjectCount = await db.table('projects').count()
+                    const finalDomCount = await db.table('doms').count()
+                    console.log(`【数据库交互】精简模式：验证完成 - 项目: ${finalProjectCount}个, DOM节点: ${finalDomCount}个`)
+                    console.log(`【数据库交互】默认关闭日志打印`)
+                    applyLogConfig(false)
+                } else {
+                    throw new Error('无法获取数据库实例')
+                }
+
+
+            } catch (error) {
+                console.error('【数据库交互】精简模式：数据库导入失败', error)
+                // 导入失败时不创建空数据库，让应用继续运行
+                console.warn('【数据库交互】精简模式：数据库导入失败，应用将以无数据状态运行')
+            }
+        } else {
+            if (!(await DexieService.databaseExists('qi-qiao-ban'))) {
+                await DexieService.createDatabase('qi-qiao-ban', false)
+            } else {
             }
 
-            // 初始化PWA
-            await PWAChecker.checkEnvironment()
-            await PWAChecker.initPWA()
-
-            // 启动定期令牌验证（每1分钟验证一次）
-            authService.startPeriodicVerification()
-
-            app = mount(App, {
-                target: document.getElementById('app')!
-            })
-            // 初始化视口缩放（基于设计稿1920x1000）
-            screenDetector.initViewportScale()
-        } catch (error) {
-            console.error('应用初始化失败', error)
+            // 再次读取并应用日志配置（数据库已存在场景）
+            try {
+                const db = await DexieService.getDatabase('qi-qiao-ban')
+                if (db) {
+                    const cfgRecord = (await db.table('config').toArray())[0]
+                    applyLogConfig(cfgRecord ? (cfgRecord.showLogs ?? cfgRecord.value) === true : import.meta.env.DEV === true)
+                }
+            } catch { }
         }
-    })()
+    } catch (error) {
+        console.error('【数据库交互】数据库初始化失败', error)
+        throw error
+    }
+}
+
+// 应用初始化函数
+async function initializeApp() {
+    try {
+        // 初始化PWA
+        await PWAChecker.checkEnvironment()
+        await PWAChecker.initPWA()
+
+        app = mount(App, {
+            target: document.getElementById('app')!
+        })
+        // 初始化视口缩放（基于设计稿1920x1000）
+        screenDetector.initViewportScale()
+    } catch (error) {
+        console.error('应用初始化失败', error)
+        throw error
+    }
+}
+
+// 主初始化流程 - 授权验证优先
+; (async () => {
+    try {
+        console.log('🚀【应用启动】开始初始化流程')
+        authService.startPeriodicVerification()
+
+        // 等待授权验证完成
+        await new Promise<void>((resolve, reject) => {
+            const unsubscribe = authService.subscribe((status, isAuthorized) => {
+                if (status === 'authorized' && isAuthorized) {
+                    unsubscribe()
+                    resolve()
+                } else if (status === 'unauthorized') {
+                    console.log('❌【授权验证】设备未授权，停止初始化')
+                    unsubscribe()
+                    reject(new Error('设备未授权'))
+                } else if (status === 'error') {
+                    console.log('⚠️【授权验证】验证失败，停止初始化')
+                    unsubscribe()
+                    reject(new Error('授权验证失败'))
+                }
+                // 如果是 'checking' 状态，继续等待
+            })
+
+            // 设置超时，避免无限等待
+            setTimeout(() => {
+                console.log('⏰【授权验证】验证超时，停止初始化')
+                unsubscribe()
+                reject(new Error('授权验证超时'))
+            }, 30000) // 30秒超时
+        })
+
+
+        await initializeDatabase()
+
+
+        await initializeApp()
+
+
+    } catch (error) {
+        console.error('💥【应用启动】初始化失败:', error)
+
+        // 显示错误信息给用户
+        const errorDiv = document.createElement('div')
+        errorDiv.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            color: #f87171;
+            font-family: system-ui, -apple-system, sans-serif;
+            text-align: center;
+            z-index: 9999;
+            backdrop-filter: blur(10px);
+        `
+
+        if (error instanceof Error) {
+            if (error.message.includes('未授权')) {
+                errorDiv.innerHTML = `
+                    <h3>🔒 设备未授权</h3>
+                    <p>此设备未获得使用授权，无法访问应用功能。</p>
+                    <p>请联系管理员获取授权。</p>
+                `
+            } else if (error.message.includes('验证失败') || error.message.includes('验证超时')) {
+                errorDiv.innerHTML = `
+                    <h3>🌐 授权验证失败</h3>
+                    <p>无法连接到授权服务器进行验证。</p>
+                    <p>请检查网络连接后刷新页面重试。</p>
+                    <button onclick="location.reload()" style="
+                        margin-top: 10px;
+                        padding: 8px 16px;
+                        background: #f87171;
+                        color: white;
+                        border: none;
+                        border-radius: 4px;
+                        cursor: pointer;
+                    ">刷新页面</button>
+                `
+            } else {
+                errorDiv.innerHTML = `
+                    <h3>⚠️ 应用初始化失败</h3>
+                    <p>应用启动过程中发生错误。</p>
+                    <p>错误信息: ${error.message}</p>
+                    <button onclick="location.reload()" style="
+                        margin-top: 10px;
+                        padding: 8px 16px;
+                        background: #f87171;
+                        color: white;
+                        border: none;
+                        border-radius: 4px;
+                        cursor: pointer;
+                    ">刷新页面</button>
+                `
+            }
+        }
+
+        document.body.appendChild(errorDiv)
+    }
+})()
 
 export default app
