@@ -169,7 +169,7 @@ class AuthService {
                     }
 
                     if (keyMatched) {
-                        console.log('✅【密钥验证】密钥匹配成功！本设备已授权')
+                        console.log('✅【密钥验证】授权成功')
                         // 验证成功时保存到本地缓存
                         this.saveToCache(deviceKeyHash, Date.now())
                         // 重置定期验证失败计数器
