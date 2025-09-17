@@ -1044,8 +1044,8 @@
                 />
             </PropertyRow>
 
-            <!-- 背景颜色 -->
-            <PropertyRow label="背景颜色">
+            <!-- 前景颜色 因为我们下面一层用了伪元素来显示背景图片 -->
+            <PropertyRow label="前景颜色">
                 <ColorPicker
                     value={hexToRgba(backgroundColor, backgroundColorAlpha)}
                     projectId={$projectId}
