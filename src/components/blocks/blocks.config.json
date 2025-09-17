@@ -76,6 +76,7 @@
         "path": "../blocks/SimpleBox.svelte",
         "preview": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSczMicgaGVpZ2h0PSczMic+PHJlY3QgeD0nNCcgeT0nNCcgd2lkdGg9JzI0JyBoZWlnaHQ9JzI0JyBmaWxsPSdub25lJyBzdHJva2U9JyM0YWRlODAnIHN0cm9rZS13aWR0aD0nMicgcng9JzInLz48bGluZSB4MT0nNCcgeTE9JzEyJyB4Mj0nMjgnIHkyPScxMicgc3Ryb2tlPScjNGFkZTgwJyBzdHJva2Utd2lkdGg9JzEnLz48bGluZSB4MT0nMTYnIHkxPSc0JyB4Mj0nMTYnIHkyPScyOCcgc3Ryb2tlPScjNGFkZTgwJyBzdHJva2Utd2lkdGg9JzEnLz48L3N2Zz4=",
         "showFeatureTab": false,
+        "randomBackgroundColor": true,
         "presetStyles": {
             "display": "flex",
             "justifyContent": "center",
@@ -93,6 +94,7 @@
         "showFeatureTab": true,
         "dataBindable": true,
         "positionAtOrigin": true,
+        "randomBackgroundColor": true,
         "presetStyles": {
             "width": "100%",
             "height": "100%",

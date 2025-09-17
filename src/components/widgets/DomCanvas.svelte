@@ -28,6 +28,7 @@
     import usePan from '../../services/actions/use-pan.action'
     import useWheelZoom from '../../services/actions/use-wheel-zoom.action'
     import { getScaleRatio } from '../../services/utils/get-scale-ratio.util'
+    import blocksConfig from '../blocks/blocks.config.json'
     import drawModeAction from '../../services/actions/draw-mode.action'
     import useAdjustMode from '../../services/actions/adjust-mode.action'
     import DrawModeOverlay from './DrawModeOverlay.svelte'
@@ -458,6 +459,40 @@
         }
         const displayName = generateUniqueDataName(payload.name ?? payload.type)
 
+        // 生成随机背景颜色
+        function generateRandomColor() {
+            const colors = [
+                'rgba(239, 68, 68, 0.8)',   // 红色
+                'rgba(245, 101, 101, 0.8)', // 浅红
+                'rgba(251, 146, 60, 0.8)',  // 橙色
+                'rgba(252, 211, 77, 0.8)',  // 黄色
+                'rgba(34, 197, 94, 0.8)',   // 绿色
+                'rgba(16, 185, 129, 0.8)',  // 青绿
+                'rgba(6, 182, 212, 0.8)',   // 青色
+                'rgba(59, 130, 246, 0.8)',  // 蓝色
+                'rgba(99, 102, 241, 0.8)',  // 靛蓝
+                'rgba(139, 92, 246, 0.8)',  // 紫色
+                'rgba(168, 85, 247, 0.8)',  // 紫罗兰
+                'rgba(236, 72, 153, 0.8)'   // 粉色
+            ]
+            return colors[Math.floor(Math.random() * colors.length)]
+        }
+
+        // 检查是否需要使用随机背景颜色
+        const blockConfig = blocksConfig.find((b: any) => b.type === payload.type)
+        const shouldUseRandomBg = blockConfig?.randomBackgroundColor === true
+
+        // 处理样式，如果启用随机背景颜色则忽略presetStyles中的背景颜色
+        let finalStyles = { ...(payload.presetStyles || {}) }
+        if (shouldUseRandomBg) {
+            // 移除presetStyles中的背景相关属性
+            const { backgroundColor, background, backgroundImage, backgroundSize, backgroundPosition, backgroundRepeat, ...stylesWithoutBg } = finalStyles
+            finalStyles = {
+                ...stylesWithoutBg,
+                backgroundColor: generateRandomColor()
+            }
+        }
+
         const newNode = {
             id: globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}`,
             componentType: payload.type,
@@ -467,7 +502,7 @@
                 top: `${topPercent}%`,
                 width: `${widthPercent}%`,
                 height: `${heightPercent}%`,
-                ...(payload.presetStyles || {})
+                ...finalStyles
             },
             attributes: {
                 'data-name': displayName
