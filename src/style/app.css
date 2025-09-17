@@ -102,4 +102,5 @@ input[type='search']::-moz-search-clear-button {
     background-position: var(--bg-pos, center center);
     background-repeat: var(--bg-repeat, no-repeat);
     opacity: var(--bg-opacity, 1);
+    z-index: -1; /* 将伪元素放到背景层，避免遮挡文字内容 */
 }
