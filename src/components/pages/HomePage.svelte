@@ -35,7 +35,7 @@
             console.log('🏗️【数据交互】数据库不存在，开始创建数据库')
             await DexieService.createDatabase(dbName)
         } else {
-            console.log('✅【数据交互】数据库已存在')
+            console.log('✅【数据验证】数据库已存在')
         }
         const rows = await DexieService.queryRecords<any>(dbName, 'projects')
         projects = rows.map((r: any) => ({
