@@ -374,12 +374,18 @@ async function initializeApp() {
 ; (async () => {
     try {
         console.log('🚀【应用启动】开始初始化流程')
-        authService.startPeriodicVerification()
+        
+        // 首次验证 - 不启动定期验证
+        console.log('🔐【授权验证】执行首次验证')
+        await authService.verifyToken()
 
         // 等待授权验证完成
         await new Promise<void>((resolve, reject) => {
             const unsubscribe = authService.subscribe((status, isAuthorized) => {
                 if (status === 'authorized' && isAuthorized) {
+                    console.log('✅【授权验证】首次验证成功，启动定期验证')
+                    // 只有首次验证成功后才启动定期验证
+                    authService.startPeriodicVerification()
                     unsubscribe()
                     resolve()
                 } else if (status === 'unauthorized') {
