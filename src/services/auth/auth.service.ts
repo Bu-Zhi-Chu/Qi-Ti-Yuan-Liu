@@ -124,18 +124,15 @@ class AuthService {
     }
 
     /**
-     * 启动定期验证
+     * 启动定期验证（不执行立即验证）
      */
     startPeriodicVerification(): void {
         // 如果已经有定时器在运行，先清除
         this.stopPeriodicVerification()
 
+        console.log('🔄【授权服务】启动定期验证')
 
-
-        // 立即执行一次验证
-        this.verifyToken()
-
-        // 设置定期验证
+        // 设置定期验证（不立即执行）
         this._verificationTimer = window.setInterval(() => {
             console.log('🔄【授权服务】执行定期验证')
             this.verifyToken()

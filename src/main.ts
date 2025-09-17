@@ -381,20 +381,22 @@ async function initializeApp() {
 
         // 等待授权验证完成
         await new Promise<void>((resolve, reject) => {
-            const unsubscribe = authService.subscribe((status, isAuthorized) => {
+            let unsubscribe: (() => void) | null = null
+            
+            unsubscribe = authService.subscribe((status, isAuthorized) => {
                 if (status === 'authorized' && isAuthorized) {
                     console.log('✅【授权验证】首次验证成功，启动定期验证')
                     // 只有首次验证成功后才启动定期验证
                     authService.startPeriodicVerification()
-                    unsubscribe()
+                    unsubscribe?.()
                     resolve()
                 } else if (status === 'unauthorized') {
                     console.log('❌【授权验证】设备未授权，停止初始化')
-                    unsubscribe()
+                    unsubscribe?.()
                     reject(new Error('设备未授权'))
                 } else if (status === 'error') {
                     console.log('⚠️【授权验证】验证失败，停止初始化')
-                    unsubscribe()
+                    unsubscribe?.()
                     reject(new Error('授权验证失败'))
                 }
                 // 如果是 'checking' 状态，继续等待
@@ -403,7 +405,7 @@ async function initializeApp() {
             // 设置超时，避免无限等待
             setTimeout(() => {
                 console.log('⏰【授权验证】验证超时，停止初始化')
-                unsubscribe()
+                unsubscribe?.()
                 reject(new Error('授权验证超时'))
             }, 30000) // 30秒超时
         })
