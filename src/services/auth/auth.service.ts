@@ -66,7 +66,7 @@ class AuthService {
             } else {
                 // 密钥不匹配，标记为缓存篡改
                 this._cacheTempered = true
-                console.log('🚨【令牌检测】检测到缓存篡改行为，缓存密钥与当前设备密钥不匹配')
+                console.log('🚨【令牌检测】检测异常')
                 // 密钥不匹配时清除缓存
                 this.clearCache()
                 return false

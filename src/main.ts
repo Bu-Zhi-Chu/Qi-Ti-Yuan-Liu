@@ -420,8 +420,8 @@ async function initializeApp() {
         try {
             const deviceKey = await getStableDeviceKey()
             const deviceKeyHash = await getStableDeviceKeyHash()
-            console.log('🔑【浏览器密钥】当前设备密钥:', deviceKey)
-            console.log('🔑【浏览器密钥】当前设备密钥哈希:', deviceKeyHash)
+            // console.log('🔑【浏览器密钥】当前设备密钥:', deviceKey)
+            // console.log('🔑【浏览器密钥】当前设备密钥哈希:', deviceKeyHash)
         } catch (keyError) {
             console.error('❌【浏览器密钥】获取设备密钥失败:', keyError)
         }
