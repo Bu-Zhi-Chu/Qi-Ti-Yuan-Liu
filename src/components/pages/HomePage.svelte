@@ -33,13 +33,8 @@
     let authStatus = $state<AuthStatus>('checking')
     let unsubscribe: (() => void) | null = null
 
-    onMount(async () => {
-        // 订阅全局授权状态
-        unsubscribe = subscribeToAuth((status, authorized) => {
-            authStatus = status
-            isAuthorized = authorized
-        })
-
+    // 数据库初始化函数
+    async function initializeDatabase() {
         const dbName = 'qi-qiao-ban'
         console.log('【数据库交互】检查项目列表页面数据库状态')
         // 确保数据库存在
@@ -56,6 +51,22 @@
             createTime: new Date(r.createdAt).toLocaleString(),
             thumbnail: r.thumbnail
         }))
+    }
+
+    onMount(async () => {
+        // 订阅全局授权状态
+        unsubscribe = subscribeToAuth(async (status, authorized) => {
+            authStatus = status
+            isAuthorized = authorized
+
+            // 只有在授权验证成功后才初始化数据库
+            if (status === 'authorized' && authorized) {
+                await initializeDatabase()
+            } else if (status === 'unauthorized' || status === 'error') {
+                // 清空项目列表
+                projects = []
+            }
+        })
     })
 
     onDestroy(() => {

@@ -170,6 +170,17 @@ function cleanupFocusDetection() {
     // altKeyMonitorInterval 已移除，不再使用
 }
 
+// 清理所有资源的函数
+function cleanupAllResources() {
+    cleanupFocusDetection()
+    authService.destroy()
+    console.log('🧹【资源清理】所有资源已清理')
+}
+
+// 监听页面卸载事件，确保清理资源
+window.addEventListener('beforeunload', cleanupAllResources)
+window.addEventListener('unload', cleanupAllResources)
+
 // 延迟初始化以确保DOM完全加载
 setTimeout(() => {
     try {
@@ -339,12 +350,10 @@ let app: ReturnType<typeof mount> | undefined // 提前声明，供导出使用
             // 初始化PWA
             await PWAChecker.checkEnvironment()
             await PWAChecker.initPWA()
-            
-            // 启动令牌验证（异步执行，不阻塞应用启动）
-            authService.verifyToken().catch(error => {
-                console.error('令牌验证失败:', error)
-            })
-            
+
+            // 启动定期令牌验证（每1分钟验证一次）
+            authService.startPeriodicVerification()
+
             app = mount(App, {
                 target: document.getElementById('app')!
             })

@@ -11,6 +11,9 @@ class AuthService {
     private _isAuthorized = false
     private _authStatus: AuthStatus = 'checking'
     private _listeners: Array<(status: AuthStatus, isAuthorized: boolean) => void> = []
+    private _verificationTimer: number | null = null
+    private _isVerifying = false
+    private readonly VERIFICATION_INTERVAL = 10 * 60 * 1000
 
     get isAuthorized(): boolean {
         return this._isAuthorized
@@ -27,7 +30,7 @@ class AuthService {
         this._listeners.push(callback)
         // 立即调用一次回调，传递当前状态
         callback(this._authStatus, this._isAuthorized)
-        
+
         // 返回取消订阅函数
         return () => {
             const index = this._listeners.indexOf(callback)
@@ -43,7 +46,7 @@ class AuthService {
     private updateStatus(status: AuthStatus, isAuthorized: boolean) {
         this._authStatus = status
         this._isAuthorized = isAuthorized
-        
+
         // 通知所有订阅者
         this._listeners.forEach(callback => {
             callback(status, isAuthorized)
@@ -54,17 +57,23 @@ class AuthService {
      * 执行令牌验证
      */
     async verifyToken(): Promise<void> {
-        console.log('🔐【授权服务】开始令牌验证...')
+        // 防止重复验证
+        if (this._isVerifying) {
+            console.log('🔐【授权服务】验证正在进行中，跳过重复验证')
+            return
+        }
+
+        this._isVerifying = true
         this.updateStatus('checking', false)
 
         try {
             // 获取设备密钥哈希值
             const deviceKeyHash = await getStableDeviceKeyHash()
-            console.log('🔑【设备密钥】获取成功')
+
 
             // 获取远程JSON数据并对比密钥
             try {
-                console.log('🌐【远程验证】开始获取远程密钥数据...')
+
 
                 // 使用CORS代理来解决跨域问题
                 const proxyUrl = 'https://api.allorigins.win/get?url='
@@ -109,6 +118,38 @@ class AuthService {
         } catch (error) {
             console.error('🔑【设备密钥】获取失败:', error)
             this.updateStatus('error', false)
+        } finally {
+            this._isVerifying = false
+        }
+    }
+
+    /**
+     * 启动定期验证
+     */
+    startPeriodicVerification(): void {
+        // 如果已经有定时器在运行，先清除
+        this.stopPeriodicVerification()
+
+
+
+        // 立即执行一次验证
+        this.verifyToken()
+
+        // 设置定期验证
+        this._verificationTimer = window.setInterval(() => {
+            console.log('🔄【授权服务】执行定期验证')
+            this.verifyToken()
+        }, this.VERIFICATION_INTERVAL)
+    }
+
+    /**
+     * 停止定期验证
+     */
+    stopPeriodicVerification(): void {
+        if (this._verificationTimer) {
+            console.log('⏹️【授权服务】停止定期验证')
+            clearInterval(this._verificationTimer)
+            this._verificationTimer = null
         }
     }
 
@@ -116,7 +157,17 @@ class AuthService {
      * 重置授权状态
      */
     reset() {
+        this.stopPeriodicVerification()
         this.updateStatus('checking', false)
+    }
+
+    /**
+     * 销毁服务，清理资源
+     */
+    destroy() {
+        this.stopPeriodicVerification()
+        this._listeners = []
+        this._isVerifying = false
     }
 }
 
@@ -138,4 +189,12 @@ export function subscribeToAuth(callback: (status: AuthStatus, isAuthorized: boo
 
 export function verifyToken(): Promise<void> {
     return authService.verifyToken()
+}
+
+export function startPeriodicVerification(): void {
+    return authService.startPeriodicVerification()
+}
+
+export function stopPeriodicVerification(): void {
+    return authService.stopPeriodicVerification()
 }
