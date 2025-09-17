@@ -123,19 +123,19 @@
         const sizeStr = typeof size === 'string' ? size : ''
         if (!sizeStr) return ['', defaultUnit]
 
-        // 支持解析 calc(100px * var(--scale-ratio, 1)) 形式
-        const calcMatch = sizeStr.match(/^calc\(\s*(\d+(?:\.\d+)?)\s*px\b.*\)$/i)
+        // 支持解析 calc(-100px * var(--scale-ratio, 1)) 形式，包括负值
+        const calcMatch = sizeStr.match(/^calc\(\s*(-?\d+(?:\.\d+)?)\s*px\b.*\)$/i)
         if (calcMatch) {
             return [calcMatch[1], 'px']
         }
 
-        // 处理百分比 - 四舍五入保留1位小数
+        // 处理百分比 - 四舍五入保留1位小数，支持负值
         if (sizeStr.endsWith('%')) {
             const value = parseFloat(sizeStr.replace('%', ''))
-            return [value ? Math.round(value * 10) / 10 + '' : '', '%']
+            return [isNaN(value) ? '' : Math.round(value * 10) / 10 + '', '%']
         }
 
-        // 处理像素
+        // 处理像素，支持负值
         if (sizeStr.endsWith('px')) {
             return [sizeStr.replace('px', ''), 'px']
         }
