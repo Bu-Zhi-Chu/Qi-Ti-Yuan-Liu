@@ -59,6 +59,13 @@ export default class DexieService {
      * 判断数据库是否存在
      */
     static async databaseExists(dbName: string): Promise<boolean> {
+        // 先进行本地授权验证
+        const isAuthorized = await DexieService.quickLocalAuthCheck()
+        if (!isAuthorized) {
+            console.error('❌【数据库访问】授权验证失败，拒绝检查数据库存在性')
+            throw new Error('Unauthorized: Local auth check failed')
+        }
+
         // 优先使用缓存，避免频繁调用 indexedDB.databases()
         if (DexieService.dbExistenceCache.has(dbName)) {
             return DexieService.dbExistenceCache.get(dbName) as boolean
@@ -84,6 +91,13 @@ export default class DexieService {
      * @param isLiteMode 是否为精简模式，默认为false。在精简模式下不会添加默认模板数据
      */
     static async createDatabase(dbName: string, isLiteMode: boolean = false): Promise<void> {
+        // 先进行本地授权验证
+        const isAuthorized = await DexieService.quickLocalAuthCheck()
+        if (!isAuthorized) {
+            console.error('❌【数据库访问】授权验证失败，拒绝创建数据库')
+            throw new Error('Unauthorized: Local auth check failed')
+        }
+
         // DatabaseLogger.creatingDatabase(dbName)
         const db = new Dexie(dbName)
 
