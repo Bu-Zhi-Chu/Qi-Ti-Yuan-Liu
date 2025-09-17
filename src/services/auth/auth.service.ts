@@ -14,7 +14,7 @@ class AuthService {
     private _listeners: Array<(status: AuthStatus, isAuthorized: boolean) => void> = []
     private _verificationTimer: number | null = null
     private _isVerifying = false
-    private readonly VERIFICATION_INTERVAL = 5000
+    private readonly VERIFICATION_INTERVAL = 10 * 60 * 1000
     private readonly CACHE_KEY = 'qi-qiao-ban-auth-cache'
 
     // 定期验证失败计数器
