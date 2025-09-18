@@ -281,6 +281,7 @@ async function initializeDatabase() {
 
                     if (shouldImport) {
 
+
                         // 清空旧数据，避免数据污染
                         console.log('【数据交互】清空数据库旧数据')
                         await db.table('projects').clear()
