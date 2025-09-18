@@ -18,6 +18,7 @@
     import { registerShortcut } from '../../services/interactions/shortcut.service'
     import { isStandardProdMode, isDevMode, isLiteMode } from '../../services/env/environment.service'
     import { copySelectedNode, pasteNodeToSelectedParent, cutSelectedNode } from '../../stores/dom-tree.store.svelte'
+    import { updateNodeProps } from '../../services/property-panel/property-panel.service'
 
     /* 新增：Dom 区域与 Dom 树列表组件 */
     import DomCanvas from '../widgets/DomCanvas.svelte'
@@ -321,9 +322,7 @@
         // 将新的标签页保存到当前选中节点的属性中
         const currentSelectedId = selectedId()
         if (currentSelectedId) {
-            import('../../services/property-panel/property-panel.service').then(({ updateNodeProps }) => {
-                updateNodeProps(currentSelectedId, { attributes: { activePropertyTab: k } })
-            })
+            updateNodeProps(currentSelectedId, { attributes: { activePropertyTab: k } })
         }
     }
 

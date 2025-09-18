@@ -38,6 +38,7 @@ import { moveDomByOffset } from '../utils/move-dom.util'
 import { getElementByNodeId } from '../utils/dom-geometry.util'
 import { domTree, findNodeById } from '../../stores/dom-tree.store.svelte'
 import { copySelectedNode, pasteNodeToSelectedParent } from '../../stores/dom-tree.store.svelte'
+import { updateNodeProps } from '../../services/property-panel/property-panel.service'
 
 
 // 提取数值工具函数，兼容 calc(...) 表达式，文件级复用
@@ -110,7 +111,7 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
   let isStaticLayoutRef = false
   // 缓存目标元素引用，避免在 mousemove 中重复查询
   let targetElRef: HTMLElement | null = null
-  let updateNodePropsFn: ((id: string, props: any) => void) | null = null
+  const updateNodePropsFn = updateNodeProps
   // V 键按下时为目标元素生成的 8 个手柄引用
   let handleEls: HTMLElement[] = []
   // 新增覆盖层引用
@@ -628,14 +629,7 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
         targetEl.style.width = newWidth
         const stylesToUpdate: any = { width: newWidth }
         onAdjustRef?.({ nodeId, x: newPx, y: 0 })
-        if (!updateNodePropsFn) {
-          import('../../services/property-panel/property-panel.service').then(({ updateNodeProps }) => {
-            updateNodePropsFn = updateNodeProps
-            updateNodePropsFn(nodeId, { styles: stylesToUpdate })
-          })
-        } else {
-          updateNodePropsFn(nodeId, { styles: stylesToUpdate })
-        }
+        updateNodePropsFn(nodeId, { styles: stylesToUpdate })
       } else if (resizeDir === 'se') {
         const dx = (e.clientX - startX) / (initialWidthUnit === '%' ? scale : scale * sr)
         const dy = (e.clientY - startY) / (initialHeightUnit === '%' ? scale : scale * sr)
@@ -665,14 +659,7 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
         targetEl.style.height = newHeight
         const stylesToUpdate: any = { width: newWidth, height: newHeight }
         onAdjustRef?.({ nodeId, x: newWxPx, y: newHyPx })
-        if (!updateNodePropsFn) {
-          import('../../services/property-panel/property-panel.service').then(({ updateNodeProps }) => {
-            updateNodePropsFn = updateNodeProps
-            updateNodePropsFn(nodeId, { styles: stylesToUpdate })
-          })
-        } else {
-          updateNodePropsFn(nodeId, { styles: stylesToUpdate })
-        }
+        updateNodePropsFn(nodeId, { styles: stylesToUpdate })
       } else if (resizeDir === 'nw') {
         const dxDesign = (e.clientX - startX) / (initialWidthUnit === '%' ? scale : scale * sr);
         const dyDesign = (e.clientY - startY) / (initialHeightUnit === '%' ? scale : scale * sr);
@@ -707,14 +694,7 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
           updateNodePropsFn!(nodeId, { styles: { width: newWidth, height: newHeight } });
           onAdjustRef?.({ nodeId, x: newWxPx, y: newHyPx });
         };
-        if (!updateNodePropsFn) {
-          import('../../services/property-panel/property-panel.service').then(({ updateNodeProps }) => {
-            updateNodePropsFn = updateNodeProps;
-            handleMoveAndResize();
-          });
-        } else {
-          handleMoveAndResize();
-        }
+        handleMoveAndResize();
       } else if (resizeDir === 'ne') {
         const dxDesign = (e.clientX - startX) / (initialWidthUnit === '%' ? scale : scale * sr);
         const dyDesign = (e.clientY - startY) / (initialHeightUnit === '%' ? scale : scale * sr);
@@ -750,14 +730,7 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
           updateNodePropsFn!(nodeId, { styles: { width: newWidth, height: newHeight } });
           onAdjustRef?.({ nodeId, x: newWxPx, y: newHyPx });
         };
-        if (!updateNodePropsFn) {
-          import('../../services/property-panel/property-panel.service').then(({ updateNodeProps }) => {
-            updateNodePropsFn = updateNodeProps;
-            handleMoveAndResize();
-          });
-        } else {
-          handleMoveAndResize();
-        }
+        handleMoveAndResize();
       } else if (resizeDir === 'sw') {
         const dxDesign = (e.clientX - startX) / (initialWidthUnit === '%' ? scale : scale * sr);
         const dyDesign = (e.clientY - startY) / (initialHeightUnit === '%' ? scale : scale * sr);
@@ -793,14 +766,7 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
           updateNodePropsFn!(nodeId, { styles: { width: newWidth, height: newHeight } });
           onAdjustRef?.({ nodeId, x: newWxPx, y: newHyPx });
         };
-        if (!updateNodePropsFn) {
-          import('../../services/property-panel/property-panel.service').then(({ updateNodeProps }) => {
-            updateNodePropsFn = updateNodeProps;
-            handleMoveAndResize();
-          });
-        } else {
-          handleMoveAndResize();
-        }
+        handleMoveAndResize();
       } else if (resizeDir === 'w') {
         // 以设计像素为基准的横向位移（不受单位差异影响）
         const dxDesign = (e.clientX - startX) / (initialWidthUnit === '%' ? scale : scale * sr);
@@ -808,75 +774,37 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
         const parentWidth = parentEl?.offsetWidth || 1;
 
         // 1. 先利用 moveDomByOffset 处理左侧定位补偿
-        if (!updateNodePropsFn) {
-          import('../../services/property-panel/property-panel.service').then(({ updateNodeProps }) => {
-            updateNodePropsFn = updateNodeProps;
+        // 仅处理水平方向移动，垂直方向不变
+        moveDomByOffset({
+          targetEl,
+          nodeId,
+          dxScreen: e.clientX - startX,
+          dyScreen: 0, // 垂直方向不变
+          scale,
+          initialLeft,
+          initialTop,
+          initialLeftUnit,
+          initialTopUnit,
+          isStaticLayout: isStaticLayoutRef,
+          updateNodeProps: updateNodePropsFn,
+          // 暂不触发回调，等宽度一起处理
+          onAdjust: undefined
+        })
 
-            // 仅处理水平方向移动，垂直方向不变
-            moveDomByOffset({
-              targetEl,
-              nodeId,
-              dxScreen: e.clientX - startX,
-              dyScreen: 0, // 垂直方向不变
-              scale,
-              initialLeft,
-              initialTop,
-              initialLeftUnit,
-              initialTopUnit,
-              isStaticLayout: isStaticLayoutRef,
-              updateNodeProps: updateNodePropsFn,
-              // 暂不触发回调，等宽度一起处理
-              onAdjust: undefined
-            });
+        // 2. 单独处理宽度变化
+        const initWidthVal = extractNumeric(initialWidth)
+        const initWidthPx = initialWidthUnit === '%' ? (initWidthVal / 100) * parentWidth : (initialWidthFromComputed ? initWidthVal / sr : initWidthVal)
+        const newWidthPx = initWidthPx - dxDesign
 
-            // 2. 单独处理宽度变化
-            const initWidthVal = extractNumeric(initialWidth);
-            const initWidthPx = initialWidthUnit === '%' ? (initWidthVal / 100) * parentWidth : (initialWidthFromComputed ? initWidthVal / sr : initWidthVal);
-            const newWidthPx = initWidthPx - dxDesign;
+        // 按原始单位回写宽度
+        const newWidth = initialWidthUnit === '%' ? `${(newWidthPx / parentWidth) * 100}%` : `calc(${Math.round(newWidthPx)}px * var(--scale-ratio, 1))`
+        targetEl.style.width = newWidth
 
-            // 按原始单位回写宽度
-            const newWidth = initialWidthUnit === '%' ? `${(newWidthPx / parentWidth) * 100}%` : `calc(${Math.round(newWidthPx)}px * var(--scale-ratio, 1))`;
-            targetEl.style.width = newWidth;
+        // 更新宽度
+        updateNodePropsFn(nodeId, { styles: { width: newWidth } })
 
-            // 更新宽度
-            updateNodePropsFn(nodeId, { styles: { width: newWidth } });
-
-            // 回调
-            onAdjustRef?.({ nodeId, x: newWidthPx, y: 0 });
-          });
-        } else {
-          // 仅处理水平方向移动，垂直方向不变
-          moveDomByOffset({
-            targetEl,
-            nodeId,
-            dxScreen: e.clientX - startX,
-            dyScreen: 0, // 垂直方向不变
-            scale,
-            initialLeft,
-            initialTop,
-            initialLeftUnit,
-            initialTopUnit,
-            isStaticLayout: isStaticLayoutRef,
-            updateNodeProps: updateNodePropsFn,
-            // 暂不触发回调，等宽度一起处理
-            onAdjust: undefined
-          });
-
-          // 2. 单独处理宽度变化
-          const initWidthVal = extractNumeric(initialWidth);
-          const initWidthPx = initialWidthUnit === '%' ? (initWidthVal / 100) * parentWidth : (initialWidthFromComputed ? initWidthVal / sr : initWidthVal);
-          const newWidthPx = initWidthPx - dxDesign;
-
-          // 按原始单位回写宽度
-          const newWidth = initialWidthUnit === '%' ? `${(newWidthPx / parentWidth) * 100}%` : `calc(${Math.round(newWidthPx)}px * var(--scale-ratio, 1))`;
-          targetEl.style.width = newWidth;
-
-          // 更新宽度
-          updateNodePropsFn(nodeId, { styles: { width: newWidth } });
-
-          // 回调
-          onAdjustRef?.({ nodeId, x: newWidthPx, y: 0 });
-        }
+        // 回调
+        onAdjustRef?.({ nodeId, x: newWidthPx, y: 0 })
       } else if (resizeDir === 'n') {
         // 以设计像素为基准的纵向位移
         const dyDesign = (e.clientY - startY) / (initialHeightUnit === '%' ? scale : scale * sr);
@@ -917,14 +845,7 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
           onAdjustRef?.({ nodeId, x: 0, y: newHeightPx });
         };
 
-        if (!updateNodePropsFn) {
-          import('../../services/property-panel/property-panel.service').then(({ updateNodeProps }) => {
-            updateNodePropsFn = updateNodeProps;
-            handleMoveAndHeight();
-          });
-        } else {
-          handleMoveAndHeight();
-        }
+        handleMoveAndHeight()
       } else if (resizeDir === 's') {
         const dy = (e.clientY - startY) / (initialHeightUnit === '%' ? scale : scale * sr)
         const initVal = extractNumeric(initialHeight)
@@ -938,14 +859,7 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
         }
         targetEl.style.height = newHeight
         onAdjustRef?.({ nodeId, x: 0, y: newPx })
-        if (!updateNodePropsFn) {
-          import('../../services/property-panel/property-panel.service').then(({ updateNodeProps }) => {
-            updateNodePropsFn = updateNodeProps
-            updateNodePropsFn(nodeId, { styles: { height: newHeight } })
-          })
-        } else {
-          updateNodePropsFn(nodeId, { styles: { height: newHeight } })
-        }
+        updateNodePropsFn(nodeId, { styles: { height: newHeight } })
       }
       return
     }
@@ -976,40 +890,20 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
       axisLocked = null
     }
     // 使用 moveDomByOffset 封装逻辑
-    if (!updateNodePropsFn) {
-      import('../../services/property-panel/property-panel.service').then(({ updateNodeProps }) => {
-        updateNodePropsFn = updateNodeProps
-        moveDomByOffset({
-          targetEl,
-          nodeId,
-          dxScreen: dxScreen,
-          dyScreen: dyScreen,
-          scale,
-          initialLeft,
-          initialTop,
-          initialLeftUnit,
-          initialTopUnit,
-          isStaticLayout: isStaticLayoutRef,
-          updateNodeProps: updateNodePropsFn,
-          onAdjust: onAdjustRef
-        })
-      })
-    } else {
-      moveDomByOffset({
-        targetEl,
-        nodeId,
-        dxScreen: dxScreen,
-        dyScreen: dyScreen,
-        scale,
-        initialLeft,
-        initialTop,
-        initialLeftUnit,
-        initialTopUnit,
-        isStaticLayout: isStaticLayoutRef,
-        updateNodeProps: updateNodePropsFn,
-        onAdjust: onAdjustRef
-      })
-    }
+    moveDomByOffset({
+      targetEl,
+      nodeId,
+      dxScreen: dxScreen,
+      dyScreen: dyScreen,
+      scale,
+      initialLeft,
+      initialTop,
+      initialLeftUnit,
+      initialTopUnit,
+      isStaticLayout: isStaticLayoutRef,
+      updateNodeProps: updateNodePropsFn,
+      onAdjust: onAdjustRef
+    })
     return
 
 
@@ -1042,14 +936,7 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
           width: toUnitValue(finalWidthPx, initialWidthUnit, parentWidth),
           height: toUnitValue(finalHeightPx, initialHeightUnit, parentHeight)
         }
-        if (!updateNodePropsFn) {
-          import('../../services/property-panel/property-panel.service').then(({ updateNodeProps }) => {
-            updateNodePropsFn = updateNodeProps
-            updateNodePropsFn(nodeId, { styles })
-          })
-        } else {
-          updateNodePropsFn(nodeId, { styles })
-        }
+        updateNodePropsFn(nodeId, { styles })
       }
       isResizing = false
       resizeDir = null

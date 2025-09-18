@@ -116,21 +116,23 @@ export default defineConfig({
                 return false;
             },
             output: {
-                // manualChunks: (id) => {
-                //     if (id.includes('node_modules')) {
-                //         if (id.includes('svelte')) return 'vendor-svelte';
-                //         if (id.includes('lucide')) return 'vendor-lucide';
-                //         if (id.includes('echarts')) return 'vendor-echarts';
-                //         return 'vendor';
-                //     }
-                //     if (id.includes('src/services/')) {
-                //         if (id.includes('dom-tree') || id.includes('property-panel') || id.includes('project-thumbnail')) {
-                //             return 'core-services';
-                //         }
-                //     }
-                // }
+                manualChunks(id) {
+                    if (id.includes('node_modules')) {
+                        if (/prosemirror/.test(id)) return 'vendor-prosemirror';
+                        if (/codemirror/.test(id)) return 'vendor-codemirror';
+                        if (/highlight\.js|prismjs/.test(id)) return 'vendor-highlight';
+                        if (/zrender/.test(id)) return 'vendor-zrender';
+                        if (/d3-/.test(id)) return 'vendor-d3';
+                        if (/dayjs/.test(id)) return 'vendor-dayjs';
+                        if (/echarts/.test(id)) return 'vendor-echarts';
+                        if (/@jsquash|image[-_]?decoder|image[-_]?easm/.test(id)) return 'vendor-imagedecoder';
+                        if (/lucide/.test(id)) return 'vendor-lucide';
+                        if (/svelte/.test(id)) return 'vendor-svelte';
+                        return 'vendor';
+                    }
+                },
                 // manualChunks 已暂时禁用以排查 "Cannot access 'STATE_SYMBOL' before initialization" 运行时错误。
-             },
+            },
             onwarn(warning, warn) {
                 // 过滤掉Node.js模块被外部化的警告
                 if (warning.code === 'MISSING_NODE_BUILTINS' ||
@@ -142,12 +144,20 @@ export default defineConfig({
                 }
                 warn(warning);
             },
-            // 生成 bundle 可视化报告，build 结束后会自动打开 stats.html
-            plugins: [visualizer({ filename: 'bundle-stats.html', open: true })]
+            // plugins: [visualizer({ filename: 'bundle-stats.html', open: true })]
         },
         chunkSizeWarningLimit: 1000, // 将警告阈值提高到1MB
-        sourcemap: true,
-        minify: false, // disable terser to ease debugging
+        sourcemap: false,
+        minify: 'terser',
+        terserOptions: {
+            compress: {
+                drop_console: true,
+                drop_debugger: true
+            },
+            format: {
+                comments: false
+            }
+        },
 
     },
     logLevel: 'info', // 显示基本构建信息，但过滤特定警告

@@ -43,7 +43,6 @@
         "es-toolkit": "^1.39.10",
         "formidable": "^2.1.2",
         "lru_map": "^0.3.3",
-        "miragejs": "^0.1.48",
         "svelte-dnd-action": "^0.9.64",
         "svelte-echarts": "^1.0.0",
         "svelte-splitpanes": "^8.0.9",

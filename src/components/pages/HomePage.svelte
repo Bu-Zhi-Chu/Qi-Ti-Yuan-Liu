@@ -17,6 +17,7 @@
     import DexieService from '../../services/database/dexie-service'
     import { clearMemoryState } from '../../stores/dom-tree.store.svelte'
     import { importInto } from 'dexie-export-import'
+    import { ProjectThumbnailService } from '../../services/project/project-thumbnail.service'
 
     interface Project {
         id: string
@@ -289,7 +290,6 @@
 
         // 生成默认项目缩略图
         try {
-            const { ProjectThumbnailService } = await import('../../services/project/project-thumbnail.service')
             await ProjectThumbnailService.createDefaultThumbnail(id)
         } catch (error) {
             console.error('创建项目缩略图失败:', error)

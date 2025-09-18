@@ -7,6 +7,7 @@
 import type { ScreenInfo, ScreenChangeCallback, DeviceType, PixelDensityLevel } from './screen.types.js'
 import DexieService from '../database/dexie-service'
 import { get } from 'svelte/store'
+import { projectId } from '../../stores/dom-tree.store.svelte'
 
 interface ViewportScale {
     width: number
@@ -195,8 +196,7 @@ class ScreenDetector {
      * 使用store中的项目ID读取项目的设计尺寸
      */
     private async applyProjectDesignSize(): Promise<void> {
-        // 从dom-tree.store获取当前项目ID
-        const { projectId } = await import('../../stores/dom-tree.store.svelte')
+        // 从dom-tree.store获取当前项目ID（已静态导入，移除动态导入）
         const currentProjectId = get(projectId)
         if (!currentProjectId) return
 
