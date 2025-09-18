@@ -24,9 +24,10 @@
 
     import GenericCard from '../widgets/GenericCard.svelte'
     import logoImage from '/icon-192.png'
-    import { useNavigate } from '@dvcol/svelte-simple-router/router'
-
-    const { push } = useNavigate()
+    // 使用 hash 跳转，避免依赖路由上下文
+    function navigateToPlayground(id: string) {
+        window.location.hash = `/playground/${id}`
+    }
 
     interface ComponentItem {
         id: string
@@ -211,7 +212,7 @@
                                 href={`/playground/${component.id}`}
                                 onclick={(e) => {
                                     e.preventDefault()
-                                    push({ path: `/playground/${component.id}` })
+                                    navigateToPlayground(component.id)
                                 }}
                                 style="text-decoration:none;display:block;"
                             >
@@ -229,7 +230,7 @@
     </ResponsiveBox>
 
     <!-- 返回首页链接 -->
-    <a href="/" class="back-to-home">← 返回</a>
+    <a href="#/" class="back-to-home" onclick={(e) => { e.preventDefault(); window.location.hash = '/'; }}>← 返回</a>
 </ResponsiveBox>
 
 <style>

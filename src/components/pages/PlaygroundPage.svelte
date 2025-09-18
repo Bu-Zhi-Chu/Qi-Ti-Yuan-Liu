@@ -10,12 +10,14 @@
     import { onMount, onDestroy } from 'svelte'
     import { Splitpanes, Pane } from 'svelte-splitpanes'
     import TabbedCodeEditor from '../widgets/TabbedCodeEditor.svelte'
-    import { useNavigate } from '@dvcol/svelte-simple-router/router'
 
-    // 获取路由参数
-    import { useRoute } from '@dvcol/svelte-simple-router/router'
-    const { location } = $derived(useRoute())
-    const params = $derived(location?.params || {})
+
+    // 获取路由参数（兼容 hash 模式）
+    const params = $derived((() => {
+        const hash = window.location.hash.slice(1) // 去掉 #
+        const parts = hash.split('/')
+        return { id: parts.pop() || 'hello-world' }
+    })())
 
     // 从JSON导入导航配置
     import demoNavigation from '../../examples/demo-navigation.json'
@@ -264,7 +266,10 @@
         const sizes = Array.isArray(e.detail) ? e.detail.map((d: any) => d.size) : e.detail.sizes
         ratio = sizes[0] / (sizes[0] + sizes[1])
     }
-    const { push } = useNavigate() // 用于导航，与核心功能无关
+    // 返回 Demo 页面
+    function goBackToDemo() {
+        window.location.hash = '/demo'
+    }
 
     // 监听 iframe console 消息的处理函数
     function handleConsoleMessage(e: MessageEvent<any>) {
@@ -303,7 +308,7 @@
     href="/demo"
     onclick={(e) => {
         e.preventDefault()
-        push({ path: '/demo' })
+        goBackToDemo()
     }}
     class="back-to-demo"
 >

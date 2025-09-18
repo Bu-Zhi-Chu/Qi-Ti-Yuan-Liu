@@ -150,14 +150,9 @@ export default defineConfig({
         sourcemap: false,
         minify: 'terser',
         terserOptions: {
-            compress: {
-                drop_console: true,
-                drop_debugger: true
-            },
-            format: {
-                comments: false
-            }
-        },
+            keep_fnames: true,
+        }
+
 
     },
     logLevel: 'info', // 显示基本构建信息，但过滤特定警告
