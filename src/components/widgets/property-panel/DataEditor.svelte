@@ -99,7 +99,6 @@
             value={currentValues.dataSource ?? 'json'}
             options={[
                 { value: 'json', label: '临时数据' },
-                { value: 'mock', label: '虚拟接口' },
                 { value: 'real', label: '真实请求' }
             ]}
             change={(v) => handleAttrChange('dataSource', v)}
