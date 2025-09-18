@@ -2,6 +2,8 @@ import { defineConfig } from 'vite'
 import { svelte } from '@sveltejs/vite-plugin-svelte'
 import { VitePWA } from 'vite-plugin-pwa'
 import { viteBuildPlugin } from './vite-build-plugin'
+import path from 'path'
+import { visualizer } from 'rollup-plugin-visualizer'
 
 
 
@@ -10,6 +12,17 @@ export default defineConfig({
     plugins: [
         svelte(),
         viteBuildPlugin(),
+        {
+            name: 'ignore-avif-mt',
+            resolveId(source) {
+                if (source.endsWith('avif_enc_mt.js')) return source;
+            },
+            load(id) {
+                if (id.endsWith('avif_enc_mt.js')) {
+                    return 'export default {}';
+                }
+            }
+        },
         VitePWA({
 
             registerType: 'autoUpdate',
@@ -18,7 +31,8 @@ export default defineConfig({
             workbox: {
 
                 globPatterns: ['**/*.{js,css,html,ico,png,svg,avif,webp}'],
-                globIgnores: ['study/**/*'],
+                globIgnores: ['study/**/*', '**/node_modules/@jsquash/**'],
+                maximumFileSizeToCacheInBytes: 6000000, // allow assets up to ~6 MB for precache
                 importScripts: ['no-wb-logs.js'],
                 navigateFallback: null, // 禁用导航回退，避免子目录问题
                 skipWaiting: true,
@@ -82,7 +96,7 @@ export default defineConfig({
     ],
     server: {
         fs: {
-            allow: ['src', 'public', 'index.html', 'manifest.json', 'dev-dist'],
+            allow: ['src', 'public', 'index.html', 'manifest.json', 'dev-dist', path.resolve(__dirname, 'node_modules/@jsquash')],
             deny: ['study'] // 明确禁止访问study目录
         },
         watch: {
@@ -96,25 +110,27 @@ export default defineConfig({
         outDir: process.env.LITE ? 'dist-lite' : 'dist',
         rollupOptions: {
             external: (id) => {
+                if (id === '@jsquash/avif/codec/enc/avif_enc_mt.js') return true;
                 if (['vite', 'module', 'fsevents'].includes(id)) return true;
                 if (id.startsWith('node:')) return true; // 排除所有 node: 前缀的核心模块
                 return false;
             },
             output: {
-                manualChunks: (id) => {
-                    if (id.includes('node_modules')) {
-                        if (id.includes('svelte')) return 'vendor-svelte';
-                        if (id.includes('lucide')) return 'vendor-lucide';
-                        if (id.includes('echarts')) return 'vendor-echarts';
-                        return 'vendor';
-                    }
-                    if (id.includes('src/services/')) {
-                        if (id.includes('dom-tree') || id.includes('property-panel') || id.includes('project-thumbnail')) {
-                            return 'core-services';
-                        }
-                    }
-                }
-            },
+                // manualChunks: (id) => {
+                //     if (id.includes('node_modules')) {
+                //         if (id.includes('svelte')) return 'vendor-svelte';
+                //         if (id.includes('lucide')) return 'vendor-lucide';
+                //         if (id.includes('echarts')) return 'vendor-echarts';
+                //         return 'vendor';
+                //     }
+                //     if (id.includes('src/services/')) {
+                //         if (id.includes('dom-tree') || id.includes('property-panel') || id.includes('project-thumbnail')) {
+                //             return 'core-services';
+                //         }
+                //     }
+                // }
+                // manualChunks 已暂时禁用以排查 "Cannot access 'STATE_SYMBOL' before initialization" 运行时错误。
+             },
             onwarn(warning, warn) {
                 // 过滤掉Node.js模块被外部化的警告
                 if (warning.code === 'MISSING_NODE_BUILTINS' ||
@@ -125,25 +141,29 @@ export default defineConfig({
                     return; // 忽略这些警告
                 }
                 warn(warning);
-            }
+            },
+            // 生成 bundle 可视化报告，build 结束后会自动打开 stats.html
+            plugins: [visualizer({ filename: 'bundle-stats.html', open: true })]
         },
         chunkSizeWarningLimit: 1000, // 将警告阈值提高到1MB
-        minify: 'terser', // 使用terser压缩，减少控制台输出
-        terserOptions: {
-            compress: {
-                drop_console: false, // 保留console.log，只影响构建输出
-                drop_debugger: true
-            }
-        }
+        sourcemap: true,
+        minify: false, // disable terser to ease debugging
+
     },
     logLevel: 'info', // 显示基本构建信息，但过滤特定警告
     // 确保JSON导入的一致性
     resolve: {
         alias: {
-            '@': '/src'
+            '@': '/src',
+            // Alias Node.js 'os' module to browser shim to satisfy libsquoosh in client runtime
+            os: path.resolve(__dirname, 'src/shims/os-shim.ts'),
+            '@jsquash/avif/codec/enc/avif_enc_mt.js': '@jsquash/avif/codec/enc/avif_enc.js',
+
         }
     },
     define: {
         'import.meta.env.LITE': JSON.stringify(process.env.LITE === 'true' ? 'true' : 'false')
     }
 })
+
+// 删除文件末尾误插入的可视化插件声明

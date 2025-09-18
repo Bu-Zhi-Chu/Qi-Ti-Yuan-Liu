@@ -488,8 +488,11 @@
 
         console.log('键盘事件:', e.key, '当前序列:', [...konamiSequence, e.key])
 
+        // 将按键规范化：字符键一律转为小写，方向键保持原样
+        const key = e.key.length === 1 ? e.key.toLowerCase() : e.key
+
         // 添加当前按键到序列
-        konamiSequence.push(e.key)
+        konamiSequence.push(key)
 
         // 检查序列是否匹配
         for (let i = 0; i < konamiSequence.length; i++) {
