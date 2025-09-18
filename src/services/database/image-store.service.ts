@@ -29,7 +29,7 @@ export async function addOrIncrement(record: Omit<ImageRecord, 'refCount'>, incr
     await db.transaction('rw', db.table(TABLE), async () => {
         const existing = await db.table<ImageRecord>(TABLE).get({ projectId: record.projectId, hash: record.hash })
         if (existing) {
-            await db.table(TABLE).update(record.hash, { refCount: existing.refCount + increment })
+            await db.table(TABLE).update([record.projectId, record.hash], { refCount: existing.refCount + increment })
         } else {
             await db.table(TABLE).add({ ...record, refCount: increment })
         }
@@ -46,9 +46,9 @@ export async function decrementOrDelete(projectId: string, hash: string): Promis
         if (!existing) return
         const newCount = existing.refCount - 1
         if (newCount <= 0) {
-            await db.table(TABLE).delete(hash)
+            await db.table(TABLE).delete([projectId, hash])
         } else {
-            await db.table(TABLE).update(hash, { refCount: newCount })
+            await db.table(TABLE).update([projectId, hash], { refCount: newCount })
         }
     })
 }
