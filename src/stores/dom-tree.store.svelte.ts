@@ -93,7 +93,7 @@ export function selectedId() {
 export function setProjectId(newProjectId: string): void {
   currentProjectId = newProjectId;
   projectId.set(newProjectId);
-  console.log('设置项目ID:', newProjectId);
+
 }
 
 /**
@@ -185,7 +185,7 @@ export async function loadDomTreeFromDatabase(projectId: string): Promise<boolea
     const savedSelectedNodeId = project?.selectedNodeId || null;
 
     // 立即清空旧数据，确保无残影
-    console.log('🧹【数据交互】立即清空DOM树数据，避免残影');
+    console.log('🧹【数据交互】清理数据');
     Object.assign(domTreeData, {
       id: 'root',
       componentType: 'SimpleBox',
@@ -205,7 +205,7 @@ export async function loadDomTreeFromDatabase(projectId: string): Promise<boolea
     const domTreeFromDoms = await loadDomNodesFromDomsTable(projectId);
     if (domTreeFromDoms) {
       Object.assign(domTreeData, domTreeFromDoms);
-      console.log('✅【数据交互】已从doms表加载DOM树数据');
+      console.log('✅【数据交互】加载数据');
 
       // 恢复之前保存的选中节点，如果节点存在的话
       const targetSelectedId = savedSelectedNodeId && hasNodeWithId(domTreeData, savedSelectedNodeId)

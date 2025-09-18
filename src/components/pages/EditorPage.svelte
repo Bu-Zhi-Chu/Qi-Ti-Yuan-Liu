@@ -368,8 +368,6 @@
         // 初始化项目模式
         await initializeProjectMode()
 
-        console.log('注册Ctrl+E快捷键用于Konami Code验证')
-
         // 替换原有的Ctrl+E快捷键为Konami验证器
         unregister = registerShortcut('Ctrl+E', () => {
             console.log('Ctrl+E快捷键被触发')
@@ -446,8 +444,6 @@
     function startKonamiVerification() {
         if (isVerifying) return
 
-        console.log('开始Konami Code验证...')
-
         // 如果当前是编辑模式，直接切换回正常模式，不需要验证
         if (showWorkspace) {
             showWorkspace = false
@@ -457,7 +453,6 @@
 
         // 非精简模式下跳过验证，直接进入编辑模式
         if (!isLiteMode()) {
-            console.log('非精简模式：跳过Konami Code验证，直接进入编辑模式')
             showWorkspace = true
             updateProjectMode()
             return
@@ -469,7 +464,6 @@
 
         // 设置15秒超时
         verificationTimeout = window.setTimeout(() => {
-            console.log('Konami Code验证超时')
             stopKonamiVerification()
         }, VERIFICATION_TIMEOUT_MS)
 
@@ -511,7 +505,6 @@
 
         // 检查是否完成整个序列
         if (konamiSequence.length === KONAMI_CODE.length) {
-            console.log('Konami Code验证成功！')
             // 验证成功，切换编辑模式
             showWorkspace = !showWorkspace
             updateProjectMode()
@@ -550,13 +543,12 @@
             const project = await DexieService.getRecord<any>('qi-qiao-ban', 'projects', currentProjectId)
             if (project && project.mode) {
                 showWorkspace = project.mode === 'editing'
-                console.log(`项目模式已初始化为: ${project.mode}`)
+
                 if (project.name) {
                     document.title = project.name as string
                 }
             } else {
                 showWorkspace = false
-                console.log('项目模式已初始化为: normal (默认模式)')
             }
         } catch (error) {
             console.error('初始化项目模式失败:', error)

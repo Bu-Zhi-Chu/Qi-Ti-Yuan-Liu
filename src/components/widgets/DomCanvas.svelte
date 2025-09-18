@@ -73,11 +73,6 @@
     let isLoading = $state(true)
 
     onMount(() => {
-        console.log('当前URL:', window.location.href)
-        console.log('当前hash:', window.location.hash)
-        console.log('当前pathname:', window.location.pathname)
-        console.log('是否为精简模式:', isLiteMode())
-
         // 立即执行加载逻辑
         loadProjectData()
 
@@ -104,7 +99,6 @@
         const currentProjectId = $projectId
         if (currentProjectId) {
             localProjectId = currentProjectId
-            console.log('从store获取项目ID:', localProjectId)
             loadCanvasState()
         } else {
             console.warn('store中项目ID为空，等待EditorPage初始化...')
@@ -125,15 +119,12 @@
         setProjectId(localProjectId)
 
         try {
-            console.log('开始加载项目:', localProjectId)
-
             // 立即加载domTree数据，确保数据是最新的
             await loadDomTreeFromDatabase(localProjectId)
 
             // 恢复上次选中的节点
-            console.log(`📥【数据交互】加载项目数据: 项目ID=${localProjectId}`)
+
             const project = await DexieService.getRecord<any>('qi-qiao-ban', 'projects', localProjectId)
-            console.log('加载到的项目数据:', project)
 
             // 恢复上次选中的节点ID
             // 恢复上次选中的节点ID
@@ -144,20 +135,17 @@
 
             if (project && project.selectedNodeId) {
                 await setSelectedId(project.selectedNodeId)
-                console.log('已恢复选中节点:', project.selectedNodeId)
             } else {
                 // 默认选中根节点
                 await setSelectedId('root')
             }
 
             if (project && project.canvasState) {
-                console.log('找到canvasState:', project.canvasState)
                 offsetX = project.canvasState.x || 0
                 offsetY = project.canvasState.y || 0
                 scale = project.canvasState.scale || 1
                 // 立即同步全局 canvasScale，防止刷新后状态栏默认 100%
                 canvasScale.set(editing ? scale * 0.5 : scale)
-                console.log('已应用canvas状态:', { offsetX, offsetY, scale })
 
                 // 强制刷新DOM状态
                 if (canvasContainerRef) {
@@ -178,7 +166,6 @@
 
             // 数据完全加载完成后隐藏加载状态
             isLoading = false
-            console.log('项目加载完成:', localProjectId)
         } catch (error) {
             console.error('加载canvas状态失败:', error)
             isLoading = false
@@ -193,13 +180,11 @@
         }
         try {
             const canvasState = { x: offsetX, y: offsetY, scale: scale }
-            console.log('准备保存canvas状态:', canvasState, '到项目:', localProjectId)
-            console.log(`💾【数据交互】保存画布状态: 项目ID=${localProjectId}, 状态=${JSON.stringify(canvasState)}`)
+            console.log(`💾【数据交互】保存画布状态`)
             await DexieService.updateRecord('qi-qiao-ban', 'projects', localProjectId, {
                 canvasState,
                 updatedAt: Date.now()
             })
-            console.log('已保存canvas状态:', canvasState)
         } catch (error) {
             console.error('保存canvas状态失败:', error)
         }
