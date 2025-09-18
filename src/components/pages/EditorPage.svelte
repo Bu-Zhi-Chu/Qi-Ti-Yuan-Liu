@@ -568,10 +568,8 @@
         if (!currentProjectId) return
         const newMode = showWorkspace ? 'editing' : 'normal'
         try {
-            const success = await DexieService.updateRecord('qi-qiao-ban', 'projects', currentProjectId, { mode: newMode })
-            if (success) {
-                console.log(`项目模式已更新为: ${newMode}`)
-            }
+            await DexieService.updateRecord('qi-qiao-ban', 'projects', currentProjectId, { mode: newMode })
+            console.log(`项目模式已更新为: ${newMode}`)
         } catch (error) {
             console.error('更新项目模式失败:', error)
         }
@@ -606,6 +604,14 @@
             if (activeTool !== 'move') {
                 activeTool = 'move'
             }
+            // 派发键盘事件给画布action
+            const evt = new KeyboardEvent('keydown', {
+                key: ' ',
+                code: 'Space',
+                bubbles: true,
+                cancelable: true
+            })
+            document.dispatchEvent(evt)
         }
     }
 
@@ -621,6 +627,14 @@
             if (activeTool === 'move') {
                 activeTool = null
             }
+            // 派发键盘事件给画布action
+            const evt = new KeyboardEvent('keyup', {
+                key: ' ',
+                code: 'Space',
+                bubbles: true,
+                cancelable: true
+            })
+            document.dispatchEvent(evt)
         }
     }
     function onAltDown(e: KeyboardEvent) {
@@ -630,6 +644,14 @@
             if (activeTool !== 'zoom') {
                 activeTool = 'zoom'
             }
+            // 派发键盘事件给画布action
+            const evt = new KeyboardEvent('keydown', {
+                key: 'Alt',
+                code: 'AltLeft',
+                bubbles: true,
+                cancelable: true
+            })
+            document.dispatchEvent(evt)
         }
     }
 
@@ -640,6 +662,14 @@
             if (activeTool === 'zoom') {
                 activeTool = null
             }
+            // 派发键盘事件给画布action
+            const evt = new KeyboardEvent('keyup', {
+                key: 'Alt',
+                code: 'AltLeft',
+                bubbles: true,
+                cancelable: true
+            })
+            document.dispatchEvent(evt)
         }
     }
     function isSelectedNodeLocked(): boolean {
