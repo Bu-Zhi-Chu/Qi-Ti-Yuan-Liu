@@ -9,12 +9,7 @@ import { importInto } from 'dexie-export-import'
 import { applyLogConfig } from './services/utils/log-switch'
 import { authService } from './services/auth/auth.service'
 import { getStableDeviceKey, getStableDeviceKeyHash } from './services/fingerprint/browser-fingerprint.service'
-
-// ========== 验证控制开关 ==========
-// 设置为 false 可以快速禁用所有验证功能
-// 包括：1. 应用启动时的授权验证  2. 路由守卫验证  3. 数据库访问验证
-export const ENABLE_AUTH_VERIFICATION = false
-// ===================================
+import { ENABLE_AUTH_VERIFICATION } from './config/auth.config'
 
 // 根据环境初始化日志：开发环境默认开启，其余环境默认关闭
 applyLogConfig(import.meta.env.DEV === true)

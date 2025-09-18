@@ -9,9 +9,12 @@
 import Dexie from 'dexie'
 import { DB_VERSION } from './database.config'
 import { getStableDeviceKeyHash } from '../fingerprint/browser-fingerprint.service'
-import { ENABLE_AUTH_VERIFICATION } from '../../main'
+import { ENABLE_AUTH_VERIFICATION } from '../../config/auth.config'
+
 
 export default class DexieService {
+
+
     /**
      * 缓存数据库存在状态，避免频繁调用 indexedDB.databases()
      * key 为数据库名，value 为是否存在

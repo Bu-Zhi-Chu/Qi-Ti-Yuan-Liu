@@ -3,7 +3,7 @@
     import { onMount } from 'svelte'
     import { authService } from '../../services/auth/auth.service'
     import { cleanupBlobUrls } from '../../services/utils/blob-url-manager'
-    import { ENABLE_AUTH_VERIFICATION } from '../../main'
+    import { ENABLE_AUTH_VERIFICATION } from '../../config/auth.config'
 
     let isFirstNavigation = true
     let navigationCount = 0
