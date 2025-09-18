@@ -16,7 +16,7 @@ class AuthService {
     private _isVerifying = false
     private readonly VERIFICATION_INTERVAL = 10 * 60 * 1000
     private readonly CACHE_KEY = 'qi-qiao-ban-auth-cache'
-    private readonly CACHE_EXPIRY_TIME = 60 * 1000
+    private readonly CACHE_EXPIRY_TIME = 5 * 60 * 1000
 
     // 缓存篡改检测标志
     private _cacheTempered = false
