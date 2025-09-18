@@ -213,7 +213,7 @@ export class BuildService {
         const fd = new FormData();
         fd.append('mode', options.mode || 'production');
         fd.append('outputDir', 'dist-lite');
-        fd.append('projectBlob', projectBlob, options.liteData?.filename || 'project-data.json');
+        fd.append('projectBlob', projectBlob, options.liteData?.filename || 'project-data.qqb');
         requestBody = fd;
         headers = undefined; // 让浏览器自动设置 multipart 边界
         console.log('准备发送构建请求，使用multipart/form-data，Blob大小:', projectBlob.size);
@@ -293,7 +293,7 @@ export class BuildService {
    */
   private async handleLiteData(liteData: { projectBlob?: Blob; projectData?: string; filename?: string }): Promise<void> {
     try {
-      const filename = liteData.filename || 'project-data.json';
+      const filename = liteData.filename || 'project-data.qqb';
       const outputPath = 'dist-lite';
       console.log(`保存精简数据到: ${outputPath}/${filename}`);
 

@@ -213,9 +213,9 @@ export class LiteExportService {
      * @param jsonData JSON字符串
      * @param filename 文件名
      */
-    downloadJson(jsonData: string, filename: string = 'lite-export.json'): void {
+    downloadJson(jsonData: string, filename: string = 'lite-export.qqb'): void {
         try {
-            const blob = new Blob([jsonData], { type: 'application/json' });
+            const blob = new Blob([jsonData], { type: 'application/octet-stream' });
             const url = URL.createObjectURL(blob);
 
             const a = document.createElement('a');

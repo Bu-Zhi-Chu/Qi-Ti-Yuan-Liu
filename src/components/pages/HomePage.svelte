@@ -73,7 +73,7 @@
     function openProjectFile() {
         const input = document.createElement('input')
         input.type = 'file'
-        input.accept = '.json'
+        input.accept = '.qqb'
         input.onchange = async (event) => {
             const file = (event.target as HTMLInputElement).files?.[0]
             if (file) {

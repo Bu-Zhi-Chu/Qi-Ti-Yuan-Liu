@@ -839,11 +839,11 @@
                                 const blob = await liteExportService.exportLiteData(currentProjectId)
                                 // @ts-ignore File System Access API
                                 const handle = await window.showSaveFilePicker({
-                                    suggestedName: 'project-data.json',
+                                    suggestedName: 'project-data.qqb',
                                     types: [
                                         {
-                                            description: 'JSON 文件',
-                                            accept: { 'application/json': ['.json'] }
+                                            description: '七巧板项目文件',
+                                            accept: { 'application/x-extension-qqb': ['.qqb'] }
                                         }
                                     ]
                                 })
@@ -971,7 +971,7 @@
                             console.log('导出的项目Blob大小:', projectBlob.size)
                             buildOptions.liteData = {
                                 projectBlob,
-                                filename: 'project-data.json'
+                                filename: 'project-data.qqb'
                             }
                             console.log('项目数据导出完成 (Blob)')
 
