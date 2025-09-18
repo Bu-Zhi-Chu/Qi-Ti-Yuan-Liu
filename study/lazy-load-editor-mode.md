@@ -67,4 +67,67 @@
 
 ---
 
+## WebAssembly + 轻量 JS Loader 进阶
+
+在以上懒加载基础上，若希望进一步压缩 JS 体积并隐藏核心算法，可将 **批量几何计算 / 布局更新 / 数据压缩** 等性能敏感逻辑迁移到 WebAssembly（WASM），只保留一个极简 Loader：
+
+1. **可迁移逻辑**
+   - 节点几何运算：对齐、分布、吸附、变形。
+   - 布局算法：自动栅格 / 约束求解。
+   - 二进制快照：状态序列化 + 压缩（LZ4、ZSTD）。
+
+2. **项目结构示例**
+
+   ```text
+   packages/
+   └─ qiqiaoban-core   # Rust/Go crate，输出 wasm pkg
+   src/
+   ├─ wasm-loader.ts   # 动态加载 init & 导出函数
+   └─ components/
+       └─ pages/
+           └─ workspace/
+               └─ Workspace.svelte
+   ```
+
+3. **使用方式（浏览器端）**
+
+   ```ts
+   // wasm-loader.ts
+   import init, { apply_command } from 'qiqiaoban-core';
+
+   let wasmReady: Promise<void> | null = null;
+   export const ensureWasm = () =>
+       wasmReady ??= init(); // 首次调用时拉取 .wasm 并初始化
+   export const runCmd = async (state, cmd) => {
+       await ensureWasm();
+       return apply_command(state, cmd); // 返回 delta
+   };
+   ```
+
+   在 `Workspace.svelte` 中：
+
+   ```svelte
+   import { runCmd } from '@/wasm-loader';
+
+   async function onMove(id, dx, dy) {
+       const delta = await runCmd(canvasState, {
+           type: 'move',
+           payload: { id, dx, dy }
+       });
+       patchCanvas(delta);
+   }
+   ```
+
+4. **渐进替换策略**
+   1. 先把“对齐/分布”操作迁移到 WASM，测量性能 & 数据往返开销。
+   2. 如果收益明显，再迁移复杂布局与快照压缩逻辑。
+   3. dev 环境保留原生 JS path，prod 环境才启用 WASM，确保调试体验。
+
+5. **收益 & 注意事项**
+   - 🚀 **性能**：重计算提速 1.5–5×，主线程更流畅。
+   - 🔒 **安全性**：WASM 字节码较难还原源码，配合 keep_fnames 提供双层保护。
+   - ⚠️ **数据序列化**：高频调用建议使用 `SharedArrayBuffer` 或二进制结构体，避免 JSON 序列化开销。
+
+通过“懒加载 Workspace + WASM 计算核心”，既降低首屏成本，又保证编辑模式的性能与代码安全性。
+
 **效果**：首屏 JS 体积显著减少，页面可交互时间提前；编辑模式资源按需加载，退出后卸载监听与组件，降低内存占用并消除无用事件监听。
