@@ -16,6 +16,7 @@
     import { onMount, onDestroy } from 'svelte'
     import DexieService from '../../services/database/dexie-service'
     import { clearMemoryState } from '../../stores/dom-tree.store.svelte'
+    import { importInto } from 'dexie-export-import'
 
     interface Project {
         id: string
@@ -65,6 +66,123 @@
     function openProject(projectId: string) {
         // 跳转到编辑器并携带项目ID
         window.location.hash = `#/editor/${projectId}`
+    }
+
+    // 打开项目文件
+    function openProjectFile() {
+        const input = document.createElement('input')
+        input.type = 'file'
+        input.accept = '.json'
+        input.onchange = async (event) => {
+            const file = (event.target as HTMLInputElement).files?.[0]
+            if (file) {
+                try {
+                    await importProjectFromFile(file)
+                } catch (error) {
+                    console.error('导入项目失败:', error)
+                    alert('导入项目失败，请检查文件格式')
+                }
+            }
+        }
+        input.click()
+    }
+
+    // 从文件导入项目
+    async function importProjectFromFile(file: File) {
+        try {
+            console.log('开始导入项目文件:', file.name)
+
+            // 读取文件内容
+            const text = await file.text()
+            const data = JSON.parse(text)
+
+            // 生成新的项目ID
+            const newProjectId = crypto.randomUUID()
+
+            // 导入项目数据并替换ID
+            await importProjectData(data, newProjectId)
+
+            // 刷新项目列表
+            await initializeDatabase()
+
+            // 跳转到新导入的项目
+            window.location.hash = `#/editor/${newProjectId}`
+
+            console.log('项目导入成功，新项目ID:', newProjectId)
+        } catch (error) {
+            console.error('导入项目失败:', error)
+            throw error
+        }
+    }
+
+    // 导入项目数据并替换所有项目ID
+    async function importProjectData(data: any, newProjectId: string) {
+        const dbName = 'qi-qiao-ban'
+        const db = await DexieService.getDatabase(dbName)
+        if (!db) throw new Error('无法获取数据库实例')
+
+        // 先获取导入前的项目数量，用于确定新导入的项目
+        const beforeImportCount = await db.table('projects').count()
+
+        console.log('📦【数据交互】使用dexie-export-import导入数据')
+
+        // 将JSON数据转换为Blob，然后使用importInto导入
+        const jsonString = JSON.stringify(data)
+        const blob = new Blob([jsonString], { type: 'application/json' })
+        await importInto(db, blob, { overwriteValues: true })
+
+        console.log('【数据交互】dexie-export-import导入完成')
+
+        // 获取导入后的所有项目，找到新导入的项目
+        const allProjects = await db.table('projects').toArray()
+        const afterImportCount = allProjects.length
+
+        if (afterImportCount > beforeImportCount) {
+            // 找到新导入的项目（通常是最后一个，或者通过其他方式识别）
+            // 由于dexie-export-import可能按照原始顺序导入，我们需要找到原始项目ID
+
+            // 从导出数据中获取原始项目ID
+            let originalProjectId: string | null = null
+
+            // 解析导出数据结构获取原始项目ID
+            if (data.data && data.data.data) {
+                const projectsTable = data.data.data.find((table: any) => table.tableName === 'projects')
+                if (projectsTable && projectsTable.rows && projectsTable.rows.length > 0) {
+                    originalProjectId = projectsTable.rows[0].id
+                }
+            }
+
+            if (originalProjectId) {
+                console.log('原项目ID:', originalProjectId, '新项目ID:', newProjectId)
+
+                // 更新项目记录
+                await db.table('projects').where('id').equals(originalProjectId).modify({
+                    id: newProjectId,
+                    createdAt: Date.now(),
+                    updatedAt: Date.now()
+                })
+
+                // 更新DOM记录的projectId
+                await db.table('doms').where('projectId').equals(originalProjectId).modify({
+                    projectId: newProjectId,
+                    createdAt: Date.now(),
+                    updatedAt: Date.now()
+                })
+
+                // 更新图片记录的projectId
+                await db.table('imageStore').where('projectId').equals(originalProjectId).modify({
+                    projectId: newProjectId
+                })
+
+                console.log('项目ID更新完成')
+            } else {
+                throw new Error('无法从导出数据中找到原始项目ID')
+            }
+        } else {
+            throw new Error('导入失败：项目数量没有增加')
+        }
+
+        console.log('项目数据导入完成')
     }
 
     async function deleteProject(projectId?: string | number) {
@@ -225,6 +343,17 @@
             ]}
             style="width: 160px; height: 56px;"
             onButtonClick={createNewProject}
+        />
+        <ActionButton
+            buttons={[
+                {
+                    name: '打开项目',
+                    variant: 'secondary',
+                    size: 'large'
+                }
+            ]}
+            style="width: 160px; height: 56px;"
+            onButtonClick={openProjectFile}
         />
         <ActionButton
             buttons={[
