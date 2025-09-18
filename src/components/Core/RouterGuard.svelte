@@ -3,6 +3,7 @@
     import { onMount } from 'svelte'
     import { authService } from '../../services/auth/auth.service'
     import { cleanupBlobUrls } from '../../services/utils/blob-url-manager'
+    import { ENABLE_AUTH_VERIFICATION } from '../../main'
 
     let isFirstNavigation = true
     let navigationCount = 0
@@ -17,13 +18,18 @@
             if (isFirstNavigation) {
                 isFirstNavigation = false
             } else {
-                // 执行缓存验证以检测作弊行为
-                try {
-                    const isValid = await authService.quickLocalAuthCheck()
+                // 根据控制开关决定是否执行验证
+                if (ENABLE_AUTH_VERIFICATION) {
+                    // 执行缓存验证以检测作弊行为
+                    try {
+                        const isValid = await authService.quickLocalAuthCheck()
 
-                    if (!isValid) {
-                    }
-                } catch (error) {}
+                        if (!isValid) {
+                        }
+                    } catch (error) {}
+                } else {
+                    // 验证已禁用，跳过验证
+                }
             }
 
             // 增加导航计数

@@ -9,6 +9,7 @@
 import Dexie from 'dexie'
 import { DB_VERSION } from './database.config'
 import { getStableDeviceKeyHash } from '../fingerprint/browser-fingerprint.service'
+import { ENABLE_AUTH_VERIFICATION } from '../../main'
 
 export default class DexieService {
     /**
@@ -28,6 +29,11 @@ export default class DexieService {
      * @returns 是否通过本地验证
      */
     private static async quickLocalAuthCheck(): Promise<boolean> {
+        // 如果验证被禁用，直接返回 true
+        if (!ENABLE_AUTH_VERIFICATION) {
+            return true
+        }
+
         try {
             // 获取当前设备密钥哈希
             const currentDeviceKeyHash = await getStableDeviceKeyHash()

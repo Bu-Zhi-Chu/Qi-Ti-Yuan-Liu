@@ -10,6 +10,11 @@ import { applyLogConfig } from './services/utils/log-switch'
 import { authService } from './services/auth/auth.service'
 import { getStableDeviceKey, getStableDeviceKeyHash } from './services/fingerprint/browser-fingerprint.service'
 
+// ========== 验证控制开关 ==========
+// 设置为 false 可以快速禁用所有验证功能
+// 包括：1. 应用启动时的授权验证  2. 路由守卫验证  3. 数据库访问验证
+export const ENABLE_AUTH_VERIFICATION = false
+// ===================================
 
 // 根据环境初始化日志：开发环境默认开启，其余环境默认关闭
 applyLogConfig(import.meta.env.DEV === true)
@@ -375,36 +380,40 @@ async function initializeApp() {
     try {
         console.log('🚀【应用启动】开始流程')
 
-        // 授权验证 - 不启动定期验证
-        await authService.verifyToken()
+        // 授权验证 - 根据控制开关决定是否执行
+        if (ENABLE_AUTH_VERIFICATION) {
+            await authService.verifyToken()
 
-        // 等待授权验证完成
-        await new Promise<void>((resolve, reject) => {
-            let unsubscribe: (() => void) | null = null
+            // 等待授权验证完成
+            await new Promise<void>((resolve, reject) => {
+                let unsubscribe: (() => void) | null = null
 
-            unsubscribe = authService.subscribe((status, isAuthorized) => {
-                if (status === 'authorized' && isAuthorized) {
+                unsubscribe = authService.subscribe((status, isAuthorized) => {
+                    if (status === 'authorized' && isAuthorized) {
 
-                    // 只有授权验证成功后才启动定期验证
-                    authService.startPeriodicVerification()
+                        // 只有授权验证成功后才启动定期验证
+                        authService.startPeriodicVerification()
+                        unsubscribe?.()
+                        resolve()
+                    } else if (status === 'unauthorized') {
+                        unsubscribe?.()
+                        reject(new Error('设备未授权'))
+                    } else if (status === 'error') {
+                        unsubscribe?.()
+                        reject(new Error('授权验证失败'))
+                    }
+                    // 如果是 'checking' 状态，继续等待
+                })
+
+                // 设置超时，避免无限等待
+                setTimeout(() => {
                     unsubscribe?.()
-                    resolve()
-                } else if (status === 'unauthorized') {
-                    unsubscribe?.()
-                    reject(new Error('设备未授权'))
-                } else if (status === 'error') {
-                    unsubscribe?.()
-                    reject(new Error('授权验证失败'))
-                }
-                // 如果是 'checking' 状态，继续等待
+                    reject(new Error('授权验证超时'))
+                }, 30000) // 30秒超时
             })
+        } else {
 
-            // 设置超时，避免无限等待
-            setTimeout(() => {
-                unsubscribe?.()
-                reject(new Error('授权验证超时'))
-            }, 30000) // 30秒超时
-        })
+        }
 
 
         await initializeDatabase()
