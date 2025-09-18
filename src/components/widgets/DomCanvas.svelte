@@ -530,8 +530,7 @@
         editingAccessor: () => editing,
         scaleAccessor: () => (editing ? scale * 0.5 : scale),
         selectedNodeAccessor: () => selectedId(),
-        isRootNodeAccessor: (nodeId) => nodeId === 'root',
-        onAdjust: (payload) => console.log('节点调整:', payload)
+        isRootNodeAccessor: (nodeId) => nodeId === 'root'
     }}
     role="application"
     onpointerdown={() => (isDragging = true)}

@@ -580,18 +580,8 @@ const useAdjustMode: Action<HTMLElement, AdjustModeOptions> = (node, options) =>
     // 开始调整
     startAdjusting({ x: e.clientX, y: e.clientY }, selectedId)
     node.style.cursor = 'move'
-    // 标记操作来源为拖动，便于属性面板区分
-    console.log('[AdjustMode] start drag', {
-      nodeId: selectedId,
-      initialLeft,
-      initialLeftUnit,
-      convertedLeft,
-      initialTop,
-      initialTopUnit,
-      convertedTop,
-      startX,
-      startY
-    })
+
+
   }
 
   /**
