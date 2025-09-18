@@ -117,6 +117,10 @@
     // 新增：哈希校验正则
     const hashRegex = /^[a-f0-9]{40,}$/
 
+    // 新增：上传进度条状态
+    let isUploading = $state(false)
+    let uploadProgress = $state(0)
+
     // 新增：递归收集节点及子节点中的背景 / 高亮图片哈希
     function collectImageHashes(node: any, hashes: string[]) {
         const styles: any = node.styles || {}
@@ -266,12 +270,17 @@
             return
         }
 
+        // 初始化上传状态
+        isUploading = true
+        uploadProgress = 0
+
         try {
             const currentProjectId = get(projectId)
             if (!currentProjectId) throw new Error('无法获取项目ID')
 
             // 1. 计算哈希（加入项目ID 以区分跨项目同图）
             const hash = await hashBlob(file, currentProjectId)
+            uploadProgress = 20
 
             // 2. 查库是否已存在
             const existing = await getImage(currentProjectId, hash)
@@ -292,6 +301,7 @@
                     },
                     1
                 )
+                uploadProgress = 60
                 finalBlob = existing.blob
                 width = existing.width
                 height = existing.height
@@ -310,6 +320,7 @@
                 }
 
                 finalBlob = candidate
+                uploadProgress = 40
 
                 // 4. 读取尺寸
                 try {
@@ -320,6 +331,7 @@
                     width = 0
                     height = 0
                 }
+                uploadProgress = 50
 
                 // 5. 入库并设置 refCount = 1
                 await addOrIncrement(
@@ -333,14 +345,19 @@
                     },
                     1
                 )
+                uploadProgress = 80
             }
 
             // 6. 将哈希写入样式
             currentValues = { ...currentValues, [key]: hash }
             updateNodeProps(selectedId, { styles: { [key]: hash } })
+            uploadProgress = 100
         } catch (err) {
             console.error('图片上传失败', err)
         } finally {
+            // 重置上传状态
+            isUploading = false
+            uploadProgress = 0
             // 无论成功还是失败，都清理文件输入框，确保可以重复上传相同文件
             inputElement.value = ''
         }
@@ -508,6 +525,14 @@
                                 </div>
                             {/if}
                             <input type="file" accept="image/*" style="display:none" use:bindFileInput={p.key} onchange={(e) => handleImageFileChange(p.key, e)} />
+                            {#if isUploading && p.key === 'highlightImage'}
+                                <div class="upload-progress" style="margin-top: calc(8px * var(--scale-ratio, 1));">
+                                    <div style="flex: 1; position: relative; height: calc(4px * var(--scale-ratio, 1)); background: rgba(255, 255, 255, 0.1); border-radius: calc(2px * var(--scale-ratio, 1));">
+                                        <div style="height: 100%; background: linear-gradient(90deg, #6366f1, #7c3aed); border-radius: calc(2px * var(--scale-ratio, 1)); transition: width 0.3s ease; width: {uploadProgress}%"></div>
+                                    </div>
+                                    <span style="font-size: calc(12px * var(--scale-ratio, 1)); color: rgba(255, 255, 255, 0.7); margin-left: calc(8px * var(--scale-ratio, 1));">{uploadProgress}%</span>
+                                </div>
+                            {/if}
                         </div>
                     {:else if p.type === 'switch'}
                         <ToggleSwitch checked={currentValues[p.key] ?? false} on:change={(e) => handleAttrChange(p.key, e.detail)} />
@@ -599,6 +624,11 @@
     .remove-image-wrapper {
         position: relative;
         flex: 1;
+    }
+    .upload-progress {
+        display: flex;
+        align-items: center;
+        gap: calc(8px * var(--scale-ratio, 1));
     }
 
     h3 {

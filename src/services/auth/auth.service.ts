@@ -4,7 +4,6 @@
  */
 
 import { getStableDeviceKeyHash } from '../fingerprint/browser-fingerprint.service'
-import DexieService from '../database/dexie-service'
 
 export type AuthStatus = 'checking' | 'authorized' | 'unauthorized' | 'error'
 
@@ -18,13 +17,13 @@ class AuthService {
     private readonly CACHE_KEY = 'qi-qiao-ban-auth-cache'
     private readonly CACHE_EXPIRY_TIME = 5 * 60 * 1000
 
-    // 缓存篡改检测标志
+    // 令牌篡改检测标志
     private _cacheTempered = false
 
 
 
     /**
-     * 检查缓存是否过期
+     * 检查令牌是否过期
      */
     private isCacheExpired(cacheData: { deviceKeyHash: string; timestamp: number; lastVerified: string }): boolean {
         const now = Date.now()
@@ -33,7 +32,7 @@ class AuthService {
 
     /**
      * 快速本地授权验证
-     * 通过比较当前设备密钥与缓存中的密钥来验证授权
+     * 通过比较当前设备密钥与令牌中的密钥来验证授权
      * @returns 是否通过本地验证
      */
     async quickLocalAuthCheck(): Promise<boolean> {
@@ -41,16 +40,16 @@ class AuthService {
             // 获取当前设备密钥哈希
             const currentDeviceKeyHash = await getStableDeviceKeyHash()
 
-            // 读取缓存中的授权信息
+            // 读取令牌中的授权信息
             const cacheData = this.readFromCache()
             if (!cacheData) {
-                console.log('🚨【令牌检测】无缓存数据')
+                console.log('🚨【令牌检测】无令牌数据')
                 return false
             }
 
-            // 检查缓存是否过期
+            // 检查令牌是否过期
             if (this.isCacheExpired(cacheData)) {
-                console.log('🚨【令牌检测】缓存已过期，需要重新验证')
+                console.log('🚨【令牌检测】令牌已过期，需要重新验证')
                 this.clearCache()
                 return false
             }
@@ -60,14 +59,14 @@ class AuthService {
             // 比较密钥
             if (currentDeviceKeyHash === cachedDeviceKeyHash) {
                 console.log('🚨【令牌检测】检测通过')
-                // 密钥匹配，重置缓存篡改标志
+                // 密钥匹配，重置令牌篡改标志
                 this._cacheTempered = false
                 return true
             } else {
-                // 密钥不匹配，标记为缓存篡改
+                // 密钥不匹配，标记为令牌篡改
                 this._cacheTempered = true
                 console.log('🚨【令牌检测】检测异常')
-                // 密钥不匹配时清除缓存
+                // 密钥不匹配时清除令牌
                 this.clearCache()
                 return false
             }
@@ -77,7 +76,7 @@ class AuthService {
     }
 
     /**
-     * 保存验证结果到本地缓存
+     * 保存验证结果到本地令牌
      * @param deviceKeyHash 设备密钥哈希
      * @param timestamp 时间戳
      */
@@ -96,7 +95,7 @@ class AuthService {
     }
 
     /**
-     * 读取本地缓存
+     * 读取本地令牌
      */
     private readFromCache(): { deviceKeyHash: string; timestamp: number; lastVerified: string } | null {
         try {
@@ -112,7 +111,7 @@ class AuthService {
     }
 
     /**
-     * 清空本地缓存
+     * 清空本地令牌
      */
     private clearCache(): void {
         try {
@@ -123,22 +122,7 @@ class AuthService {
         }
     }
 
-    /**
-     * 清空IndexedDB数据库（作弊惩罚）
-     */
-    private async clearIndexedDB(): Promise<void> {
-        try {
 
-            const success = await DexieService.clearDatabase('qi-qiao-ban')
-            if (success) {
-                console.log('✅【作弊检测】执行惩罚，清空数据库')
-            } else {
-                console.error('❌【作弊检测】惩罚执行失败')
-            }
-        } catch (error) {
-            console.error('❌【作弊检测】惩罚执行异常:', error)
-        }
-    }
 
     get isAuthorized(): boolean {
         return this._isAuthorized
@@ -189,7 +173,7 @@ class AuthService {
             return
         }
 
-        // 授权验证逻辑：优先使用本地缓存验证
+        // 授权验证逻辑：优先使用本地令牌验证
         if (!isPeriodicCheck && !forceVerification) {
             // 尝试本地验证
             const localAuthResult = await this.quickLocalAuthCheck()
@@ -202,12 +186,12 @@ class AuthService {
             }
         }
 
-        // 定期验证和强制验证直接进行远程验证，不使用缓存
+        // 定期验证和强制验证直接进行远程验证，不使用令牌
         this._isVerifying = true
         this.updateStatus('checking', false)
 
         try {
-            // 每次都重新获取设备密钥哈希值，不使用缓存，防止前端注入
+            // 每次都重新获取设备密钥哈希值，不使用令牌，防止前端注入
             const deviceKeyHash = await getStableDeviceKeyHash()
 
 
@@ -217,7 +201,7 @@ class AuthService {
                 const proxyUrl = 'https://api.allorigins.win/get?url='
                 const targetUrl = encodeURIComponent('https://buzhichu.netlify.app/societies/99%20asset/json/qi-qiao-ban.json')
 
-                // 为所有验证类型都添加缓存破坏参数，确保获取最新数据
+                // 为所有验证类型都添加令牌破坏参数，确保获取最新数据
                 const cacheBuster = `&_t=${Date.now()}&_r=${Math.random()}`
                 const fetchUrl = proxyUrl + targetUrl + cacheBuster
                 const fetchOptions: RequestInit = {
@@ -251,9 +235,9 @@ class AuthService {
                         if (!isPeriodicCheck) {
                             console.log('✅【授权验证】验证成功')
                         }
-                        // 验证成功时保存到本地缓存
+                        // 验证成功时保存到本地令牌
                         this.saveToCache(deviceKeyHash, Date.now())
-                        // 重置缓存篡改标志
+                        // 重置令牌篡改标志
                         if (isPeriodicCheck) {
                             this._cacheTempered = false
                         }
@@ -263,48 +247,48 @@ class AuthService {
                         if (!isPeriodicCheck) {
                             console.log('❌【授权验证】验证失败')
                         }
-                        // 验证失败时清除本地缓存
+                        // 验证失败时清除本地令牌
                         this.clearCache()
 
-                        // 如果是定期验证失败，直接根据缓存篡改情况处理
+                        // 如果是定期验证失败，直接根据令牌篡改情况处理
                         if (isPeriodicCheck) {
-                            // 区分缓存篡改和权限撤销的处理逻辑
+                            // 区分令牌篡改和权限撤销的处理逻辑
                             if (this._cacheTempered) {
-                                // 缓存篡改：立即执行数据库清空惩罚
-                                console.log('🚨【作弊惩罚】检测到缓存篡改，执行惩罚')
-                                await this.clearIndexedDB()
+                                // 令牌篡改：立即执行令牌清空惩罚
+                                console.log('🚨【作弊惩罚】令牌异常')
+                                this.clearCache()
                                 this._cacheTempered = false // 重置篡改标志
                             } else {
-                                // 权限撤销：仅清除缓存
-                                console.log('⚠️【权限撤销】验证失败，可能权限已被撤销')
+                                // 权限撤销：仅清除令牌
+                                console.log('⚠️【权限撤销】权限异常')
                             }
                         }
 
                         this.updateStatus('unauthorized', false)
                     }
                 } else {
-                    console.log('❌【远程数据】数据格式异常或为空')
-                    // 远程数据异常时清除本地缓存
+                    console.log('❌【远程数据】数据异常')
+                    // 远程数据异常时清除本地令牌
                     this.clearCache()
 
-                    // 如果是定期验证失败，直接根据缓存篡改情况处理
+                    // 如果是定期验证失败，直接根据令牌篡改情况处理
                     if (isPeriodicCheck) {
-                        // 区分缓存篡改和权限撤销的处理逻辑
+                        // 区分令牌篡改和权限撤销的处理逻辑
                         if (this._cacheTempered) {
-                            // 缓存篡改：立即执行数据库清空惩罚
-                            console.log('🚨【作弊惩罚】检测到缓存篡改，执行数据库清空惩罚')
-                            await this.clearIndexedDB()
+                            // 令牌篡改：立即执行令牌清空惩罚
+                            console.log('🚨【作弊惩罚】令牌异常')
+                            this.clearCache()
                             this._cacheTempered = false // 重置篡改标志
                         } else {
-                            // 权限撤销：仅清除缓存
-                            console.log('⚠️【权限撤销】验证失败，可能权限已被撤销，仅清除缓存')
+                            // 权限撤销：仅清除令牌
+                            console.log('⚠️【权限撤销】权限异常')
                         }
                     }
 
                     this.updateStatus('unauthorized', false)
                 }
             } catch (fetchError) {
-                // 网络错误时清除本地缓存
+                // 网络错误时清除本地令牌
                 this.clearCache()
 
                 // 网络错误不触发数据库清空，只有密钥对比失败才清空
@@ -315,7 +299,7 @@ class AuthService {
                 this.updateStatus('error', false)
             }
         } catch (error) {
-            // 设备密钥获取失败时清除本地缓存
+            // 设备密钥获取失败时清除本地令牌
             this.clearCache()
 
             // 设备密钥获取失败不触发数据库清空
