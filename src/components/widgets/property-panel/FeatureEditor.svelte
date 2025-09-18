@@ -258,7 +258,13 @@
     // 工具函数：解析尺寸字符串，拆分为数值与单位
     async function handleImageFileChange(key: string, e: Event) {
         const file = (e.target as HTMLInputElement).files?.[0]
-        if (!file || !selectedId) return
+        const inputElement = e.target as HTMLInputElement
+        
+        if (!file || !selectedId) {
+            // 清理文件输入框
+            inputElement.value = ''
+            return
+        }
 
         try {
             const currentProjectId = get(projectId)
@@ -334,6 +340,9 @@
             updateNodeProps(selectedId, { styles: { [key]: hash } })
         } catch (err) {
             console.error('图片上传失败', err)
+        } finally {
+            // 无论成功还是失败，都清理文件输入框，确保可以重复上传相同文件
+            inputElement.value = ''
         }
     }
 
