@@ -81,8 +81,3 @@ export const routerOptions = {
     routes,
     hash: true
 } as const
-
-/**
- * 导航计数器（用于统计路由切换次数）
- */
-export let navigationCount = 0
