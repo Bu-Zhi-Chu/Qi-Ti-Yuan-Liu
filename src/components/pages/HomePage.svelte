@@ -94,7 +94,16 @@
             console.log('开始导入项目文件:', file.name)
 
             // 读取文件内容
-            const text = await file.text()
+            let text = await file.text()
+            const magic = 'QQB1'
+            const shift = 0x40
+            if (text.startsWith(magic)) {
+                const shifted = text.slice(magic.length)
+                const base64 = Array.from(shifted)
+                    .map(c => String.fromCharCode((c.charCodeAt(0) - shift + 256) & 0xff))
+                    .join('')
+                text = decodeURIComponent(escape(atob(base64)))
+            }
             const data = JSON.parse(text)
 
             // 生成新的项目ID

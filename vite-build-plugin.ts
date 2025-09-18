@@ -9,6 +9,7 @@ import { parse } from 'url';
 import { readFile } from 'fs/promises';
 import { exec } from 'child_process';
 
+
 interface BuildRequest {
   mode?: 'development' | 'production';
   liteData?: any;
@@ -57,23 +58,15 @@ export function viteBuildPlugin(): Plugin {
               const buildRequest: BuildRequest = { mode, liteData: null, outputDir };
               const result = await performRealBuild(buildRequest);
 
-              // 构建完成后，再写入 data/project-data.json，避免被 Vite 覆盖
+              // 构建完成后，再写入 data/project-data.qqb，避免被 Vite 覆盖
               const dataDir = resolve(process.cwd(), outputDir, 'data');
               if (!existsSync(dataDir)) mkdirSync(dataDir, { recursive: true });
-              const targetPath = resolve(dataDir, 'project-data.json');
+              const targetPath = resolve(dataDir, 'project-data.qqb');
 
-              // 读取上传的 Blob 并计算哈希
+              // 直接保存上传的 Blob 数据，不进行任何处理
               const uploadedBuffer = await readFile(tempBlobPath);
-              let finalBuffer = uploadedBuffer;
-              try {
-                const jsonObj = JSON.parse(uploadedBuffer.toString('utf-8'));
-                const hash = createHash('md5').update(uploadedBuffer).digest('hex');
-                jsonObj.revision = hash;
-                finalBuffer = Buffer.from(JSON.stringify(jsonObj));
-              } catch (_) {
-                // 不是有效JSON则直接写入
-              }
-              writeFileSync(targetPath, finalBuffer);
+              writeFileSync(targetPath, uploadedBuffer);
+              console.log('[vite-build-plugin] 已直接保存上传的 Blob 数据 ->', targetPath);
               console.log('[vite-build-plugin] 构建后已写入上传Blob ->', targetPath);
 
               res.setHeader('Content-Type', 'application/json');
@@ -158,7 +151,7 @@ export function viteBuildPlugin(): Plugin {
             }
 
             // 使用固定的英文文件名，忽略传入的fileName参数
-            const liteDataPath = resolve(dataDir, 'project-data.json');
+            const liteDataPath = resolve(dataDir, 'project-data.qqb');
             let liteDataBuffer: Buffer;
             if (typeof liteData === 'string') {
               liteDataBuffer = Buffer.from(liteData);

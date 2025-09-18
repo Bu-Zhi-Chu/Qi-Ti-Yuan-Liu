@@ -47,8 +47,13 @@ export class LiteExportService {
             // 使用 dexie-export-import 直接导出完整数据库
             const exportBlob = await this.exportTablesWithDexie(['projects', 'doms', 'imageStore'], projectId);
 
-            console.log(`导出完成: Blob大小 ${exportBlob.size} 字节`);
-            return exportBlob;
+            // 将JSON文本编码后再生成Blob
+            const jsonText = await exportBlob.text();
+            const encodedText = this.encodeData(jsonText);
+            const finalBlob = new Blob([encodedText], { type: 'application/octet-stream' });
+
+            console.log(`导出完成: Blob大小 ${finalBlob.size} 字节 (已编码)`);
+            return finalBlob;
 
         } catch (error) {
             console.error('导出精简数据失败:', error);
@@ -213,9 +218,34 @@ export class LiteExportService {
      * @param jsonData JSON字符串
      * @param filename 文件名
      */
+    private encodeData(jsonString: string): string {
+
+        const magic = 'QQB1';
+        const shift = 0x40;
+        const base64 = btoa(unescape(encodeURIComponent(jsonString)));
+        const shifted = Array.from(base64)
+            .map((c) => String.fromCharCode((c.charCodeAt(0) + shift) & 0xff))
+            .join('');
+        return magic + shifted;
+    }
+    private decodeData(data: string): string {
+
+        const magic = 'QQB1';
+        const shift = 0x40;
+        if (data.startsWith(magic)) {
+            const shifted = data.slice(magic.length);
+            const base64 = Array.from(shifted)
+                .map((c) => String.fromCharCode((c.charCodeAt(0) - shift + 256) & 0xff))
+                .join('');
+            return decodeURIComponent(escape(atob(base64)));
+        }
+        return data;
+    }
+
     downloadJson(jsonData: string, filename: string = 'lite-export.qqb'): void {
         try {
-            const blob = new Blob([jsonData], { type: 'application/octet-stream' });
+            const encoded = this.encodeData(jsonData);
+            const blob = new Blob([encoded], { type: 'application/octet-stream' });
             const url = URL.createObjectURL(blob);
 
             const a = document.createElement('a');

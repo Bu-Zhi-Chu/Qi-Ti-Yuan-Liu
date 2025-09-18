@@ -204,20 +204,19 @@ async function initializeDatabase() {
                 // 导入项目数据
                 const response = await fetch('./data/project-data.qqb')
                 let projectData: any
-                try {
-                    const ct = response.headers.get('content-type') || ''
-                    if (ct.includes('application/json')) {
-                        projectData = await response.json()
-                    } else {
-                        const blob = await response.blob()
-                        const text = await blob.text()
-                        projectData = JSON.parse(text)
-                    }
-                } catch (parseErr) {
-                    const blob = await response.blob()
-                    const text = await blob.text()
-                    projectData = JSON.parse(text)
+                
+                // 读取文件内容
+                let text = await response.text()
+                const magic = 'QQB1'
+                const shift = 0x40
+                if (text.startsWith(magic)) {
+                    const shifted = text.slice(magic.length)
+                    const base64 = Array.from(shifted)
+                        .map(c => String.fromCharCode((c.charCodeAt(0) - shift + 256) & 0xff))
+                        .join('')
+                    text = decodeURIComponent(escape(atob(base64)))
                 }
+                projectData = JSON.parse(text)
 
 
                 // 检查数据库是否存在，不存在则创建
