@@ -117,73 +117,59 @@
     }
 
     // 导入项目数据并替换所有项目ID
-    async function importProjectData(data: any, newProjectId: string) {
-        const dbName = 'qi-qiao-ban'
-        const db = await DexieService.getDatabase(dbName)
-        if (!db) throw new Error('无法获取数据库实例')
+    async function importProjectData(data: any, newProjectId: string): Promise<void> {
+        // 1. 深拷贝导出的 JSON，避免直接改动原对象
+        const cloned: any = JSON.parse(JSON.stringify(data))
 
-        // 先获取导入前的项目数量，用于确定新导入的项目
-        const beforeImportCount = await db.table('projects').count()
+        // 2. 找到原始项目 ID（projects 表第一条记录的 id 即可）
+        let originalProjectId: string | null = null
+        const projectsTable = cloned?.data?.data?.find((t: any) => t.tableName === 'projects')
+        if (projectsTable?.rows?.length) {
+            originalProjectId = projectsTable.rows[0].id
+        }
+        if (!originalProjectId) throw new Error('无法解析导出数据中的项目 ID')
 
-        console.log('📦【数据交互】使用dexie-export-import导入数据')
+        // 3. 遍历所有表，替换 id / projectId
+        for (const table of cloned.data.data) {
+            const { tableName, rows } = table
+            if (!Array.isArray(rows)) continue
 
-        // 将JSON数据转换为Blob，然后使用importInto导入
-        const jsonString = JSON.stringify(data)
-        const blob = new Blob([jsonString], { type: 'application/json' })
-        await importInto(db, blob, { overwriteValues: true })
-
-        console.log('【数据交互】dexie-export-import导入完成')
-
-        // 获取导入后的所有项目，找到新导入的项目
-        const allProjects = await db.table('projects').toArray()
-        const afterImportCount = allProjects.length
-
-        if (afterImportCount > beforeImportCount) {
-            // 找到新导入的项目（通常是最后一个，或者通过其他方式识别）
-            // 由于dexie-export-import可能按照原始顺序导入，我们需要找到原始项目ID
-
-            // 从导出数据中获取原始项目ID
-            let originalProjectId: string | null = null
-
-            // 解析导出数据结构获取原始项目ID
-            if (data.data && data.data.data) {
-                const projectsTable = data.data.data.find((table: any) => table.tableName === 'projects')
-                if (projectsTable && projectsTable.rows && projectsTable.rows.length > 0) {
-                    originalProjectId = projectsTable.rows[0].id
-                }
+            switch (tableName) {
+                case 'projects':
+                    // 一个导出包通常只有一条项目记录，但以防万一遍历所有
+                    for (const row of rows) {
+                        if (row.id === originalProjectId) {
+                            row.id = newProjectId
+                            // 刷新时间戳，表示这个项目是在本地新建
+                            const now = Date.now()
+                            row.createdAt = now
+                            row.updatedAt = now
+                        }
+                    }
+                    break
+                case 'doms':
+                case 'imageStore':
+                    for (const row of rows) {
+                        if (row.projectId === originalProjectId) row.projectId = newProjectId
+                    }
+                    break
+                default:
+                    // 其他表无需处理
+                    break
             }
-
-            if (originalProjectId) {
-                console.log('原项目ID:', originalProjectId, '新项目ID:', newProjectId)
-
-                // 更新项目记录
-                await db.table('projects').where('id').equals(originalProjectId).modify({
-                    id: newProjectId,
-                    createdAt: Date.now(),
-                    updatedAt: Date.now()
-                })
-
-                // 更新DOM记录的projectId
-                await db.table('doms').where('projectId').equals(originalProjectId).modify({
-                    projectId: newProjectId,
-                    createdAt: Date.now(),
-                    updatedAt: Date.now()
-                })
-
-                // 更新图片记录的projectId
-                await db.table('imageStore').where('projectId').equals(originalProjectId).modify({
-                    projectId: newProjectId
-                })
-
-                console.log('项目ID更新完成')
-            } else {
-                throw new Error('无法从导出数据中找到原始项目ID')
-            }
-        } else {
-            throw new Error('导入失败：项目数量没有增加')
         }
 
-        console.log('项目数据导入完成')
+        console.log('📦【数据交互】导入前 ID 替换完成:', originalProjectId, '=>', newProjectId)
+
+        // 4. 调用 importInto 导入，关闭 overwrite，确保不会覆盖同名主键
+        const db = await DexieService.getDatabase('qi-qiao-ban')
+        if (!db) throw new Error('无法获取数据库实例')
+
+        await importInto(db, new Blob([JSON.stringify(cloned)], { type: 'application/json' }), {
+            overwriteValues: false
+        })
+
+        console.log('✅【数据交互】项目导入完成(已作为新副本保存)')
     }
 
     async function deleteProject(projectId?: string | number) {
