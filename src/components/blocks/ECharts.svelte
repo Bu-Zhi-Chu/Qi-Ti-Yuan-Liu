@@ -2,6 +2,8 @@
     import { Chart as ECharts } from 'svelte-echarts'
     import echartsInit from './echarts-core'
     import { request } from '../../services/request'
+    import * as echarts from 'echarts/core'
+    import { graphic } from 'echarts'
 
     // 不再使用默认模板和数据生成函数，JavaScript代码是唯一渲染方式
 
@@ -139,7 +141,7 @@
     // 安全执行JavaScript代码并返回option对象
     function executeJavaScriptCode(code: string): any {
         try {
-            // 创建一个安全的执行环境
+            // 创建一个安全的执行环境，包含echarts图形功能
             const sandbox = {
                 option: undefined,
                 console: console,
@@ -148,7 +150,10 @@
                 Object: Object,
                 String: String,
                 Number: Number,
-                Date: Date
+                Date: Date,
+                echarts: {
+                    graphic: graphic
+                }
             }
 
             // 创建函数代码，将sandbox作为作用域
