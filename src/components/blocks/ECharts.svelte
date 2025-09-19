@@ -104,10 +104,12 @@
                 yAxis: {
                     type: 'value'
                 },
-                series: [{
-                    data: [0, 0, 0],
-                    type: 'bar'
-                }]
+                series: [
+                    {
+                        data: [0, 0, 0],
+                        type: 'bar'
+                    }
+                ]
             }
         })()
     )
