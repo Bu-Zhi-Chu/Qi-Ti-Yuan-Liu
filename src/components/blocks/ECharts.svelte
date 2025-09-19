@@ -35,6 +35,62 @@
     // Svelte 5 runes写法：直接在解构中初始化默认值
     const { id = crypto.randomUUID(), code, theme = 'light', style = '', className, ...restProps } = $props() as Props
 
+    // 设计尺寸常量
+    const DESIGN_WIDTH = 1920 // 设计宽度
+    const DESIGN_HEIGHT = 1080 // 设计高度
+
+    // 当前缩放比例
+    let scaleRatio = $state({ width: 1, height: 1 })
+    let containerRef: HTMLDivElement | null = null
+
+    // 计算并应用缩放比例
+    function refreshScale() {
+        if (!containerRef) return
+
+        const docWidth = window.innerWidth
+        const docHeight = window.innerHeight
+        const widthRatio = docWidth / DESIGN_WIDTH
+        const heightRatio = docHeight / DESIGN_HEIGHT
+
+        // 使用较小的比例，确保内容完整显示
+        const scale = Math.min(widthRatio, heightRatio)
+
+        scaleRatio = { width: scale, height: scale }
+
+        // 应用缩放变换
+        containerRef.style.transform = `scale(${scale}, ${scale})`
+        containerRef.style.transformOrigin = 'left top'
+
+        // 设置容器尺寸为设计尺寸
+        containerRef.style.width = DESIGN_WIDTH + 'px'
+        containerRef.style.height = DESIGN_HEIGHT + 'px'
+    }
+
+    // 监听窗口大小变化
+    $effect(() => {
+        refreshScale()
+
+        const handleResize = () => {
+            refreshScale()
+        }
+
+        window.addEventListener('resize', handleResize)
+
+        // 页面显示时重新计算
+        const handlePageshow = (e: PageTransitionEvent) => {
+            if (e.persisted) {
+                refreshScale()
+            }
+        }
+
+        window.addEventListener('pageshow', handlePageshow)
+
+        return () => {
+            window.removeEventListener('resize', handleResize)
+            window.removeEventListener('pageshow', handlePageshow)
+        }
+    })
+
     // 调试：检查code属性是否被正确传递
     $effect(() => {
         console.log('ECharts component received code:', code)
@@ -115,15 +171,27 @@
     )
 </script>
 
-<!-- 使用一个禁用指针事件的包装层，确保仅图表本身可以交互 -->
-<div class="wrapper" {style} {...restProps} {id}>
-    <ECharts class="chart" options={option} theme={theme as any} init={echartsInit as any} />
+<!-- 外层容器用于应用缩放变换 -->
+<div class="scale-container" bind:this={containerRef}>
+    <!-- 使用一个禁用指针事件的包装层，确保仅图表本身可以交互 -->
+    <div class="wrapper" {style} {...restProps} {id}>
+        <ECharts class="chart" options={option} theme={theme as any} init={echartsInit as any} />
+    </div>
 </div>
 
 <style>
+    /* 外层缩放容器 */
+    .scale-container {
+        position: relative;
+        transform-origin: left top;
+        overflow: hidden;
+    }
+
     /* 让外层容器可以接收鼠标事件用于选中 */
     .wrapper {
         pointer-events: all;
+        width: 100%;
+        height: 100%;
     }
 
     /* 禁用图表本身的鼠标事件，避免拦截选中 */

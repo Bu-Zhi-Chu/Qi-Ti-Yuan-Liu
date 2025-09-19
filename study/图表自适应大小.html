@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>ECharts 自适应缩放示例 (父容器 scale)</title>
+        <!-- 引入 ECharts -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+        <style>
+            /* 设置容器样式，使其占据整个页面 */
+            html,
+            body {
+                height: 100%;
+                margin: 0;
+                overflow: hidden; /* 隐藏滚动条，防止缩放后出现 */
+            }
+
+            #container {
+                /* 父容器 */
+                width: 1912px; /* 设计宽度 */
+                height: 1000px; /* 设计高度 */
+                position: relative; /* 关键：相对定位 */
+                transform-origin: left top; /* 缩放原点 */
+            }
+
+            #main {
+                /* ECharts 容器 */
+                width: 100%; /* 占据父容器的全部宽度 */
+                height: 100%; /* 占据父容器的全部高度 */
+            }
+        </style>
+    </head>
+    <body>
+        <div id="container">
+            <div id="main"></div>
+        </div>
+        <script type="text/javascript">
+            ;(function (win) {
+                function refreshScale() {
+                    let docWidth = document.documentElement.clientWidth
+                    let docHeight = document.documentElement.clientHeight
+                    var designWidth = 1912, // 设计宽度
+                        designHeight = 1000, // 设计高度
+                        widthRatio = docWidth / designWidth
+                    heightRatio = docHeight / designHeight
+
+                    var container = document.getElementById('container') // 父容器
+
+                    if (container) {
+                        container.style.transform = `scale(${widthRatio},${heightRatio})`
+                        container.style.transformOrigin = 'left top'
+
+                        // 容器大小也要撑满
+                        container.style.width = designWidth + 'px'
+                        container.style.height = designHeight + 'px'
+                    }
+
+                    setTimeout(function () {
+                        var lateWidth = document.documentElement.clientWidth,
+                            lateHeight = document.documentElement.clientHeight
+                        if (lateWidth === docWidth) return
+                        widthRatio = lateWidth / designWidth
+                        heightRatio = lateHeight / designHeight
+                        container.style.transform = `scale(${widthRatio},${heightRatio})`
+                        container.style.transformOrigin = 'left top'
+                        if (container) {
+                            container.style.width = designWidth + 'px'
+                            container.style.height = designHeight + 'px'
+                        }
+                    }, 0)
+                }
+
+                refreshScale()
+                win.addEventListener(
+                    'pageshow',
+                    function (e) {
+                        if (e.persisted) {
+                            refreshScale()
+                        }
+                    },
+                    false
+                )
+                win.addEventListener('resize', refreshScale, false)
+            })(window)
+
+            // ECharts 初始化和配置
+            var myChart = echarts.init(document.getElementById('main'))
+            var option = {
+                title: {
+                    text: 'ECharts 自适应缩放示例 (父容器 scale)'
+                },
+                tooltip: {},
+                legend: {
+                    data: ['销量']
+                },
+                xAxis: {
+                    data: ['衬衫', '羊毛衫', '雪纺衫', '裤子', '高跟鞋', '袜子']
+                },
+                yAxis: {},
+                series: [
+                    {
+                        name: '销量',
+                        type: 'bar',
+                        data: [5, 20, 36, 10, 10, 20]
+                    }
+                ]
+            }
+            myChart.setOption(option)
+        </script>
+    </body>
+</html>
