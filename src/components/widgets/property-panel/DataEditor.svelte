@@ -49,9 +49,9 @@
     $effect(() => {
         const code = currentValues.code as unknown as string | undefined
         if (typeof code === 'string') {
-            const regex = /data\s*:\s*\[[^\]]*\]/g
+            const regex = /data\s*:\s*(\[[^\]]*\])/g
             codeMatches = [...code.matchAll(regex)]
-            dataArrays = codeMatches.map((m) => m[0]) // 存储完整的 data: [x,x] 格式
+            dataArrays = codeMatches.map((m) => m[1]) // 只存储数组内容 [x,x] 格式，不包含 data:
         } else {
             codeMatches = []
             dataArrays = []
@@ -68,7 +68,7 @@
         const newCode = oldCode.replace(/data\s*:\s*\[[^\]]*\]/g, (match) => {
             if (i === index) {
                 i++
-                return newValue // newValue 已经是完整的 data: [x,x] 格式
+                return `data: ${newValue}` // newValue 只包含数组内容，需要添加 data: 前缀
             }
             i++
             return match
@@ -87,7 +87,11 @@
     function matchesShowIf(node: any, showIfConfig: { key: string; value: any }): boolean {
         if (!showIfConfig || !node) return false
         const attr = node.attributes || {}
-        const currentValue = attr[showIfConfig.key] || (node as any)[showIfConfig.key]
+        // 对于 dataSource，如果没有设置则默认为 'json'
+        let currentValue = attr[showIfConfig.key] || (node as any)[showIfConfig.key]
+        if (showIfConfig.key === 'dataSource' && currentValue === undefined) {
+            currentValue = 'json'
+        }
         return currentValue === showIfConfig.value
     }
 
@@ -123,7 +127,7 @@
         {#each dataArrays as arr, idx}
             <PropertyRow label={`${getChineseOrdinal(idx)}序列`}>
                 <!-- 使用 CodeEditor 显示完整的 [x,x] 数组格式 -->
-                <CodeEditor bind:code={dataArrays[idx]} language="javascript" theme="one-dark" height="80px" run={(code: string) => updateDataArray(idx, code)} toolbar={false} autoRun={true} wrap={true} showLineNumbers={false} style="flex:1; width:0;" />
+                <CodeEditor bind:code={dataArrays[idx]} language="javascript" theme="one-dark" height="calc(80px * var(--scale-ratio, 1))" run={(code: string) => updateDataArray(idx, code)} toolbar={false} autoRun={true} wrap={true} showLineNumbers={false} style="flex:1; width:0;" />
             </PropertyRow>
         {/each}
     {/if}

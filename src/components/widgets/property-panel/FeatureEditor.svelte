@@ -577,7 +577,18 @@
                             {JSON.stringify(currentValues[p.key] ?? p.default ?? {}, null, 2)}
                         </textarea>
                     {:else if p.type === 'code'}
-                        <CodeEditor bind:code={currentValues[p.key]} language="javascript" theme="one-dark" height="200px" run={(code: string) => handleAttrChange(p.key, code)} toolbar={false} autoRun={true} wrap={true} showLineNumbers={false} style="flex:1; width:0;" />
+                        <CodeEditor
+                            bind:code={currentValues[p.key]}
+                            language="javascript"
+                            theme="one-dark"
+                            height="calc(200px * var(--scale-ratio, 1))"
+                            run={(code: string) => handleAttrChange(p.key, code)}
+                            toolbar={false}
+                            autoRun={true}
+                            wrap={true}
+                            showLineNumbers={false}
+                            style="flex:1; width:0;"
+                        />
                     {/if}
                     <!-- 其他类型控件可在此扩展 -->
                 </PropertyRow>
