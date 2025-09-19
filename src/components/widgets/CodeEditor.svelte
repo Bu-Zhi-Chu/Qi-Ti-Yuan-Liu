@@ -148,7 +148,7 @@
         display: flex;
         flex-direction: column;
         border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.2);
-        border-radius: calc(6px * var(--scale-ratio, 1));
+        /* border-radius: calc(6px * var(--scale-ratio, 1)); */
         background: rgba(255, 255, 255, 0.1);
         transition: all 0.3s ease;
     }
