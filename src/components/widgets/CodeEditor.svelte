@@ -39,11 +39,12 @@
         toolbar?: boolean // 是否显示顶部运行/重置工具栏，默认为 true
         autoRun?: boolean // 是否在代码变更时自动触发 run
         wrap?: boolean // 是否启用行自动换行，默认 false
+        showLineNumbers?: boolean // 是否显示行号，默认 true
         class?: string // 允许父组件传递 class
         style?: string // 允许传递额外 style
     }
 
-    let { code = $bindable(), language = 'javascript', readonly = false, theme = 'one-dark', height = '100%', run: onRun = undefined, reset: onReset = undefined, toolbar = true, autoRun = false, wrap = false, class: wrapperClass = '', style: wrapperStyle = '' } = $props()
+    let { code = $bindable(), language = 'javascript', readonly = false, theme = 'one-dark', height = '100%', run: onRun = undefined, reset: onReset = undefined, toolbar = true, autoRun = false, wrap = false, showLineNumbers = true, class: wrapperClass = '', style: wrapperStyle = '' } = $props()
 
     // 事件通过回调 props 处理，已无需 dispatch
     let editorContainer: HTMLDivElement | null = null
@@ -54,7 +55,7 @@
         const exts: Extension[] = [
             keymap.of(defaultKeymap),
             history(),
-            lineNumbers(),
+            ...(showLineNumbers ? [lineNumbers()] : []),
             indentOnInput(),
             autocompletion(),
             EditorView.updateListener.of((v) => {
@@ -153,22 +154,12 @@
     }
 
     /* hover / focus 样式与输入框保持一致 */
-    .editor-wrapper:hover {
-        background: rgba(255, 255, 255, 0.15);
-    }
     .editor-wrapper:focus-within {
         outline: none;
-        border-color: #cbd5e1;
-        background: rgba(255, 255, 255, 0.15);
-        box-shadow: 0 0 0 calc(3px * var(--scale-ratio, 1)) rgba(255, 255, 255, 0.1);
     }
 
-    .editor-wrapper:hover {
-        border-color: rgba(99, 102, 241, 0.5);
-    }
     .editor-wrapper:focus-within {
-        border-color: #6366f1;
-        box-shadow: 0 0 0 calc(3px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.2);
+        outline: none;
     }
 
     /* 顶部右侧工具栏 */
