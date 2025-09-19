@@ -548,6 +548,7 @@
                             {JSON.stringify(currentValues[p.key] ?? p.default ?? {}, null, 2)}
                         </textarea>
                     {:else if p.type === 'code'}
+                        <a href="https://www.makeapie.cn/echarts" class="input-style chart-repo-button" target="_blank" rel="noopener">图表仓库</a>
                         <CodeEditor bind:code={currentValues[p.key]} language="javascript" theme="one-dark" height="200px" run={(code: string) => handleAttrChange(p.key, code)} toolbar={false} autoRun={true} wrap={true} showLineNumbers={false} style="flex:1; width:0;" />
                     {/if}
                     <!-- 其他类型控件可在此扩展 -->
@@ -609,6 +610,10 @@
         background: rgba(255, 255, 255, 0.15);
         box-shadow: 0 0 0 calc(3px * var(--scale-ratio, 1)) rgba(255, 255, 255, 0.1);
     }
+    /* 图表仓库按钮额外样式，与输入控件保持一致宽度 */
+    .chart-repo-button {
+        text-decoration: none;
+    }
     .input-style:hover {
         border-color: rgba(99, 102, 241, 0.5);
     }
@@ -625,6 +630,29 @@
         display: flex;
         align-items: center;
         gap: calc(8px * var(--scale-ratio, 1));
+    }
+
+.code-header {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: calc(6px * var(--scale-ratio, 1));
+    }
+    .repo-button {
+        padding: calc(4px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));
+        font-size: calc(12px * var(--scale-ratio, 1));
+        color: #e2e8f0;
+        background: rgba(99, 102, 241, 0.25);
+        border: 1px solid rgba(99, 102, 241, 0.5);
+        border-radius: calc(4px * var(--scale-ratio, 1));
+        transition: all 0.2s ease;
+        text-decoration: none;
+    }
+    .repo-button:hover {
+        background: rgba(99, 102, 241, 0.35);
+        border-color: rgba(99, 102, 241, 0.75);
+    }
+    .repo-button:active {
+        background: rgba(99, 102, 241, 0.45);
     }
 
     h3 {
