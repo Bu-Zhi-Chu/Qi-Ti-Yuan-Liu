@@ -29,16 +29,21 @@
     /* --------------------------- Props (Runes) --------------------------- */
     // 使用 $props() + $bindable() 迁移到 Svelte5 Runes 语法，code 支持双向绑定
     type CodeEditorProps = {
-        code: string
+        code?: string
         language?: 'javascript' | string
         readonly?: boolean
         theme?: 'one-dark' | 'default'
         height?: string
         run?: (code: string) => void
         reset?: () => void
+        toolbar?: boolean // 是否显示顶部运行/重置工具栏，默认为 true
+        autoRun?: boolean // 是否在代码变更时自动触发 run
+        wrap?: boolean // 是否启用行自动换行，默认 false
+        class?: string // 允许父组件传递 class
+        style?: string // 允许传递额外 style
     }
 
-    let { code = $bindable(''), language = 'javascript', readonly = false, theme = 'one-dark', height = '100%', run: onRun = undefined, reset: onReset = undefined } = $props()
+    let { code = $bindable(), language = 'javascript', readonly = false, theme = 'one-dark', height = '100%', run: onRun = undefined, reset: onReset = undefined, toolbar = true, autoRun = false, wrap = false, class: wrapperClass = '', style: wrapperStyle = '' } = $props()
 
     // 事件通过回调 props 处理，已无需 dispatch
     let editorContainer: HTMLDivElement | null = null
@@ -56,6 +61,10 @@
                 if (v.docChanged) {
                     // 细粒度同步外部 code
                     code = v.state.doc.toString()
+                    if (autoRun) {
+                        // 自动运行
+                        onRun?.(code)
+                    }
                 }
             })
         ]
@@ -72,6 +81,10 @@
             })
         )
 
+        if (wrap) {
+            // 软换行
+            exts.push(EditorView.lineWrapping)
+        }
         if (readonly) exts.push(EditorView.editable.of(false))
         return exts
     }
@@ -115,12 +128,14 @@
 <!--
   UI：顶部工具栏 + 编辑器实例容器
 -->
-<div class="editor-wrapper" style="width: 100%; height: {height};">
-    <!-- 工具栏 -->
-    <div class="toolbar">
-        <button onclick={handleRun} class="btn-run">运行</button>
-        <button onclick={handleReset} class="btn-reset">重置</button>
-    </div>
+<div class="editor-wrapper {wrapperClass}" style="width: 100%; height: {height}; {wrapperStyle}">
+    {#if toolbar}
+        <!-- 工具栏 -->
+        <div class="toolbar">
+            <button onclick={handleRun} class="btn-run">运行</button>
+            <button onclick={handleReset} class="btn-reset">重置</button>
+        </div>
+    {/if}
     <!-- 编辑器 -->
     <div bind:this={editorContainer} class="editor-container"></div>
 </div>
@@ -131,6 +146,29 @@
         position: relative;
         display: flex;
         flex-direction: column;
+        border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.2);
+        border-radius: calc(6px * var(--scale-ratio, 1));
+        background: rgba(255, 255, 255, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    /* hover / focus 样式与输入框保持一致 */
+    .editor-wrapper:hover {
+        background: rgba(255, 255, 255, 0.15);
+    }
+    .editor-wrapper:focus-within {
+        outline: none;
+        border-color: #cbd5e1;
+        background: rgba(255, 255, 255, 0.15);
+        box-shadow: 0 0 0 calc(3px * var(--scale-ratio, 1)) rgba(255, 255, 255, 0.1);
+    }
+
+    .editor-wrapper:hover {
+        border-color: rgba(99, 102, 241, 0.5);
+    }
+    .editor-wrapper:focus-within {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 calc(3px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.2);
     }
 
     /* 顶部右侧工具栏 */

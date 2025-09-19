@@ -53,11 +53,11 @@
         {#each tabs as tab, i}
             <div class="panel" style="display:{currentTab === i ? 'block' : 'none'};">
                 {#if tab.bind === 'jsCode'}
-                    <CodeEditor bind:code={jsCode} language={tab.language} run={(c: string) => onRun?.(c)} reset={onReset} height="100%" />
+                    <CodeEditor bind:code={jsCode} language={tab.language} height="100%" run={(c: string) => onRun?.(c)} toolbar={false} autoRun={true} />
                 {:else if tab.bind === 'cssCode'}
-                    <CodeEditor bind:code={cssCode} language={tab.language} run={(c: string) => onRun?.(c)} reset={onReset} height="100%" />
+                    <CodeEditor bind:code={cssCode} language={tab.language} height="100%" run={(c: string) => onRun?.(c)} toolbar={false} autoRun={true} />
                 {:else}
-                    <CodeEditor bind:code={htmlCode} language={tab.language} run={(c: string) => onRun?.(c)} reset={onReset} height="100%" />
+                    <CodeEditor bind:code={htmlCode} language={tab.language} height="100%" run={(c: string) => onRun?.(c)} toolbar={false} autoRun={true} />
                 {/if}
             </div>
         {/each}

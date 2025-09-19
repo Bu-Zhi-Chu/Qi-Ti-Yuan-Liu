@@ -18,6 +18,7 @@
     import { domTree } from '../../../stores/dom-tree.store.svelte'
     import { setCurrentPage } from '../../../stores/dom-tree.store.svelte'
     import { findParentById } from '../../../stores/dom-tree.store.svelte'
+    import CodeEditor from '../CodeEditor.svelte'
 
     // 派生当前选中节点的 featureProps
     const featureProps = $derived(() => {
@@ -106,12 +107,24 @@
             Object.entries(fp).forEach(([key, cfg]: [string, any]) => {
                 if (cfg.default !== undefined) {
                     defaults[key] = cfg.default
+                } else if (cfg.type === 'code') {
+                    // 为code类型属性提供空字符串默认值，避免绑定undefined
+                    defaults[key] = ''
                 }
             })
         }
 
         // 合并顺序：默认值 -> 属性值 -> 样式值（后者优先）
-        currentValues = { ...defaults, ...attrs, ...styles }
+        // 确保code类型属性不为undefined
+        const merged = { ...defaults, ...attrs, ...styles }
+        if (fp) {
+            Object.entries(fp).forEach(([key, cfg]: [string, any]) => {
+                if (cfg.type === 'code' && merged[key] === undefined) {
+                    merged[key] = ''
+                }
+            })
+        }
+        currentValues = merged
     })
     let syncingFromDomTree = false
     let editingButtonCount = false // 标记正在由输入框主动修改中
@@ -535,17 +548,7 @@
                             {JSON.stringify(currentValues[p.key] ?? p.default ?? {}, null, 2)}
                         </textarea>
                     {:else if p.type === 'code'}
-                        <textarea
-                            rows={10}
-                            class="code-input"
-                            oninput={(e: Event) => {
-                                const code = (e.currentTarget as HTMLTextAreaElement).value
-                                handleAttrChange(p.key, code)
-                            }}
-                            placeholder="输入JavaScript代码"
-                        >
-                            {currentValues[p.key] ?? p.default ?? ''}
-                        </textarea>
+                        <CodeEditor bind:code={currentValues[p.key]} language="javascript" theme="one-dark" height="200px" run={(code: string) => handleAttrChange(p.key, code)} toolbar={false} autoRun={true} wrap={true} style="flex:1; width:0;" />
                     {/if}
                     <!-- 其他类型控件可在此扩展 -->
                 </PropertyRow>
@@ -635,7 +638,6 @@
     .text-input,
     .number-input,
     .json-input,
-    .code-input,
     input[type='number'] {
         flex: 1;
         padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
@@ -650,8 +652,7 @@
 
     .text-input::placeholder,
     .number-input::placeholder,
-    .json-input::placeholder,
-    .code-input::placeholder {
+    .json-input::placeholder {
         color: #9ca3af;
         white-space: pre-wrap;
     }
