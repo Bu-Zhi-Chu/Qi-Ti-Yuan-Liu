@@ -33,7 +33,7 @@
     }
 
     // Svelte 5 runes写法：直接在解构中初始化默认值
-    const { id = crypto.randomUUID(), code, theme = 'light', style = '', className, ...restProps } = $props() as Props
+    const { id = crypto.randomUUID(), code, theme = 'light', style = '', className, designWidth: propDesignWidth, designHeight: propDesignHeight, ...restProps } = $props() as Props
 
     // 导入必要的服务和存储
     import { screenDetector } from '../../services/screen/screen-detector.service'
@@ -57,8 +57,13 @@
     async function refreshScale() {
         if (!containerRef) return
 
-        // 直接读 store 缓存的设计尺寸
-        const { width: designWidth = 1920, height: designHeight = 1080 } = getDesignSize()
+        // 优先使用props中的设计尺寸，如果没有则使用store中的设计尺寸
+        const storeDesignSize = getDesignSize()
+        const designWidth = propDesignWidth ?? storeDesignSize.width ?? 1920
+        const designHeight = propDesignHeight ?? storeDesignSize.height ?? 1080
+
+        // 调试日志：输出实际使用的尺寸值
+        console.log(`[ECharts] 设计尺寸: ${designWidth}x${designHeight}, prop尺寸: ${propDesignWidth}x${propDesignHeight}, store尺寸: ${storeDesignSize.width}x${storeDesignSize.height}`)
 
         const docWidth = window.innerWidth
         const docHeight = window.innerHeight
@@ -79,7 +84,7 @@
         containerRef.style.height = designHeight + 'px'
     }
 
-    // 监听窗口大小变化
+    // 监听窗口大小变化和项目尺寸变化
     $effect(() => {
         refreshScale()
 
@@ -97,6 +102,11 @@
         }
 
         window.addEventListener('pageshow', handlePageshow)
+
+        // 监听项目ID变化，当项目切换时重新计算尺寸
+        const unsubscribeProject = projectId.subscribe(async () => {
+            await refreshScale()
+        })
 
         // 等待容器准备好
         const checkReady = () => {
@@ -116,6 +126,7 @@
         return () => {
             window.removeEventListener('resize', handleResize)
             window.removeEventListener('pageshow', handlePageshow)
+            unsubscribeProject()
         }
     })
 

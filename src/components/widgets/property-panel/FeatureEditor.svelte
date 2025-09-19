@@ -18,6 +18,7 @@
     import { domTree } from '../../../stores/dom-tree.store.svelte'
     import { setCurrentPage } from '../../../stores/dom-tree.store.svelte'
     import { findParentById } from '../../../stores/dom-tree.store.svelte'
+    import { getDesignSize } from '../../../stores/dom-tree.store.svelte'
     import CodeEditor from '../CodeEditor.svelte'
 
     // 派生当前选中节点的 featureProps
@@ -121,8 +122,16 @@
         const fp = featureProps()
         if (fp) {
             Object.entries(fp).forEach(([key, cfg]: [string, any]) => {
-                if (cfg.default !== undefined) {
+                if (cfg.default !== undefined && cfg.default !== null) {
                     defaults[key] = cfg.default
+                } else if (cfg.default === null && (key === 'designWidth' || key === 'designHeight')) {
+                    // 对于designWidth/designHeight，当配置默认值为null时，使用store中的动态值
+                    const storeDesignSize = getDesignSize()
+                    if (key === 'designWidth') {
+                        defaults[key] = storeDesignSize.width
+                    } else if (key === 'designHeight') {
+                        defaults[key] = storeDesignSize.height
+                    }
                 } else if (cfg.type === 'code') {
                     // 为code类型属性提供空字符串默认值，避免绑定undefined
                     defaults[key] = ''

@@ -47,7 +47,7 @@
 
     // 派生状态：获取组件级别的 dataSource 配置
     let dataSourceConfig = $derived(componentType ? getComponentDataSourceConfig(componentType) : null)
-    
+
     // 派生状态：获取完整的 dataSource 配置（包含 dataAccess 和其他配置）
     let fullDataSourceConfig = $derived(componentType ? getFullDataSourceConfig(componentType) : null)
 
@@ -118,13 +118,7 @@
     <!-- 请求路径配置：只在选择真实请求时显示 -->
     {#if fullDataSourceConfig?.requestPath && (currentValues.dataSource ?? dataSourceConfig?.default ?? 'json') === 'real'}
         <PropertyRow label={fullDataSourceConfig.requestPath.label}>
-            <input 
-                type="text" 
-                value={currentValues.requestPath ?? fullDataSourceConfig.requestPath.default ?? '/api/data'}
-                onchange={(e) => handleAttrChange('requestPath', (e.target as HTMLInputElement).value)}
-                class="request-path-input"
-                placeholder="请输入请求路径"
-            />
+            <input type="text" value={currentValues.requestPath ?? fullDataSourceConfig.requestPath.default ?? '/api/data'} onchange={(e) => handleAttrChange('requestPath', (e.target as HTMLInputElement).value)} class="request-path-input" placeholder="请输入请求路径" />
         </PropertyRow>
     {/if}
 

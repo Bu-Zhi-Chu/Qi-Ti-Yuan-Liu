@@ -233,7 +233,7 @@
     },
     {
         "type": "ECharts",
-        "nameZh": "图表(ECharts)",
+        "nameZh": "图表",
         "path": "../blocks/ECharts.svelte",
         "preview": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><rect x='2' y='2' width='28' height='28' fill='none' stroke='%239d4edd' stroke-width='2' rx='2'/><polyline points='6,24 12,16 18,20 24,10' fill='none' stroke='%239d4edd' stroke-width='2'/><circle cx='6' cy='24' r='1.5' fill='%239d4edd'/><circle cx='12' cy='16' r='1.5' fill='%239d4edd'/><circle cx='18' cy='20' r='1.5' fill='%239d4edd'/><circle cx='24' cy='10' r='1.5' fill='%239d4edd'/></svg>",
         "showFeatureTab": true,
@@ -271,6 +271,20 @@
             }
         },
         "featureProps": {
+            "designWidth": {
+                "label": "理想宽度",
+                "type": "number",
+                "default": null,
+                "min": 320,
+                "max": 3840
+            },
+            "designHeight": {
+                "label": "理想高度",
+                "type": "number",
+                "default": null,
+                "min": 240,
+                "max": 2160
+            },
             "chartCases": {
                 "label": "图表案例",
                 "type": "linkGroup",
