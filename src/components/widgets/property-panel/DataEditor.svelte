@@ -47,6 +47,9 @@
 
     // 派生状态：获取组件级别的 dataSource 配置
     let dataSourceConfig = $derived(componentType ? getComponentDataSourceConfig(componentType) : null)
+    
+    // 派生状态：获取完整的 dataSource 配置（包含 dataAccess 和其他配置）
+    let fullDataSourceConfig = $derived(componentType ? getFullDataSourceConfig(componentType) : null)
 
     /** 当 code 变化时解析其中的 data: [] 数组 */
     $effect(() => {
@@ -89,6 +92,12 @@
     // 工具函数：获取组件级别的 dataSource 配置
     function getComponentDataSourceConfig(componentType: string): any | null {
         const componentConfig = (blocksConfig as any[]).find((b) => b.type === componentType)
+        return componentConfig?.dataSource?.dataAccess || null
+    }
+
+    // 工具函数：获取完整的 dataSource 配置
+    function getFullDataSourceConfig(componentType: string): any | null {
+        const componentConfig = (blocksConfig as any[]).find((b) => b.type === componentType)
         return componentConfig?.dataSource || null
     }
 
@@ -103,6 +112,19 @@
     {#if dataSourceConfig}
         <PropertyRow label={dataSourceConfig.label}>
             <PropertySelect value={currentValues.dataSource ?? dataSourceConfig.default ?? 'json'} options={dataSourceConfig.options || []} change={(v) => handleAttrChange('dataSource', v)} />
+        </PropertyRow>
+    {/if}
+
+    <!-- 请求路径配置：只在选择真实请求时显示 -->
+    {#if fullDataSourceConfig?.requestPath && (currentValues.dataSource ?? dataSourceConfig?.default ?? 'json') === 'real'}
+        <PropertyRow label={fullDataSourceConfig.requestPath.label}>
+            <input 
+                type="text" 
+                value={currentValues.requestPath ?? fullDataSourceConfig.requestPath.default ?? '/api/data'}
+                onchange={(e) => handleAttrChange('requestPath', (e.target as HTMLInputElement).value)}
+                class="request-path-input"
+                placeholder="请输入请求路径"
+            />
         </PropertyRow>
     {/if}
 
@@ -126,5 +148,28 @@
     /* 行间距：仅作用于本页签，其他面板已自带 */
     :global(.data-editor .property-row:not(:last-child)) {
         margin-bottom: calc(12px * var(--scale-ratio, 1));
+    }
+
+    /* 请求路径输入框样式 */
+    .request-path-input {
+        flex: 1;
+        width: 0;
+        background: rgba(15, 23, 42, 0.8);
+        border: 1px solid rgba(51, 65, 85, 0.8);
+        border-radius: calc(4px * var(--scale-ratio, 1));
+        padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
+        color: #e2e8f0;
+        font-size: calc(14px * var(--scale-ratio, 1));
+        transition: border-color 0.2s ease;
+    }
+
+    .request-path-input:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    }
+
+    .request-path-input::placeholder {
+        color: rgba(148, 163, 184, 0.6);
     }
 </style>

@@ -245,19 +245,30 @@
             "height": "100%"
         },
         "dataSource": {
-            "label": "数据接入",
-            "type": "select",
-            "options": [
-                {
-                    "value": "json",
-                    "label": "虚拟数据"
-                },
-                {
-                    "value": "real",
-                    "label": "真实请求"
+            "dataAccess": {
+                "label": "数据接入",
+                "type": "select",
+                "options": [
+                    {
+                        "value": "json",
+                        "label": "虚拟数据"
+                    },
+                    {
+                        "value": "real",
+                        "label": "真实请求"
+                    }
+                ],
+                "default": "json"
+            },
+            "requestPath": {
+                "label": "请求路径",
+                "type": "text",
+                "default": "",
+                "showIf": {
+                    "key": "dataSource",
+                    "value": "real"
                 }
-            ],
-            "default": "json"
+            }
         },
         "featureProps": {
             "chartCases": {
