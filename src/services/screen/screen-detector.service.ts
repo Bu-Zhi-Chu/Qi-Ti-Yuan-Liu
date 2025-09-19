@@ -20,7 +20,7 @@ class ScreenDetector {
     private currentInfo: ScreenInfo | null = null
     private styleElement: HTMLStyleElement | null = null
     private DESIGN_WIDTH = 1920
-    private DESIGN_HEIGHT = 1080
+    private DESIGN_HEIGHT = 1000
     private isViewportScalingEnabled = false
 
     constructor() {
@@ -98,7 +98,7 @@ class ScreenDetector {
     getRecommendedScale(): number {
         const { width, height } = this.getScreenInfo().viewport
         const baseWidth = 1920
-        const baseHeight = 1080
+        const baseHeight = 1000
 
         const scaleX = width / baseWidth
         const scaleY = height / baseHeight

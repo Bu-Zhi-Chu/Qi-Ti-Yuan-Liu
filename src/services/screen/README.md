@@ -79,7 +79,7 @@ screenDetector.initViewportScale();
 const scale = screenDetector.getViewportScale();
 
 // 设置自定义设计稿尺寸
-screenDetector.setDesignSize(1920, 1080);
+screenDetector.setDesignSize(1920, 1000);
 
 // 停止响应式缩放
 screenDetector.stopViewportScale();

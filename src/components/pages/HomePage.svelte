@@ -219,7 +219,7 @@
         }
     }
 
-    async function confirmNewProject(name: string, templateId: string = 'blank', width: number = 1920, height: number = 1080) {
+    async function confirmNewProject(name: string, templateId: string = 'blank', width: number = 1920, height: number = 1000) {
         // 清理内存中的旧项目数据
         clearMemoryState()
 

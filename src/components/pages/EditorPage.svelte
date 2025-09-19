@@ -424,7 +424,7 @@
 
     onDestroy(() => {
         // 离开编辑器页面时恢复默认设计尺寸，避免主页UI被放大
-        screenDetector.setDesignSize(1920, 1080)
+        screenDetector.setDesignSize(1920, 1000)
         unregister && unregister()
         stopKonamiVerification()
         unregisterDelKey && unregisterDelKey()
@@ -550,7 +550,7 @@
                     document.title = project.name as string
                 }
                 // 把设计尺寸写进 store，供所有组件复用
-                setDesignSize(project.designWidth || 1920, project.designHeight || 1080)
+                setDesignSize(project.designWidth || 1920, project.designHeight || 1000)
             } else {
                 showWorkspace = false
             }

@@ -85,7 +85,7 @@ static async createProject(projectData: Omit<Project, 'id'>): Promise<number>
 const projectId = await DexieService.createProject({
   name: "我的设计",
   description: "这是一个测试项目",
-  pages: [{ id: "page-1", name: "首页", width: 1920, height: 1080 }],
+  pages: [{ id: "page-1", name: "首页", width: 1920, height: 1000 }],
   settings: { theme: "light" }
 })
 ```
@@ -306,8 +306,8 @@ const projectId = await DexieService.createProject({
   name: "响应式网站",
   description: "企业官网设计",
   pages: [
-    { id: "home", name: "首页", width: 1920, height: 1080 },
-    { id: "about", name: "关于我们", width: 1920, height: 1080 }
+    { id: "home", name: "首页", width: 1920, height: 1000 },
+    { id: "about", name: "关于我们", width: 1920, height: 1000 }
   ],
   settings: {
     theme: "modern",

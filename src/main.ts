@@ -204,7 +204,7 @@ async function initializeDatabase() {
                 // 导入项目数据
                 const response = await fetch('./data/project-data.qqb')
                 let projectData: any
-                
+
                 // 读取文件内容
                 let text = await response.text()
                 const magic = 'QQB1'
