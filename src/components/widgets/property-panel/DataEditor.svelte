@@ -3,7 +3,7 @@
      现在只支持JavaScript代码方式，不再处理dataProps
 -->
 <script lang="ts">
-    import { getNodeProps as _getNodeProps, getNodePropsStore, updateNodeProps } from '../../../services/property-panel/property-panel.service'
+    import { getNodeProps as _getNodeProps, getNodePropsStore, updateNodeProps, getFullNode } from '../../../services/property-panel/property-panel.service'
     import PropertyRow from './PropertyRow.svelte'
     import PropertySelect from './PropertySelect.svelte'
     import CodeEditor from '../CodeEditor.svelte'
@@ -42,8 +42,11 @@
     let dataArrays = $state<string[]>([])
     let codeMatches: RegExpMatchArray[] = []
 
-    // 派生状态：获取 showIf 配置
-    let codeShowIfConfig = $derived(getComponentShowIfConfig('ECharts', 'code'))
+    // 派生状态：获取当前组件类型
+    let componentType = $derived(selectedId ? getFullNode(selectedId)?.componentType || null : null)
+
+    // 派生状态：获取组件级别的 dataSource 配置
+    let dataSourceConfig = $derived(componentType ? getComponentDataSourceConfig(componentType) : null)
 
     /** 当 code 变化时解析其中的 data: [] 数组 */
     $effect(() => {
@@ -83,24 +86,10 @@
         updateNodeProps(selectedId, { attributes: { [key]: value } })
     }
 
-    // 工具函数：检查节点是否匹配 showIf 条件（复用现有的 showIf 逻辑）
-    function matchesShowIf(node: any, showIfConfig: { key: string; value: any }): boolean {
-        if (!showIfConfig || !node) return false
-        const attr = node.attributes || {}
-        // 对于 dataSource，如果没有设置则默认为 'json'
-        let currentValue = attr[showIfConfig.key] || (node as any)[showIfConfig.key]
-        if (showIfConfig.key === 'dataSource' && currentValue === undefined) {
-            currentValue = 'json'
-        }
-        return currentValue === showIfConfig.value
-    }
-
-    // 工具函数：获取组件类型的 showIf 配置
-    function getComponentShowIfConfig(componentType: string, propKey: string): { key: string; value: any } | null {
+    // 工具函数：获取组件级别的 dataSource 配置
+    function getComponentDataSourceConfig(componentType: string): any | null {
         const componentConfig = (blocksConfig as any[]).find((b) => b.type === componentType)
-        const featureProps = componentConfig?.featureProps
-        const propConfig = featureProps?.[propKey]
-        return propConfig?.showIf || null
+        return componentConfig?.dataSource || null
     }
 
     /** 获取中文序数词 */
@@ -111,19 +100,14 @@
 </script>
 
 <div class="data-editor">
-    <PropertyRow label="数据接入">
-        <PropertySelect
-            value={currentValues.dataSource ?? 'json'}
-            options={[
-                { value: 'json', label: '虚拟数据' },
-                { value: 'real', label: '真实请求' }
-            ]}
-            change={(v) => handleAttrChange('dataSource', v)}
-        />
-    </PropertyRow>
+    {#if dataSourceConfig}
+        <PropertyRow label={dataSourceConfig.label}>
+            <PropertySelect value={currentValues.dataSource ?? dataSourceConfig.default ?? 'json'} options={dataSourceConfig.options || []} change={(v) => handleAttrChange('dataSource', v)} />
+        </PropertyRow>
+    {/if}
 
-    <!-- 只在选择虚拟数据时显示动态数组 -->
-    {#if codeShowIfConfig && matchesShowIf(currentValues, codeShowIfConfig)}
+    <!-- 当 code 属性存在、有 data 数组且数据源为 json（虚拟数据）时显示序列编辑器 -->
+    {#if currentValues.code && dataArrays.length > 0 && currentValues.dataSource === 'json'}
         {#each dataArrays as arr, idx}
             <PropertyRow label={`${getChineseOrdinal(idx)}序列`}>
                 <!-- 使用 CodeEditor 显示完整的 [x,x] 数组格式 -->
