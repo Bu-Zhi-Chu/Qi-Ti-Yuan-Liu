@@ -37,6 +37,9 @@ let selectedNodeId = $state<string | null>('root');
 
 // 当前项目ID
 let currentProjectId = $state<string>('');
+// 项目设计尺寸
+let designWidth = $state<number>(1920);
+let designHeight = $state<number>(1080);
 
 // 导出只读引用
 export const domTree = domTreeData;
@@ -62,13 +65,25 @@ export function selectedId() {
   return selectedNodeId;
 }
 
+// 导出设计尺寸（只读）
+export function getDesignSize() {
+  return { width: designWidth, height: designHeight };
+}
+
 /**
  * 设置当前项目ID（由EditorPage统一设置）
  */
 export function setProjectId(newProjectId: string): void {
   currentProjectId = newProjectId;
   projectId.set(newProjectId);
+}
 
+/**
+ * 同时设置项目设计尺寸
+ */
+export function setDesignSize(width: number, height: number): void {
+  designWidth = width;
+  designHeight = height;
 }
 
 /**

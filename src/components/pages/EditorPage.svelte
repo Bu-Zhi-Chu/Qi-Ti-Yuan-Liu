@@ -29,7 +29,7 @@
     import { applyLogConfig } from '../../services/utils/log-switch'
 
     // 引入 DOM 树集中式状态管理
-    import { domTree, selectedId, removeNodeById, projectId, findNodeById } from '../../stores/dom-tree.store.svelte'
+    import { domTree, selectedId, removeNodeById, projectId, findNodeById, setDesignSize } from '../../stores/dom-tree.store.svelte'
     import DexieService from '../../services/database/dexie-service'
     import StatusBar from '../widgets/StatusBar.svelte'
     import { screenDetector } from '../../services/screen/screen-detector.service'
@@ -549,6 +549,8 @@
                 if (project.name) {
                     document.title = project.name as string
                 }
+                // 把设计尺寸写进 store，供所有组件复用
+                setDesignSize(project.designWidth || 1920, project.designHeight || 1080)
             } else {
                 showWorkspace = false
             }

@@ -35,22 +35,27 @@
     // Svelte 5 runes写法：直接在解构中初始化默认值
     const { id = crypto.randomUUID(), code, theme = 'light', style = '', className, ...restProps } = $props() as Props
 
-    // 设计尺寸常量
-    const DESIGN_WIDTH = 1920 // 设计宽度
-    const DESIGN_HEIGHT = 1080 // 设计高度
+    // 导入必要的服务和存储
+    import { screenDetector } from '../../services/screen/screen-detector.service'
+    import DexieService from '../../services/database/dexie-service'
+    import { projectId, getDesignSize } from '../../stores/dom-tree.store.svelte'
+    import { get } from 'svelte/store'
 
     // 当前缩放比例
     let scaleRatio = $state({ width: 1, height: 1 })
     let containerRef: HTMLDivElement | null = null
 
     // 计算并应用缩放比例
-    function refreshScale() {
+    async function refreshScale() {
         if (!containerRef) return
+
+        // 直接读 store 缓存的设计尺寸
+        const { width: designWidth = 1920, height: designHeight = 1080 } = getDesignSize()
 
         const docWidth = window.innerWidth
         const docHeight = window.innerHeight
-        const widthRatio = docWidth / DESIGN_WIDTH
-        const heightRatio = docHeight / DESIGN_HEIGHT
+        const widthRatio = docWidth / designWidth
+        const heightRatio = docHeight / designHeight
 
         // 使用较小的比例，确保内容完整显示
         const scale = Math.min(widthRatio, heightRatio)
@@ -62,24 +67,24 @@
         containerRef.style.transformOrigin = 'left top'
 
         // 设置容器尺寸为设计尺寸
-        containerRef.style.width = DESIGN_WIDTH + 'px'
-        containerRef.style.height = DESIGN_HEIGHT + 'px'
+        containerRef.style.width = designWidth + 'px'
+        containerRef.style.height = designHeight + 'px'
     }
 
     // 监听窗口大小变化
     $effect(() => {
         refreshScale()
 
-        const handleResize = () => {
-            refreshScale()
+        const handleResize = async () => {
+            await refreshScale()
         }
 
         window.addEventListener('resize', handleResize)
 
         // 页面显示时重新计算
-        const handlePageshow = (e: PageTransitionEvent) => {
+        const handlePageshow = async (e: PageTransitionEvent) => {
             if (e.persisted) {
-                refreshScale()
+                await refreshScale()
             }
         }
 
