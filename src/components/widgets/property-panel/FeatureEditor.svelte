@@ -263,7 +263,7 @@
     async function handleImageFileChange(key: string, e: Event) {
         const file = (e.target as HTMLInputElement).files?.[0]
         const inputElement = e.target as HTMLInputElement
-        
+
         if (!file || !selectedId) {
             // 清理文件输入框
             inputElement.value = ''

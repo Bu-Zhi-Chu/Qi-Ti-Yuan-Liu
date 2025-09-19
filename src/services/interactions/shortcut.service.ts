@@ -108,6 +108,21 @@ function attachListener() {
     if (listenerAttached) return
     listenerAttached = true
     document.addEventListener('keydown', (e) => {
+        // 若当前焦点在可编辑元素内（input / textarea / contenteditable 等），跳过所有自定义快捷键，保留原生行为
+        const target = e.target as HTMLElement | null
+        if (target) {
+            const tag = target.tagName
+            const isEditableElement =
+                target.isContentEditable ||
+                tag === 'INPUT' ||
+                tag === 'TEXTAREA' ||
+                tag === 'SELECT' ||
+                (target.getAttribute('role') || '').toLowerCase() === 'textbox'
+            if (isEditableElement) {
+                return // 直接退出，浏览器默认处理 Ctrl+C/V/X 等
+            }
+        }
+
         // 空格按下处理（只触发一次，避免重复触发）
         if ((e.code === 'Space' || e.key === ' ') && !spacePressed) {
             spacePressed = true
