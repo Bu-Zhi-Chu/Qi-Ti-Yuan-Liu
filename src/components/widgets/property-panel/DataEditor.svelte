@@ -137,6 +137,13 @@
         </PropertyRow>
     {/if}
 
+    <!-- 模拟路径配置：只在选择模拟接口时显示 -->
+    {#if fullDataSourceConfig?.mockPath && (currentValues.dataSource ?? dataSourceConfig?.default ?? 'json') === 'mock'}
+        <PropertyRow label={fullDataSourceConfig.mockPath.label}>
+            <input type="text" value={currentValues.mockPath ?? fullDataSourceConfig.mockPath.default ?? '/api/mock'} onchange={(e) => handleAttrChange('mockPath', (e.target as HTMLInputElement).value)} class="request-path-input" placeholder="请输入模拟路径" />
+        </PropertyRow>
+    {/if}
+
     <!-- 当 code 属性存在、有 data 数组且数据源为 json（虚拟数据）时显示序列编辑器 -->
     {#if currentValues.code && dataArrays.length > 0 && (currentValues.dataSource ?? dataSourceConfig?.default ?? 'json') === 'json'}
         {#each dataArrays as arr, idx}

@@ -139,11 +139,12 @@
     // })
 
     // 安全执行JavaScript代码并返回option对象
-    function executeJavaScriptCode(code: string): any {
+    function executeJavaScriptCode(code: string, data?: any): any {
         try {
-            // 创建一个安全的执行环境，包含echarts图形功能
+            // 创建一个安全的执行环境，包含echarts图形功能和数据
             const sandbox = {
                 option: undefined,
+                data: data, // 添加真实数据到沙箱环境
                 console: console,
                 Math: Math,
                 Array: Array,
@@ -175,9 +176,133 @@
         }
     }
 
-    // 最终 ECharts option，仅通过JavaScript代码生成
+    // 数据状态管理
+    let realData = $state<any>(null)
+    let isLoading = $state(false)
+    let loadError = $state<string | null>(null)
+
+    // 数据请求函数
+    async function fetchRealData(requestPath: string) {
+        if (!requestPath || requestPath.trim() === '') {
+            return null
+        }
+
+        isLoading = true
+        loadError = null
+
+        try {
+            const data = await request(requestPath)
+            return data
+        } catch (error) {
+            console.error('数据请求失败:', error)
+            loadError = error instanceof Error ? error.message : '数据请求失败'
+            return null
+        } finally {
+            isLoading = false
+        }
+    }
+
+    // 监听数据相关属性变化，发起真实请求
+    $effect(() => {
+        // 获取数据配置
+        const dataSource = restProps.dataAccess || 'json'
+        const requestPath = restProps.requestPath
+        const mockPath = restProps.mockPath
+
+        // 如果数据源是真实请求且有请求路径
+        if (dataSource === 'real' && requestPath) {
+            fetchRealData(requestPath).then(data => {
+                realData = data
+            })
+        }
+        // 如果数据源是模拟接口且有模拟路径
+        else if (dataSource === 'mock' && mockPath) {
+            fetchRealData(mockPath).then(data => {
+                realData = data
+            })
+        } else {
+            realData = null
+        }
+    })
+
+    // 最终 ECharts option，支持JavaScript代码和真实数据
     const option = $derived(
         (() => {
+            // 获取数据配置
+            const dataSource = restProps.dataAccess || 'json'
+            const requestPath = restProps.requestPath
+
+            // 如果数据源是真实请求或模拟接口
+            if (dataSource === 'real' || dataSource === 'mock') {
+                // 如果正在加载，显示加载状态
+                if (isLoading) {
+                    return {
+                        title: {
+                            text: '数据加载中...',
+                            left: 'center',
+                            top: 'middle',
+                            textStyle: {
+                                fontSize: 14,
+                                color: '#666'
+                            }
+                        },
+                        series: []
+                    }
+                }
+
+                // 如果有错误，显示错误信息
+                if (loadError) {
+                    return {
+                        title: {
+                            text: `数据加载失败: ${loadError}`,
+                            left: 'center',
+                            top: 'middle',
+                            textStyle: {
+                                fontSize: 12,
+                                color: '#ff4d4f'
+                            }
+                        },
+                        series: []
+                    }
+                }
+
+                // 如果提供了JavaScript代码，执行代码生成option（传入真实数据）
+                if (code && typeof code === 'string' && code.trim()) {
+                    const codeResult = executeJavaScriptCode(code, realData)
+                    if (codeResult && typeof codeResult === 'object') {
+                        // 处理标题和图例的默认位置
+                        return processOptionDefaults(codeResult)
+                    }
+                }
+
+                // 如果没有提供JavaScript代码但有真实数据，使用默认配置
+                if (realData) {
+                    const titleText = dataSource === 'mock' ? '模拟数据图表' : '真实数据图表'
+                    return {
+                        title: {
+                            text: titleText,
+                            left: 'center',
+                            top: 20
+                        },
+                        tooltip: {
+                            trigger: 'axis'
+                        },
+                        xAxis: {
+                            type: 'category'
+                        },
+                        yAxis: {
+                            type: 'value'
+                        },
+                        series: [{
+                            name: '数据',
+                            type: 'line',
+                            data: realData
+                        }]
+                    }
+                }
+            }
+
+            // 默认的虚拟数据逻辑（原有的json模式）
             // 如果提供了JavaScript代码，执行代码生成option
             if (code && typeof code === 'string' && code.trim()) {
                 const codeResult = executeJavaScriptCode(code)
@@ -237,6 +362,14 @@
         {#if chartReady}
             <ECharts class="chart" options={option} theme={theme as any} init={echartsInit as any} />
         {/if}
+
+        <!-- 加载状态指示器 -->
+        {#if isLoading}
+            <div class="loading-overlay">
+                <div class="loading-spinner"></div>
+                <div class="loading-text">数据加载中...</div>
+            </div>
+        {/if}
     </div>
 </div>
 
@@ -262,5 +395,41 @@
         width: 100%;
         height: 100%;
         pointer-events: none;
+    }
+
+    /* 加载状态覆盖层 */
+    .loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid rgba(255, 255, 255, 0.3);
+        border-top: 4px solid #ffffff;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 16px;
+    }
+
+    .loading-text {
+        color: #ffffff;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
     }
 </style>
