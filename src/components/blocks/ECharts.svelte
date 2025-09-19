@@ -44,6 +44,14 @@
     // 当前缩放比例
     let scaleRatio = $state({ width: 1, height: 1 })
     let containerRef: HTMLDivElement | null = null
+    let chartReady = $state(false)
+
+    // 检查容器是否有有效尺寸
+    function checkContainerSize(): boolean {
+        if (!containerRef) return false
+        const rect = containerRef.getBoundingClientRect()
+        return rect.width > 0 && rect.height > 0
+    }
 
     // 计算并应用缩放比例
     async function refreshScale() {
@@ -90,6 +98,21 @@
 
         window.addEventListener('pageshow', handlePageshow)
 
+        // 等待容器准备好
+        const checkReady = () => {
+            if (checkContainerSize()) {
+                chartReady = true
+            } else {
+                // 如果容器还没准备好，稍后重试
+                setTimeout(checkReady, 100)
+            }
+        }
+
+        // 使用 requestAnimationFrame 确保 DOM 已经渲染
+        requestAnimationFrame(() => {
+            checkReady()
+        })
+
         return () => {
             window.removeEventListener('resize', handleResize)
             window.removeEventListener('pageshow', handlePageshow)
@@ -97,10 +120,10 @@
     })
 
     // 调试：检查code属性是否被正确传递
-    $effect(() => {
-        console.log('ECharts component received code:', code)
-        console.log('ECharts component received all props:', { id, code, theme, style, className, ...restProps })
-    })
+    // $effect(() => {
+    //     console.log('ECharts component received code:', code)
+    //     console.log('ECharts component received all props:', { id, code, theme, style, className, ...restProps })
+    // })
 
     // 安全执行JavaScript代码并返回option对象
     function executeJavaScriptCode(code: string): any {
@@ -174,7 +197,9 @@
 <div class="scale-container" bind:this={containerRef}>
     <!-- 使用一个禁用指针事件的包装层，确保仅图表本身可以交互 -->
     <div class="wrapper" {style} {...restProps} {id}>
-        <ECharts class="chart" options={option} theme={theme as any} init={echartsInit as any} />
+        {#if chartReady}
+            <ECharts class="chart" options={option} theme={theme as any} init={echartsInit as any} />
+        {/if}
     </div>
 </div>
 
@@ -184,6 +209,8 @@
         position: relative;
         transform-origin: left top;
         overflow: hidden;
+        min-width: 100px;
+        min-height: 100px;
     }
 
     /* 让外层容器可以接收鼠标事件用于选中 */

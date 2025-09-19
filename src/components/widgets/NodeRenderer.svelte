@@ -316,9 +316,9 @@
 
         // 调试：检查组件属性是否包含code属性
         if (componentType === 'ECharts') {
-            console.log('NodeRenderer ECharts componentProps:', result)
-            console.log('NodeRenderer restAttrs:', restAttrs)
-            console.log('NodeRenderer node.attributes:', node.attributes)
+            // console.log('NodeRenderer ECharts componentProps:', result)
+            // console.log('NodeRenderer restAttrs:', restAttrs)
+            // console.log('NodeRenderer node.attributes:', node.attributes)
         }
 
         // 确保featureProps中的属性也能传递给组件

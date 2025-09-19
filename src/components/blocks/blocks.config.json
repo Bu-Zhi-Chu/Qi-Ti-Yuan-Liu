@@ -108,7 +108,6 @@
             }
         }
     },
-
     {
         "type": "ButtonGroup",
         "nameZh": "按钮组",
@@ -250,32 +249,19 @@
                 "label": "图表案例",
                 "type": "linkGroup",
                 "links": [
-                    { "label": "官方案例", "url": "https://echarts.apache.org/examples/zh/index.html" },
-                    { "label": "社区案例", "url": "https://www.makeapie.cn/echarts" }
-                ]
-            },
-            "dataSource": {
-                "label": "数据接入",
-                "type": "select",
-                "options": [
                     {
-                        "value": "json",
-                        "label": "虚拟数据"
+                        "label": "官方案例",
+                        "url": "https://echarts.apache.org/examples/zh/index.html"
                     },
                     {
-                        "value": "real",
-                        "label": "真实请求"
+                        "label": "社区案例",
+                        "url": "https://www.makeapie.cn/echarts"
                     }
-                ],
-                "default": "json"
+                ]
             },
             "code": {
                 "label": "图表代码",
-                "type": "code",
-                "showIf": {
-                    "key": "dataSource",
-                    "value": "json"
-                }
+                "type": "code"
             }
         }
     }
