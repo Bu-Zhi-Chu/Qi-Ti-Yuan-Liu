@@ -7,6 +7,7 @@
     import PropertyRow from './PropertyRow.svelte'
     import PropertySelect from './PropertySelect.svelte'
     import CodeEditor from '../CodeEditor.svelte'
+    import blocksConfig from '../../blocks/blocks.config.json'
 
     let { selectedId = null } = $props<{ selectedId?: string | null }>()
 
@@ -40,6 +41,9 @@
 
     let dataArrays = $state<string[]>([])
     let codeMatches: RegExpMatchArray[] = []
+
+    // 派生状态：获取 showIf 配置
+    let codeShowIfConfig = $derived(getComponentShowIfConfig('ECharts', 'code'))
 
     /** 当 code 变化时解析其中的 data: [] 数组 */
     $effect(() => {
@@ -79,6 +83,22 @@
         updateNodeProps(selectedId, { attributes: { [key]: value } })
     }
 
+    // 工具函数：检查节点是否匹配 showIf 条件（复用现有的 showIf 逻辑）
+    function matchesShowIf(node: any, showIfConfig: { key: string; value: any }): boolean {
+        if (!showIfConfig || !node) return false
+        const attr = node.attributes || {}
+        const currentValue = attr[showIfConfig.key] || (node as any)[showIfConfig.key]
+        return currentValue === showIfConfig.value
+    }
+
+    // 工具函数：获取组件类型的 showIf 配置
+    function getComponentShowIfConfig(componentType: string, propKey: string): { key: string; value: any } | null {
+        const componentConfig = (blocksConfig as any[]).find((b) => b.type === componentType)
+        const featureProps = componentConfig?.featureProps
+        const propConfig = featureProps?.[propKey]
+        return propConfig?.showIf || null
+    }
+
     /** 获取中文序数词 */
     function getChineseOrdinal(num: number): string {
         const ordinals = ['第一', '第二', '第三', '第四', '第五', '第六', '第七', '第八', '第九', '第十']
@@ -99,7 +119,7 @@
     </PropertyRow>
 
     <!-- 只在选择虚拟数据时显示动态数组 -->
-    {#if (currentValues.dataSource ?? 'json') === 'json'}
+    {#if codeShowIfConfig && matchesShowIf(currentValues, codeShowIfConfig)}
         {#each dataArrays as arr, idx}
             <PropertyRow label={`${getChineseOrdinal(idx)}序列`}>
                 <!-- 使用 CodeEditor 显示完整的 [x,x] 数组格式 -->

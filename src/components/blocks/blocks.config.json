@@ -254,9 +254,28 @@
                     { "label": "社区案例", "url": "https://www.makeapie.cn/echarts" }
                 ]
             },
+            "dataSource": {
+                "label": "数据接入",
+                "type": "select",
+                "options": [
+                    {
+                        "value": "json",
+                        "label": "虚拟数据"
+                    },
+                    {
+                        "value": "real",
+                        "label": "真实请求"
+                    }
+                ],
+                "default": "json"
+            },
             "code": {
                 "label": "图表代码",
-                "type": "code"
+                "type": "code",
+                "showIf": {
+                    "key": "dataSource",
+                    "value": "json"
+                }
             }
         }
     }

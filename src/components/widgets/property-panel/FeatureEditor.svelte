@@ -55,6 +55,22 @@
 
     // 派生属性描述数组
     type PropEntry = { key: string; label: string; type: string; url?: string; links?: { label: string; url: string }[]; options?: any[]; min?: number; max?: number; default?: any; showIf?: { key: string; value: any } }
+
+    // 工具函数：检查节点是否匹配 showIf 条件（复用现有的 showIf 逻辑）
+    function matchesShowIf(node: any, showIfConfig: { key: string; value: any }): boolean {
+        if (!showIfConfig || !node) return false
+        const attr = node.attributes || {}
+        const currentValue = attr[showIfConfig.key] || (node as any)[showIfConfig.key]
+        return currentValue === showIfConfig.value
+    }
+
+    // 工具函数：获取组件类型的 showIf 配置
+    function getComponentShowIfConfig(componentType: string, propKey: string): { key: string; value: any } | null {
+        const componentConfig = (blocksConfig as any[]).find((b) => b.type === componentType)
+        const featureProps = componentConfig?.featureProps
+        const propConfig = featureProps?.[propKey]
+        return propConfig?.showIf || null
+    }
     // 属性描述数组
     const propEntries: () => PropEntry[] = $derived(() => {
         const fp = featureProps()
@@ -174,9 +190,14 @@
                     parent.children.forEach((child: any) => {
                         if (child.id !== selectedId && child.componentType === 'Button') {
                             const attr = child.attributes || {}
-                            const isNav = attr.buttonType === 'navigation' || (child as any).buttonType === 'navigation'
-                            if (isNav && attr.defaultHome) {
-                                updateNodeProps(child.id, { attributes: { defaultHome: false } })
+                            // 使用 showIf 配置来判断是否为导航按钮，而不是硬编码
+                            const defaultHomeShowIf = getComponentShowIfConfig('Button', 'defaultHome')
+                            if (defaultHomeShowIf) {
+                                // 如果当前按钮满足 defaultHome 的 showIf 条件（即 buttonType === 'navigation'）
+                                const isNavButton = matchesShowIf(child, defaultHomeShowIf)
+                                if (isNavButton && attr.defaultHome) {
+                                    updateNodeProps(child.id, { attributes: { defaultHome: false } })
+                                }
                             }
                         }
                     })
