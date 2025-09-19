@@ -312,7 +312,18 @@
                 styleProps[k] = v
             }
         })
-        return { 'data-name': dataNameAttr, ...restAttrs, ...(node.componentProps ?? {}), ...styleProps }
+        const result = { 'data-name': dataNameAttr, ...restAttrs, ...(node.componentProps ?? {}), ...styleProps }
+
+        // 调试：检查组件属性是否包含code属性
+        if (componentType === 'ECharts') {
+            console.log('NodeRenderer ECharts componentProps:', result)
+            console.log('NodeRenderer restAttrs:', restAttrs)
+            console.log('NodeRenderer node.attributes:', node.attributes)
+        }
+
+        // 确保featureProps中的属性也能传递给组件
+        // 这对于ECharts等需要code属性的组件很重要
+        return result
     })
 </script>
 

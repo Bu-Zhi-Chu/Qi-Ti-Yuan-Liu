@@ -86,6 +86,20 @@ export function createDrawNode(rect: RelativeRect, options: CreateDrawNodeOption
         }
         displayName = `${baseName} ${index}`
     }
+
+    // 获取默认的featureProps值
+    const defaultAttributes: Record<string, any> = {
+        'data-name': displayName
+    }
+
+    if (matched?.featureProps) {
+        Object.entries(matched.featureProps).forEach(([key, config]: [string, any]) => {
+            if (config.default !== undefined) {
+                defaultAttributes[key] = config.default
+            }
+        })
+    }
+
     return {
         id,
         componentType,
@@ -101,9 +115,7 @@ export function createDrawNode(rect: RelativeRect, options: CreateDrawNodeOption
             pointerEvents: 'auto',
             ...presetStyles
         },
-        attributes: {
-            'data-name': displayName
-        },
+        attributes: defaultAttributes,
         children: []
     };
 }

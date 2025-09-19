@@ -98,19 +98,20 @@
     $effect(() => {
         const attrs = propsSnapshot?.attributes || {}
         const styles = propsSnapshot?.styles || {}
-        // 若为 ECharts 且 config 为模板映射，默认展开当前 chartType 子配置，避免面板显示整体映射 JSON
-        const ct = attrs['chartType']
-        const cfg = attrs['config']
-        if (ct && cfg && typeof cfg === 'object') {
-            const templateMap = featureProps()?.config?.default
-            const templateKeys: string[] = templateMap ? Object.keys(templateMap) : []
-            if (templateKeys.length && templateKeys.every((k) => k in cfg)) {
-                // 模板映射 -> 展开子配置
-                attrs['config'] = cfg[ct] ?? cfg[templateKeys[0]]
-            }
+
+        // 获取featureProps的默认值
+        const defaults: Record<string, any> = {}
+        const fp = featureProps()
+        if (fp) {
+            Object.entries(fp).forEach(([key, cfg]: [string, any]) => {
+                if (cfg.default !== undefined) {
+                    defaults[key] = cfg.default
+                }
+            })
         }
-        // 属性与样式合并，样式优先（避免同名冲突）
-        currentValues = { ...attrs, ...styles }
+
+        // 合并顺序：默认值 -> 属性值 -> 样式值（后者优先）
+        currentValues = { ...defaults, ...attrs, ...styles }
     })
     let syncingFromDomTree = false
     let editingButtonCount = false // 标记正在由输入框主动修改中
@@ -151,26 +152,6 @@
         if (entry?.type === 'size') {
             updateNodeProps(selectedId, { styles: { [key]: value } })
         } else {
-            // 若切换图表类型，同时根据默认模板更新 config 字段，提升编辑体验
-            if (key === 'chartType') {
-                // 获取 ECharts 组件默认模板映射
-                const cfgEntry = featureProps()?.config
-                const defaultMap = cfgEntry?.default as any
-                const currentCfg = currentValues['config']
-                let newCfg = currentCfg
-                const templateKeys = Object.keys(defaultMap ?? {}).length ? Object.keys(defaultMap) : Object.keys(currentCfg ?? {})
-                if (currentCfg && templateKeys.every((k) => k in currentCfg)) {
-                    // 当前为模板映射，直接取目标子配置
-                    newCfg = JSON.parse(JSON.stringify((currentCfg as any)[value] ?? (currentCfg as any)[templateKeys[0]]))
-                } else if (defaultMap && defaultMap[value]) {
-                    // 使用 blocks.config.json 中的默认模板
-                    newCfg = JSON.parse(JSON.stringify(defaultMap[value]))
-                }
-                if (newCfg !== currentCfg) {
-                    currentValues = { ...currentValues, config: newCfg }
-                    updateNodeProps(selectedId, { attributes: { config: newCfg } })
-                }
-            }
             updateNodeProps(selectedId, { attributes: { [key]: value } })
 
             // 额外逻辑：同级导航按钮唯一默认首页
@@ -553,6 +534,18 @@
                         >
                             {JSON.stringify(currentValues[p.key] ?? p.default ?? {}, null, 2)}
                         </textarea>
+                    {:else if p.type === 'code'}
+                        <textarea
+                            rows={10}
+                            class="code-input"
+                            oninput={(e: Event) => {
+                                const code = (e.currentTarget as HTMLTextAreaElement).value
+                                handleAttrChange(p.key, code)
+                            }}
+                            placeholder="输入JavaScript代码"
+                        >
+                            {currentValues[p.key] ?? p.default ?? ''}
+                        </textarea>
                     {/if}
                     <!-- 其他类型控件可在此扩展 -->
                 </PropertyRow>
@@ -642,6 +635,7 @@
     .text-input,
     .number-input,
     .json-input,
+    .code-input,
     input[type='number'] {
         flex: 1;
         padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
@@ -656,7 +650,9 @@
 
     .text-input::placeholder,
     .number-input::placeholder,
-    .json-input::placeholder {
+    .json-input::placeholder,
+    .code-input::placeholder {
         color: #9ca3af;
+        white-space: pre-wrap;
     }
 </style>
