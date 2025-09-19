@@ -246,6 +246,14 @@
             "height": "100%"
         },
         "featureProps": {
+            "chartCases": {
+                "label": "图表案例",
+                "type": "linkGroup",
+                "links": [
+                    { "label": "官方案例", "url": "https://echarts.apache.org/examples/zh/index.html" },
+                    { "label": "社区案例", "url": "https://www.makeapie.cn/echarts" }
+                ]
+            },
             "code": {
                 "label": "图表代码",
                 "type": "code"

@@ -54,7 +54,7 @@
     })
 
     // 派生属性描述数组
-    type PropEntry = { key: string; label: string; type: string; options?: any[]; min?: number; max?: number; default?: any; showIf?: { key: string; value: any } }
+    type PropEntry = { key: string; label: string; type: string; url?: string; links?: { label: string; url: string }[]; options?: any[]; min?: number; max?: number; default?: any; showIf?: { key: string; value: any } }
     // 属性描述数组
     const propEntries: () => PropEntry[] = $derived(() => {
         const fp = featureProps()
@@ -530,9 +530,17 @@
                         </div>
                     {:else if p.type === 'switch'}
                         <ToggleSwitch checked={currentValues[p.key] ?? false} on:change={(e) => handleAttrChange(p.key, e.detail)} />
+                    {:else if p.type === 'link'}
+                        <a class="input-style" href={p.url} target="_blank" rel="noopener noreferrer">{p.label ?? '打开'}</a>
+                    {:else if p.type === 'linkGroup'}
+                        <div class="link-group" style="display:flex; gap: calc(8px * var(--scale-ratio, 1)); flex:1 1 0; width:0;">
+                            {#each p.links || [] as l}
+                                <a class="input-style link-btn" href={l.url} target="_blank" rel="noopener noreferrer" style="flex:1;">{l.label}</a>
+                            {/each}
+                        </div>
                     {:else if p.type === 'text'}
                         <input type="text" class="text-input" value={currentValues[p.key] ?? ''} oninput={(e) => handleAttrChange(p.key, (e.currentTarget as HTMLInputElement).value)} />
-                    {:else if p.type === 'json'}
+                    {:else if p.type === 'json' || p.type === 'object'}
                         <textarea
                             rows="6"
                             class="json-input"
@@ -625,6 +633,10 @@
         display: flex;
         align-items: center;
         gap: calc(8px * var(--scale-ratio, 1));
+    }
+    .link-btn {
+        padding: calc(6px * var(--scale-ratio, 1)) calc(10px * var(--scale-ratio, 1));
+        font-size: calc(12px * var(--scale-ratio, 1));
     }
 
     h3 {
