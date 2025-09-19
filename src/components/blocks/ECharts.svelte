@@ -182,7 +182,8 @@
             if (code && typeof code === 'string' && code.trim()) {
                 const codeResult = executeJavaScriptCode(code)
                 if (codeResult && typeof codeResult === 'object') {
-                    return codeResult
+                    // 处理标题和图例的默认位置
+                    return processOptionDefaults(codeResult)
                 }
             }
 
@@ -207,6 +208,26 @@
             }
         })()
     )
+
+    // 处理标题和图例的默认位置
+    function processOptionDefaults(option: any): any {
+        // 深拷贝option对象，避免修改原始对象
+        const processedOption = JSON.parse(JSON.stringify(option))
+
+        // 如果存在标题但没有位置信息，设置为顶部居中
+        if (processedOption.title && !processedOption.title.left && !processedOption.title.x) {
+            processedOption.title.left = 'center'
+            processedOption.title.top = 20 // 距离顶部20像素
+        }
+
+        // 如果存在图例但没有位置信息，设置为底部居中
+        if (processedOption.legend && !processedOption.legend.bottom && !processedOption.legend.top && !processedOption.legend.left && !processedOption.legend.right && !processedOption.legend.x) {
+            processedOption.legend.bottom = 20 // 距离底部20像素
+            processedOption.legend.left = 'center'
+        }
+
+        return processedOption
+    }
 </script>
 
 <!-- 外层容器用于应用缩放变换 -->

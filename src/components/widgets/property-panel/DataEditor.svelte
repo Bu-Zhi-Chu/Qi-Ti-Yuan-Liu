@@ -55,8 +55,17 @@
     $effect(() => {
         const code = currentValues.code as unknown as string | undefined
         if (typeof code === 'string') {
-            const regex = /data\s*:\s*(\[[^\]]*\])/g
-            codeMatches = [...code.matchAll(regex)]
+            // 匹配 data: [] 数组，但排除 legend.data 等配置数据
+            const allMatches = [...code.matchAll(/data\s*:\s*(\[[^\]]*\])/g)]
+
+            // 过滤掉 legend.data 等非系列数据
+            codeMatches = allMatches.filter((match) => {
+                const matchStart = match.index!
+                const beforeMatch = code.substring(Math.max(0, matchStart - 20), matchStart)
+                // 检查是否是 legend.data 或其他非系列配置
+                return !beforeMatch.includes('legend') && !beforeMatch.includes('tooltip')
+            })
+
             dataArrays = codeMatches.map((m) => m[1]) // 只存储数组内容 [x,x] 格式，不包含 data:
         } else {
             codeMatches = []
@@ -70,13 +79,19 @@
         const oldCode = currentValues.code as unknown as string | undefined
         if (typeof oldCode !== 'string') return
 
-        let i = 0
-        const newCode = oldCode.replace(/data\s*:\s*\[[^\]]*\]/g, (match) => {
-            if (i === index) {
-                i++
+        let matchIndex = 0
+        const newCode = oldCode.replace(/data\s*:\s*\[[^\]]*\]/g, (match, offset) => {
+            // 检查这个匹配是否是 legend.data 或其他非系列配置
+            const beforeMatch = oldCode.substring(Math.max(0, offset - 20), offset)
+            if (beforeMatch.includes('legend') || beforeMatch.includes('tooltip')) {
+                return match // 跳过 legend.data 等配置
+            }
+
+            if (matchIndex === index) {
+                matchIndex++
                 return `data: ${newValue}` // newValue 只包含数组内容，需要添加 data: 前缀
             }
-            i++
+            matchIndex++
             return match
         })
         // 立即触发属性更新
