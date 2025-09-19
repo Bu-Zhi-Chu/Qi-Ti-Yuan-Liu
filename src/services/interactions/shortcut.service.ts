@@ -110,7 +110,7 @@ function attachListener() {
     document.addEventListener('keydown', (e) => {
         // 若当前焦点在可编辑元素内（input / textarea / contenteditable 等），跳过所有自定义快捷键，保留原生行为
         const target = e.target as HTMLElement | null
-        if (target) {
+        if (target && target.nodeType === Node.ELEMENT_NODE) {
             const tag = target.tagName
             const isEditableElement =
                 target.isContentEditable ||

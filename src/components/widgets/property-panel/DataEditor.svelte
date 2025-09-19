@@ -64,12 +64,4 @@
     :global(.data-editor .property-row:not(:last-child)) {
         margin-bottom: calc(12px * var(--scale-ratio, 1));
     }
-
-    .placeholder {
-        color: #64748b;
-        font-style: italic;
-        text-align: center;
-        margin-top: calc(40px * var(--scale-ratio, 1));
-        font-size: calc(14px * var(--scale-ratio, 1));
-    }
 </style>
