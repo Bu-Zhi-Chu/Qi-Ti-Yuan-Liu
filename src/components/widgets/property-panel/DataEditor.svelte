@@ -6,6 +6,7 @@
     import { getNodeProps as _getNodeProps, getNodePropsStore, updateNodeProps } from '../../../services/property-panel/property-panel.service'
     import PropertyRow from './PropertyRow.svelte'
     import PropertySelect from './PropertySelect.svelte'
+    import CodeEditor from '../CodeEditor.svelte'
 
     let { selectedId = null } = $props<{ selectedId?: string | null }>()
 
@@ -34,7 +35,7 @@
     $effect(() => {
         const attrs = dataSnapshot?.attributes || {}
         const styles = dataSnapshot?.styles || {}
-        currentValues = { ...attrs, ...styles }   // 样式覆盖属性，保持与 NodeRenderer 同样优先级
+        currentValues = { ...attrs, ...styles } // 样式覆盖属性，保持与 NodeRenderer 同样优先级
     })
 
     let dataArrays = $state<string[]>([])
@@ -46,12 +47,7 @@
         if (typeof code === 'string') {
             const regex = /data\s*:\s*\[[^\]]*\]/g
             codeMatches = [...code.matchAll(regex)]
-            dataArrays = codeMatches.map((m) =>
-                m[0]
-                    .replace(/^[^\[]*\[/, '')
-                    .replace(/\]$/, '')
-                    .trim()
-            )
+            dataArrays = codeMatches.map((m) => m[0]) // 存储完整的 data: [x,x] 格式
         } else {
             codeMatches = []
             dataArrays = []
@@ -68,7 +64,7 @@
         const newCode = oldCode.replace(/data\s*:\s*\[[^\]]*\]/g, (match) => {
             if (i === index) {
                 i++
-                return `data: [${newValue}]`
+                return newValue // newValue 已经是完整的 data: [x,x] 格式
             }
             i++
             return match
@@ -82,6 +78,12 @@
         // DataEditor 只改 attributes；styles 由别的面板处理
         updateNodeProps(selectedId, { attributes: { [key]: value } })
     }
+
+    /** 获取中文序数词 */
+    function getChineseOrdinal(num: number): string {
+        const ordinals = ['第一', '第二', '第三', '第四', '第五', '第六', '第七', '第八', '第九', '第十']
+        return ordinals[num] || `第${num + 1}`
+    }
 </script>
 
 <div class="data-editor">
@@ -89,24 +91,22 @@
         <PropertySelect
             value={currentValues.dataSource ?? 'json'}
             options={[
-                { value: 'json', label: '临时数据' },
+                { value: 'json', label: '虚拟数据' },
                 { value: 'real', label: '真实请求' }
             ]}
             change={(v) => handleAttrChange('dataSource', v)}
         />
     </PropertyRow>
 
-    {#each dataArrays as arr, idx}
-        <PropertyRow label={`数据数组 ${idx + 1}`}>
-            <!-- 实时绑定 + 实时同步 -->
-            <textarea
-                class="input-style"
-                rows="3"
-                bind:value={dataArrays[idx]}
-                oninput={() => updateDataArray(idx, dataArrays[idx])}
-            ></textarea>
-        </PropertyRow>
-    {/each}
+    <!-- 只在选择虚拟数据时显示动态数组 -->
+    {#if (currentValues.dataSource ?? 'json') === 'json'}
+        {#each dataArrays as arr, idx}
+            <PropertyRow label={`${getChineseOrdinal(idx)}序列`}>
+                <!-- 使用 CodeEditor 显示完整的 [x,x] 数组格式 -->
+                <CodeEditor bind:code={dataArrays[idx]} language="javascript" theme="one-dark" height="80px" run={(code: string) => updateDataArray(idx, code)} toolbar={false} autoRun={true} wrap={true} showLineNumbers={false} style="flex:1; width:0;" />
+            </PropertyRow>
+        {/each}
+    {/if}
 </div>
 
 <style>
