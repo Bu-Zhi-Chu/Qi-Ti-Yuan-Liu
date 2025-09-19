@@ -107,7 +107,7 @@
     {/if}
 
     <!-- 当 code 属性存在、有 data 数组且数据源为 json（虚拟数据）时显示序列编辑器 -->
-    {#if currentValues.code && dataArrays.length > 0 && currentValues.dataSource === 'json'}
+    {#if currentValues.code && dataArrays.length > 0 && (currentValues.dataSource ?? dataSourceConfig?.default ?? 'json') === 'json'}
         {#each dataArrays as arr, idx}
             <PropertyRow label={`${getChineseOrdinal(idx)}序列`}>
                 <!-- 使用 CodeEditor 显示完整的 [x,x] 数组格式 -->
