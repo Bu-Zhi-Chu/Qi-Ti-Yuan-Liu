@@ -195,12 +195,57 @@
             const result = func(sandbox)
 
             // 如果有数据映射，则应用它
-            if (result && Array.isArray(result.series) && Array.isArray(seriesMapping) && data) {
-                result.series.forEach((s: any, i: number) => {
-                    const mappingPath = seriesMapping[i]
-                    // 直接从预处理好的数据中根据 key 获取数组
+            if (result && Array.isArray(seriesMapping) && data) {
+                // 先提取出所有的data数组，保持它们在代码中的原始顺序
+                const dataMatches = [...code.matchAll(/data\s*:\s*(\[[^\]]*\])/g)].filter((match) => {
+                    const matchStart = match.index!
+                    const beforeMatch = code.substring(Math.max(0, matchStart - 20), matchStart)
+                    return !beforeMatch.includes('legend') && !beforeMatch.includes('tooltip')
+                })
+
+                // 第X映射对应第X个data数组（按代码中出现顺序）
+                dataMatches.forEach((match, index) => {
+                    const mappingPath = seriesMapping[index]
                     if (mappingPath && data[mappingPath]) {
-                        s.data = data[mappingPath]
+                        let targetData = data[mappingPath]
+
+                        // 数据长度兼容性处理
+                        if (Array.isArray(targetData)) {
+                            // 解析原始data数组的长度
+                            let originalLength = 0
+                            try {
+                                const parsedOriginal = JSON.parse(match[1])
+                                originalLength = Array.isArray(parsedOriginal) ? parsedOriginal.length : 0
+                            } catch (e) {
+                                // 解析失败，使用默认值
+                            }
+
+                            if (originalLength > 0 && targetData.length !== originalLength) {
+                                if (targetData.length > originalLength) {
+                                    // 目标数据更长，截断
+                                    targetData = targetData.slice(0, originalLength)
+                                } else {
+                                    // 目标数据更短，用最后一个值填充
+                                    const lastValue = targetData[targetData.length - 1]
+                                    while (targetData.length < originalLength) {
+                                        targetData.push(lastValue)
+                                    }
+                                }
+                            }
+                        }
+
+                        // 找到这个data在result中的位置并替换
+                        if (result.series && Array.isArray(result.series)) {
+                            result.series.forEach((s: any) => {
+                                if (s.data === match[1] || JSON.stringify(s.data) === match[1]) {
+                                    s.data = targetData
+                                }
+                            })
+                        }
+                        // 也要检查xAxis等位置
+                        if (result.xAxis && result.xAxis.data === match[1]) {
+                            result.xAxis.data = targetData
+                        }
                     }
                 })
             }
@@ -288,6 +333,9 @@
         }
     })
 
+    // 导入序列提取服务
+    import { extractSeriesFromCode, getSeriesCount } from '../../services/property-panel/series-extractor.service'
+
     // 最终 ECharts option，支持JavaScript代码和真实数据
     const option = $derived(
         (() => {
@@ -301,21 +349,27 @@
 
             // 如果是虚拟数据模式，且有独立数据源，则进行代码覆盖
             if (dataSource === 'json' && finalCode && seriesData && seriesData.length > 0) {
-                let seriesIndex = 0
-                // 使用正则表达式替换 code 中的 data: [...] 部分
-                finalCode = finalCode.replace(/data\s*:\s*(\[[^\]]*\])/g, (match, offset) => {
-                    const beforeMatch = finalCode!.substring(Math.max(0, offset - 20), offset)
-                    if (beforeMatch.includes('legend') || beforeMatch.includes('tooltip')) {
-                        return match // 跳过非系列数据
-                    }
+                // 使用序列提取服务来替换数据
+                const extraction = extractSeriesFromCode(finalCode, seriesData)
 
-                    if (seriesIndex < seriesData.length) {
-                        const newSeries = `data: ${seriesData[seriesIndex]}`
-                        seriesIndex++
-                        return newSeries
-                    }
-                    return match // 如果 seriesData 长度不够，则保留原始数据
-                })
+                if (extraction.dataArrays.length > 0) {
+                    let seriesIndex = 0
+                    // 使用正则表达式替换 code 中的 data: [...] 部分
+                    finalCode = finalCode.replace(/data\s*:\s*(\[[^\]]*\])/g, (match, offset) => {
+                        const beforeMatch = finalCode!.substring(Math.max(0, offset - 20), offset)
+
+                        if (beforeMatch.includes('legend') || beforeMatch.includes('tooltip')) {
+                            return match // 跳过非系列数据
+                        }
+
+                        if (seriesIndex < extraction.dataArrays.length) {
+                            const newSeries = `data: ${extraction.dataArrays[seriesIndex]}`
+                            seriesIndex++
+                            return newSeries
+                        }
+                        return match // 如果 seriesData 长度不够，则保留原始数据
+                    })
+                }
             }
 
             // 如果数据源是真实请求或模拟接口

@@ -49,6 +49,9 @@
     // 2. 使用 $derived 进行响应式状态派生
     let currentValues = $derived(dataSnapshot ? { ...(dataSnapshot.attributes || {}), ...(dataSnapshot.styles || {}) } : {})
 
+    // 导入序列提取服务
+    import { extractSeriesFromCode, getSeriesMapping } from '../../../services/property-panel/series-extractor.service'
+
     const derivedState = $derived(() => {
         const code = currentValues.code as string | undefined
         const seriesData = currentValues.seriesData as string[] | undefined
@@ -61,18 +64,11 @@
             }
         }
 
-        const allMatches = [...code.matchAll(/data\s*:\s*(\[[^\]]*\])/g)]
-        const matches = allMatches.filter((match) => {
-            const matchStart = match.index!
-            const beforeMatch = code.substring(Math.max(0, matchStart - 20), matchStart)
-            return !beforeMatch.includes('legend') && !beforeMatch.includes('tooltip')
-        })
-        const parsed = matches.map((m) => m[1])
+        // JSON 模式下，使用序列提取服务
+        const extraction = extractSeriesFromCode(code, seriesData)
+        const needsWriteBack = JSON.stringify(seriesData) !== JSON.stringify(extraction.dataArrays)
 
-        const finalData = seriesData && seriesData.length === parsed.length ? seriesData : parsed
-        const needsWriteBack = JSON.stringify(seriesData) !== JSON.stringify(finalData)
-
-        return { finalData, matches, needsWriteBack }
+        return { finalData: extraction.dataArrays, matches: extraction.matches, needsWriteBack }
     })
 
     let dataArrays = $derived(derivedState().finalData)
@@ -127,6 +123,15 @@
         handleAttrChange('seriesMapping', newMapping)
     }
 
+    // 获取序列数量（用于映射）
+    function getSeriesCount(): number {
+        if (dataSource === 'json') {
+            return dataArrays.length
+        } else {
+            return currentValues.seriesData?.length || 0
+        }
+    }
+
     function handleAttrChange(key: string, value: any) {
         if (!selectedId) return
         // DataEditor 只改 attributes；styles 由别的面板处理
@@ -153,8 +158,8 @@
         return componentConfig?.dataSource || null
     }
 
-    /** 获取中文序数词 */
-    function getChineseOrdinal(num: number): string {
+    // 获取中文序数词函数
+    const getChineseOrdinal = (num: number) => {
         const ordinals = ['第一', '第二', '第三', '第四', '第五', '第六', '第七', '第八', '第九', '第十']
         return ordinals[num] || `第${num + 1}`
     }
@@ -207,8 +212,8 @@
 
     <!-- 动态数据(mock/real)模式：编辑 seriesMapping -->
     {#if dataSource === 'mock' || dataSource === 'real'}
-        {#if dataArrays.length > 0}
-            {#each dataArrays as arr, idx}
+        {#if getSeriesCount() > 0}
+            {#each Array(getSeriesCount()) as _, idx}
                 <PropertyRow label={`${getChineseOrdinal(idx)}映射`}>
                     {#if dataMappingKeys.length > 0}
                         <PropertySelect value={seriesMapping()[idx] || ''} options={dataMappingKeys.map((k) => ({ label: k, value: k }))} change={(v) => updateSeriesMapping(idx, v)} placeholder="选择数据字段" />
