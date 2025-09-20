@@ -260,7 +260,7 @@
                 "max": 2160
             },
             "renderer": {
-                "label": "最高性能",
+                "label": "高级渲染",
                 "type": "switch",
                 "default": false
             },
