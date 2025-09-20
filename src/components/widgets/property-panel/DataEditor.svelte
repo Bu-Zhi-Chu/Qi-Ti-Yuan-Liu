@@ -242,7 +242,7 @@
         flex: 1;
         width: 0;
         background: rgba(15, 23, 42, 0.8);
-        border: 1px solid rgba(51, 65, 85, 0.8);
+        border: calc(1px * var(--scale-ratio, 1)) solid rgba(51, 65, 85, 0.8);
         border-radius: calc(4px * var(--scale-ratio, 1));
         padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
         color: #e2e8f0;
