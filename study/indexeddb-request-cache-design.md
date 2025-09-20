@@ -1,543 +1,298 @@
 # IndexedDB 数据请求缓存机制设计
 
-## 概述
+## 📋 概述
 
-本文档详细描述了基于 IndexedDB 的通用数据请求缓存机制的设计方案，该方案采用"缓存优先"策略，能够显著提升应用性能和用户体验。
+基于 IndexedDB 的通用数据请求缓存机制，采用**缓存优先**策略，显著提升应用性能和用户体验。
 
-## 核心设计思路
-
-### 缓存策略
-- **缓存优先 (Cache First)**：优先返回缓存数据，然后异步更新
-- **渐进式更新**：先展示缓存，后台对比更新
+### 🎯 核心优势
+- **极速响应**：优先返回缓存数据，减少等待时间
 - **离线可用**：网络断开时仍可提供基础功能
+- **智能更新**：后台异步对比更新，保持数据新鲜度
+- **降级保障**：网络异常时提供降级方案，确保稳定性
+
+---
+
+## 🏗️ 核心设计
+
+### 缓存策略流程
+```
+用户请求 → 立即返回缓存 & 更新UI → 后台异步请求真实数据 → 对比差异 → 若不同则更新缓存 & 再次刷新UI
+```
 
 ### 技术架构
-```
-用户请求 → 检查缓存 → 返回缓存数据 → 异步请求真实数据 → 对比更新 → 更新缓存
-```
+- **双层缓存**：内存缓存(L1) + IndexedDB缓存(L2)
+- **缓存键**：URL + Method + 排序后 Query/Body 生成唯一标识（相同接口不同参数=独立缓存）
+- **数据对比**：JSON快照对比，检测数据变化
 
-## 详细实现方案
+---
 
-### 1. 缓存层设计
+## 💻 实现方案
 
-#### IndexedDB 表结构
-```javascript
-// 缓存表结构
-interface CacheRecord {
-  key: string;           // 请求唯一标识 (URL + params)
-  data: any;            // 响应数据
-  timestamp: number;    // 缓存时间戳
-  etag?: string;        // 数据版本标识
-  expires: number;      // 过期时间
-}
-
-// 数据库配置
+### 1. 缓存管理器
+```typescript
+// 核心配置
 const DB_CONFIG = {
   name: 'RequestCache',
-  version: 1,
-  stores: {
-    cache: {
-      keyPath: 'key',
-      indexes: ['timestamp', 'expires']
-    }
-  }
+  version: 1
 }
-```
 
-#### 缓存键生成策略
-```javascript
-function generateCacheKey(url: string, params: any): string {
-  const paramsStr = JSON.stringify(params || {});
-  return `${url}:${paramsStr}`;
-}
-```
-
-### 2. 缓存管理器实现
-
-#### 核心缓存管理类
-```javascript
-class RequestCacheManager {
-  private db: Dexie;
-  private defaultTTL: number = 5 * 60 * 1000; // 5分钟默认过期
-
-  constructor() {
-    this.db = new Dexie(DB_CONFIG.name);
-    this.initDatabase();
-  }
-
-  // 初始化数据库
-  private async initDatabase() {
-    this.db.version(DB_CONFIG.version).stores({
-      cache: 'key, timestamp, expires'
-    });
-  }
-
-  // 获取缓存数据
-  async getCache(key: string): Promise<CacheRecord | null> {
-    try {
-      const record = await this.db.cache.get(key);
-      if (!record) return null;
-
-      // 检查是否过期
-      if (Date.now() > record.expires) {
-        await this.deleteCache(key);
-        return null;
-      }
-
-      return record;
-    } catch (error) {
-      console.warn('Cache get error:', error);
-      return null;
-    }
-  }
-
-  // 设置缓存数据
-  async setCache(key: string, data: any, ttl?: number): Promise<void> {
-    try {
-      const record: CacheRecord = {
-        key,
-        data,
-        timestamp: Date.now(),
-        expires: Date.now() + (ttl || this.defaultTTL)
-      };
-
-      await this.db.cache.put(record);
-    } catch (error) {
-      console.warn('Cache set error:', error);
-    }
-  }
-
-  // 删除缓存
-  async deleteCache(key: string): Promise<void> {
-    try {
-      await this.db.cache.delete(key);
-    } catch (error) {
-      console.warn('Cache delete error:', error);
-    }
-  }
-
-  // 清理过期缓存
-  async cleanupExpiredCache(): Promise<void> {
-    try {
-      const now = Date.now();
-      await this.db.cache.where('expires').below(now).delete();
-    } catch (error) {
-      console.warn('Cache cleanup error:', error);
-    }
-  }
-}
-```
-
-### 3. 请求缓存包装器
-
-#### 带缓存的请求函数
-```javascript
-class CachedRequestService {
-  private cacheManager: RequestCacheManager;
-
-  constructor() {
-    this.cacheManager = new RequestCacheManager();
-  }
-
-  // 带缓存的请求方法
-  async cachedRequest<T>(
-    url: string,
-    options: RequestInit = {},
-    cacheConfig: {
-      ttl?: number;
-      forceRefresh?: boolean;
-      onUpdate?: (data: T) => void;
-    } = {}
-  ): Promise<T> {
-    const { ttl, forceRefresh = false, onUpdate } = cacheConfig;
-    const cacheKey = generateCacheKey(url, options.body);
-
-    // 步骤1: 尝试获取缓存数据
-    if (!forceRefresh) {
-      const cachedData = await this.cacheManager.getCache(cacheKey);
-      if (cachedData) {
-        // 立即返回缓存数据
-        const cacheResult = cachedData.data;
-
-        // 步骤2: 异步获取最新数据并对比
-        this.fetchAndCompare(url, options, cacheKey, cacheResult, onUpdate).catch(error => {
-          console.warn('Background update failed:', error);
-        });
-
-        return cacheResult;
-      }
-    }
-
-    // 步骤3: 无缓存或强制刷新，直接请求
-    const response = await this.fetchWithTimeout(url, options);
-    const data = await response.json();
-
-    // 步骤4: 更新缓存
-    await this.cacheManager.setCache(cacheKey, data, ttl);
-
-    return data;
-  }
-
-  // 后台对比更新逻辑
-  private async fetchAndCompare<T>(
-    url: string,
-    options: RequestInit,
-    cacheKey: string,
-    cachedData: T,
-    onUpdate?: (data: T) => void
-  ): Promise<void> {
-    try {
-      const response = await this.fetchWithTimeout(url, options);
-      const newData = await response.json();
-
-      // 数据对比逻辑
-      if (this.isDataDifferent(cachedData, newData)) {
-        // 数据有更新
-        await this.cacheManager.setCache(cacheKey, newData);
-
-        if (onUpdate) {
-          onUpdate(newData);
-        }
-      }
-    } catch (error) {
-      console.warn('Background fetch failed:', error);
-    }
-  }
-
-  // 数据对比函数
-  private isDataDifferent(oldData: any, newData: any): boolean {
-    return JSON.stringify(oldData) !== JSON.stringify(newData);
-  }
-
-  // 带超时的fetch
-  private async fetchWithTimeout(url: string, options: RequestInit): Promise<Response> {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30秒超时
-
-    try {
-      const response = await fetch(url, {
-        ...options,
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-      return response;
-    } catch (error) {
-      clearTimeout(timeoutId);
-      throw error;
-    }
-  }
-}
-```
-
-### 4. 使用示例
-
-#### 基础使用
-```javascript
-const cacheService = new CachedRequestService();
-
-// 基础缓存请求
-const data = await cacheService.cachedRequest('/api/charts/data');
-
-// 自定义缓存时间 (10分钟)
-const data2 = await cacheService.cachedRequest(
-  '/api/charts/data',
-  {},
-  { ttl: 10 * 60 * 1000 }
-);
-```
-
-#### 带更新回调的使用
-```javascript
-// 图表数据缓存，支持实时更新
-const chartData = await cacheService.cachedRequest(
-  '/api/charts/bar-chart',
-  {},
-  {
-    ttl: 5 * 60 * 1000,
-    onUpdate: (newData) => {
-      // 当后台发现数据更新时调用
-      updateChart(newData);
-      showUpdateNotification('图表数据已更新');
-    }
-  }
-);
-```
-
-#### 强制刷新
-```javascript
-// 强制获取最新数据
-const freshData = await cacheService.cachedRequest(
-  '/api/charts/data',
-  {},
-  { forceRefresh: true }
-);
-```
-
-## 性能优化策略
-
-### 1. 内存缓存层
-```javascript
-class MemoryCache {
-  private cache = new Map<string, { data: any; expires: number }>();
-  private maxSize = 100; // 最大缓存数量
-
-  get(key: string): any | null {
-    const item = this.cache.get(key);
-    if (!item) return null;
-
-    if (Date.now() > item.expires) {
-      this.cache.delete(key);
-      return null;
-    }
-
-    return item.data;
-  }
-
-  set(key: string, data: any, ttl: number): void {
-    if (this.cache.size >= this.maxSize) {
-      // LRU清理策略
-      const firstKey = this.cache.keys().next().value;
-      this.cache.delete(firstKey);
-    }
-
-    this.cache.set(key, {
-      data,
-      expires: Date.now() + ttl
-    });
-  }
-}
-```
-
-### 2. 缓存预热
-```javascript
-// 应用启动时预加载关键数据
-async function preloadCriticalData() {
-  const criticalEndpoints = [
-    '/api/user/config',
-    '/api/charts/default-data',
-    '/api/navigation/menu'
-  ];
-
-  for (const endpoint of criticalEndpoints) {
-    try {
-      await cacheService.cachedRequest(endpoint);
-    } catch (error) {
-      console.warn(`Preload failed for ${endpoint}:`, error);
-    }
-  }
-}
-```
-
-### 3. 智能缓存清理
-```javascript
-// 定期清理策略
-class CacheCleanupService {
-  constructor(private cacheManager: RequestCacheManager) {}
-
-  // 基于使用频率的清理
-  async cleanupByUsage(): Promise<void> {
-    // 清理最久未使用的缓存
-    await this.cacheManager.cleanupExpiredCache();
-  }
-
-  // 基于存储空间的清理
-  async cleanupByStorage(): Promise<void> {
-    const usage = await navigator.storage?.estimate();
-    if (usage && usage.usage / usage.quota > 0.8) {
-      // 存储使用率超过80%，清理缓存
-      await this.cleanupByUsage();
-    }
-  }
-}
-```
-
-## 错误处理与降级
-
-### 1. 网络异常处理
-```javascript
-async cachedRequestWithFallback<T>(
-  url: string,
-  options: RequestInit = {},
-  fallbackData?: T
-): Promise<T> {
-  try {
-    return await this.cachedRequest<T>(url, options);
-  } catch (error) {
-    if (fallbackData) {
-      console.warn('Request failed, using fallback data:', error);
-      return fallbackData;
-    }
-    throw error;
-  }
-}
-```
-
-### 2. 缓存异常降级
-```javascript
-async safeCachedRequest<T>(
-  url: string,
-  options: RequestInit = {}
-): Promise<T> {
-  try {
-    // 尝试缓存请求
-    return await this.cachedRequest<T>(url, options);
-  } catch (cacheError) {
-    console.warn('Cache failed, falling back to direct request:', cacheError);
-
-    try {
-      // 缓存失败，直接请求
-      const response = await fetch(url, options);
-      return await response.json();
-    } catch (requestError) {
-      console.error('Both cache and direct request failed:', requestError);
-      throw requestError;
-    }
-  }
-}
-```
-
-## 数据一致性保障
-
-### 1. 版本控制
-```javascript
+// 缓存记录结构
 interface CacheRecord {
-  key: string;
-  data: any;
-  timestamp: number;
-  version: string;      // 数据版本
-  etag?: string;        // HTTP ETag
+  key: string;           // 请求唯一标识：Method + 排序后 URL+Query+Body（不同参数=不同 key）
+  url: string;          // 请求路径（不含参数）
+  params: string;       // 排序后 Query/Body 字符串，便于单独分析
+  data: any;            // 响应数据
+  lastAccess: number;   // 最后访问时间戳（毫秒）
+  etag?: string;        // 数据版本标识
 }
+```
 
-// 带版本检查的请求
-async cachedRequestWithVersion<T>(
+### 2. 统一接口设计
+```typescript
+// 统一接口设计
+```typescript
+// 业务层零改动，直接替换 fetch
+cachedFetch<T>(
   url: string,
-  currentVersion?: string
-): Promise<T> {
-  const cacheKey = generateCacheKey(url);
-  const cached = await this.cacheManager.getCache(cacheKey);
-
-  if (cached && cached.version === currentVersion) {
-    return cached.data;
+  options?: RequestInit,
+  cacheConfig?: {
+    forceRefresh?: boolean;    // 强制刷新
+    onUpdate?: (data: T) => void; // 数据更新回调
   }
+): Promise<T>
+```
 
-  // 版本不匹配或没有缓存，重新请求
-  const response = await fetch(url);
-  const newData = await response.json();
-  const newVersion = response.headers.get('X-Data-Version');
+### 3. 使用示例
+```javascript
+// 使用示例
+```javascript
+// 立即返回缓存，后台更新
+const data = await cachedFetch('/api/charts/data');
 
-  await this.cacheManager.setCache(cacheKey, newData);
-  return newData;
+// 监听后台更新（若数据变化会再次回调）
+const chartData = await cachedFetch('/api/charts/bar', {}, {
+  onUpdate: (newData) => {
+    updateChart(newData);   // 立即渲染缓存
+    // 若后台拉取的数据与缓存不同，onUpdate 会再次被调用
+  }
+});
+
+// 强制获取最新数据
+const freshData = await cachedFetch('/api/data', {}, {
+  forceRefresh: true
+});
+```
+
+---
+
+## ⚡ 性能优化
+
+### 多级缓存架构
+```
+用户请求 → 内存缓存(L1) → IndexedDB缓存(L2) → 网络请求
+                ↓              ↓              ↓
+              毫秒级响应     本地存储      远程数据
+              (100项LRU)    (50MB上限)     (30s超时)
+```
+
+### 缓存清理策略
+- **LRU淘汰**：内存缓存按最近使用顺序淘汰
+- **冷数据清理**：后台异步删除半年未访问的缓存（不阻塞主线程）
+- **存储监控**：存储使用率>80%时清理最早20%数据
+- **启动清理**：应用启动时异步清理，不阻塞首屏
+
+### 缓存策略说明
+- **无降级处理**：缓存仅作为性能优化，不影响主流程
+- **IndexedDB 不可用**：自动降级为直接网络请求
+- **缓存失败处理**：查询或写入失败时直接走真实请求，不影响业务逻辑
+
+---
+
+## 🛡️ 错误处理
+
+### 错误处理原则
+缓存机制仅作为性能优化，不影响主业务流程：
+
+1. **IndexedDB 不可用**：自动降级为直接网络请求，无感知切换
+2. **缓存查询失败**：直接走真实网络请求，不影响业务
+3. **缓存写入失败**：记录警告日志，不影响主流程继续执行
+4. **网络异常**：抛出原始错误，由业务层自行处理
+
+```javascript
+// 错误处理示例
+try {
+  const data = await cachedFetch('/api/data');
+} catch (error) {
+  console.error('网络请求失败:', error);
+  // 网络异常时，业务层可根据需要处理兜底逻辑
 }
 ```
 
-### 2. 增量更新
+---
+
+## 📊 监控与调试
+
+### 开发调试工具
 ```javascript
-// 支持增量数据更新的缓存
-async cachedRequestWithDelta<T>(
+// 开发环境可用调试接口
+window.__CACHE_DEBUG__ = {
+  getMetrics: () => ({ hits, misses, hitRate }),     // 命中率统计
+  clearCache: () => {},                            // 清空缓存
+  getCacheStatus: async (key) => {}                // 查看缓存状态
+};
+```
+
+### 关键指标
+- **命中率**：缓存命中次数/总请求次数
+- **更新次数**：后台数据更新次数
+- **存储使用**：缓存占用存储空间
+- **响应时间**：缓存命中vs未命中的响应时间对比
+
+---
+
+## 📋 最佳实践
+
+### 缓存策略选择
+| 数据类型 | 适用场景 | 建议 |
+|---------|----------|------|
+| 静态数据 | 配置信息、字典数据 | 放心缓存，后台静默更新 |
+| 半动态数据 | 图表数据、列表数据 | 立即返回缓存，后台刷新 |
+| 实时数据 | 监控数据、实时状态 | 缓存+后台短轮询/推送 |
+| 用户数据 | 个人信息、权限数据 | 谨慎缓存，可强制刷新 |
+
+### 实施建议
+1. **渐进式迁移**：先在高频接口试点，逐步扩大范围
+2. **监控告警**：设置命中率告警，及时发现异常
+3. **版本控制**：重要接口使用ETag或版本号确保数据一致性
+
+---
+
+## 🚀 组件化实现计划
+
+### 目录结构
+```
+src/services/cache/
+├─ index.ts          # 统一出口：cachedFetch()
+├─ memory-l1.ts      # 内存LRU缓存(100项)
+├─ indexeddb-l2.ts   # IndexedDB持久化存储
+├─ cache-key.ts      # 缓存键生成算法
+├─ cleanup.ts        # 清理策略
+└─ types.ts          # 类型定义
+```
+
+### 迁移步骤
+1. **新增组件**：开发缓存组件，零依赖改动
+2. **接口替换**：全局替换 `fetch(` → `cachedFetch(`
+3. **策略调优**：针对图表等高频接口优化TTL
+4. **监控验证**：通过命中率指标持续优化
+
+### 数据隔离声明
+- **缓存数据库**完全独立于项目数据
+- **导出/导入**功能不会携带缓存表
+- **精简构建**不包含任何缓存文件
+- 用户清缓存不影响项目数据完整性
+
+---
+
+## ✅ 总结
+
+基于 IndexedDB 的缓存机制通过**缓存优先**策略，能够：
+
+1. **⚡ 提升用户体验**：毫秒级响应，减少等待时间
+2. **📉 降低服务器压力**：减少重复请求，节省带宽
+3. **🔒 增强应用稳定性**：提供完整的降级保障机制
+4. **🔄 支持实时更新**：后台智能对比，保持数据新鲜度
+
+特别适合图表类应用，能够有效处理大量数据请求的缓存需求，同时保持数据的实时性和一致性。
+
+---
+
+## 组件化实现计划（2025-06 更新）
+
+为把“缓存逻辑”与“业务代码”彻底解耦，后续将以**统一组件**形式提供能力，对外仅暴露一个函数，内部自动完成缓存键生成、多级缓存、后台更新、降级处理。
+
+### 1. 目录结构
+```
+src/services/cache/
+├─ index.ts               # 唯一出口：cachedFetch()
+├─ cache-key.ts           # URL + 参数 → 稳定 key（排序防抖动）
+├─ memory-l1.ts           # 内存 LRU（100 项），会话级毫秒复用
+├─ indexeddb-l2.ts       # Dexie 封装，表结构见下
+├─ cleanup.ts             # 启动清理 + 存储紧张时 LRU 淘汰
+└─ types.ts               # 公共类型（CacheConfig、CacheRecord …）
+```
+
+### 2. 接口设计
+```ts
+// 业务层零改动，直接替换 fetch
+cachedFetch<T>(
   url: string,
-  deltaUrl: string
-): Promise<T> {
-  const cacheKey = generateCacheKey(url);
-  const cached = await this.cacheManager.getCache(cacheKey);
-
-  if (cached) {
-    // 获取增量更新
-    const deltaResponse = await fetch(deltaUrl);
-    const deltaData = await deltaResponse.json();
-
-    // 合并增量数据
-    const updatedData = this.mergeDeltaData(cached.data, deltaData);
-    await this.cacheManager.setCache(cacheKey, updatedData);
-
-    return updatedData;
+  options?: RequestInit,
+  cacheCfg?: {
+    forceRefresh?: boolean;    // 跳过缓存
+    onUpdate?: (data: T) => void; // 后台更新回调
   }
-
-  // 没有缓存，获取全量数据
-  const response = await fetch(url);
-  const fullData = await response.json();
-  await this.cacheManager.setCache(cacheKey, fullData);
-
-  return fullData;
-}
+): Promise<T>
 ```
 
-## 监控与调试
-
-### 1. 缓存命中率监控
-```javascript
-class CacheMetrics {
-  private hits = 0;
-  private misses = 0;
-  private updates = 0;
-
-  recordHit(): void {
-    this.hits++;
-  }
-
-  recordMiss(): void {
-    this.misses++;
-  }
-
-  recordUpdate(): void {
-    this.updates++;
-  }
-
-  getHitRate(): number {
-    const total = this.hits + this.misses;
-    return total === 0 ? 0 : this.hits / total;
-  }
-
-  getMetrics() {
-    return {
-      hits: this.hits,
-      misses: this.misses,
-      updates: this.updates,
-      hitRate: this.getHitRate()
-    };
-  }
-}
+### 3. 运行时流程
+```
+用户调用 → 生成稳定 key → 先读 Memory(L1) →
+├─ 命中 → 立即返回 & 更新UI + 后台 fetch&diff → 若差异则写回 L1/L2 并再次触发 onUpdate 刷新UI
+└─ 未命中 → fetch 网络 → 写入 L1+L2 → 返回结果 & 更新UI
 ```
 
-### 2. 调试模式
-```javascript
-// 开发环境调试信息
-if (process.env.NODE_ENV === 'development') {
-  window.__CACHE_DEBUG__ = {
-    getCacheStatus: async (key: string) => {
-      return await cacheManager.getCache(key);
-    },
-    clearAllCache: async () => {
-      await cacheManager.clearAll();
-    },
-    getMetrics: () => {
-      return cacheMetrics.getMetrics();
-    }
-  };
-}
-```
+### 3.1 缓存键规则
+- key 生成：Method + URL + 排序后 Query/Body（不同参数=不同 key）
+- 入库后额外存储裸 `url` 与排序后 `params` 字符串，方便独立分析/清理
+- 敏感字段（token）可配置黑名单
+- 超长 key 自动哈希，保证 IndexedDB 兼容性
 
-## 最佳实践建议
+### 3.2 数据一致性
+- 使用 `JSON.stringify` 快照对比；后续可接入 HTTP ETag / 服务端版本号
+- 增量更新场景预留 `mergeDeltaData` 钩子，业务可自定义合并逻辑
 
-### 1. 缓存策略选择
-- **静态数据**：长时间缓存 (1小时-24小时)
-- **半动态数据**：中等时间缓存 (5-30分钟)
-- **实时数据**：短时间缓存 (30秒-5分钟)
-- **用户相关数据**：谨慎缓存或禁用缓存
+### 3.4 并发请求处理
+- 相同 key 的并发请求自动合并，共享同一个 Promise
+- 避免重复网络请求，提升性能
+- 实现请求队列管理，确保数据一致性
 
-### 2. 缓存键设计
-- 包含所有影响响应的参数
-- 避免过长的键名
-- 考虑敏感信息的脱敏处理
+### 3.3 错误处理
+- IndexedDB 不可用 → 直接走真实网络请求（无降级处理）
+- 缓存查询失败 → 直接走真实网络请求
+- 缓存写入失败 → 不影响主流程，继续正常执行
+- 网络异常 → 抛出原始错误，业务自行捕获
 
-### 3. 错误处理
-- 始终提供降级方案
-- 记录关键错误信息
-- 设置合理的超时时间
+### 4. 性能与存储
+- 内存层容量 100 项，按 LRU 淘汰；IndexedDB 层默认 50 MB 上限，到达后清理最早 20%
+- 后台异步清理“半年未访问”冷数据（低优先级任务，不阻塞主线程）
+- 启动时异步执行 `cleanupExpired()`，不阻塞首屏
+- 提供 `window.__CACHE_DEBUG__` 对象，开发环境可查看命中率、手动清缓存
 
-### 4. 性能优化
-- 定期清理过期缓存
-- 合理设置缓存大小限制
-- 使用内存缓存作为第一层
+### 4.1 数据序列化
+- 使用 `JSON.stringify/parse` 进行数据序列化与反序列化
+- 支持基本数据类型、对象、数组等常规数据结构
+- 特殊类型（Date、Blob等）需在业务层自行处理
+
+### 5. 迁移步骤
+1. 新增 `cachedFetch` 文件体系（零依赖改动）
+2. 全局批量替换 `fetch(` → `cachedFetch(`，老参数保持原样
+3. 图表、配置等高频接口追加 `ttl: 10 * 60 * 1000` 等细调策略
+4. 上线后通过监控指标（命中率、更新次数）持续优化 TTL 与容量阈值
+
+### 6. 交付物
+- 上述 6 个 TS 文件 + 单测（100% 覆盖核心路径）
+- 使用示例：`src/examples/cache-demo.svelte`
+- 文档更新：本文件追加“组件化实现”章节，原手工示例代码标记为【已废弃】
+
+> 计划一周内完成编码 + 单测 + 业务替换，届时删除旧散落缓存逻辑，整体减少约 300 行重复代码。
+
+### 7. 与 qi-qiao-ban 项目数据隔离声明
+- **缓存数据库**（IndexedDB 实例）完全独立于 qi-qiao-ban 项目数据，**导出/导入**功能不会携带缓存表
+- **精简构建**仅输出 `project-data.qqb`，**不会**包含任何缓存文件
+- 用户清缓存或换浏览器仅影响 `RequestCache`，**项目数据无损**
+
+---
 
 ## 总结
 
