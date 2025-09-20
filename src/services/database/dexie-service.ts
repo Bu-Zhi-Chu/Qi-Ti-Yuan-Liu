@@ -304,41 +304,41 @@ export default class DexieService {
  * @param primaryKey 主键值
  * @param updates   更新的字段
  */
-static async updateRecord<T>(dbName: string, tableName: string, primaryKey: any, updates: Partial<T>): Promise<void> {
-    // 先进行本地授权验证
-    const isAuthorized = await DexieService.quickLocalAuthCheck()
-    if (!isAuthorized) {
-        throw new Error('Unauthorized: Local auth check failed')
+    static async updateRecord<T>(dbName: string, tableName: string, primaryKey: any, updates: Partial<T>): Promise<void> {
+        // 先进行本地授权验证
+        const isAuthorized = await DexieService.quickLocalAuthCheck()
+        if (!isAuthorized) {
+            throw new Error('Unauthorized: Local auth check failed')
+        }
+
+        const db = new Dexie(dbName)
+        await db.open()
+        await db.table(tableName).update(primaryKey, updates)
     }
 
-    const db = new Dexie(dbName)
-    await db.open()
-    await db.table(tableName).update(primaryKey, updates)
-}
+    /**
+     * 执行事务封装
+     * @param dbName 数据库名称
+     * @param tableName 表名
+     * @param fn 事务函数，接收 db 和 table 实例
+     */
+    static async transaction<T>(
+        dbName: string,
+        tableName: string,
+        fn: (db: Dexie, table: Dexie.Table<any, any>) => Promise<T>
+    ): Promise<T> {
+        // 先进行本地授权验证
+        const isAuthorized = await DexieService.quickLocalAuthCheck()
+        if (!isAuthorized) {
+            throw new Error('Unauthorized: Local auth check failed')
+        }
 
-/**
- * 执行事务封装
- * @param dbName 数据库名称
- * @param tableName 表名
- * @param fn 事务函数，接收 db 和 table 实例
- */
-static async transaction<T>(
-    dbName: string,
-    tableName: string,
-    fn: (db: Dexie, table: Dexie.Table<any, any>) => Promise<T>
-): Promise<T> {
-    // 先进行本地授权验证
-    const isAuthorized = await DexieService.quickLocalAuthCheck()
-    if (!isAuthorized) {
-        throw new Error('Unauthorized: Local auth check failed')
+        const db = new Dexie(dbName)
+        await db.open()
+        return db.transaction('rw', db.table(tableName), async () => {
+            return await fn(db, db.table(tableName))
+        })
     }
-
-    const db = new Dexie(dbName)
-    await db.open()
-    return db.transaction('rw', db.table(tableName), async () => {
-        return await fn(db, db.table(tableName))
-    })
-}
 
 
     /**
