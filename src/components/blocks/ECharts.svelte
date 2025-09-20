@@ -7,22 +7,22 @@
 
     // 被动事件监听器polyfill，优化性能警告
     if (typeof window !== 'undefined') {
-        const originalAddEventListener = EventTarget.prototype.addEventListener;
-        EventTarget.prototype.addEventListener = function(type: string, listener: EventListener, options?: boolean | AddEventListenerOptions) {
+        const originalAddEventListener = EventTarget.prototype.addEventListener
+        EventTarget.prototype.addEventListener = function (type: string, listener: EventListener, options?: boolean | AddEventListenerOptions) {
             // 对于wheel和mousewheel事件，默认使用被动监听器
             if (type === 'wheel' || type === 'mousewheel') {
                 if (typeof options === 'boolean') {
-                    options = { passive: true, capture: options };
+                    options = { passive: true, capture: options }
                 } else if (typeof options === 'object' && options !== null) {
                     if (!options.hasOwnProperty('passive')) {
-                        options.passive = true;
+                        options.passive = true
                     }
                 } else {
-                    options = { passive: true };
+                    options = { passive: true }
                 }
             }
-            return originalAddEventListener.call(this, type, listener, options as any);
-        };
+            return originalAddEventListener.call(this, type, listener, options as any)
+        }
     }
 
     // 不再使用默认模板和数据生成函数，JavaScript代码是唯一渲染方式
@@ -41,6 +41,8 @@
         id?: string
         /** JavaScript代码配置（唯一渲染方式） */
         code?: string
+        /** 独立存储的序列化数据 */
+        seriesData?: string[]
         theme?: any
         style?: string
         // 废弃的属性（不再使用）
@@ -231,13 +233,13 @@
 
         // 如果数据源是真实请求且有请求路径
         if (dataSource === 'real' && requestPath) {
-            fetchRealData(requestPath).then(data => {
+            fetchRealData(requestPath).then((data) => {
                 realData = data
             })
         }
         // 如果数据源是模拟接口且有模拟路径
         else if (dataSource === 'mock' && mockPath) {
-            fetchRealData(mockPath).then(data => {
+            fetchRealData(mockPath).then((data) => {
                 realData = data
             })
         } else {
@@ -251,6 +253,29 @@
             // 获取数据配置 - 注意：保存的是dataSource，但组件内部使用dataAccess
             const dataSource = restProps.dataSource || restProps.dataAccess || 'json'
             const requestPath = restProps.requestPath
+            const seriesData = restProps.seriesData as string[] | undefined
+
+            // 准备最终执行的 code
+            let finalCode = code
+
+            // 如果是虚拟数据模式，且有独立数据源，则进行代码覆盖
+            if (dataSource === 'json' && finalCode && seriesData && seriesData.length > 0) {
+                let seriesIndex = 0
+                // 使用正则表达式替换 code 中的 data: [...] 部分
+                finalCode = finalCode.replace(/data\s*:\s*(\[[^\]]*\])/g, (match, offset) => {
+                    const beforeMatch = finalCode!.substring(Math.max(0, offset - 20), offset)
+                    if (beforeMatch.includes('legend') || beforeMatch.includes('tooltip')) {
+                        return match // 跳过非系列数据
+                    }
+
+                    if (seriesIndex < seriesData.length) {
+                        const newSeries = `data: ${seriesData[seriesIndex]}`
+                        seriesIndex++
+                        return newSeries
+                    }
+                    return match // 如果 seriesData 长度不够，则保留原始数据
+                })
+            }
 
             // 如果数据源是真实请求或模拟接口
             if (dataSource === 'real' || dataSource === 'mock') {
@@ -287,8 +312,8 @@
                 }
 
                 // 如果提供了JavaScript代码，执行代码生成option（传入真实数据）
-                if (code && typeof code === 'string' && code.trim()) {
-                    const codeResult = executeJavaScriptCode(code, realData)
+                if (finalCode && typeof finalCode === 'string' && finalCode.trim()) {
+                    const codeResult = executeJavaScriptCode(finalCode, realData)
                     if (codeResult && typeof codeResult === 'object') {
                         // 处理标题和图例的默认位置
                         return processOptionDefaults(codeResult)
@@ -313,19 +338,21 @@
                         yAxis: {
                             type: 'value'
                         },
-                        series: [{
-                            name: '数据',
-                            type: 'line',
-                            data: realData
-                        }]
+                        series: [
+                            {
+                                name: '数据',
+                                type: 'line',
+                                data: realData
+                            }
+                        ]
                     }
                 }
             }
 
             // 默认的虚拟数据逻辑（原有的json模式）
             // 如果提供了JavaScript代码，执行代码生成option
-            if (code && typeof code === 'string' && code.trim()) {
-                const codeResult = executeJavaScriptCode(code)
+            if (finalCode && typeof finalCode === 'string' && finalCode.trim()) {
+                const codeResult = executeJavaScriptCode(finalCode)
                 if (codeResult && typeof codeResult === 'object') {
                     // 处理标题和图例的默认位置
                     return processOptionDefaults(codeResult)
@@ -386,8 +413,8 @@
                 theme={theme as any}
                 init={((dom: HTMLElement, theme?: string, opts?: any) => {
                     // renderer为true时使用canvas（最高性能），为false时使用svg
-                    const rendererType = renderer ? 'canvas' : 'svg';
-                    return echartsInit(dom, theme, { ...opts, renderer: rendererType });
+                    const rendererType = renderer ? 'canvas' : 'svg'
+                    return echartsInit(dom, theme, { ...opts, renderer: rendererType })
                 }) as any}
             />
         {/if}
@@ -458,7 +485,11 @@
     }
 
     @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
     }
 </style>

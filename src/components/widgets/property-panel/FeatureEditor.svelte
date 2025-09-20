@@ -142,6 +142,36 @@
         // 合并顺序：默认值 -> 属性值 -> 样式值（后者优先）
         // 确保code类型属性不为undefined
         const merged = { ...defaults, ...attrs, ...styles }
+
+        // 如果存在 seriesData，则用它来合成最新的 code 以在编辑器中显示
+        const seriesData = merged.seriesData as string[] | undefined
+        let code = merged.code as string | undefined
+
+        if (seriesData && Array.isArray(seriesData) && seriesData.length > 0 && typeof code === 'string') {
+            // 匹配 data: [] 数组，但排除 legend.data 等配置数据
+            const allMatches = [...code.matchAll(/data\s*:\s*(\[[^\]]*\])/g)]
+            const codeMatches = allMatches.filter((match) => {
+                const matchStart = match.index!
+                const beforeMatch = code.substring(Math.max(0, matchStart - 20), matchStart)
+                return !beforeMatch.includes('legend') && !beforeMatch.includes('tooltip')
+            })
+
+            if (codeMatches.length > 0 && codeMatches.length === seriesData.length) {
+                let tempCode = code
+                let offset = 0
+                for (let i = 0; i < codeMatches.length; i++) {
+                    const match = codeMatches[i]
+                    const originalDataStr = match[1]
+                    const newDataStr = seriesData[i]
+                    const startIndex = match.index! + match[0].indexOf(originalDataStr) + offset
+
+                    tempCode = tempCode.substring(0, startIndex) + newDataStr + tempCode.substring(startIndex + originalDataStr.length)
+                    offset += newDataStr.length - originalDataStr.length
+                }
+                merged.code = tempCode // 更新 merged 对象中的 code
+            }
+        }
+
         if (fp) {
             Object.entries(fp).forEach(([key, cfg]: [string, any]) => {
                 if (cfg.type === 'code' && merged[key] === undefined) {
@@ -190,7 +220,28 @@
         if (entry?.type === 'size') {
             updateNodeProps(selectedId, { styles: { [key]: value } })
         } else {
-            updateNodeProps(selectedId, { attributes: { [key]: value } })
+            const attributesToUpdate: { [k: string]: any } = { [key]: value }
+
+            // 当 code 属性变化时，解析出 seriesData 并一同更新
+            if (key === 'code' && typeof value === 'string') {
+                const code = value
+                // 匹配 data: [] 数组，但排除 legend.data 等配置数据
+                const allMatches = [...code.matchAll(/data\s*:\s*(\[[^\]]*\])/g)]
+
+                const codeMatches = allMatches.filter((match) => {
+                    const matchStart = match.index!
+                    const beforeMatch = code.substring(Math.max(0, matchStart - 20), matchStart)
+                    // 检查是否是 legend.data 或其他非系列配置
+                    return !beforeMatch.includes('legend') && !beforeMatch.includes('tooltip')
+                })
+
+                const parsedData = codeMatches.map((m) => m[1])
+
+                // 如果解析出了数据，则存入 seriesData，否则存 undefined
+                attributesToUpdate.seriesData = parsedData.length > 0 ? parsedData : undefined
+            }
+
+            updateNodeProps(selectedId, { attributes: attributesToUpdate })
 
             // 额外逻辑：同级导航按钮唯一默认首页
             if (key === 'defaultHome' && value === true) {

@@ -54,6 +54,15 @@
     /** 当 code 变化时解析其中的 data: [] 数组 */
     $effect(() => {
         const code = currentValues.code as unknown as string | undefined
+        const seriesData = currentValues.seriesData as string[] | undefined
+
+        // 优先使用独立存储的 seriesData
+        if (seriesData && Array.isArray(seriesData)) {
+            dataArrays = seriesData
+            return
+        }
+
+        // 如果 seriesData 不存在，则从 code 中解析并回填
         if (typeof code === 'string') {
             // 匹配 data: [] 数组，但排除 legend.data 等配置数据
             const allMatches = [...code.matchAll(/data\s*:\s*(\[[^\]]*\])/g)]
@@ -66,7 +75,13 @@
                 return !beforeMatch.includes('legend') && !beforeMatch.includes('tooltip')
             })
 
-            dataArrays = codeMatches.map((m) => m[1]) // 只存储数组内容 [x,x] 格式，不包含 data:
+            const parsedData = codeMatches.map((m) => m[1])
+            dataArrays = parsedData
+
+            // 如果解析出了数据，则立即回填到 seriesData 属性
+            if (parsedData.length > 0 && selectedId) {
+                handleAttrChange('seriesData', parsedData)
+            }
         } else {
             codeMatches = []
             dataArrays = []
@@ -76,26 +91,14 @@
     /** 实时更新第 index 个 data 数组的内容 */
     function updateDataArray(index: number, newValue: string) {
         if (!selectedId) return
-        const oldCode = currentValues.code as unknown as string | undefined
-        if (typeof oldCode !== 'string') return
 
-        let matchIndex = 0
-        const newCode = oldCode.replace(/data\s*:\s*\[[^\]]*\]/g, (match, offset) => {
-            // 检查这个匹配是否是 legend.data 或其他非系列配置
-            const beforeMatch = oldCode.substring(Math.max(0, offset - 20), offset)
-            if (beforeMatch.includes('legend') || beforeMatch.includes('tooltip')) {
-                return match // 跳过 legend.data 等配置
-            }
+        // 创建新数组以触发状态更新
+        const newDataArrays = [...dataArrays]
+        newDataArrays[index] = newValue
+        dataArrays = newDataArrays
 
-            if (matchIndex === index) {
-                matchIndex++
-                return `data: ${newValue}` // newValue 只包含数组内容，需要添加 data: 前缀
-            }
-            matchIndex++
-            return match
-        })
-        // 立即触发属性更新
-        handleAttrChange('code', newCode)
+        // 直接更新 seriesData 属性
+        handleAttrChange('seriesData', newDataArrays)
     }
 
     function handleAttrChange(key: string, value: any) {
