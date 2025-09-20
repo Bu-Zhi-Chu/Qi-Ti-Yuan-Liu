@@ -203,11 +203,18 @@
                     return !beforeMatch.includes('legend') && !beforeMatch.includes('tooltip')
                 })
 
+                console.log('需要映射的数组数量:', dataMatches.length)
+
                 // 第X映射对应第X个data数组（按代码中出现顺序）
                 dataMatches.forEach((match, index) => {
                     const mappingPath = seriesMapping[index]
+                    console.log(`\n第${index}个映射:`)
+                    console.log(`  映射路径: ${mappingPath}`)
+                    console.log(`  原数据: ${match[1]}`)
+
                     if (mappingPath && data[mappingPath]) {
                         let targetData = data[mappingPath]
+                        console.log(`  映射数据:`, targetData)
 
                         // 数据长度兼容性处理
                         if (Array.isArray(targetData)) {
@@ -220,34 +227,91 @@
                                 // 解析失败，使用默认值
                             }
 
-                            if (originalLength > 0 && targetData.length !== originalLength) {
-                                if (targetData.length > originalLength) {
-                                    // 目标数据更长，截断
-                                    targetData = targetData.slice(0, originalLength)
-                                } else {
-                                    // 目标数据更短，用最后一个值填充
-                                    const lastValue = targetData[targetData.length - 1]
-                                    while (targetData.length < originalLength) {
-                                        targetData.push(lastValue)
-                                    }
-                                }
-                            }
+                            // 移除数据长度限制 - 保持数据原始长度
+                            // if (originalLength > 0 && targetData.length !== originalLength) {
+                            //     if (targetData.length > originalLength) {
+                            //         // 目标数据更长，截断
+                            //         targetData = targetData.slice(0, originalLength)
+                            //         console.log(`  数据过长，截断为前${originalLength}个`)
+                            //     } else {
+                            //         // 目标数据更短，用最后一个值填充
+                            //         const lastValue = targetData[targetData.length - 1]
+                            //         while (targetData.length < originalLength) {
+                            //             targetData.push(lastValue)
+                            //         }
+                            //         console.log(`  数据过短，填充到${originalLength}个`)
+                            //     }
+                            // }
                         }
 
                         // 找到这个data在result中的位置并替换
+                        let replaced = false
+
+                        // 首先尝试解析原始data字符串 - 处理单引号情况
+                        let originalData: any
+                        try {
+                            // 将单引号替换为双引号，使其成为有效的JSON
+                            const jsonString = match[1].replace(/'/g, '"')
+                            originalData = JSON.parse(jsonString)
+                        } catch (e) {
+                            // 如果JSON解析失败，尝试作为数组字面量执行
+                            try {
+                                // 使用Function构造器安全地执行数组表达式
+                                originalData = new Function('return ' + match[1])()
+                            } catch (e2) {
+                                // 最后降级为字符串比较
+                                originalData = match[1]
+                            }
+                        }
+
+                        // 检查series中的data
                         if (result.series && Array.isArray(result.series)) {
                             result.series.forEach((s: any) => {
-                                if (s.data === match[1] || JSON.stringify(s.data) === match[1]) {
+                                if (JSON.stringify(s.data) === JSON.stringify(originalData)) {
                                     s.data = targetData
+                                    replaced = true
                                 }
                             })
                         }
-                        // 也要检查xAxis等位置
-                        if (result.xAxis && result.xAxis.data === match[1]) {
-                            result.xAxis.data = targetData
+
+                        // 检查xAxis中的data
+                        if (result.xAxis && result.xAxis.data) {
+                            if (JSON.stringify(result.xAxis.data) === JSON.stringify(originalData)) {
+                                result.xAxis.data = targetData
+                                replaced = true
+                            }
                         }
+
+                        // 检查yAxis中的data（如果有的话）
+                        if (result.yAxis && result.yAxis.data) {
+                            if (JSON.stringify(result.yAxis.data) === JSON.stringify(originalData)) {
+                                result.yAxis.data = targetData
+                                replaced = true
+                            }
+                        }
+
+                        // 添加详细的匹配调试信息
+                        if (!replaced) {
+                            console.log(`  匹配调试:`)
+                            console.log(`    原始数据:`, JSON.stringify(originalData))
+                            console.log(`    xAxis.data:`, result.xAxis?.data ? JSON.stringify(result.xAxis.data) : '无')
+                            console.log(
+                                `    series数据:`,
+                                result.series?.map((s: any, i: number) => `series[${i}]: ${JSON.stringify(s.data)}`)
+                            )
+                            console.log(`    匹配结果:`, JSON.stringify(originalData) === JSON.stringify(result.xAxis?.data) ? 'xAxis匹配' : 'xAxis不匹配')
+                        }
+
+                        console.log(`  替换结果: ${replaced ? '成功' : '未找到对应位置'}`)
+                    } else {
+                        console.log(`  映射数据: 未找到 (${mappingPath ? '路径存在但数据为空' : '无映射路径'})`)
                     }
                 })
+
+                // 添加详细的调试信息来查看result结构
+                // console.log('\n=== 详细结构分析 ===')
+                // console.log('result对象:', JSON.stringify(result, null, 2))
+                // console.log('\n所有data数组:')
             }
 
             return result
