@@ -7,7 +7,7 @@
  */
 
 import Dexie from 'dexie'
-import { DB_VERSION } from './database.config'
+import { DB_VERSION, DEFAULT_DB_NAME } from './database.config'
 import { getStableDeviceKeyHash } from '../fingerprint/browser-fingerprint.service'
 import { ENABLE_AUTH_VERIFICATION } from '../../config/auth.config'
 
@@ -21,14 +21,10 @@ export default class DexieService {
      */
     private static dbExistenceCache: Map<string, boolean> = new Map()
 
-    /**
-     * 授权缓存键名
-     */
-    private static readonly AUTH_CACHE_KEY = 'qi-qiao-ban-auth-cache'
 
     /**
      * 快速本地授权验证
-     * 通过比较当前设备密钥与缓存中的密钥来验证授权
+     * 通过查询config表中的authCache来验证授权
      * @returns 是否通过本地验证
      */
     private static async quickLocalAuthCheck(): Promise<boolean> {
@@ -41,21 +37,59 @@ export default class DexieService {
             // 获取当前设备密钥哈希
             const currentDeviceKeyHash = await getStableDeviceKeyHash()
 
-            // 读取缓存中的授权信息
-            const cacheData = localStorage.getItem(DexieService.AUTH_CACHE_KEY)
-            if (!cacheData) {
+            // 查询config表中的授权缓存
+            const configRecords = await indexedDB.databases()
+            if (configRecords.length === 0) {
                 return false
             }
 
-            const parsed = JSON.parse(cacheData)
-            const cachedDeviceKeyHash = parsed.deviceKeyHash
-
-            // 比较密钥
-            if (currentDeviceKeyHash === cachedDeviceKeyHash) {
-                return true
-            } else {
+            // 获取数据库实例来查询config表
+            const dbExists = await DexieService.databaseExists(DEFAULT_DB_NAME)
+            if (!dbExists) {
                 return false
             }
+
+            // 使用getDatabase会触发循环依赖，这里直接使用低层API
+            const request = indexedDB.open(DEFAULT_DB_NAME)
+            return new Promise((resolve) => {
+                request.onsuccess = async () => {
+                    const db = request.result
+                    try {
+                        const transaction = db.transaction(['config'], 'readonly')
+                        const configTable = transaction.objectStore('config')
+                        const getRequest = configTable.getAll()
+
+                        getRequest.onsuccess = () => {
+                            const configRecords = getRequest.result
+                            const configRecord = configRecords[0]
+                            const authCache = configRecord?.authCache
+
+                            if (!authCache || !authCache.deviceKeyHash) {
+                                db.close()
+                                resolve(false)
+                                return
+                            }
+
+                            // 比较密钥
+                            const isValid = currentDeviceKeyHash === authCache.deviceKeyHash
+                            db.close()
+                            resolve(isValid)
+                        }
+
+                        getRequest.onerror = () => {
+                            db.close()
+                            resolve(false)
+                        }
+                    } catch (error) {
+                        db.close()
+                        resolve(false)
+                    }
+                }
+
+                request.onerror = () => {
+                    resolve(false)
+                }
+            })
         } catch (error) {
             return false
         }
@@ -64,12 +98,6 @@ export default class DexieService {
      * 判断数据库是否存在
      */
     static async databaseExists(dbName: string): Promise<boolean> {
-        // 先进行本地授权验证
-        const isAuthorized = await DexieService.quickLocalAuthCheck()
-        if (!isAuthorized) {
-            throw new Error('Unauthorized: Local auth check failed')
-        }
-
         // 优先使用缓存，避免频繁调用 indexedDB.databases()
         if (DexieService.dbExistenceCache.has(dbName)) {
             return DexieService.dbExistenceCache.get(dbName) as boolean
@@ -95,12 +123,6 @@ export default class DexieService {
      * @param isLiteMode 是否为精简模式，默认为false。在精简模式下不会添加默认模板数据
      */
     static async createDatabase(dbName: string, isLiteMode: boolean = false): Promise<void> {
-        // 先进行本地授权验证
-        const isAuthorized = await DexieService.quickLocalAuthCheck()
-        if (!isAuthorized) {
-            throw new Error('Unauthorized: Local auth check failed')
-        }
-
         // DatabaseLogger.creatingDatabase(dbName)
         const db = new Dexie(dbName)
 
@@ -108,7 +130,7 @@ export default class DexieService {
         const stores: Record<string, string> = {
             projects: 'id, name, templateId, createdAt, updatedAt, canvasState, mode, exportTime, designWidth, designHeight',
             doms: '[projectId+id], projectId, parentId, attributes, style',
-            config: '++id, showLogs, perfMonitor',
+            config: '++id, showLogs, perfMonitor, authCache',
             imageStore: '[projectId+hash], blob, hash, height, name, projectId, refCount, width',
             requestCache: 'key, lastAccess'
         }
@@ -128,7 +150,7 @@ export default class DexieService {
         const cfgCount = await db.table('config').count()
         if (cfgCount === 0) {
             // 根据环境决定日志默认值：开发环境默认开启，其他环境默认关闭
-            await db.table('config').put({ showLogs: import.meta.env.DEV === true, perfMonitor: true })
+            await db.table('config').put({ showLogs: import.meta.env.DEV === true, perfMonitor: true, authCache: null })
         }
         // DatabaseLogger.databaseCreated(dbName)
 
@@ -195,15 +217,8 @@ export default class DexieService {
      * 查询表数据
      */
     static async queryRecords<T>(dbName: string, tableName: string): Promise<T[]> {
-        // 先进行本地授权验证
-        const isAuthorized = await DexieService.quickLocalAuthCheck()
-        if (!isAuthorized) {
-            throw new Error('Unauthorized: Local auth check failed')
-        }
-
         // // // // // DatabaseLogger.queryingRecords(dbName, tableName)
-        const db = new Dexie(dbName)
-        await db.open()
+        const db = await DexieService.getDatabase(dbName)
         const result = await db.table(tableName).toArray()
         // // // // // DatabaseLogger.queryResults(result.length)
         return result
@@ -213,14 +228,7 @@ export default class DexieService {
      * 获取表中的所有记录
      */
     static async getAllRecords<T>(dbName: string, tableName: string): Promise<T[]> {
-        // 先进行本地授权验证
-        const isAuthorized = await DexieService.quickLocalAuthCheck()
-        if (!isAuthorized) {
-            throw new Error('Unauthorized: Local auth check failed')
-        }
-
-        const db = new Dexie(dbName)
-        await db.open()
+        const db = await DexieService.getDatabase(dbName)
         const result = await db.table(tableName).toArray()
         return result
     }
@@ -229,12 +237,7 @@ export default class DexieService {
      * 获取指定主键的记录
      */
     static async getRecord<T>(dbName: string, tableName: string, key: any): Promise<T | undefined> {
-        // 先进行本地授权验证
-        const isAuthorized = await DexieService.quickLocalAuthCheck()
-        if (!isAuthorized) {
-            console.error('❌【数据库访问】授权验证失败，拒绝获取单条记录操作')
-            throw new Error('Unauthorized: Local auth check failed')
-        }
+
 
         // DatabaseLogger.gettingRecord(dbName, tableName, key)
         const db = await DexieService.getDatabase(dbName)
@@ -250,29 +253,17 @@ export default class DexieService {
      * @param primaryKey 主键值
      */
     static async deleteRecord(dbName: string, tableName: string, primaryKey: any): Promise<void> {
-        // 先进行本地授权验证
-        const isAuthorized = await DexieService.quickLocalAuthCheck()
-        if (!isAuthorized) {
-            throw new Error('Unauthorized: Local auth check failed')
-        }
 
-        const db = new Dexie(dbName)
-        await db.open()
+        const db = await DexieService.getDatabase(dbName)
         await db.table(tableName).delete(primaryKey)
     }
 
     static async addRecord<T>(dbName: string, tableName: string, data: T): Promise<any> {
-        // 先进行本地授权验证
-        const isAuthorized = await DexieService.quickLocalAuthCheck()
-        if (!isAuthorized) {
-            console.error('❌【数据库访问】授权验证失败，拒绝添加记录操作')
-            throw new Error('Unauthorized: Local auth check failed')
-        }
+
 
         // DatabaseLogger.addingRecord(dbName, tableName)
         try {
-            const db = new Dexie(dbName)
-            await db.open()
+            const db = await DexieService.getDatabase(dbName)
             const id = await db.table(tableName).add(data as any)
             // DatabaseLogger.recordAdded(id)
             return id
@@ -286,14 +277,9 @@ export default class DexieService {
      * 插入记录到表中
      */
     static async insertRecord<T>(dbName: string, tableName: string, record: T): Promise<void> {
-        // 先进行本地授权验证
-        const isAuthorized = await DexieService.quickLocalAuthCheck()
-        if (!isAuthorized) {
-            throw new Error('Unauthorized: Local auth check failed')
-        }
 
-        const db = new Dexie(dbName)
-        await db.open()
+
+        const db = await DexieService.getDatabase(dbName)
         await db.table(tableName).add(record)
     }
 
@@ -305,14 +291,9 @@ export default class DexieService {
  * @param updates   更新的字段
  */
     static async updateRecord<T>(dbName: string, tableName: string, primaryKey: any, updates: Partial<T>): Promise<void> {
-        // 先进行本地授权验证
-        const isAuthorized = await DexieService.quickLocalAuthCheck()
-        if (!isAuthorized) {
-            throw new Error('Unauthorized: Local auth check failed')
-        }
 
-        const db = new Dexie(dbName)
-        await db.open()
+
+        const db = await DexieService.getDatabase(dbName)
         await db.table(tableName).update(primaryKey, updates)
     }
 
@@ -327,14 +308,9 @@ export default class DexieService {
         tableName: string,
         fn: (db: Dexie, table: Dexie.Table<any, any>) => Promise<T>
     ): Promise<T> {
-        // 先进行本地授权验证
-        const isAuthorized = await DexieService.quickLocalAuthCheck()
-        if (!isAuthorized) {
-            throw new Error('Unauthorized: Local auth check failed')
-        }
 
-        const db = new Dexie(dbName)
-        await db.open()
+
+        const db = await DexieService.getDatabase(dbName)
         return db.transaction('rw', db.table(tableName), async () => {
             return await fn(db, db.table(tableName))
         })
@@ -348,8 +324,9 @@ export default class DexieService {
      */
     static async clearDatabase(dbName: string): Promise<boolean> {
         try {
-            const db = new Dexie(dbName)
-            await db.open()
+
+
+            const db = await DexieService.getDatabase(dbName)
 
             // 获取所有表名
             const tableNames = db.tables.map(table => table.name)
@@ -379,6 +356,12 @@ export default class DexieService {
      * 注意：使用此方法前必须确保数据库已创建
      */
     static async getDatabase(dbName: string): Promise<Dexie> {
+        // 先进行本地授权验证
+        const isAuthorized = await DexieService.quickLocalAuthCheck()
+        if (!isAuthorized) {
+            throw new Error('Unauthorized: Local auth check failed')
+        }
+
         if (DexieService.dbInstanceCache.has(dbName)) {
             // 有缓存，直接返回
             return DexieService.dbInstanceCache.get(dbName)!

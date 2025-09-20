@@ -4,6 +4,8 @@
  */
 
 import { getStableDeviceKeyHash } from '../fingerprint/browser-fingerprint.service'
+import AuthStoreService from '../database/auth-store.service'
+import { DEFAULT_DB_NAME } from '../database/database.config'
 
 export type AuthStatus = 'checking' | 'authorized' | 'unauthorized' | 'error'
 
@@ -14,7 +16,6 @@ class AuthService {
     private _verificationTimer: number | null = null
     private _isVerifying = false
     private readonly VERIFICATION_INTERVAL = 10 * 60 * 1000
-    private readonly CACHE_KEY = 'qi-qiao-ban-auth-cache'
     private readonly CACHE_EXPIRY_TIME = 5 * 60 * 1000
 
     // 令牌篡改检测标志
@@ -41,7 +42,7 @@ class AuthService {
             const currentDeviceKeyHash = await getStableDeviceKeyHash()
 
             // 读取令牌中的授权信息
-            const cacheData = this.readFromCache()
+            const cacheData = await this.readFromCache()
             if (!cacheData) {
                 console.log('🚨【令牌检测】无令牌数据')
                 return false
@@ -50,7 +51,7 @@ class AuthService {
             // 检查令牌是否过期
             if (this.isCacheExpired(cacheData)) {
                 console.log('🚨【令牌检测】令牌已过期，需要重新验证')
-                this.clearCache()
+                await this.clearCache()
                 return false
             }
 
@@ -67,7 +68,7 @@ class AuthService {
                 this._cacheTempered = true
                 console.log('🚨【令牌检测】检测异常')
                 // 密钥不匹配时清除令牌
-                this.clearCache()
+                await this.clearCache()
                 return false
             }
         } catch (error) {
@@ -76,49 +77,43 @@ class AuthService {
     }
 
     /**
-     * 保存验证结果到本地令牌
+     * 保存验证结果到数据库
      * @param deviceKeyHash 设备密钥哈希
      * @param timestamp 时间戳
      */
-    private saveToCache(deviceKeyHash: string, timestamp: number): void {
+    private async saveToCache(deviceKeyHash: string, timestamp: number): Promise<void> {
         try {
             const cacheData = {
                 deviceKeyHash,
                 timestamp,
                 lastVerified: new Date().toISOString()
             }
-            localStorage.setItem(this.CACHE_KEY, JSON.stringify(cacheData))
-
+            await AuthStoreService.saveAuthCache(DEFAULT_DB_NAME, cacheData)
         } catch (error) {
-
+            console.error('保存授权缓存失败:', error)
         }
     }
 
     /**
-     * 读取本地令牌
+     * 从数据库读取授权缓存
      */
-    private readFromCache(): { deviceKeyHash: string; timestamp: number; lastVerified: string } | null {
+    private async readFromCache(): Promise<{ deviceKeyHash: string; timestamp: number; lastVerified: string } | null> {
         try {
-            const cacheData = localStorage.getItem(this.CACHE_KEY)
-            if (cacheData) {
-                const parsed = JSON.parse(cacheData)
-                return parsed
-            }
+            return await AuthStoreService.readAuthCache(DEFAULT_DB_NAME)
         } catch (error) {
-
+            console.error('读取授权缓存失败:', error)
+            return null
         }
-        return null
     }
 
     /**
-     * 清空本地令牌
+     * 清空数据库中的授权缓存
      */
-    private clearCache(): void {
+    private async clearCache(): Promise<void> {
         try {
-            localStorage.removeItem(this.CACHE_KEY)
-
+            await AuthStoreService.clearAuthCache(DEFAULT_DB_NAME)
         } catch (error) {
-
+            console.error('清空授权缓存失败:', error)
         }
     }
 
@@ -236,7 +231,7 @@ class AuthService {
                             console.log('✅【授权验证】验证成功')
                         }
                         // 验证成功时保存到本地令牌
-                        this.saveToCache(deviceKeyHash, Date.now())
+                        await this.saveToCache(deviceKeyHash, Date.now())
                         // 重置令牌篡改标志
                         if (isPeriodicCheck) {
                             this._cacheTempered = false
@@ -248,7 +243,7 @@ class AuthService {
                             console.log('❌【授权验证】验证失败')
                         }
                         // 验证失败时清除本地令牌
-                        this.clearCache()
+                        await this.clearCache()
 
                         // 如果是定期验证失败，直接根据令牌篡改情况处理
                         if (isPeriodicCheck) {
@@ -256,7 +251,7 @@ class AuthService {
                             if (this._cacheTempered) {
                                 // 令牌篡改：立即执行令牌清空惩罚
                                 console.log('🚨【作弊惩罚】令牌异常')
-                                this.clearCache()
+                                await this.clearCache()
                                 this._cacheTempered = false // 重置篡改标志
                             } else {
                                 // 权限撤销：仅清除令牌
@@ -269,7 +264,7 @@ class AuthService {
                 } else {
                     console.log('❌【远程数据】数据异常')
                     // 远程数据异常时清除本地令牌
-                    this.clearCache()
+                    await this.clearCache()
 
                     // 如果是定期验证失败，直接根据令牌篡改情况处理
                     if (isPeriodicCheck) {
@@ -277,7 +272,7 @@ class AuthService {
                         if (this._cacheTempered) {
                             // 令牌篡改：立即执行令牌清空惩罚
                             console.log('🚨【作弊惩罚】令牌异常')
-                            this.clearCache()
+                            await this.clearCache()
                             this._cacheTempered = false // 重置篡改标志
                         } else {
                             // 权限撤销：仅清除令牌
@@ -289,7 +284,7 @@ class AuthService {
                 }
             } catch (fetchError) {
                 // 网络错误时清除本地令牌
-                this.clearCache()
+                await this.clearCache()
 
                 // 网络错误不触发数据库清空，只有密钥对比失败才清空
                 if (isPeriodicCheck) {
@@ -300,7 +295,7 @@ class AuthService {
             }
         } catch (error) {
             // 设备密钥获取失败时清除本地令牌
-            this.clearCache()
+            await this.clearCache()
 
             // 设备密钥获取失败不触发数据库清空
             if (isPeriodicCheck) {
@@ -340,11 +335,11 @@ class AuthService {
     /**
      * 重置授权状态
      */
-    reset() {
+    async reset() {
         this._isAuthorized = false
         this._authStatus = 'checking'
         this._cacheTempered = false
-        this.clearCache()
+        await this.clearCache()
         this.stopPeriodicVerification()
     }
 

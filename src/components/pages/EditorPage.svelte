@@ -31,7 +31,7 @@
     // 引入 DOM 树集中式状态管理
     import { domTree, selectedId, removeNodeById, projectId, findNodeById, setDesignSize } from '../../stores/dom-tree.store.svelte'
     import DexieService from '../../services/database/dexie-service'
-import { DEFAULT_DB_NAME } from '../../services/database/database.config'
+    import { DEFAULT_DB_NAME } from '../../services/database/database.config'
     import StatusBar from '../widgets/StatusBar.svelte'
     import { screenDetector } from '../../services/screen/screen-detector.service'
     // 是否显示工作区，默认显示工作区
@@ -874,7 +874,7 @@ import { DEFAULT_DB_NAME } from '../../services/database/database.config'
                     try {
                         const db = await DexieService.getDatabase(DEFAULT_DB_NAME)
                         if (!db) throw new Error('无法获取数据库')
-                        const cfgRecord = (await db.table('config').toArray())[0] || { showLogs: false, perfMonitor: true }
+                        const cfgRecord = (await db.table('config').toArray())[0] || { showLogs: false, perfMonitor: true, authCache: null }
                         const newVal = !cfgRecord.perfMonitor
                         await db.table('config').clear()
                         await db.table('config').put({ ...cfgRecord, perfMonitor: newVal })
@@ -898,7 +898,7 @@ import { DEFAULT_DB_NAME } from '../../services/database/database.config'
                         if (!db) throw new Error('无法获取数据库')
 
                         // 读取现有配置（取首条记录）
-                        const cfgRecord = (await db.table('config').toArray())[0] || { showLogs: false }
+                        const cfgRecord = (await db.table('config').toArray())[0] || { showLogs: false, authCache: null }
                         const newVal = !cfgRecord.showLogs
 
                         // 更新数据库配置（清空后写入，因主键为 showLogs）
