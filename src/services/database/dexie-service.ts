@@ -109,7 +109,8 @@ export default class DexieService {
             projects: 'id, name, templateId, createdAt, updatedAt, canvasState, mode, exportTime, designWidth, designHeight',
             doms: '[projectId+id], projectId, parentId, attributes, style',
             config: '++id, showLogs, perfMonitor',
-            imageStore: '[projectId+hash], blob, hash, height, name, projectId, refCount, width'
+            imageStore: '[projectId+hash], blob, hash, height, name, projectId, refCount, width',
+            requestCache: 'key, lastAccess'
         }
 
         // 精简模式下不创建templates表

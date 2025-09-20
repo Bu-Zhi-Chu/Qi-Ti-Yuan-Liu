@@ -1,6 +1,6 @@
 // z/X/qi-qiao-ban/src/services/cache/cache-cleanup.ts
 
-import { indexedDBCache } from './indexeddb-cache';
+import { cleanupCache } from '../database/cache-store.service';
 
 const CLEANUP_INTERVAL = 24 * 60 * 60 * 1000; // 每天清理一次
 const MAX_AGE = 7 * 24 * 60 * 60 * 1000;      // 缓存最长保留 7 天
@@ -13,7 +13,7 @@ let cleanupTimer: ReturnType<typeof setInterval> | undefined;
 async function runCleanup(): Promise<void> {
   console.log('Running cache cleanup...');
   try {
-    await indexedDBCache.cleanup(MAX_AGE);
+    await cleanupCache(MAX_AGE);
     console.log('Cache cleanup finished.');
   } catch (error) {
     console.error('Error during cache cleanup:', error);
