@@ -39,7 +39,7 @@ export default defineConfig({
                 clientsClaim: true,
                 runtimeCaching: [
                     {
-                        urlPattern: /\/data\/project-data\.json$/,
+                        urlPattern: /\/data\/project-data\.qqb$/,
                         handler: 'NetworkFirst',
                         options: {
                             cacheName: 'project-data',

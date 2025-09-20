@@ -80,47 +80,7 @@ export function viteBuildPlugin(): Plugin {
           return; // 已处理
         }
 
-        // 旧 JSON 流程
-        let body = '';
-        req.on('data', chunk => {
-          body += chunk.toString();
-        });
-
-        req.on('end', async () => {
-          try {
-            console.log('[vite-build-plugin] /api/build 收到构建请求');
-
-            if (!body || body.trim() === '') {
-              throw new Error('请求体为空');
-            }
-
-            const request: BuildRequest = JSON.parse(body);
-            console.log('[vite-build-plugin] /api/build 请求参数解析成功', {
-              mode: request.mode,
-              hasLiteData: !!request.liteData,
-              liteDataLength: request.liteData ? (typeof request.liteData === 'string' ? request.liteData.length : JSON.stringify(request.liteData).length) : 0,
-              outputDir: request.outputDir
-            });
-
-            const result = await performRealBuild(request);
-            console.log('[vite-build-plugin] /api/build 构建完成', {
-              success: result.success,
-              duration: result.duration,
-              output: result.outputPath
-            });
-
-            res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify(result));
-          } catch (error) {
-            console.error('[vite-build-plugin] /api/build 构建错误:', error);
-            res.statusCode = 500;
-            res.end(JSON.stringify({
-              success: false,
-              message: error instanceof Error ? error.message : '构建失败',
-              stack: error instanceof Error ? error.stack : undefined
-            }));
-          }
-        });
+        // JSON 流程已废弃，前端只上传 Blob
       });
 
       // 添加仅写入 Lite 数据的 API 端点，支持在构建完成后单独写入/覆盖 JSON
@@ -136,8 +96,8 @@ export function viteBuildPlugin(): Plugin {
 
         req.on('end', () => {
           try {
-            const { liteData, fileName = 'project-data.json', outputDir = 'dist-lite' } = JSON.parse(body);
-            console.log('[vite-build-plugin] /api/write-lite 请求数据', { fileName, outputDir, hasLiteData: !!liteData });
+            const { liteData, outputDir = 'dist-lite' } = JSON.parse(body);
+            console.log('[vite-build-plugin] /api/write-lite 请求数据', { outputDir, hasLiteData: !!liteData });
 
             const outputPath = resolve(process.cwd(), outputDir);
             if (!existsSync(outputPath)) {
@@ -418,10 +378,10 @@ async function performRealBuild(request: BuildRequest): Promise<BuildResponse> {
         mkdirSync(dataDir, { recursive: true });
       }
 
-      // 使用固定的英文文件名，不包含项目ID
-      const liteDataPath = resolve(dataDir, 'project-data.json');
-      const jsonContent = typeof liteData === 'string' ? liteData : JSON.stringify(liteData, null, 2);
-      writeFileSync(liteDataPath, jsonContent);
+      // 使用固定的英文文件名，不包含项目ID - 统一使用 .qqb 格式
+      const liteDataPath = resolve(dataDir, 'project-data.qqb');
+      // 前端传入的是 Blob（Buffer），直接写入即可
+      writeFileSync(liteDataPath, liteData);
     }
 
     const duration = Date.now() - startTime;
