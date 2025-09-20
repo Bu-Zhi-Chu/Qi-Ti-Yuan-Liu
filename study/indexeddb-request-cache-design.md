@@ -141,7 +141,7 @@ class CachedRequestService {
 
   // 带缓存的请求方法
   async cachedRequest<T>(
-    url: string, 
+    url: string,
     options: RequestInit = {},
     cacheConfig: {
       ttl?: number;
@@ -158,7 +158,7 @@ class CachedRequestService {
       if (cachedData) {
         // 立即返回缓存数据
         const cacheResult = cachedData.data;
-        
+
         // 步骤2: 异步获取最新数据并对比
         this.fetchAndCompare(url, options, cacheKey, cacheResult, onUpdate).catch(error => {
           console.warn('Background update failed:', error);
@@ -194,7 +194,7 @@ class CachedRequestService {
       if (this.isDataDifferent(cachedData, newData)) {
         // 数据有更新
         await this.cacheManager.setCache(cacheKey, newData);
-        
+
         if (onUpdate) {
           onUpdate(newData);
         }
@@ -240,7 +240,7 @@ const data = await cacheService.cachedRequest('/api/charts/data');
 
 // 自定义缓存时间 (10分钟)
 const data2 = await cacheService.cachedRequest(
-  '/api/charts/data', 
+  '/api/charts/data',
   {},
   { ttl: 10 * 60 * 1000 }
 );
@@ -383,7 +383,7 @@ async safeCachedRequest<T>(
     return await this.cachedRequest<T>(url, options);
   } catch (cacheError) {
     console.warn('Cache failed, falling back to direct request:', cacheError);
-    
+
     try {
       // 缓存失败，直接请求
       const response = await fetch(url, options);

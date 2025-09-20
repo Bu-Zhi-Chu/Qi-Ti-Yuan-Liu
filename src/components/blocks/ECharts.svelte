@@ -380,15 +380,15 @@
     <!-- 使用一个禁用指针事件的包装层，确保仅图表本身可以交互 -->
     <div class="wrapper" {style} {...restProps} {id}>
         {#if chartReady}
-            <ECharts 
-                class="chart" 
-                options={option} 
-                theme={theme as any} 
+            <ECharts
+                class="chart"
+                options={option}
+                theme={theme as any}
                 init={((dom: HTMLElement, theme?: string, opts?: any) => {
                     // renderer为true时使用canvas（最高性能），为false时使用svg
                     const rendererType = renderer ? 'canvas' : 'svg';
                     return echartsInit(dom, theme, { ...opts, renderer: rendererType });
-                }) as any} 
+                }) as any}
             />
         {/if}
 
