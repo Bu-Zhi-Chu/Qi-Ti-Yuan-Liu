@@ -1,10 +1,18 @@
 <script lang="ts">
     import { Chart as ECharts } from 'svelte-echarts'
     import echartsInit from './echarts-core'
-    import { useCachedFetch } from '../../services/cache/useCachedFetch.svelte'
-    import type { ApiResponse } from '../../types/api.types'
+    import { cachedFetch } from '../../services/cache/cached-fetch'
     import * as echarts from 'echarts/core'
     import { graphic } from 'echarts'
+
+    // 定义API响应的接口
+    interface ApiResponse<T = any> {
+        isSuccess: boolean
+        result: T
+        isCache: boolean
+        timestamp: number
+        error?: any
+    }
 
     // 被动事件监听器polyfill，优化性能警告
     if (typeof window !== 'undefined') {
@@ -324,6 +332,8 @@
 
     // 数据状态管理
     let realData = $state<any>(null)
+    let isLoading = $state(false)
+    let loadError = $state<string | null>(null)
 
     // 新增：预处理后的数据
     const processedData = $derived(() => {
@@ -338,19 +348,62 @@
         return pData
     })
 
-    const {
-        data: chartData,
-        isLoading,
-        error: loadError
-    } = useCachedFetch(() => {
+    let chartData: ApiResponse | null = $state(null)
+
+    // 数据请求函数
+    async function fetchRealData(requestPath: string) {
+        if (!requestPath || requestPath.trim() === '') {
+            chartData = null
+            return
+        }
+
+        isLoading = true
+        loadError = null
+
+        try {
+            const data = await cachedFetch(
+                requestPath,
+                {},
+                {
+                    onUpdate: (updatedData) => {
+                        if (JSON.stringify(updatedData) !== JSON.stringify(data)) {
+                            console.log('数据有变，更新UI')
+                            chartData = updatedData
+                        }
+                    }
+                }
+            )
+            chartData = data
+        } catch (error) {
+            console.error('数据请求失败:', error)
+            loadError = error instanceof Error ? error.message : '数据请求失败'
+            chartData = null
+        } finally {
+            isLoading = false
+        }
+    }
+
+    // 监听数据相关属性变化，发起真实请求
+    $effect(() => {
         const dataSource = restProps.dataSource || restProps.dataAccess || 'json'
-        if (dataSource === 'real') {
-            return restProps.requestPath
+        const requestPath = restProps.requestPath
+        const mockPath = restProps.mockPath
+
+        const handleDataFetch = (path: string | undefined) => {
+            if (!path) {
+                chartData = null
+                return
+            }
+            fetchRealData(path)
         }
-        if (dataSource === 'mock') {
-            return restProps.mockPath
+
+        if (dataSource === 'real' && requestPath) {
+            handleDataFetch(requestPath)
+        } else if (dataSource === 'mock' && mockPath) {
+            handleDataFetch(mockPath)
+        } else {
+            chartData = null
         }
-        return undefined
     })
 
     // 监听 chartData 变化，处理副作用
