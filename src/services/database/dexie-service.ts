@@ -352,16 +352,11 @@ export default class DexieService {
     private static dbInstanceCache: Map<string, Dexie> = new Map()
 
     /**
-     * 获取数据库实例（单例模式）
-     * 注意：使用此方法前必须确保数据库已创建
+     * 获取数据库实例（不带授权验证）
+     * 用于授权验证过程中的数据库操作，避免循环依赖
+     * @param dbName 数据库名称
      */
-    static async getDatabase(dbName: string): Promise<Dexie> {
-        // 先进行本地授权验证
-        const isAuthorized = await DexieService.quickLocalAuthCheck()
-        if (!isAuthorized) {
-            throw new Error('Unauthorized: Local auth check failed')
-        }
-
+    static async getDatabaseUnsafe(dbName: string): Promise<Dexie> {
         if (DexieService.dbInstanceCache.has(dbName)) {
             // 有缓存，直接返回
             return DexieService.dbInstanceCache.get(dbName)!
@@ -372,5 +367,19 @@ export default class DexieService {
             DexieService.dbInstanceCache.set(dbName, db)
             return db
         }
+    }
+
+    /**
+     * 获取数据库实例（单例模式）
+     * 注意：使用此方法前必须确保数据库已创建
+     */
+    static async getDatabase(dbName: string): Promise<Dexie> {
+        // 先进行本地授权验证
+        const isAuthorized = await DexieService.quickLocalAuthCheck()
+        if (!isAuthorized) {
+            throw new Error('Unauthorized: Local auth check failed')
+        }
+
+        return DexieService.getDatabaseUnsafe(dbName)
     }
 }

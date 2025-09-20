@@ -40,15 +40,28 @@ export async function clearCache(): Promise<void> {
 }
 
 /**
- * 清理超过 maxAge 的缓存
+ * 清理过期缓存
+ * @param maxAge 最大缓存时间（毫秒）
+ * @returns 删除的记录数量
  */
 export async function cleanupCache(maxAge: number): Promise<number> {
-    const cutoff = Date.now() - maxAge
-    let count = 0
-    await DexieService.transaction(DEFAULT_DB_NAME, TABLE, async (db, table) => {
-        const keys = await table.where('lastAccess').below(cutoff).primaryKeys()
-        await table.bulkDelete(keys as string[])
-        count = keys.length
-    })
-    return count
+    try {
+        // 使用不带验证的方法获取数据库实例，避免循环依赖
+        const db = await DexieService.getDatabaseUnsafe(DEFAULT_DB_NAME)
+        const allRecords = await db.table(TABLE).toArray()
+        const cutoff = Date.now() - maxAge
+        let deletedCount = 0
+
+        // 删除过期记录
+        for (const record of allRecords) {
+            if (record.lastAccess < cutoff) {
+                await db.table(TABLE).delete(record.key)
+                deletedCount++
+            }
+        }
+
+        return deletedCount
+    } catch (error) {
+        return 0
+    }
 }

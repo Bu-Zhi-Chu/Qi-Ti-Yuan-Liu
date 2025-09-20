@@ -226,7 +226,7 @@ async function initializeDatabase() {
                     await DexieService.createDatabase(DEFAULT_DB_NAME, true)
                 }
 
-                const db = await DexieService.getDatabase(DEFAULT_DB_NAME)
+                const db = await DexieService.getDatabaseUnsafe(DEFAULT_DB_NAME)
                 if (db) {
                     // 读取并应用日志配置
                     try {
@@ -334,13 +334,13 @@ async function initializeDatabase() {
             }
         } else {
             if (!(await DexieService.databaseExists(DEFAULT_DB_NAME))) {
-            await DexieService.createDatabase(DEFAULT_DB_NAME, false)
-        } else {
-        }
+                await DexieService.createDatabase(DEFAULT_DB_NAME, false)
+            } else {
+            }
 
-        // 再次读取并应用日志配置（数据库已存在场景）
-        try {
-            const db = await DexieService.getDatabase(DEFAULT_DB_NAME)
+            // 再次读取并应用日志配置（数据库已存在场景）
+            try {
+                const db = await DexieService.getDatabaseUnsafe(DEFAULT_DB_NAME)
                 if (db) {
                     const cfgRecord = (await db.table('config').toArray())[0]
                     applyLogConfig(cfgRecord ? (cfgRecord.showLogs ?? cfgRecord.value) === true : import.meta.env.DEV === true)
@@ -371,10 +371,13 @@ async function initializeApp() {
     }
 }
 
-// 主初始化流程 - 授权验证优先
+// 主初始化流程 - 数据库优先创建，再进行授权验证
 ; (async () => {
     try {
         console.log('🚀【应用启动】开始流程')
+
+        // 先初始化数据库（必须先创建数据库，因为授权验证需要读取config表）
+        await initializeDatabase()
 
         // 授权验证 - 根据控制开关决定是否执行
         if (ENABLE_AUTH_VERIFICATION) {
@@ -410,10 +413,6 @@ async function initializeApp() {
         } else {
 
         }
-
-
-        await initializeDatabase()
-
 
         await initializeApp()
 
