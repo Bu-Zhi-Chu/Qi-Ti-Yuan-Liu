@@ -334,16 +334,16 @@ class AuthService {
         const tick = 1000 // 每 1 秒检查一次
 
         const setupVerification = async () => {
-            if (!startImmediately) {
-                // 设置下次验证时间为当前时间 + VERIFICATION_INTERVAL
-                const nextVerificationTime = Date.now() + VERIFICATION_INTERVAL
-                await AuthStoreService.saveNextVerificationAt(DEFAULT_DB_NAME, nextVerificationTime)
+            const now = Date.now()
+            let next = await AuthStoreService.readNextVerificationAt(DEFAULT_DB_NAME)
+
+            // 如果没有存储时间，或者时间已过，则重置
+            if (!next || next <= now) {
+                next = now + VERIFICATION_INTERVAL
+                await AuthStoreService.saveNextVerificationAt(DEFAULT_DB_NAME, next)
             }
 
-            // 打印一次剩余秒数
-            const next = await AuthStoreService.readNextVerificationAt(DEFAULT_DB_NAME)
-            const now = Date.now()
-            const remainingSec = Math.round(((next || now) - now) / 1000)
+            const remainingSec = Math.round((next - now) / 1000)
             console.log(`⏱️【授权检测】${remainingSec}`)
 
             // 随后每秒静默轮询：读库 → 对比 → 到点就验证（不再打印）
