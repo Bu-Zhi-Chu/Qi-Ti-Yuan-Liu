@@ -9,7 +9,7 @@ import { importInto } from 'dexie-export-import'
 import { applyLogConfig } from './services/utils/log-switch'
 import { authService } from './services/auth/auth.service'
 import { getStableDeviceKey, getStableDeviceKeyHash } from './services/fingerprint/browser-fingerprint.service'
-import { ENABLE_AUTH_VERIFICATION } from './config/auth.config'
+import { ENABLE_AUTH_VERIFICATION } from './config/config'
 import { DEFAULT_DB_NAME } from './services/database/database.config'
 
 // 根据环境初始化日志：开发环境默认开启，其余环境默认关闭

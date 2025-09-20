@@ -9,7 +9,7 @@
 import Dexie from 'dexie'
 import { DB_VERSION, DEFAULT_DB_NAME } from './database.config'
 import { getStableDeviceKeyHash } from '../fingerprint/browser-fingerprint.service'
-import { ENABLE_AUTH_VERIFICATION } from '../../config/auth.config'
+import { ENABLE_AUTH_VERIFICATION } from '../../config/config'
 
 
 export default class DexieService {
