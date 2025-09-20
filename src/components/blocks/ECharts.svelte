@@ -66,6 +66,7 @@
     import DexieService from '../../services/database/dexie-service'
     import { projectId, getDesignSize } from '../../stores/dom-tree.store.svelte'
     import { get } from 'svelte/store'
+    import { dataMappingKeysStore } from '../../stores/data-mapping.store.svelte'
 
     // 当前缩放比例
     let scaleRatio = $state({ width: 1, height: 1 })
@@ -163,12 +164,12 @@
     // })
 
     // 安全执行JavaScript代码并返回option对象
-    function executeJavaScriptCode(code: string, data?: any): any {
+    function executeJavaScriptCode(code: string, data?: { [key: string]: any[] } | null, seriesMapping?: string[]): any {
         try {
             // 创建一个安全的执行环境，包含echarts图形功能和数据
             const sandbox = {
                 option: undefined,
-                data: data, // 添加真实数据到沙箱环境
+                data: data, // 添加预处理后的数据到沙箱环境
                 console: console,
                 Math: Math,
                 Array: Array,
@@ -194,15 +195,12 @@
             const result = func(sandbox)
 
             // 如果有数据映射，则应用它
-            if (result && Array.isArray(result.series) && Array.isArray(restProps.seriesMapping)) {
+            if (result && Array.isArray(result.series) && Array.isArray(seriesMapping) && data) {
                 result.series.forEach((s: any, i: number) => {
-                    const mappingPath = (restProps.seriesMapping as string[])[i]
-                    if (mappingPath && data) {
-                        // 使用路径从 data 中提取数据
-                        const mappedData = getByPath(data, mappingPath)
-                        if (mappedData) {
-                            s.data = mappedData
-                        }
+                    const mappingPath = seriesMapping[i]
+                    // 直接从预处理好的数据中根据 key 获取数组
+                    if (mappingPath && data[mappingPath]) {
+                        s.data = data[mappingPath]
                     }
                 })
             }
@@ -218,6 +216,19 @@
     let realData = $state<any>(null)
     let isLoading = $state(false)
     let loadError = $state<string | null>(null)
+
+    // 新增：预处理后的数据
+    const processedData = $derived(() => {
+        if (!realData || !realData.isSuccess || !Array.isArray(realData.result) || realData.result.length === 0) {
+            return null
+        }
+        const keys = Object.keys(realData.result[0])
+        const pData: { [key: string]: any[] } = {}
+        for (const key of keys) {
+            pData[key] = realData.result.map((item: any) => item[key])
+        }
+        return pData
+    })
 
     // 数据请求函数
     async function fetchRealData(requestPath: string) {
@@ -247,19 +258,33 @@
         const requestPath = restProps.requestPath
         const mockPath = restProps.mockPath
 
+        const handleDataFetch = (path: string | undefined) => {
+            if (!path) {
+                realData = null
+                dataMappingKeysStore.clearKeys(id)
+                return
+            }
+            fetchRealData(path).then((data) => {
+                realData = data
+                if (data && data.isSuccess && Array.isArray(data.result) && data.result.length > 0) {
+                    const keys = Object.keys(data.result[0])
+                    dataMappingKeysStore.setKeys(id, keys)
+                } else {
+                    dataMappingKeysStore.clearKeys(id)
+                }
+            })
+        }
+
         // 如果数据源是真实请求且有请求路径
         if (dataSource === 'real' && requestPath) {
-            fetchRealData(requestPath).then((data) => {
-                realData = data
-            })
+            handleDataFetch(requestPath)
         }
         // 如果数据源是模拟接口且有模拟路径
         else if (dataSource === 'mock' && mockPath) {
-            fetchRealData(mockPath).then((data) => {
-                realData = data
-            })
+            handleDataFetch(mockPath)
         } else {
             realData = null
+            dataMappingKeysStore.clearKeys(id)
         }
     })
 
@@ -329,7 +354,7 @@
 
                 // 如果提供了JavaScript代码，执行代码生成option（传入真实数据）
                 if (finalCode && typeof finalCode === 'string' && finalCode.trim()) {
-                    const codeResult = executeJavaScriptCode(finalCode, realData)
+                    const codeResult = executeJavaScriptCode(finalCode, processedData(), restProps.seriesMapping as string[] | undefined)
                     if (codeResult && typeof codeResult === 'object') {
                         // 处理标题和图例的默认位置
                         return processOptionDefaults(codeResult)

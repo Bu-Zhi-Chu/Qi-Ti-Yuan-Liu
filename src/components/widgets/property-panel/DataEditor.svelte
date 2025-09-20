@@ -8,12 +8,15 @@
     import PropertySelect from './PropertySelect.svelte'
     import CodeEditor from '../CodeEditor.svelte'
     import blocksConfig from '../../blocks/blocks.config.json'
+    import { dataMappingKeysStore } from '../../../stores/data-mapping.store.svelte'
 
     let { selectedId = null } = $props<{ selectedId?: string | null }>()
 
     // 1. 快照 + 订阅（完全照抄 FeatureEditor）
     let dataSnapshot = $state<ReturnType<typeof _getNodeProps> | null>(null)
     let unsubscribe = () => {}
+    let dataMappingKeys = $state<string[]>([])
+
     $effect(() => {
         unsubscribe()
         if (selectedId) {
@@ -22,8 +25,20 @@
             unsubscribe = store.subscribe(() => {
                 dataSnapshot = _getNodeProps(selectedId)
             })
+
+            // 订阅数据映射键
+            const dataMappingUnsubscribe = dataMappingKeysStore.subscribe((allKeys) => {
+                dataMappingKeys = allKeys[selectedId] || []
+            })
+
+            // 在清理时取消订阅
+            return () => {
+                unsubscribe()
+                dataMappingUnsubscribe()
+            }
         } else {
             dataSnapshot = null
+            dataMappingKeys = []
         }
         return () => {
             unsubscribe()
@@ -42,7 +57,7 @@
             return {
                 finalData: seriesData || [],
                 matches: [] as RegExpMatchArray[],
-                needsWriteBack: false,
+                needsWriteBack: false
             }
         }
 
@@ -195,13 +210,11 @@
         {#if dataArrays.length > 0}
             {#each dataArrays as arr, idx}
                 <PropertyRow label={`${getChineseOrdinal(idx)}映射`}>
-                    <input
-                        type="text"
-                        class="request-path-input"
-                        placeholder="e.g., data.values"
-                        value={seriesMapping()[idx] || ''}
-                        onchange={(e) => updateSeriesMapping(idx, (e.target as HTMLInputElement).value)}
-                    />
+                    {#if dataMappingKeys.length > 0}
+                        <PropertySelect value={seriesMapping()[idx] || ''} options={dataMappingKeys.map((k) => ({ label: k, value: k }))} change={(v) => updateSeriesMapping(idx, v)} placeholder="选择数据字段" />
+                    {:else}
+                        <input type="text" class="request-path-input" placeholder="e.g., data.values" value={seriesMapping()[idx] || ''} onchange={(e) => updateSeriesMapping(idx, (e.target as HTMLInputElement).value)} />
+                    {/if}
                 </PropertyRow>
             {/each}
         {/if}
