@@ -222,23 +222,9 @@
         } else {
             const attributesToUpdate: { [k: string]: any } = { [key]: value }
 
-            // 当 code 属性变化时，解析出 seriesData 并一同更新
-            if (key === 'code' && typeof value === 'string') {
-                const code = value
-                // 匹配 data: [] 数组，但排除 legend.data 等配置数据
-                const allMatches = [...code.matchAll(/data\s*:\s*(\[[^\]]*\])/g)]
-
-                const codeMatches = allMatches.filter((match) => {
-                    const matchStart = match.index!
-                    const beforeMatch = code.substring(Math.max(0, matchStart - 20), matchStart)
-                    // 检查是否是 legend.data 或其他非系列配置
-                    return !beforeMatch.includes('legend') && !beforeMatch.includes('tooltip')
-                })
-
-                const parsedData = codeMatches.map((m) => m[1])
-
-                // 如果解析出了数据，则存入 seriesData，否则存 undefined
-                attributesToUpdate.seriesData = parsedData.length > 0 ? parsedData : undefined
+            // 当 code 属性变化时，清空 seriesData，以便从新代码中重新解析
+            if (key === 'code') {
+                attributesToUpdate.seriesData = undefined
             }
 
             updateNodeProps(selectedId, { attributes: attributesToUpdate })

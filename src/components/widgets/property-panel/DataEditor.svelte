@@ -147,9 +147,6 @@
         if (!selectedId) return
         // DataEditor 只改 attributes；styles 由别的面板处理
         const attributesToUpdate: { [k: string]: any } = { [key]: value }
-        if (key === 'dataSource' && (value === 'mock' || value === 'real')) {
-            attributesToUpdate.seriesData = undefined
-        }
         updateNodeProps(selectedId, { attributes: attributesToUpdate })
     }
 
@@ -182,7 +179,7 @@
     <!-- 请求路径配置：只在选择真实请求时显示 -->
     {#if fullDataSourceConfig?.requestPath && (currentValues.dataSource ?? dataSourceConfig?.default ?? 'json') === 'real'}
         <PropertyRow label={fullDataSourceConfig.requestPath.label}>
-            <input type="text" value={currentValues.requestPath ?? fullDataSourceConfig.requestPath.default ?? '/api/data'} onchange={(e) => handleAttrChange('requestPath', (e.target as HTMLInputElement).value)} class="request-path-input" placeholder="请输入请求路径" />
+            <input type="text" autocomplete="off" value={currentValues.requestPath ?? fullDataSourceConfig.requestPath.default ?? '/api/data'} onchange={(e) => handleAttrChange('requestPath', (e.target as HTMLInputElement).value)} class="request-path-input" placeholder="请输入请求路径" />
         </PropertyRow>
     {/if}
 
@@ -200,7 +197,7 @@
     <!-- 模拟路径配置：只在选择模拟接口时显示 -->
     {#if fullDataSourceConfig?.mockPath && (currentValues.dataSource ?? dataSourceConfig?.default ?? 'json') === 'mock'}
         <PropertyRow label={fullDataSourceConfig.mockPath.label}>
-            <input type="text" value={currentValues.mockPath ?? fullDataSourceConfig.mockPath.default ?? '/api/mock'} onchange={(e) => handleAttrChange('mockPath', (e.target as HTMLInputElement).value)} class="request-path-input" placeholder="请输入模拟路径" />
+            <input type="text" autocomplete="off" value={currentValues.mockPath ?? fullDataSourceConfig.mockPath.default ?? '/api/mock'} onchange={(e) => handleAttrChange('mockPath', (e.target as HTMLInputElement).value)} class="request-path-input" placeholder="请输入模拟路径" />
         </PropertyRow>
     {/if}
 
@@ -225,7 +222,7 @@
                     {#if dataMappingKeys.length > 0}
                         <PropertySelect value={mockSeriesMapping()[idx] || ''} options={dataMappingKeys.map((k) => ({ label: k, value: k }))} change={(v) => updateMockSeriesMapping(idx, v)} placeholder="选择数据字段" />
                     {:else}
-                        <input type="text" class="request-path-input" placeholder="e.g., data.values" value={mockSeriesMapping()[idx] || ''} onchange={(e) => updateMockSeriesMapping(idx, (e.target as HTMLInputElement).value)} />
+                        <input type="text" autocomplete="off" class="request-path-input" placeholder="e.g., data.values" value={mockSeriesMapping()[idx] || ''} onchange={(e) => updateMockSeriesMapping(idx, (e.target as HTMLInputElement).value)} />
                     {/if}
                 </PropertyRow>
             {/each}
@@ -240,7 +237,7 @@
                     {#if dataMappingKeys.length > 0}
                         <PropertySelect value={requestSeriesMapping()[idx] || ''} options={dataMappingKeys.map((k) => ({ label: k, value: k }))} change={(v) => updateRequestSeriesMapping(idx, v)} placeholder="选择数据字段" />
                     {:else}
-                        <input type="text" class="request-path-input" placeholder="e.g., data.values" value={requestSeriesMapping()[idx] || ''} onchange={(e) => updateRequestSeriesMapping(idx, (e.target as HTMLInputElement).value)} />
+                        <input type="text" autocomplete="off" class="request-path-input" placeholder="e.g., data.values" value={requestSeriesMapping()[idx] || ''} onchange={(e) => updateRequestSeriesMapping(idx, (e.target as HTMLInputElement).value)} />
                     {/if}
                 </PropertyRow>
             {/each}
