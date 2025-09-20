@@ -334,7 +334,7 @@ class AuthService {
             AuthStoreService.readNextVerificationAt(DEFAULT_DB_NAME).then(next => {
                 const now = Date.now()
                 const remainingSec = Math.round(((next || now) - now) / 1000)
-                console.log(`⏱️【令牌检测】${remainingSec}`)
+                console.log(`⏱️【授权检测】${remainingSec}`)
             })
             // 随后每秒静默轮询：读库 → 对比 → 到点就验证（不再打印）
             this._verificationTimer = window.setInterval(() => {
