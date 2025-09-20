@@ -130,7 +130,7 @@ export default class DexieService {
         const stores: Record<string, string> = {
             projects: 'id, name, templateId, createdAt, updatedAt, canvasState, mode, exportTime, designWidth, designHeight',
             doms: '[projectId+id], projectId, parentId, attributes, style',
-            config: '++id, showLogs, perfMonitor, authCache',
+            config: '++id, showLogs, perfMonitor, authCache, nextVerificationAt',
             imageStore: '[projectId+hash], blob, hash, height, name, projectId, refCount, width',
             requestCache: 'key, lastAccess'
         }

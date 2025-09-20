@@ -28,7 +28,17 @@ class AuthService {
      */
     private isCacheExpired(cacheData: { deviceKeyHash: string; timestamp: number; lastVerified: string }): boolean {
         const now = Date.now()
-        return (now - cacheData.timestamp) > CACHE_EXPIRY_TIME
+        const elapsedTime = now - cacheData.timestamp
+        const remainingTime = CACHE_EXPIRY_TIME - elapsedTime
+        const remainingSeconds = Math.round(remainingTime / 1000)
+
+        if (remainingTime > 0) {
+            console.log(`⏱️【令牌检测】` + remainingSeconds)
+        } else {
+            console.log('⏱️【令牌检测】令牌已过期')
+        }
+
+        return elapsedTime > CACHE_EXPIRY_TIME
     }
 
     /**
@@ -224,75 +234,84 @@ class AuthService {
             }
         }
 
-        // 定期验证和强制验证直接进行远程验证，不使用令牌
-        this._isVerifying = true
-        this.updateStatus('checking', false)
-
-        try {
-            // 每次都重新获取设备密钥哈希值，不使用令牌，防止前端注入
-            const deviceKeyHash = await getStableDeviceKeyHash()
-
-
-            // 获取远程JSON数据并对比密钥
-            try {
-                // 使用CORS代理来解决跨域问题
-                const proxyUrl = PROXY_URL
-                const targetUrl = encodeURIComponent(TARGET_URL)
-
-                // 为所有验证类型都添加令牌破坏参数，确保获取最新数据
-                const cacheBuster = `&_t=${Date.now()}&_r=${Math.random()}`
-                const fetchUrl = proxyUrl + targetUrl + cacheBuster
-                const fetchOptions: RequestInit = {
-                    cache: 'no-cache'
-                }
-
-                const response = await fetch(fetchUrl, fetchOptions)
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`)
-                }
-
-                const proxyData = await response.json()
-                const remoteData = JSON.parse(proxyData.contents)
-
-                // 对比密钥 - 只考虑值，不关注键名
-                const remoteValues = Object.values(remoteData)
-
-                if (remoteValues.length > 0) {
-                    // 遍历所有远程密钥值，进行精确字符串匹配
-                    let keyMatched = false
-                    for (const remoteValue of remoteValues) {
-                        if (typeof remoteValue === 'string' && remoteValue === deviceKeyHash) {
-                            keyMatched = true
-                            break
-                        }
-                    }
-
-                    if (keyMatched) {
-                        // 只在授权验证时打印成功信息
-                        if (!isPeriodicCheck) {
-                            console.log('✅【授权验证】验证成功')
-                        }
-                        // 验证成功时保存到本地令牌
-                        await this.saveToCache(deviceKeyHash, Date.now())
-                        // 重置令牌篡改标志
-                        if (isPeriodicCheck) {
-                            this._cacheTempered = false
-                        }
-                        this.updateStatus('authorized', true)
-                    } else {
-                        await this.handleAuthFailure(isPeriodicCheck, '❌【授权验证】验证失败')
-                    }
-                } else {
-                    await this.handleAuthFailure(isPeriodicCheck, '❌【远程数据】数据异常')
-                }
-            } catch (fetchError) {
-                await this.handleAuthError(isPeriodicCheck, '网络错误')
+        // 将远程验证逻辑封装，以便根据场景选择同步等待或异步执行
+        const remoteVerification = async () => {
+            this._isVerifying = true
+            // 仅在首次验证时显示“检查中”状态，避免定期验证时UI闪烁
+            if (!isPeriodicCheck) {
+                this.updateStatus('checking', false)
             }
-        } catch (error) {
-            await this.handleAuthError(isPeriodicCheck, '设备密钥获取失败')
-        } finally {
-            this._isVerifying = false
+
+            try {
+                // 每次都重新获取设备密钥哈希值，不使用令牌，防止前端注入
+                const deviceKeyHash = await getStableDeviceKeyHash()
+
+                // 获取远程JSON数据并对比密钥
+                try {
+                    // 使用CORS代理来解决跨域问题
+                    const proxyUrl = PROXY_URL
+                    const targetUrl = encodeURIComponent(TARGET_URL)
+
+                    // 为所有验证类型都添加令牌破坏参数，确保获取最新数据
+                    const cacheBuster = `&_t=${Date.now()}&_r=${Math.random()}`
+                    const fetchUrl = proxyUrl + targetUrl + cacheBuster
+                    const fetchOptions: RequestInit = {
+                        cache: 'no-cache'
+                    }
+
+                    const response = await fetch(fetchUrl, fetchOptions)
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`)
+                    }
+
+                    const proxyData = await response.json()
+                    const remoteData = JSON.parse(proxyData.contents)
+
+                    // 对比密钥 - 只考虑值，不关注键名
+                    const remoteValues = Object.values(remoteData)
+
+                    if (remoteValues.length > 0) {
+                        // 使用 .some 优化遍历，进行精确字符串匹配
+                        const keyMatched = remoteValues.some(
+                            remoteValue => typeof remoteValue === 'string' && remoteValue === deviceKeyHash
+                        )
+
+                        if (keyMatched) {
+                            // 只在授权验证时打印成功信息
+                            if (!isPeriodicCheck) {
+                                console.log('✅【授权验证】验证成功')
+                            }
+                            // 验证成功时保存到本地令牌
+                            await this.saveToCache(deviceKeyHash, Date.now())
+                            // 重置令牌篡改标志
+                            if (isPeriodicCheck) {
+                                this._cacheTempered = false
+                            }
+                            this.updateStatus('authorized', true)
+                        } else {
+                            await this.handleAuthFailure(isPeriodicCheck, '❌【授权验证】验证失败')
+                        }
+                    } else {
+                        await this.handleAuthFailure(isPeriodicCheck, '❌【远程数据】数据异常')
+                    }
+                } catch (fetchError) {
+                    await this.handleAuthError(isPeriodicCheck, '网络错误')
+                }
+            } catch (error) {
+                await this.handleAuthError(isPeriodicCheck, '设备密钥获取失败')
+            } finally {
+                this._isVerifying = false
+            }
+        }
+
+        // 根据是否为定期验证，选择不同的执行策略
+        if (isPeriodicCheck) {
+            // 定期验证：异步执行，不阻塞当前流程
+            remoteVerification()
+        } else {
+            // 首次验证：同步等待，确保完成授权检查
+            await remoteVerification()
         }
     }
 
@@ -303,11 +322,40 @@ class AuthService {
         // 如果已经有定时器在运行，先清除
         this.stopPeriodicVerification()
 
+        const tick = 1000 // 每 1 秒检查一次
 
-        // 设置定期验证（不立即执行）
-        this._verificationTimer = window.setInterval(() => {
-            this.verifyToken(true) // 传入true表示这是定期验证
-        }, VERIFICATION_INTERVAL)
+        // 立即同步一次：若数据库里没有时间戳或已过期，就立即验证并写入下一次时间
+        this.syncNextVerification().then(() => {
+            // 打印一次剩余秒数
+            AuthStoreService.readNextVerificationAt(DEFAULT_DB_NAME).then(next => {
+                const now = Date.now()
+                const remainingSec = Math.round(((next || now) - now) / 1000)
+                console.log(`⏱️【令牌检测】${remainingSec}`)
+            })
+            // 随后每秒静默轮询：读库 → 对比 → 到点就验证（不再打印）
+            this._verificationTimer = window.setInterval(() => {
+                this.syncNextVerification()
+            }, tick)
+        })
+    }
+
+    /**
+     * 同步「下一次验证时间」
+     *  - 若未到时间：仅打印剩余秒数
+     *  - 若已到或不存在：立即验证（异步）并写入「当前时间 + VERIFICATION_INTERVAL」
+     */
+    private async syncNextVerification(): Promise<void> {
+        const now = Date.now()
+        let next = await AuthStoreService.readNextVerificationAt(DEFAULT_DB_NAME)
+
+        if (!next || now >= next) {
+            // 时间到或首次：立即验证（异步，不阻塞）
+            this.verifyToken(true)
+            // 写入下一次时间
+            next = now + VERIFICATION_INTERVAL
+            await AuthStoreService.saveNextVerificationAt(DEFAULT_DB_NAME, next)
+        }
+        // 不再实时打印，由调用方决定要不要日志
     }
 
     /**

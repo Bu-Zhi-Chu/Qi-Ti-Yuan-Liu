@@ -63,4 +63,35 @@ export default class AuthCacheService {
             throw new Error(`Clear auth cache failed: ${error}`)
         }
     }
+
+    /**
+     * 保存下次定期验证的时间戳（毫秒）
+     */
+    static async saveNextVerificationAt(dbName: string, timestamp: number): Promise<void> {
+        try {
+            const db = await DexieService.getDatabaseUnsafe(dbName)
+            const configRecords = await db.table('config').toArray()
+            const configRecord = configRecords[0] || { showLogs: false, perfMonitor: true, authCache: null }
+
+            await db.table('config').clear()
+            await db.table('config').put({ ...configRecord, nextVerificationAt: timestamp })
+        } catch (error) {
+            throw new Error(`Save nextVerificationAt failed: ${error}`)
+        }
+    }
+
+    /**
+     * 读取下次定期验证的时间戳（毫秒）
+     * 若不存在返回 null
+     */
+    static async readNextVerificationAt(dbName: string): Promise<number | null> {
+        try {
+            const db = await DexieService.getDatabaseUnsafe(dbName)
+            const configRecords = await db.table('config').toArray()
+            const configRecord = configRecords[0]
+            return configRecord?.nextVerificationAt ?? null
+        } catch (error) {
+            return null
+        }
+    }
 }
