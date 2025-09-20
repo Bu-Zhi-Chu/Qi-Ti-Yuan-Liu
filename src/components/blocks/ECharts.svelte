@@ -338,7 +338,11 @@
         return pData
     })
 
-    const { data: chartData, isLoading, error: loadError } = useCachedFetch(() => {
+    const {
+        data: chartData,
+        isLoading,
+        error: loadError
+    } = useCachedFetch(() => {
         const dataSource = restProps.dataSource || restProps.dataAccess || 'json'
         if (dataSource === 'real') {
             return restProps.requestPath
