@@ -104,7 +104,11 @@
     function handleAttrChange(key: string, value: any) {
         if (!selectedId) return
         // DataEditor 只改 attributes；styles 由别的面板处理
-        updateNodeProps(selectedId, { attributes: { [key]: value } })
+        const attributesToUpdate: { [k: string]: any } = { [key]: value }
+        if (key === 'dataSource' && (value === 'mock' || value === 'real')) {
+            attributesToUpdate.seriesData = undefined
+        }
+        updateNodeProps(selectedId, { attributes: attributesToUpdate })
     }
 
     // 工具函数：获取组件级别的 dataSource 配置
