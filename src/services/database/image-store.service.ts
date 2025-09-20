@@ -25,13 +25,12 @@ export async function getImage(projectId: string, hash: string): Promise<ImageRe
  * 新增或引用计数 +1（事务）
  */
 export async function addOrIncrement(record: Omit<ImageRecord, 'refCount'>, increment = 1): Promise<void> {
-    const db = await DexieService.getDatabase(DEFAULT_DB_NAME)
-    await db.transaction('rw', db.table(TABLE), async () => {
-        const existing = await db.table<ImageRecord>(TABLE).get({ projectId: record.projectId, hash: record.hash })
+    await DexieService.transaction(DEFAULT_DB_NAME, TABLE, async (db, table) => {
+        const existing = await table.get({ projectId: record.projectId, hash: record.hash })
         if (existing) {
-            await db.table(TABLE).update([record.projectId, record.hash], { refCount: existing.refCount + increment })
+            await table.update([record.projectId, record.hash], { refCount: existing.refCount + increment })
         } else {
-            await db.table(TABLE).add({ ...record, refCount: increment })
+            await table.add({ ...record, refCount: increment })
         }
     })
 }
@@ -40,15 +39,14 @@ export async function addOrIncrement(record: Omit<ImageRecord, 'refCount'>, incr
  * 引用计数 -1，若减至 0 则删除记录
  */
 export async function decrementOrDelete(projectId: string, hash: string): Promise<void> {
-    const db = await DexieService.getDatabase(DEFAULT_DB_NAME)
-    await db.transaction('rw', db.table(TABLE), async () => {
-        const existing = await db.table<ImageRecord>(TABLE).get({ projectId, hash })
+    await DexieService.transaction(DEFAULT_DB_NAME, TABLE, async (db, table) => {
+        const existing = await table.get({ projectId, hash })
         if (!existing) return
         const newCount = existing.refCount - 1
         if (newCount <= 0) {
-            await db.table(TABLE).delete([projectId, hash])
+            await table.delete([projectId, hash])
         } else {
-            await db.table(TABLE).update([projectId, hash], { refCount: newCount })
+            await table.update([projectId, hash], { refCount: newCount })
         }
     })
 }
