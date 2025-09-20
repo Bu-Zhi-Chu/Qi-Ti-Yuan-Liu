@@ -259,6 +259,11 @@
                 "min": 240,
                 "max": 2160
             },
+            "renderer": {
+                "label": "最高性能",
+                "type": "switch",
+                "default": false
+            },
             "chartCases": {
                 "label": "图表案例",
                 "type": "linkGroup",

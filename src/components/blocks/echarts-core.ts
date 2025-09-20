@@ -8,7 +8,7 @@ import { BarChart, LineChart, PieChart } from 'echarts/charts'
 // 组件
 import { GridComponent, TooltipComponent, LegendComponent, TitleComponent, MarkPointComponent, MarkLineComponent, ToolboxComponent, DataZoomComponent, GraphicComponent } from 'echarts/components'
 // 渲染器
-import { CanvasRenderer } from 'echarts/renderers'
+import { CanvasRenderer, SVGRenderer } from 'echarts/renderers'
 
 // 按需注册
 echarts.use([
@@ -24,7 +24,8 @@ echarts.use([
   ToolboxComponent,
   DataZoomComponent,
   GraphicComponent,
-  CanvasRenderer
+  CanvasRenderer,
+  SVGRenderer
 ])
 
 // ✅ 导出函数形式，与官方 init 接口保持一致
@@ -35,6 +36,8 @@ export default function (dom: HTMLElement, theme?: string, opts?: any) {
     useCoarsePointer: true,
     // 允许使用被动事件监听器
     pointerEvents: 'auto',
+    // 设置渲染器（canvas或svg）
+    renderer: opts?.renderer || 'canvas',
     // 合并用户传入的选项
     ...opts
   }

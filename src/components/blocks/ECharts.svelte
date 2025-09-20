@@ -55,7 +55,7 @@
     }
 
     // Svelte 5 runes写法：直接在解构中初始化默认值
-    const { id = crypto.randomUUID(), code, theme = 'light', style = '', className, designWidth: propDesignWidth, designHeight: propDesignHeight, ...restProps } = $props() as Props
+    const { id = crypto.randomUUID(), code, theme = 'light', style = '', className, designWidth: propDesignWidth, designHeight: propDesignHeight, renderer = false, ...restProps } = $props() as Props
 
     // 导入必要的服务和存储
     import { screenDetector } from '../../services/screen/screen-detector.service'
@@ -380,7 +380,16 @@
     <!-- 使用一个禁用指针事件的包装层，确保仅图表本身可以交互 -->
     <div class="wrapper" {style} {...restProps} {id}>
         {#if chartReady}
-            <ECharts class="chart" options={option} theme={theme as any} init={echartsInit as any} />
+            <ECharts 
+                class="chart" 
+                options={option} 
+                theme={theme as any} 
+                init={((dom: HTMLElement, theme?: string, opts?: any) => {
+                    // renderer为true时使用canvas（最高性能），为false时使用svg
+                    const rendererType = renderer ? 'canvas' : 'svg';
+                    return echartsInit(dom, theme, { ...opts, renderer: rendererType });
+                }) as any} 
+            />
         {/if}
 
         <!-- 加载状态指示器 -->
