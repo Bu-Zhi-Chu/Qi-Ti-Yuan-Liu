@@ -50,7 +50,7 @@
     let currentValues = $derived(dataSnapshot ? { ...(dataSnapshot.attributes || {}), ...(dataSnapshot.styles || {}) } : {})
 
     // 导入序列提取服务
-    import { extractSeriesFromCode, getSeriesMapping } from '../../../services/property-panel/series-extractor.service'
+    import { extractSeriesFromCode, getSeriesCount } from '../../../services/property-panel/series-extractor.service'
 
     const derivedState = $derived(() => {
         const code = currentValues.code as string | undefined
@@ -75,11 +75,21 @@
     let codeMatches = $derived(derivedState().matches)
 
     let mockSeriesMapping = $derived(() => {
-        const mapping = currentValues.seriesMapping as string[] | undefined
-        if (mapping && Array.isArray(mapping) && mapping.length === dataArrays.length) {
+        const mapping = currentValues.mockSeriesMapping as string[] | undefined
+        const count = getSeriesCount(currentValues.code as string)
+        if (mapping && Array.isArray(mapping) && mapping.length === count) {
             return mapping
         }
-        return Array(dataArrays.length).fill('')
+        return Array(count).fill('')
+    })
+
+    let requestSeriesMapping = $derived(() => {
+        const mapping = currentValues.requestSeriesMapping as string[] | undefined
+        const count = getSeriesCount(currentValues.code as string)
+        if (mapping && Array.isArray(mapping) && mapping.length === count) {
+            return mapping
+        }
+        return Array(count).fill('')
     })
 
     // 3. 使用 $effect 单独处理副作用（回写）
@@ -113,23 +123,24 @@
         handleAttrChange('seriesData', newDataArrays)
     }
 
-    /** 实时更新第 index 个 data 映射路径 */
+    /** 实时更新第 index 个 mock data 映射路径 */
     function updateMockSeriesMapping(index: number, path: string) {
         if (!selectedId || mockSeriesMapping()[index] === path) return
 
         const newMapping = [...mockSeriesMapping()]
         newMapping[index] = path
 
-        handleAttrChange('seriesMapping', newMapping)
+        handleAttrChange('mockSeriesMapping', newMapping)
     }
 
-    // 获取序列数量（用于映射）
-    function getSeriesCount(): number {
-        if (dataSource === 'json') {
-            return dataArrays.length
-        } else {
-            return currentValues.seriesData?.length || 0
-        }
+    /** 实时更新第 index 个 request data 映射路径 */
+    function updateRequestSeriesMapping(index: number, path: string) {
+        if (!selectedId || requestSeriesMapping()[index] === path) return
+
+        const newMapping = [...requestSeriesMapping()]
+        newMapping[index] = path
+
+        handleAttrChange('requestSeriesMapping', newMapping)
     }
 
     function handleAttrChange(key: string, value: any) {
@@ -206,15 +217,30 @@
         {/if}
     {/if}
 
-    <!-- 动态数据(mock/real)模式：编辑 mockSeriesMapping -->
-    {#if dataSource === 'mock' || dataSource === 'real'}
-        {#if getSeriesCount() > 0}
-            {#each Array(getSeriesCount()) as _, idx}
+    <!-- 动态数据(mock)模式：编辑 mockSeriesMapping -->
+    {#if dataSource === 'mock'}
+        {#if getSeriesCount(currentValues.code as string) > 0}
+            {#each Array(getSeriesCount(currentValues.code as string)) as _, idx}
                 <PropertyRow label={`${getChineseOrdinal(idx)}映射`}>
                     {#if dataMappingKeys.length > 0}
                         <PropertySelect value={mockSeriesMapping()[idx] || ''} options={dataMappingKeys.map((k) => ({ label: k, value: k }))} change={(v) => updateMockSeriesMapping(idx, v)} placeholder="选择数据字段" />
                     {:else}
                         <input type="text" class="request-path-input" placeholder="e.g., data.values" value={mockSeriesMapping()[idx] || ''} onchange={(e) => updateMockSeriesMapping(idx, (e.target as HTMLInputElement).value)} />
+                    {/if}
+                </PropertyRow>
+            {/each}
+        {/if}
+    {/if}
+
+    <!-- 动态数据(real)模式：编辑 requestSeriesMapping -->
+    {#if dataSource === 'real'}
+        {#if getSeriesCount(currentValues.code as string) > 0}
+            {#each Array(getSeriesCount(currentValues.code as string)) as _, idx}
+                <PropertyRow label={`${getChineseOrdinal(idx)}映射`}>
+                    {#if dataMappingKeys.length > 0}
+                        <PropertySelect value={requestSeriesMapping()[idx] || ''} options={dataMappingKeys.map((k) => ({ label: k, value: k }))} change={(v) => updateRequestSeriesMapping(idx, v)} placeholder="选择数据字段" />
+                    {:else}
+                        <input type="text" class="request-path-input" placeholder="e.g., data.values" value={requestSeriesMapping()[idx] || ''} onchange={(e) => updateRequestSeriesMapping(idx, (e.target as HTMLInputElement).value)} />
                     {/if}
                 </PropertyRow>
             {/each}

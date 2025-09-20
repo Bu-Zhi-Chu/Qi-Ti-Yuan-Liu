@@ -53,7 +53,8 @@
         /** 独立存储的序列化数据 */
         seriesData?: string[]
         /** 动态数据映射关系 */
-        seriesMapping?: string[]
+        mockSeriesMapping?: string[]
+        requestSeriesMapping?: string[]
         theme?: any
         style?: string
         // 废弃的属性（不再使用）
@@ -494,7 +495,14 @@
 
                 // 如果提供了JavaScript代码，执行代码生成option（传入真实数据）
                 if (finalCode && typeof finalCode === 'string' && finalCode.trim()) {
-                    const codeResult = executeJavaScriptCode(finalCode, processedData(), restProps.seriesMapping as string[] | undefined)
+                    let seriesMapping: string[] | undefined
+                    if (dataSource === 'real') {
+                        seriesMapping = restProps.requestSeriesMapping
+                    } else if (dataSource === 'mock') {
+                        seriesMapping = restProps.mockSeriesMapping
+                    }
+
+                    const codeResult = executeJavaScriptCode(finalCode, processedData(), seriesMapping)
                     if (codeResult && typeof codeResult === 'object') {
                         // 处理标题和图例的默认位置
                         return processOptionDefaults(codeResult)

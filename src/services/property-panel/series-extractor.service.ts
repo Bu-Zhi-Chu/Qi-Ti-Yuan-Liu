@@ -12,13 +12,6 @@ export interface SeriesExtractionResult {
   needsWriteBack: boolean
 }
 
-export interface SeriesMappingResult {
-  /** 映射路径数组 */
-  mappingPaths: string[]
-  /** 映射数量 */
-  count: number
-}
-
 /**
  * 从JavaScript代码中提取数据序列
  * @param code - JavaScript代码
@@ -62,32 +55,6 @@ export function extractSeriesFromCode(
     dataArrays: finalData,
     matches,
     needsWriteBack
-  }
-}
-
-/**
- * 获取序列映射路径
- * @param dataArraysLength - 数据数组长度
- * @param existingMapping - 已存在的映射数据
- * @returns 映射结果
- */
-export function getSeriesMapping(
-  dataArraysLength: number,
-  existingMapping: string[] | undefined
-): SeriesMappingResult {
-  if (existingMapping &&
-    Array.isArray(existingMapping) &&
-    existingMapping.length === dataArraysLength) {
-    return {
-      mappingPaths: existingMapping,
-      count: dataArraysLength
-    }
-  }
-
-  // 如果没有已存在的映射或长度不匹配，创建空映射
-  return {
-    mappingPaths: Array(dataArraysLength).fill(''),
-    count: dataArraysLength
   }
 }
 
