@@ -379,19 +379,19 @@ async function initializeApp() {
         // 先初始化数据库（必须先创建数据库，因为授权验证需要读取config表）
         await initializeDatabase()
 
-        // 授权验证 - 根据控制开关决定是否执行
+        // ===== 统一授权验证（精简/非精简都走这里） =====
+        // 可通过环境变量彻底关闭验证
         if (ENABLE_AUTH_VERIFICATION) {
             await authService.verifyToken()
 
-            // 等待授权验证完成
+            // 等待首次验证成功
             await new Promise<void>((resolve, reject) => {
                 let unsubscribe: (() => void) | null = null
 
                 unsubscribe = authService.subscribe((status, isAuthorized) => {
                     if (status === 'authorized' && isAuthorized) {
-
-                        // 只有授权验证成功后才启动定期验证
-                        authService.startPeriodicVerification()
+                        // 首次验证成功，启动定期验证（不立即触发）
+                        authService.startPeriodicVerification(false)
                         unsubscribe?.()
                         resolve()
                     } else if (status === 'unauthorized') {
@@ -411,7 +411,8 @@ async function initializeApp() {
                 }, 30000) // 30秒超时
             })
         } else {
-
+            // ⚙️ 验证被关闭：直接放行
+            console.log('⚙️【应用启动】授权验证已关闭，直接放行')
         }
 
         await initializeApp()

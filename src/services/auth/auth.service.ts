@@ -282,15 +282,16 @@ class AuthService {
                         )
 
                         if (keyMatched) {
-                            // 只在授权验证时打印成功信息
-                            if (!isPeriodicCheck) {
-                                console.log('✅【授权验证】验证成功')
-                            }
-                            // 验证成功时保存到本地令牌
+                            // 验证成功时先保存到本地令牌，再更新状态
                             await this.saveToCache(deviceKeyHash, Date.now())
+                            console.log('✅【首次远程验证】本地令牌已写入缓存')   // ← 新增打印
                             // 重置令牌篡改标志
                             if (isPeriodicCheck) {
                                 this._cacheTempered = false
+                            }
+                            // 只在授权验证时打印成功信息（落库完成后）
+                            if (!isPeriodicCheck) {
+                                console.log('✅【授权验证】验证成功')
                             }
                             this.updateStatus('authorized', true)
                         } else {
@@ -324,26 +325,34 @@ class AuthService {
 
     /**
      * 启动定期验证（不执行立即验证）
+     * @param startImmediately 是否立即开始第一次检测，默认为false（从下次验证时间开始）
      */
-    startPeriodicVerification(): void {
+    startPeriodicVerification(startImmediately: boolean = false): void {
         // 如果已经有定时器在运行，先清除
         this.stopPeriodicVerification()
 
         const tick = 1000 // 每 1 秒检查一次
 
-        // 立即同步一次：若数据库里没有时间戳或已过期，就立即验证并写入下一次时间
-        this.syncNextVerification().then(() => {
+        const setupVerification = async () => {
+            if (!startImmediately) {
+                // 设置下次验证时间为当前时间 + VERIFICATION_INTERVAL
+                const nextVerificationTime = Date.now() + VERIFICATION_INTERVAL
+                await AuthStoreService.saveNextVerificationAt(DEFAULT_DB_NAME, nextVerificationTime)
+            }
+
             // 打印一次剩余秒数
-            AuthStoreService.readNextVerificationAt(DEFAULT_DB_NAME).then(next => {
-                const now = Date.now()
-                const remainingSec = Math.round(((next || now) - now) / 1000)
-                console.log(`⏱️【授权检测】${remainingSec}`)
-            })
+            const next = await AuthStoreService.readNextVerificationAt(DEFAULT_DB_NAME)
+            const now = Date.now()
+            const remainingSec = Math.round(((next || now) - now) / 1000)
+            console.log(`⏱️【授权检测】${remainingSec}`)
+
             // 随后每秒静默轮询：读库 → 对比 → 到点就验证（不再打印）
             this._verificationTimer = window.setInterval(() => {
                 this.syncNextVerification()
             }, tick)
-        })
+        }
+
+        setupVerification()
     }
 
     /**
@@ -356,7 +365,7 @@ class AuthService {
         let next = await AuthStoreService.readNextVerificationAt(DEFAULT_DB_NAME)
 
         if (!next || now >= next) {
-            // 时间到或首次：立即验证（异步，不阻塞）
+            // 时间到：立即验证（异步，不阻塞）
             this.verifyToken(true)
             // 写入下一次时间
             next = now + VERIFICATION_INTERVAL

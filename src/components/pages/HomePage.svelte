@@ -15,7 +15,7 @@
     import NewProjectDialog from '../widgets/NewProjectDialog.svelte'
     import { onMount, onDestroy } from 'svelte'
     import DexieService from '../../services/database/dexie-service'
-import { DEFAULT_DB_NAME } from '../../config/config'
+    import { DEFAULT_DB_NAME } from '../../config/config'
     import { clearMemoryState } from '../../stores/dom-tree.store.svelte'
     import { importInto } from 'dexie-export-import'
     import { ProjectThumbnailService } from '../../services/project/project-thumbnail.service'
@@ -30,28 +30,31 @@ import { DEFAULT_DB_NAME } from '../../config/config'
     // 历史项目数据，由 IndexedDB 实时加载
     let projects: Project[] = $state([])
 
-    // 数据库初始化函数
-    async function initializeDatabase() {
-        const dbName = DEFAULT_DB_NAME
-        // 确保数据库存在
-        if (!(await DexieService.databaseExists(dbName))) {
-            console.log('🏗️【数据交互】数据库不存在，开始创建数据库')
-            await DexieService.createDatabase(dbName)
-        } else {
-            console.log('✅【数据验证】验证通过')
+    // 加载项目列表函数
+    async function loadProjects() {
+        try {
+            const dbName = DEFAULT_DB_NAME
+            const rows = await DexieService.queryRecords<any>(dbName, 'projects')
+            projects = rows.map((r: any) => ({
+                id: String(r.id),
+                name: r.name,
+                createTime: new Date(r.createdAt).toLocaleString(),
+                thumbnail: r.thumbnail
+            }))
+            console.log(`✅【项目加载】成功加载 ${projects.length} 个项目`)
+        } catch (error) {
+            console.error('❌【项目加载】加载项目列表失败:', error)
+            projects = []
+            // 可以在这里添加用户友好的错误提示
+            if (error instanceof Error && error.message.includes('授权')) {
+                console.warn('⚠️【项目加载】可能是授权验证问题，请检查授权状态')
+            }
         }
-        const rows = await DexieService.queryRecords<any>(dbName, 'projects')
-        projects = rows.map((r: any) => ({
-            id: String(r.id),
-            name: r.name,
-            createTime: new Date(r.createdAt).toLocaleString(),
-            thumbnail: r.thumbnail
-        }))
     }
 
     onMount(async () => {
-        // 直接初始化数据库，不再依赖授权状态
-        await initializeDatabase()
+        // 直接加载项目列表，数据库已在 main.ts 中初始化完成
+        await loadProjects()
     })
 
     onDestroy(() => {
@@ -101,7 +104,7 @@ import { DEFAULT_DB_NAME } from '../../config/config'
             if (text.startsWith(magic)) {
                 const shifted = text.slice(magic.length)
                 const base64 = Array.from(shifted)
-                    .map(c => String.fromCharCode((c.charCodeAt(0) - shift + 256) & 0xff))
+                    .map((c) => String.fromCharCode((c.charCodeAt(0) - shift + 256) & 0xff))
                     .join('')
                 text = decodeURIComponent(escape(atob(base64)))
             }
@@ -114,7 +117,7 @@ import { DEFAULT_DB_NAME } from '../../config/config'
             await importProjectData(data, newProjectId)
 
             // 刷新项目列表
-            await initializeDatabase()
+            await loadProjects()
 
             // 跳转到新导入的项目
             window.location.hash = `#/editor/${newProjectId}`

@@ -10,6 +10,7 @@ import Dexie from 'dexie'
 import { DB_VERSION, DEFAULT_DB_NAME } from '../../config/config'
 import { getStableDeviceKeyHash } from '../fingerprint/browser-fingerprint.service'
 import { ENABLE_AUTH_VERIFICATION } from '../../config/config'
+import { authService } from '../auth/auth.service'
 
 
 export default class DexieService {
@@ -374,9 +375,8 @@ export default class DexieService {
      * 注意：使用此方法前必须确保数据库已创建
      */
     static async getDatabase(dbName: string): Promise<Dexie> {
-        // 先进行本地授权验证
-        const isAuthorized = await DexieService.quickLocalAuthCheck()
-        if (!isAuthorized) {
+        // 使用 AuthService 的单例状态进行验证
+        if (!authService.isAuthorized) {
             throw new Error('Unauthorized: Local auth check failed')
         }
 
