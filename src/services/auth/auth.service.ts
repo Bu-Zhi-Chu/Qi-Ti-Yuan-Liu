@@ -1,6 +1,9 @@
 /**
  * 授权服务
- * 负责管理应用的授权状态和令牌验证
+ * 1. 远程拉取“授权列表”（设备指纹哈希白名单）
+ * 2. 将当前设备哈希与授权列表比对
+ * 3. 比对成功后，将结果作为“本地令牌”写入 IndexedDB
+ * 4. 在令牌有效期内优先使用本地令牌；过期后重新远程校验
  */
 
 import { getStableDeviceKeyHash } from '../fingerprint/browser-fingerprint.service'
@@ -34,17 +37,17 @@ class AuthService {
         const remainingSeconds = Math.round(remainingTime / 1000)
 
         if (remainingTime > 0) {
-            console.log(`⏱️【令牌检测】` + remainingSeconds)
+            console.log(`⏱️【本地令牌】` + remainingSeconds)
         } else {
-            console.log('⏱️【令牌检测】令牌已过期')
+            console.log('⏱️【本地令牌】已过期，即将远程校验令牌')
         }
 
         return elapsedTime > CACHE_EXPIRY_TIME
     }
 
     /**
-     * 快速本地授权验证
-     * 通过比较当前设备密钥与令牌中的密钥来验证授权
+     * 快速本地令牌验证
+     * 通过比较当前设备密钥与令牌中的密钥来验证本地令牌
      * @returns 是否通过本地验证
      */
     async quickLocalAuthCheck(): Promise<boolean> {
@@ -52,10 +55,10 @@ class AuthService {
             // 获取当前设备密钥哈希
             const currentDeviceKeyHash = await getStableDeviceKeyHash()
 
-            // 读取令牌中的授权信息
+            // 读取令牌中的设备信息
             const cacheData = await this.readFromCache()
             if (!cacheData) {
-                console.log('🚨【令牌检测】无令牌数据')
+                console.log('🚨【本地令牌】无缓存数据')
                 return false
             }
 
@@ -70,14 +73,14 @@ class AuthService {
 
             // 比较密钥
             if (currentDeviceKeyHash === cachedDeviceKeyHash) {
-                console.log('🚨【令牌检测】检测通过')
+                console.log('✅【本地令牌】校验通过')
                 // 密钥匹配，重置令牌篡改标志
                 this._cacheTempered = false
                 return true
             } else {
                 // 密钥不匹配，标记为令牌篡改
                 this._cacheTempered = true
-                console.log('🚨【令牌检测】检测异常')
+                console.log('⚠️【本地令牌】指纹不匹配，令牌作废')
                 // 密钥不匹配时清除令牌
                 await this.clearCache()
                 return false
@@ -101,7 +104,7 @@ class AuthService {
             }
             await AuthStoreService.saveAuthCache(DEFAULT_DB_NAME, cacheData)
         } catch (error) {
-            console.error('❌【令牌保存】授权令牌保存失败')
+            console.error('❌【令牌保存】本地令牌保存失败')
         }
     }
 
@@ -112,7 +115,7 @@ class AuthService {
         try {
             return await AuthStoreService.readAuthCache(DEFAULT_DB_NAME)
         } catch (error) {
-            console.error('❌【令牌读取】授权令牌读取失败')
+            console.error('❌【令牌读取】本地令牌读取失败')
             return null
         }
     }
@@ -123,9 +126,9 @@ class AuthService {
     private async clearCache(): Promise<void> {
         try {
             await AuthStoreService.clearAuthCache(DEFAULT_DB_NAME)
-            console.log('✅ 授权已清除')
+            console.log('✅ 本地令牌已清除')
         } catch (error) {
-            console.error('❌【授权清空】授权清空失败')
+            console.error('❌【令牌清空】本地令牌清空失败')
         }
     }
 
@@ -222,16 +225,16 @@ class AuthService {
             return
         }
 
-        // 授权验证逻辑：优先使用本地令牌验证
+        // 令牌验证逻辑：优先使用本地令牌验证
         if (!isPeriodicCheck && !forceVerification) {
             // 尝试本地验证
             const localAuthResult = await this.quickLocalAuthCheck()
             if (localAuthResult) {
-                console.log('✅【授权验证】授权成功')
+                console.log('✅【远程授权】校验通过')
                 this.updateStatus('authorized', true)
                 return
             } else {
-                console.log('❌【授权验证】授权失败，再次验证')
+                console.log('❌【令牌验证】本地验证失败，再次验证')
             }
         }
 
@@ -291,16 +294,16 @@ class AuthService {
                             }
                             this.updateStatus('authorized', true)
                         } else {
-                            await this.handleAuthFailure(isPeriodicCheck, '❌【授权验证】验证失败')
+                            await this.handleAuthFailure(isPeriodicCheck, '❌【远程授权】设备未在授权列表')
                         }
                     } else {
-                        await this.handleAuthFailure(isPeriodicCheck, '❌【远程数据】数据异常')
+                        await this.handleAuthFailure(isPeriodicCheck, '❌【远程授权】授权列表为空或格式错误')
                     }
                 } catch (fetchError) {
-                    await this.handleAuthError(isPeriodicCheck, '网络错误')
+                    await this.handleAuthError(isPeriodicCheck, '远程授权接口网络错误')
                 }
             } catch (error) {
-                await this.handleAuthError(isPeriodicCheck, '设备密钥获取失败')
+                await this.handleAuthError(isPeriodicCheck, '获取设备指纹失败')
             } finally {
                 this._isVerifying = false
             }

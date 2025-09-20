@@ -23,8 +23,8 @@ export default class DexieService {
 
 
     /**
-     * 快速本地授权验证
-     * 通过查询config表中的authCache来验证授权
+     * 快速本地令牌验证
+     * 通过查询config表中的authCache来验证本地令牌
      * @returns 是否通过本地验证
      */
     private static async quickLocalAuthCheck(): Promise<boolean> {

@@ -451,13 +451,13 @@ async function initializeApp() {
         if (error instanceof Error) {
             if (error.message.includes('未授权')) {
                 errorDiv.innerHTML = `
-                    <h3>🔒 设备未授权</h3>
-                    <p>此设备未获得使用授权，无法访问应用功能。</p>
+                    <h3>🔒 设备令牌无效</h3>
+                    <p>此设备令牌未获得远程授权，无法访问应用功能。</p>
                     <p>请联系管理员获取授权。</p>
                 `
             } else if (error.message.includes('验证失败') || error.message.includes('验证超时')) {
                 errorDiv.innerHTML = `
-                    <h3>🌐 授权验证失败</h3>
+                    <h3>🌐 令牌验证失败</h3>
                     <p>无法连接到授权服务器进行验证。</p>
                     <p>请检查网络连接后刷新页面重试。</p>
                     <button onclick="location.reload()" style="
