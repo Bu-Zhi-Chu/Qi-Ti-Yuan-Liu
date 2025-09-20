@@ -13,7 +13,7 @@
  */
 
 import DexieService from '../database/dexie-service'
-import { DEFAULT_DB_NAME } from '../database/database.config'
+import { DEFAULT_DB_NAME } from '../../config/config'
 import { getImage, addOrIncrement } from '../database/image-store.service'
 import { hashBlob } from '../image/image-utils'
 

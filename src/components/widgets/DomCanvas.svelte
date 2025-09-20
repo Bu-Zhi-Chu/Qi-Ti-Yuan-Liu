@@ -35,7 +35,7 @@
     import AlignmentOverlay from './AlignmentOverlay.svelte'
     import { isDrawMode } from '../../stores/draw-mode.store.svelte'
     import DexieService from '../../services/database/dexie-service'
-import { DEFAULT_DB_NAME } from '../../services/database/database.config'
+import { DEFAULT_DB_NAME } from '../../config/config'
     import { canvasScale } from '../../stores/canvas-state.store.svelte'
     import { screenDetector } from '../../services/screen/screen-detector.service'
 </script>

@@ -6,7 +6,7 @@
 
 import type { ScreenInfo, ScreenChangeCallback, DeviceType, PixelDensityLevel } from './screen.types.js'
 import DexieService from '../database/dexie-service'
-import { DEFAULT_DB_NAME } from '../database/database.config'
+import { DEFAULT_DB_NAME } from '../../config/config'
 import { get } from 'svelte/store'
 import { projectId } from '../../stores/dom-tree.store.svelte'
 

@@ -1,8 +1,9 @@
 // z/X/qi-qiao-ban/src/services/cache/memory-cache.ts
 
 import type { CacheRecord } from './types';
+import { CACHE_MAX_SIZE } from '../../config/config';
 
-const MAX_SIZE = 100; // 内存缓存的最大记录数
+
 
 class MemoryCache {
   private cache = new Map<string, CacheRecord>();
@@ -30,7 +31,7 @@ class MemoryCache {
    * @param record - 要缓存的记录。
    */
   set<T>(key: string, record: CacheRecord<T>): void {
-    if (this.cache.size >= MAX_SIZE && !this.cache.has(key)) {
+    if (this.cache.size >= CACHE_MAX_SIZE && !this.cache.has(key)) {
       // 如果缓存已满且是新记录，则移除最久未使用的记录
       const oldestKey = this.lruKeys.shift();
       if (oldestKey) {

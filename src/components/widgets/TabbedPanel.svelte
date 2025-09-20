@@ -23,7 +23,7 @@
     import { addNodeToParent } from '../../stores/dom-tree.store.svelte'
     import { projectId } from '../../stores/dom-tree.store.svelte'
     import DexieService from '../../services/database/dexie-service'
-import { DEFAULT_DB_NAME } from '../../services/database/database.config'
+import { DEFAULT_DB_NAME } from '../../config/config'
     import { get } from 'svelte/store'
 
     // 当前激活的页签

@@ -1,5 +1,5 @@
 import DexieService from './dexie-service'
-import { DEFAULT_DB_NAME } from './database.config'
+import { DEFAULT_DB_NAME } from '../../config/config'
 import type { CacheRecord } from '../cache/types'
 
 const TABLE = 'requestCache'

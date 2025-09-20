@@ -31,7 +31,7 @@
     // 引入 DOM 树集中式状态管理
     import { domTree, selectedId, removeNodeById, projectId, findNodeById, setDesignSize } from '../../stores/dom-tree.store.svelte'
     import DexieService from '../../services/database/dexie-service'
-    import { DEFAULT_DB_NAME } from '../../services/database/database.config'
+    import { DEFAULT_DB_NAME } from '../../config/config'
     import StatusBar from '../widgets/StatusBar.svelte'
     import { screenDetector } from '../../services/screen/screen-detector.service'
     // 是否显示工作区，默认显示工作区

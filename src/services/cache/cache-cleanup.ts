@@ -1,9 +1,9 @@
 // z/X/qi-qiao-ban/src/services/cache/cache-cleanup.ts
 
 import { cleanupCache } from '../database/cache-store.service';
+import { CACHE_CLEANUP_INTERVAL, CACHE_MAX_AGE } from '../../config/config';
 
-const CLEANUP_INTERVAL = 24 * 60 * 60 * 1000; // 每天清理一次
-const MAX_AGE = 7 * 24 * 60 * 60 * 1000;      // 缓存最长保留 7 天
+
 
 let cleanupTimer: ReturnType<typeof setInterval> | undefined;
 
@@ -13,7 +13,7 @@ let cleanupTimer: ReturnType<typeof setInterval> | undefined;
 async function runCleanup(): Promise<void> {
   console.log('Running cache cleanup...');
   try {
-    await cleanupCache(MAX_AGE);
+    await cleanupCache(CACHE_MAX_AGE);
     console.log('Cache cleanup finished.');
   } catch (error) {
     console.error('Error during cache cleanup:', error);
@@ -41,11 +41,11 @@ export function startCacheCleanup(): void {
     (window as any).requestIdleCallback(runCleanup);
     cleanupTimer = setInterval(() => {
       (window as any).requestIdleCallback(runCleanup);
-    }, CLEANUP_INTERVAL);
+    }, CACHE_CLEANUP_INTERVAL);
   } else {
     // 兼容不支持 requestIdleCallback 的环境
     runCleanup(); // 立即执行
-    cleanupTimer = setInterval(runCleanup, CLEANUP_INTERVAL);
+    cleanupTimer = setInterval(runCleanup, CACHE_CLEANUP_INTERVAL);
   }
 }
 

@@ -5,7 +5,8 @@
 
 import { getStableDeviceKeyHash } from '../fingerprint/browser-fingerprint.service'
 import AuthStoreService from '../database/auth-store.service'
-import { DEFAULT_DB_NAME } from '../database/database.config'
+import { DEFAULT_DB_NAME } from '../../config/config'
+import { ENABLE_AUTH_VERIFICATION, VERIFICATION_INTERVAL, CACHE_EXPIRY_TIME, PROXY_URL, TARGET_URL } from '../../config/config'
 
 export type AuthStatus = 'checking' | 'authorized' | 'unauthorized' | 'error'
 
@@ -15,8 +16,7 @@ class AuthService {
     private _listeners: Array<(status: AuthStatus, isAuthorized: boolean) => void> = []
     private _verificationTimer: number | null = null
     private _isVerifying = false
-    private readonly VERIFICATION_INTERVAL = 10 * 60 * 1000
-    private readonly CACHE_EXPIRY_TIME = 5 * 60 * 1000
+
 
     // 令牌篡改检测标志
     private _cacheTempered = false
@@ -28,7 +28,7 @@ class AuthService {
      */
     private isCacheExpired(cacheData: { deviceKeyHash: string; timestamp: number; lastVerified: string }): boolean {
         const now = Date.now()
-        return (now - cacheData.timestamp) > this.CACHE_EXPIRY_TIME
+        return (now - cacheData.timestamp) > CACHE_EXPIRY_TIME
     }
 
     /**
@@ -193,8 +193,8 @@ class AuthService {
             // 获取远程JSON数据并对比密钥
             try {
                 // 使用CORS代理来解决跨域问题
-                const proxyUrl = 'https://api.allorigins.win/get?url='
-                const targetUrl = encodeURIComponent('https://buzhichu.netlify.app/societies/99%20asset/json/qi-qiao-ban.json')
+                const proxyUrl = PROXY_URL
+                const targetUrl = encodeURIComponent(TARGET_URL)
 
                 // 为所有验证类型都添加令牌破坏参数，确保获取最新数据
                 const cacheBuster = `&_t=${Date.now()}&_r=${Math.random()}`
@@ -319,7 +319,7 @@ class AuthService {
         // 设置定期验证（不立即执行）
         this._verificationTimer = window.setInterval(() => {
             this.verifyToken(true) // 传入true表示这是定期验证
-        }, this.VERIFICATION_INTERVAL)
+        }, VERIFICATION_INTERVAL)
     }
 
     /**

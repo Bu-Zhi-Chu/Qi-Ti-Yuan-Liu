@@ -15,7 +15,7 @@
     import NewProjectDialog from '../widgets/NewProjectDialog.svelte'
     import { onMount, onDestroy } from 'svelte'
     import DexieService from '../../services/database/dexie-service'
-import { DEFAULT_DB_NAME } from '../../services/database/database.config'
+import { DEFAULT_DB_NAME } from '../../config/config'
     import { clearMemoryState } from '../../stores/dom-tree.store.svelte'
     import { importInto } from 'dexie-export-import'
     import { ProjectThumbnailService } from '../../services/project/project-thumbnail.service'

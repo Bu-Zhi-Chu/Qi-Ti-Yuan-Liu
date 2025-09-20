@@ -12,7 +12,7 @@
     import ResponsiveBox from '../core/ResponsiveBox.svelte'
     import GenericCard from './GenericCard.svelte'
     import DexieService from '../../services/database/dexie-service'
-import { DEFAULT_DB_NAME } from '../../services/database/database.config'
+import { DEFAULT_DB_NAME } from '../../config/config'
     import { Toast } from './Toast.svelte'
 
     // Props定义

@@ -5,7 +5,7 @@
 
 import { exportDB } from 'dexie-export-import';
 import DexieService from '../database/dexie-service'
-import { DEFAULT_DB_NAME } from '../database/database.config';
+import { DEFAULT_DB_NAME } from '../../config/config';
 
 /**
  * 精简导出数据结构

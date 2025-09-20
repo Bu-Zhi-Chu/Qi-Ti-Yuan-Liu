@@ -8,7 +8,7 @@
 
 import type { DomNode } from '../types/dom-node.types';
 import DexieService from '../services/database/dexie-service'
-import { DEFAULT_DB_NAME } from '../services/database/database.config';
+import { DEFAULT_DB_NAME } from '../config/config';
 import Dexie from 'dexie';
 import { writable } from 'svelte/store';
 import { isLiteMode } from '../services/env/environment.service'

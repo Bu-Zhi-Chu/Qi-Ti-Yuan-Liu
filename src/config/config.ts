@@ -1,13 +1,22 @@
-/**
- * 应用通用配置
- * 独立的配置文件，避免循环引用
- */
+/** 应用配置 */
 
-// ========== 授权验证控制 ==========
-/**
- * 授权验证开关
- * 设置为 false 可以快速禁用所有验证功能
- * 包括：1. 应用启动时的授权验证  2. 路由守卫验证  3. 数据库访问验证
- */
+/** 授权验证开关 */
 export const ENABLE_AUTH_VERIFICATION = false
-// ===================================
+/** 授权验证目标URL */
+export const TARGET_URL = 'https://buzhichu.netlify.app/societies/99%20asset/json/qi-qiao-ban.json'
+/** 授权验证间隔时间（毫秒） */
+export const VERIFICATION_INTERVAL = 10 * 60 * 1000
+/** 授权缓存过期时间（毫秒） */
+export const CACHE_EXPIRY_TIME = 5 * 60 * 1000
+
+/** CORS代理URL */
+export const PROXY_URL = 'https://api.allorigins.win/get?url='
+
+/** 数据库配置 */
+export const DEFAULT_DB_NAME = 'qi-qiao-ban'
+export const DB_VERSION = 1
+
+/** 缓存配置 */
+export const CACHE_MAX_SIZE = 100 // 内存缓存的最大记录数
+export const CACHE_CLEANUP_INTERVAL = 24 * 60 * 60 * 1000 // 缓存清理间隔时间（毫秒）
+export const CACHE_MAX_AGE = 7 * 24 * 60 * 60 * 1000 // 缓存最长保留时间（毫秒）
