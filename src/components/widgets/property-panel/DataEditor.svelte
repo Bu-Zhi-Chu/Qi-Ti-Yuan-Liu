@@ -31,16 +31,52 @@
         }
     })
 
-    // 2. 合并 attributes + styles（和 FeatureEditor 完全一致）
-    let currentValues = $state<Record<string, any>>({})
-    $effect(() => {
-        const attrs = dataSnapshot?.attributes || {}
-        const styles = dataSnapshot?.styles || {}
-        currentValues = { ...attrs, ...styles } // 样式覆盖属性，保持与 NodeRenderer 同样优先级
+    // 2. 使用 $derived 进行响应式状态派生
+    let currentValues = $derived(dataSnapshot ? { ...(dataSnapshot.attributes || {}), ...(dataSnapshot.styles || {}) } : {})
+
+    const derivedState = $derived(() => {
+        const code = currentValues.code as string | undefined
+        const seriesData = currentValues.seriesData as string[] | undefined
+
+        if (!code) {
+            return {
+                finalData: seriesData || [],
+                matches: [] as RegExpMatchArray[],
+                needsWriteBack: false,
+            }
+        }
+
+        const allMatches = [...code.matchAll(/data\s*:\s*(\[[^\]]*\])/g)]
+        const matches = allMatches.filter((match) => {
+            const matchStart = match.index!
+            const beforeMatch = code.substring(Math.max(0, matchStart - 20), matchStart)
+            return !beforeMatch.includes('legend') && !beforeMatch.includes('tooltip')
+        })
+        const parsed = matches.map((m) => m[1])
+
+        const finalData = seriesData && seriesData.length === parsed.length ? seriesData : parsed
+        const needsWriteBack = JSON.stringify(seriesData) !== JSON.stringify(finalData)
+
+        return { finalData, matches, needsWriteBack }
     })
 
-    let dataArrays = $state<string[]>([])
-    let codeMatches: RegExpMatchArray[] = []
+    let dataArrays = $derived(derivedState().finalData)
+    let codeMatches = $derived(derivedState().matches)
+
+    let seriesMapping = $derived(() => {
+        const mapping = currentValues.seriesMapping as string[] | undefined
+        if (mapping && Array.isArray(mapping) && mapping.length === dataArrays.length) {
+            return mapping
+        }
+        return Array(dataArrays.length).fill('')
+    })
+
+    // 3. 使用 $effect 单独处理副作用（回写）
+    $effect(() => {
+        if (selectedId && derivedState().needsWriteBack) {
+            handleAttrChange('seriesData', dataArrays)
+        }
+    })
 
     // 派生状态：获取当前组件类型
     let componentType = $derived(selectedId ? getFullNode(selectedId)?.componentType || null : null)
@@ -48,57 +84,32 @@
     // 派生状态：获取组件级别的 dataSource 配置
     let dataSourceConfig = $derived(componentType ? getComponentDataSourceConfig(componentType) : null)
 
+    // 派生状态：获取最终的 dataSource 值
+    let dataSource = $derived(currentValues.dataSource ?? dataSourceConfig?.default ?? 'json')
+
     // 派生状态：获取完整的 dataSource 配置（包含 dataAccess 和其他配置）
     let fullDataSourceConfig = $derived(componentType ? getFullDataSourceConfig(componentType) : null)
 
-    /** 当 code 变化时解析其中的 data: [] 数组 */
-    $effect(() => {
-        const code = currentValues.code as unknown as string | undefined
-        const seriesData = currentValues.seriesData as string[] | undefined
-
-        // 优先使用独立存储的 seriesData
-        if (seriesData && Array.isArray(seriesData)) {
-            dataArrays = seriesData
-            return
-        }
-
-        // 如果 seriesData 不存在，则从 code 中解析并回填
-        if (typeof code === 'string') {
-            // 匹配 data: [] 数组，但排除 legend.data 等配置数据
-            const allMatches = [...code.matchAll(/data\s*:\s*(\[[^\]]*\])/g)]
-
-            // 过滤掉 legend.data 等非系列数据
-            codeMatches = allMatches.filter((match) => {
-                const matchStart = match.index!
-                const beforeMatch = code.substring(Math.max(0, matchStart - 20), matchStart)
-                // 检查是否是 legend.data 或其他非系列配置
-                return !beforeMatch.includes('legend') && !beforeMatch.includes('tooltip')
-            })
-
-            const parsedData = codeMatches.map((m) => m[1])
-            dataArrays = parsedData
-
-            // 如果解析出了数据，则立即回填到 seriesData 属性
-            if (parsedData.length > 0 && selectedId) {
-                handleAttrChange('seriesData', parsedData)
-            }
-        } else {
-            codeMatches = []
-            dataArrays = []
-        }
-    })
-
     /** 实时更新第 index 个 data 数组的内容 */
     function updateDataArray(index: number, newValue: string) {
-        if (!selectedId) return
+        if (!selectedId || dataArrays[index] === newValue) return
 
         // 创建新数组以触发状态更新
         const newDataArrays = [...dataArrays]
         newDataArrays[index] = newValue
-        dataArrays = newDataArrays
 
         // 直接更新 seriesData 属性
         handleAttrChange('seriesData', newDataArrays)
+    }
+
+    /** 实时更新第 index 个 data 映射路径 */
+    function updateSeriesMapping(index: number, path: string) {
+        if (!selectedId || seriesMapping()[index] === path) return
+
+        const newMapping = [...seriesMapping()]
+        newMapping[index] = path
+
+        handleAttrChange('seriesMapping', newMapping)
     }
 
     function handleAttrChange(key: string, value: any) {
@@ -107,6 +118,10 @@
         const attributesToUpdate: { [k: string]: any } = { [key]: value }
         if (key === 'dataSource' && (value === 'mock' || value === 'real')) {
             attributesToUpdate.seriesData = undefined
+        }
+        // 当切换回 json 模式时，清除 seriesMapping
+        if (key === 'dataSource' && value === 'json') {
+            attributesToUpdate.seriesMapping = undefined
         }
         updateNodeProps(selectedId, { attributes: attributesToUpdate })
     }
@@ -162,14 +177,34 @@
         </PropertyRow>
     {/if}
 
-    <!-- 当 code 属性存在、有 data 数组且数据源为 json（虚拟数据）时显示序列编辑器 -->
-    {#if currentValues.code && dataArrays.length > 0 && (currentValues.dataSource ?? dataSourceConfig?.default ?? 'json') === 'json'}
-        {#each dataArrays as arr, idx}
-            <PropertyRow label={`${getChineseOrdinal(idx)}序列`}>
-                <!-- 使用 CodeEditor 显示完整的 [x,x] 数组格式 -->
-                <CodeEditor bind:code={dataArrays[idx]} language="javascript" theme="one-dark" height="calc(80px * var(--scale-ratio, 1))" run={(code: string) => updateDataArray(idx, code)} toolbar={false} autoRun={true} wrap={true} showLineNumbers={false} style="flex:1; width:0;" />
-            </PropertyRow>
-        {/each}
+    <!-- 根据数据源显示不同的编辑器 -->
+
+    <!-- 虚拟数据(json)模式：编辑 seriesData -->
+    {#if dataSource === 'json'}
+        {#if currentValues.code && dataArrays.length > 0}
+            {#each dataArrays as arr, idx}
+                <PropertyRow label={`${getChineseOrdinal(idx)}序列`}>
+                    <CodeEditor code={dataArrays[idx]} language="javascript" theme="one-dark" height="calc(80px * var(--scale-ratio, 1))" run={(code: string) => updateDataArray(idx, code)} toolbar={false} autoRun={true} wrap={true} showLineNumbers={false} style="flex:1; width:0;" />
+                </PropertyRow>
+            {/each}
+        {/if}
+    {/if}
+
+    <!-- 动态数据(mock/real)模式：编辑 seriesMapping -->
+    {#if dataSource === 'mock' || dataSource === 'real'}
+        {#if dataArrays.length > 0}
+            {#each dataArrays as arr, idx}
+                <PropertyRow label={`${getChineseOrdinal(idx)}映射`}>
+                    <input
+                        type="text"
+                        class="request-path-input"
+                        placeholder="e.g., data.values"
+                        value={seriesMapping()[idx] || ''}
+                        onchange={(e) => updateSeriesMapping(idx, (e.target as HTMLInputElement).value)}
+                    />
+                </PropertyRow>
+            {/each}
+        {/if}
     {/if}
 </div>
 

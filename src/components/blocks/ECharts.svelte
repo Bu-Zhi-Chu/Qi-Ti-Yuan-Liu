@@ -43,6 +43,8 @@
         code?: string
         /** 独立存储的序列化数据 */
         seriesData?: string[]
+        /** 动态数据映射关系 */
+        seriesMapping?: string[]
         theme?: any
         style?: string
         // 废弃的属性（不再使用）
@@ -87,7 +89,7 @@
         const designHeight = propDesignHeight ?? storeDesignSize.height ?? 1080
 
         // 调试日志：输出实际使用的尺寸值
-        console.log(`[ECharts] 设计尺寸: ${designWidth}x${designHeight}, prop尺寸: ${propDesignWidth}x${propDesignHeight}, store尺寸: ${storeDesignSize.width}x${storeDesignSize.height}`)
+        // console.log(`[ECharts] 设计尺寸: ${designWidth}x${designHeight}, prop尺寸: ${propDesignWidth}x${propDesignHeight}, store尺寸: ${storeDesignSize.width}x${storeDesignSize.height}`)
 
         const docWidth = window.innerWidth
         const docHeight = window.innerHeight
@@ -190,6 +192,20 @@
             // 创建函数并执行
             const func = new Function('sandbox', functionCode)
             const result = func(sandbox)
+
+            // 如果有数据映射，则应用它
+            if (result && Array.isArray(result.series) && Array.isArray(restProps.seriesMapping)) {
+                result.series.forEach((s: any, i: number) => {
+                    const mappingPath = (restProps.seriesMapping as string[])[i]
+                    if (mappingPath && data) {
+                        // 使用路径从 data 中提取数据
+                        const mappedData = getByPath(data, mappingPath)
+                        if (mappedData) {
+                            s.data = mappedData
+                        }
+                    }
+                })
+            }
 
             return result
         } catch (error) {
@@ -380,6 +396,16 @@
             }
         })()
     )
+
+    // 辅助函数：通过路径字符串从对象中获取值
+    function getByPath(obj: any, path: string): any {
+        try {
+            return path.split('.').reduce((acc, part) => acc && acc[part], obj)
+        } catch (e) {
+            console.error(`Error getting data by path: ${path}`, e)
+            return null
+        }
+    }
 
     // 处理标题和图例的默认位置
     function processOptionDefaults(option: any): any {
