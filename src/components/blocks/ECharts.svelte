@@ -1,7 +1,7 @@
 <script lang="ts">
     import { Chart as ECharts } from 'svelte-echarts'
     import echartsInit from './echarts-core'
-    import { request } from '../../services/request'
+    import { cachedFetch } from '../../services/cache/cached-fetch'
     import * as echarts from 'echarts/core'
     import { graphic } from 'echarts'
 
@@ -349,7 +349,7 @@
         loadError = null
 
         try {
-            const data = await request(requestPath)
+            const data = await cachedFetch(requestPath)
             return data
         } catch (error) {
             console.error('数据请求失败:', error)
