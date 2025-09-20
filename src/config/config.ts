@@ -20,3 +20,6 @@ export const DB_VERSION = 1
 export const CACHE_MAX_SIZE = 100 // 内存缓存的最大记录数
 export const CACHE_CLEANUP_INTERVAL = 24 * 60 * 60 * 1000 // 缓存清理间隔时间（毫秒）
 export const CACHE_MAX_AGE = 7 * 24 * 60 * 60 * 1000 // 缓存最长保留时间（毫秒）
+
+/** 图片处理配置 */
+export const LQIP_QUALITY = 0.6 // 低分辨率占位图输出质量（0-1）

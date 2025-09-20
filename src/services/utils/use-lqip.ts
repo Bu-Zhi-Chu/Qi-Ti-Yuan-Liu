@@ -1,9 +1,10 @@
 import { writable, type Writable } from 'svelte/store'
+import { LQIP_QUALITY } from '../../config/config'
 
 interface LqipOptions {
     /** 生成缩略图的最大边尺寸，默认 20px */
     size?: number
-    /** toDataURL 输出的图片质量，0-1，默认 0.6 */
+    /** toDataURL 输出的图片质量，0-1，默认使用全局配置 */
     quality?: number
 }
 
@@ -17,7 +18,7 @@ export function useLQIP(
     source: File | Blob | string | null | undefined,
     options: LqipOptions = {}
 ): Writable<string | null> {
-    const { size = 20, quality = 0.6 } = options
+    const { size = 20, quality = LQIP_QUALITY } = options
     const lqipStore: Writable<string | null> = writable(null)
 
     /** Blob → DataURL */
