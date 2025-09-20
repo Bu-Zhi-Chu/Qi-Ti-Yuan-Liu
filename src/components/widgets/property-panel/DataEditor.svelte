@@ -137,6 +137,17 @@
         </PropertyRow>
     {/if}
 
+    <!-- 模拟平台链接组：只在选择模拟接口时显示 -->
+    {#if fullDataSourceConfig?.mockPlatforms && (currentValues.dataSource ?? dataSourceConfig?.default ?? 'json') === 'mock'}
+        <PropertyRow label={fullDataSourceConfig.mockPlatforms.label}>
+            <div class="link-group" style="display:flex; gap: calc(8px * var(--scale-ratio, 1)); flex:1 1 0; width:0;">
+                {#each fullDataSourceConfig.mockPlatforms.links || [] as link}
+                    <a class="input-style link-btn" href={link.url} target="_blank" rel="noopener noreferrer" style="flex:1;">{link.label}</a>
+                {/each}
+            </div>
+        </PropertyRow>
+    {/if}
+
     <!-- 模拟路径配置：只在选择模拟接口时显示 -->
     {#if fullDataSourceConfig?.mockPath && (currentValues.dataSource ?? dataSourceConfig?.default ?? 'json') === 'mock'}
         <PropertyRow label={fullDataSourceConfig.mockPath.label}>
@@ -187,5 +198,51 @@
 
     .request-path-input::placeholder {
         color: rgba(148, 163, 184, 0.6);
+    }
+
+    /* 链接按钮样式 - 与FeatureEditor保持一致 */
+    .link-btn {
+        padding: calc(6px * var(--scale-ratio, 1)) calc(10px * var(--scale-ratio, 1));
+        font-size: calc(12px * var(--scale-ratio, 1));
+    }
+
+    /* 链接按钮组样式 */
+    .link-group {
+        display: flex;
+        gap: calc(8px * var(--scale-ratio, 1));
+        flex: 1 1 0;
+        width: 0;
+    }
+
+    /* 输入样式 - 与FeatureEditor保持一致 */
+    .input-style {
+        flex: 1;
+        padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
+        border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.2);
+        border-radius: calc(6px * var(--scale-ratio, 1));
+        font-size: calc(13px * var(--scale-ratio, 1));
+        background: rgba(255, 255, 255, 0.1);
+        color: #e2e8f0;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        text-align: center;
+        text-decoration: none;
+    }
+    .input-style:hover {
+        background: rgba(255, 255, 255, 0.15);
+    }
+    .input-style:focus {
+        outline: none;
+        border-color: #cbd5e1;
+        background: rgba(255, 255, 255, 0.15);
+        box-shadow: 0 0 0 calc(3px * var(--scale-ratio, 1)) rgba(255, 255, 255, 0.1);
+    }
+    .input-style:hover {
+        border-color: rgba(99, 102, 241, 0.5);
+    }
+    .input-style:active,
+    .input-style:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 calc(3px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.2);
     }
 </style>

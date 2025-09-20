@@ -5,6 +5,26 @@
     import * as echarts from 'echarts/core'
     import { graphic } from 'echarts'
 
+    // 被动事件监听器polyfill，优化性能警告
+    if (typeof window !== 'undefined') {
+        const originalAddEventListener = EventTarget.prototype.addEventListener;
+        EventTarget.prototype.addEventListener = function(type: string, listener: EventListener, options?: boolean | AddEventListenerOptions) {
+            // 对于wheel和mousewheel事件，默认使用被动监听器
+            if (type === 'wheel' || type === 'mousewheel') {
+                if (typeof options === 'boolean') {
+                    options = { passive: true, capture: options };
+                } else if (typeof options === 'object' && options !== null) {
+                    if (!options.hasOwnProperty('passive')) {
+                        options.passive = true;
+                    }
+                } else {
+                    options = { passive: true };
+                }
+            }
+            return originalAddEventListener.call(this, type, listener, options as any);
+        };
+    }
+
     // 不再使用默认模板和数据生成函数，JavaScript代码是唯一渲染方式
 
     /**
@@ -204,8 +224,8 @@
 
     // 监听数据相关属性变化，发起真实请求
     $effect(() => {
-        // 获取数据配置
-        const dataSource = restProps.dataAccess || 'json'
+        // 获取数据配置 - 注意：保存的是dataSource，但组件内部使用dataAccess
+        const dataSource = restProps.dataSource || restProps.dataAccess || 'json'
         const requestPath = restProps.requestPath
         const mockPath = restProps.mockPath
 
@@ -228,8 +248,8 @@
     // 最终 ECharts option，支持JavaScript代码和真实数据
     const option = $derived(
         (() => {
-            // 获取数据配置
-            const dataSource = restProps.dataAccess || 'json'
+            // 获取数据配置 - 注意：保存的是dataSource，但组件内部使用dataAccess
+            const dataSource = restProps.dataSource || restProps.dataAccess || 'json'
             const requestPath = restProps.requestPath
 
             // 如果数据源是真实请求或模拟接口

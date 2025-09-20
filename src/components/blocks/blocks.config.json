@@ -298,6 +298,24 @@
                 ],
                 "default": "json"
             },
+            "mockPlatforms": {
+                "label": "模拟平台",
+                "type": "linkGroup",
+                "links": [
+                    {
+                        "label": "Easy Mock",
+                        "url": "https://mock.presstime.cn/"
+                    },
+                    {
+                        "label": "Apifox",
+                        "url": "https://app.apifox.com/"
+                    }
+                ],
+                "showIf": {
+                    "key": "dataAccess",
+                    "value": "mock"
+                }
+            },
             "mockPath": {
                 "label": "接口路径",
                 "type": "text",

@@ -29,5 +29,14 @@ echarts.use([
 
 // ✅ 导出函数形式，与官方 init 接口保持一致
 export default function (dom: HTMLElement, theme?: string, opts?: any) {
-  return echarts.init(dom, theme, opts)
+  // 合并性能优化选项
+  const optimizedOpts = {
+    // 优化移动端性能，减少事件监听器
+    useCoarsePointer: true,
+    // 允许使用被动事件监听器
+    pointerEvents: 'auto',
+    // 合并用户传入的选项
+    ...opts
+  }
+  return echarts.init(dom, theme, optimizedOpts)
 }
