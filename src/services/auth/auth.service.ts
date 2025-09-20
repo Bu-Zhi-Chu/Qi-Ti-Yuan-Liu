@@ -20,6 +20,7 @@ class AuthService {
 
     // 令牌篡改检测标志
     private _cacheTempered = false
+    private _hasSynced = false   // 是否已经完成过首次同步验证
 
 
 
@@ -305,13 +306,16 @@ class AuthService {
             }
         }
 
-        // 根据是否为定期验证，选择不同的执行策略
-        if (isPeriodicCheck) {
-            // 定期验证：异步执行，不阻塞当前流程
+        // 执行策略：
+        // - 首次验证（!isPeriodicCheck && !this._hasSynced）必须同步，确保页面能正常渲染
+        // - 其余（定时器、缓存过期）全部异步，不卡 UI
+        if (isPeriodicCheck || this._hasSynced) {
+            // 非首次：异步执行
             remoteVerification()
         } else {
-            // 非定期验证（首次或缓存过期）也异步执行，避免卡顿
-            remoteVerification()
+            // 首次：同步等待
+            await remoteVerification()
+            this._hasSynced = true
         }
     }
 
@@ -375,6 +379,7 @@ class AuthService {
         this._isAuthorized = false
         this._authStatus = 'checking'
         this._cacheTempered = false
+        this._hasSynced = false   // 重置首次同步标记
         await this.clearCache()
         this.stopPeriodicVerification()
     }
