@@ -90,31 +90,74 @@ class AuthService {
             }
             await AuthStoreService.saveAuthCache(DEFAULT_DB_NAME, cacheData)
         } catch (error) {
-            console.error('保存授权缓存失败:', error)
+            console.error('❌【令牌保存】授权令牌保存失败')
         }
     }
 
     /**
-     * 从数据库读取授权缓存
+     * 从数据库读取授权令牌
      */
     private async readFromCache(): Promise<{ deviceKeyHash: string; timestamp: number; lastVerified: string } | null> {
         try {
             return await AuthStoreService.readAuthCache(DEFAULT_DB_NAME)
         } catch (error) {
-            console.error('读取授权缓存失败:', error)
+            console.error('❌【令牌读取】授权令牌读取失败')
             return null
         }
     }
 
     /**
-     * 清空数据库中的授权缓存
+     * 清空数据库中的授权令牌
      */
     private async clearCache(): Promise<void> {
         try {
             await AuthStoreService.clearAuthCache(DEFAULT_DB_NAME)
+            console.log('✅ 授权已清除')
         } catch (error) {
-            console.error('清空授权缓存失败:', error)
+            console.error('❌【授权清空】授权清空失败')
         }
+    }
+
+    /**
+     * 统一处理授权失败逻辑
+     */
+    private async handleAuthFailure(isPeriodicCheck: boolean, errorMsg: string): Promise<void> {
+        // 只在授权验证时打印失败信息
+        if (!isPeriodicCheck) {
+            // 提取错误类型（去掉表情符号和方括号）
+            const errorType = errorMsg.replace(/[🚨⚠️✅❌]/g, '').replace(/【.*?】/g, '').trim()
+            console.log(`❌【授权验证】${errorType}`)
+        }
+
+        // 清除本地令牌
+        await this.clearCache()
+
+        // 如果是定期验证失败，处理令牌篡改情况
+        if (isPeriodicCheck) {
+            if (this._cacheTempered) {
+                // 令牌篡改：立即执行令牌清空惩罚
+                console.log('🚨【作弊惩罚】令牌异常')
+                this._cacheTempered = false // 重置篡改标志
+            } else {
+                // 权限撤销：仅清除令牌
+                console.log('⚠️【权限撤销】权限异常')
+            }
+        }
+
+        this.updateStatus('unauthorized', false)
+    }
+
+    /**
+     * 统一处理授权错误逻辑
+     */
+    private async handleAuthError(isPeriodicCheck: boolean, errorType: string): Promise<void> {
+        // 清除本地令牌
+        await this.clearCache()
+
+        // 网络错误和设备密钥获取失败不触发数据库清空
+        console.log(`❌【${errorType}】授权异常`)
+
+        this.updateStatus('error', false)
     }
 
 
@@ -238,71 +281,16 @@ class AuthService {
                         }
                         this.updateStatus('authorized', true)
                     } else {
-                        // 只在授权验证时打印失败信息
-                        if (!isPeriodicCheck) {
-                            console.log('❌【授权验证】验证失败')
-                        }
-                        // 验证失败时清除本地令牌
-                        await this.clearCache()
-
-                        // 如果是定期验证失败，直接根据令牌篡改情况处理
-                        if (isPeriodicCheck) {
-                            // 区分令牌篡改和权限撤销的处理逻辑
-                            if (this._cacheTempered) {
-                                // 令牌篡改：立即执行令牌清空惩罚
-                                console.log('🚨【作弊惩罚】令牌异常')
-                                await this.clearCache()
-                                this._cacheTempered = false // 重置篡改标志
-                            } else {
-                                // 权限撤销：仅清除令牌
-                                console.log('⚠️【权限撤销】权限异常')
-                            }
-                        }
-
-                        this.updateStatus('unauthorized', false)
+                        await this.handleAuthFailure(isPeriodicCheck, '❌【授权验证】验证失败')
                     }
                 } else {
-                    console.log('❌【远程数据】数据异常')
-                    // 远程数据异常时清除本地令牌
-                    await this.clearCache()
-
-                    // 如果是定期验证失败，直接根据令牌篡改情况处理
-                    if (isPeriodicCheck) {
-                        // 区分令牌篡改和权限撤销的处理逻辑
-                        if (this._cacheTempered) {
-                            // 令牌篡改：立即执行令牌清空惩罚
-                            console.log('🚨【作弊惩罚】令牌异常')
-                            await this.clearCache()
-                            this._cacheTempered = false // 重置篡改标志
-                        } else {
-                            // 权限撤销：仅清除令牌
-                            console.log('⚠️【权限撤销】权限异常')
-                        }
-                    }
-
-                    this.updateStatus('unauthorized', false)
+                    await this.handleAuthFailure(isPeriodicCheck, '❌【远程数据】数据异常')
                 }
             } catch (fetchError) {
-                // 网络错误时清除本地令牌
-                await this.clearCache()
-
-                // 网络错误不触发数据库清空，只有密钥对比失败才清空
-                if (isPeriodicCheck) {
-
-                }
-
-                this.updateStatus('error', false)
+                await this.handleAuthError(isPeriodicCheck, '网络错误')
             }
         } catch (error) {
-            // 设备密钥获取失败时清除本地令牌
-            await this.clearCache()
-
-            // 设备密钥获取失败不触发数据库清空
-            if (isPeriodicCheck) {
-
-            }
-
-            this.updateStatus('error', false)
+            await this.handleAuthError(isPeriodicCheck, '设备密钥获取失败')
         } finally {
             this._isVerifying = false
         }
