@@ -74,7 +74,7 @@
     let dataArrays = $derived(derivedState().finalData)
     let codeMatches = $derived(derivedState().matches)
 
-    let seriesMapping = $derived(() => {
+    let mockSeriesMapping = $derived(() => {
         const mapping = currentValues.seriesMapping as string[] | undefined
         if (mapping && Array.isArray(mapping) && mapping.length === dataArrays.length) {
             return mapping
@@ -114,10 +114,10 @@
     }
 
     /** 实时更新第 index 个 data 映射路径 */
-    function updateSeriesMapping(index: number, path: string) {
-        if (!selectedId || seriesMapping()[index] === path) return
+    function updateMockSeriesMapping(index: number, path: string) {
+        if (!selectedId || mockSeriesMapping()[index] === path) return
 
-        const newMapping = [...seriesMapping()]
+        const newMapping = [...mockSeriesMapping()]
         newMapping[index] = path
 
         handleAttrChange('seriesMapping', newMapping)
@@ -138,10 +138,6 @@
         const attributesToUpdate: { [k: string]: any } = { [key]: value }
         if (key === 'dataSource' && (value === 'mock' || value === 'real')) {
             attributesToUpdate.seriesData = undefined
-        }
-        // 当切换回 json 模式时，清除 seriesMapping
-        if (key === 'dataSource' && value === 'json') {
-            attributesToUpdate.seriesMapping = undefined
         }
         updateNodeProps(selectedId, { attributes: attributesToUpdate })
     }
@@ -210,15 +206,15 @@
         {/if}
     {/if}
 
-    <!-- 动态数据(mock/real)模式：编辑 seriesMapping -->
+    <!-- 动态数据(mock/real)模式：编辑 mockSeriesMapping -->
     {#if dataSource === 'mock' || dataSource === 'real'}
         {#if getSeriesCount() > 0}
             {#each Array(getSeriesCount()) as _, idx}
                 <PropertyRow label={`${getChineseOrdinal(idx)}映射`}>
                     {#if dataMappingKeys.length > 0}
-                        <PropertySelect value={seriesMapping()[idx] || ''} options={dataMappingKeys.map((k) => ({ label: k, value: k }))} change={(v) => updateSeriesMapping(idx, v)} placeholder="选择数据字段" />
+                        <PropertySelect value={mockSeriesMapping()[idx] || ''} options={dataMappingKeys.map((k) => ({ label: k, value: k }))} change={(v) => updateMockSeriesMapping(idx, v)} placeholder="选择数据字段" />
                     {:else}
-                        <input type="text" class="request-path-input" placeholder="e.g., data.values" value={seriesMapping()[idx] || ''} onchange={(e) => updateSeriesMapping(idx, (e.target as HTMLInputElement).value)} />
+                        <input type="text" class="request-path-input" placeholder="e.g., data.values" value={mockSeriesMapping()[idx] || ''} onchange={(e) => updateMockSeriesMapping(idx, (e.target as HTMLInputElement).value)} />
                     {/if}
                 </PropertyRow>
             {/each}
