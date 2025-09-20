@@ -310,8 +310,8 @@ class AuthService {
             // 定期验证：异步执行，不阻塞当前流程
             remoteVerification()
         } else {
-            // 首次验证：同步等待，确保完成授权检查
-            await remoteVerification()
+            // 非定期验证（首次或缓存过期）也异步执行，避免卡顿
+            remoteVerification()
         }
     }
 
