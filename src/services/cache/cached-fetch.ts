@@ -25,32 +25,41 @@ export async function cachedFetch<T = any>(
   config: CacheConfig<T> = {}
 ): Promise<T> {
   const key = await generateCacheKey(url, options);
+  console.log(`[Cache] Generated key for URL (${url}): ${key}`);
 
   // --- 并发处理 ---
   if (ongoingRequests.has(key)) {
+    console.log(`[Cache] Request for key ${key} is already ongoing. Returning existing promise.`);
     return ongoingRequests.get(key)!;
   }
 
   const requestPromise = (async () => {
     try {
       // 1. 强制刷新或非 GET 请求，直接发起网络请求
-      if (config.forceRefresh || options.method?.toUpperCase() !== 'GET') {
+      if (config.forceRefresh || (options.method && options.method.toUpperCase() !== 'GET')) {
+        console.log(`[Cache] Force refresh or non-GET method. Fetching from network for key: ${key}`);
         return await networkFetchAndCache<T>(url, options, key);
       }
 
       // 2. 检查内存缓存
+      console.log(`[Cache] Checking memory cache for key: ${key}`);
       const memoryRecord = memoryCache.get<T>(key);
       if (memoryRecord) {
+        console.log(`[Cache] Memory cache HIT for key: ${key}`, memoryRecord);
         // 异步更新后台数据
         if (config.onUpdate) {
           networkFetchAndCache<T>(url, options, key).then(config.onUpdate).catch(console.error);
         }
         return memoryRecord.data;
       }
+      console.log(`[Cache] Memory cache MISS for key: ${key}`);
+
 
       // 3. 检查 IndexedDB 缓存
+      console.log(`[Cache] Checking IndexedDB cache for key: ${key}`);
       const dbRecord = await indexedDBCache.get<T>(key);
       if (dbRecord) {
+        console.log(`[Cache] IndexedDB HIT for key: ${key}`, dbRecord);
         // 将数据存入内存缓存以备下次快速访问
         memoryCache.set(key, dbRecord);
         // 异步更新后台数据
@@ -59,8 +68,11 @@ export async function cachedFetch<T = any>(
         }
         return dbRecord.data;
       }
+      console.log(`[Cache] IndexedDB MISS for key: ${key}`);
+
 
       // 4. 如果缓存未命中，则执行网络请求
+      console.log(`[Cache] All caches MISS for key: ${key}. Fetching from network...`);
       return await networkFetchAndCache<T>(url, options, key);
 
     } finally {
@@ -87,6 +99,7 @@ async function networkFetchAndCache<T>(
   options: RequestInit,
   key: string
 ): Promise<T> {
+  console.log(`[Cache] Executing network fetch for key: ${key}`);
   const response = await fetch(url, options);
 
   if (!response.ok) {
@@ -104,6 +117,7 @@ async function networkFetchAndCache<T>(
     etag: response.headers.get('etag') || undefined,
   };
 
+  console.log(`[Cache] Storing new record in cache for key: ${key}`, record);
   // 同时写入内存和 IndexedDB 缓存
   memoryCache.set(key, record);
   await indexedDBCache.set(key, record);
