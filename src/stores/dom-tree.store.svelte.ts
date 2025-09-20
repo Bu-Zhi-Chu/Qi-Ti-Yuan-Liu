@@ -7,7 +7,8 @@
  */
 
 import type { DomNode } from '../types/dom-node.types';
-import DexieService from '../services/database/dexie-service';
+import DexieService from '../services/database/dexie-service'
+import { DEFAULT_DB_NAME } from '../services/database/database.config';
 import Dexie from 'dexie';
 import { writable } from 'svelte/store';
 import { isLiteMode } from '../services/env/environment.service'
@@ -91,8 +92,7 @@ export function setDesignSize(width: number, height: number): void {
  */
 async function loadDomNodesFromDomsTable(projectId: string): Promise<DomNode | null> {
   try {
-    const db = new Dexie('qi-qiao-ban');
-    await db.open();
+    const db = await DexieService.getDatabase(DEFAULT_DB_NAME);
     const nodes = await db.table('doms').where('projectId').equals(projectId).toArray();
 
     if (nodes.length === 0) {
@@ -171,7 +171,7 @@ export async function loadDomTreeFromDatabase(projectId: string): Promise<boolea
 
   try {
     // 先从数据库读取之前保存的选中节点ID
-    const project = await DexieService.getRecord<any>('qi-qiao-ban', 'projects', projectId);
+    const project = await DexieService.getRecord<any>(DEFAULT_DB_NAME, 'projects', projectId);
     const savedSelectedNodeId = project?.selectedNodeId || null;
 
     // 立即清空旧数据，确保无残影
@@ -225,8 +225,7 @@ let saveTimeout: ReturnType<typeof setTimeout> | null = null;
 async function saveDomNodesToDomsTable(projectId: string, domTree: DomNode): Promise<void> {
   try {
     // 先删除该项目的所有旧节点
-    const db = new Dexie('qi-qiao-ban');
-    await db.open();
+    const db = await DexieService.getDatabase(DEFAULT_DB_NAME);
     console.log('🗑️【数据交互】开始删除项目旧节点，项目ID:', projectId);
     await db.table('doms').where({ projectId }).delete();
 
@@ -249,7 +248,7 @@ async function saveDomNodesToDomsTable(projectId: string, domTree: DomNode): Pro
         }
       }
 
-      await DexieService.addRecord('qi-qiao-ban', 'doms', {
+      await DexieService.addRecord(DEFAULT_DB_NAME, 'doms', {
         projectId,
         id: node.id, // 不变的节点UUID
         parentId,
@@ -320,7 +319,7 @@ export async function setSelectedId(id: string | null): Promise<void> {
   if (currentProjectId) {
     try {
       console.log(`🎯【数据交互】更新项目选中节点ID: 项目ID=${currentProjectId}, 选中节点ID=${id}`)
-      await DexieService.updateRecord('qi-qiao-ban', 'projects', currentProjectId, {
+      await DexieService.updateRecord(DEFAULT_DB_NAME, 'projects', currentProjectId, {
         selectedNodeId: id
       });
       console.log('✅【数据交互】项目选中节点ID已更新到数据库')

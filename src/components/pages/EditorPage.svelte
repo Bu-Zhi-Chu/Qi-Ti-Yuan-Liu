@@ -31,6 +31,7 @@
     // 引入 DOM 树集中式状态管理
     import { domTree, selectedId, removeNodeById, projectId, findNodeById, setDesignSize } from '../../stores/dom-tree.store.svelte'
     import DexieService from '../../services/database/dexie-service'
+import { DEFAULT_DB_NAME } from '../../services/database/database.config'
     import StatusBar from '../widgets/StatusBar.svelte'
     import { screenDetector } from '../../services/screen/screen-detector.service'
     // 是否显示工作区，默认显示工作区
@@ -353,7 +354,7 @@
         // 初始化项目ID（兼容精简/路由两种场景）
         if (isLiteMode()) {
             try {
-                const projects = await DexieService.getAllRecords('qi-qiao-ban', 'projects')
+                const projects = await DexieService.getAllRecords(DEFAULT_DB_NAME, 'projects')
                 const id = (projects?.[0] as any)?.id as string | undefined
                 if (id) projectId.set(id)
             } catch (e) {
@@ -542,7 +543,7 @@
             return
         }
         try {
-            const project = await DexieService.getRecord<any>('qi-qiao-ban', 'projects', currentProjectId)
+            const project = await DexieService.getRecord<any>(DEFAULT_DB_NAME, 'projects', currentProjectId)
             if (project && project.mode) {
                 showWorkspace = project.mode === 'editing'
 
@@ -564,7 +565,7 @@
         if (!currentProjectId) return
         const newMode = showWorkspace ? 'editing' : 'normal'
         try {
-            await DexieService.updateRecord('qi-qiao-ban', 'projects', currentProjectId, { mode: newMode })
+            await DexieService.updateRecord(DEFAULT_DB_NAME, 'projects', currentProjectId, { mode: newMode })
             console.log(`项目模式已更新为: ${newMode}`)
         } catch (error) {
             console.error('更新项目模式失败:', error)
@@ -573,7 +574,7 @@
     let showLogsEnabled = $state<boolean | null>(null)
     onMount(async () => {
         try {
-            const db = await DexieService.getDatabase('qi-qiao-ban')
+            const db = await DexieService.getDatabase(DEFAULT_DB_NAME)
             if (db) {
                 const cfgRecord = (await db.table('config').toArray())[0]
                 showLogsEnabled = (cfgRecord?.showLogs ?? cfgRecord?.value) === true
@@ -871,7 +872,7 @@
                 onclick={async (event) => {
                     const button = event.target as HTMLButtonElement
                     try {
-                        const db = await DexieService.getDatabase('qi-qiao-ban')
+                        const db = await DexieService.getDatabase(DEFAULT_DB_NAME)
                         if (!db) throw new Error('无法获取数据库')
                         const cfgRecord = (await db.table('config').toArray())[0] || { showLogs: false, perfMonitor: true }
                         const newVal = !cfgRecord.perfMonitor
@@ -893,7 +894,7 @@
                     const button = event.target as HTMLButtonElement
                     try {
                         // 获取数据库实例
-                        const db = await DexieService.getDatabase('qi-qiao-ban')
+                        const db = await DexieService.getDatabase(DEFAULT_DB_NAME)
                         if (!db) throw new Error('无法获取数据库')
 
                         // 读取现有配置（取首条记录）

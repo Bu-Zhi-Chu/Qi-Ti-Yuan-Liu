@@ -15,6 +15,7 @@
     import NewProjectDialog from '../widgets/NewProjectDialog.svelte'
     import { onMount, onDestroy } from 'svelte'
     import DexieService from '../../services/database/dexie-service'
+import { DEFAULT_DB_NAME } from '../../services/database/database.config'
     import { clearMemoryState } from '../../stores/dom-tree.store.svelte'
     import { importInto } from 'dexie-export-import'
     import { ProjectThumbnailService } from '../../services/project/project-thumbnail.service'
@@ -31,7 +32,7 @@
 
     // 数据库初始化函数
     async function initializeDatabase() {
-        const dbName = 'qi-qiao-ban'
+        const dbName = DEFAULT_DB_NAME
         // 确保数据库存在
         if (!(await DexieService.databaseExists(dbName))) {
             console.log('🏗️【数据交互】数据库不存在，开始创建数据库')
@@ -171,7 +172,7 @@
         console.log('📦【数据交互】导入前 ID 替换完成:', originalProjectId, '=>', newProjectId)
 
         // 4. 调用 importInto 导入，关闭 overwrite，确保不会覆盖同名主键
-        const db = await DexieService.getDatabase('qi-qiao-ban')
+        const db = await DexieService.getDatabase(DEFAULT_DB_NAME)
         if (!db) throw new Error('无法获取数据库实例')
 
         await importInto(db, new Blob([JSON.stringify(cloned)], { type: 'application/json' }), {
@@ -185,7 +186,7 @@
         if (projectId == null) return
 
         // 先删除doms表中对应项目ID的所有记录
-        const dbName = 'qi-qiao-ban'
+        const dbName = DEFAULT_DB_NAME
         console.log(`🗑️【数据交互】删除项目: 项目ID=${projectId}`)
         try {
             const db = await DexieService.getDatabase(dbName)
@@ -227,7 +228,7 @@
         const now = Date.now()
 
         // 创建项目记录
-        await DexieService.addRecord('qi-qiao-ban', 'projects', {
+        await DexieService.addRecord(DEFAULT_DB_NAME, 'projects', {
             id,
             name,
             templateId,
@@ -241,7 +242,7 @@
         })
         // 根据模板加载DOM结构
         try {
-            const db = await DexieService.getDatabase('qi-qiao-ban')
+            const db = await DexieService.getDatabase(DEFAULT_DB_NAME)
             if (db) {
                 const template = await db.table('templates').get(templateId)
                 if (template && template.domStructure && template.domStructure.length > 0) {
@@ -279,7 +280,7 @@
                 createdAt: now,
                 updatedAt: now
             }
-            const db = await DexieService.getDatabase('qi-qiao-ban')
+            const db = await DexieService.getDatabase(DEFAULT_DB_NAME)
             if (db) await db.table('doms').add(rootNode)
         }
 

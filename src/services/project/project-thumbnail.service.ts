@@ -13,6 +13,7 @@
  */
 
 import DexieService from '../database/dexie-service'
+import { DEFAULT_DB_NAME } from '../database/database.config'
 import { getImage, addOrIncrement } from '../database/image-store.service'
 import { hashBlob } from '../image/image-utils'
 
@@ -98,7 +99,7 @@ export class ProjectThumbnailService {
       // 3. 更新项目记录为哈希字符串
       try {
         await DexieService.updateRecord(
-          'qi-qiao-ban',
+          DEFAULT_DB_NAME,
           'projects',
           projectId,
           { thumbnail: hash }
@@ -124,7 +125,7 @@ export class ProjectThumbnailService {
     try {
       // 从doms表获取根节点数据
       console.log(`📸【数据交互】获取项目缩略图: 项目ID=${projectId}`)
-      const rootNodes = await DexieService.queryRecords('qi-qiao-ban', 'doms')
+      const rootNodes = await DexieService.queryRecords(DEFAULT_DB_NAME, 'doms')
       const rootNode = (rootNodes as DomNode[]).find((node) => node.projectId === projectId && node.id === 'root')
 
       if (!rootNode) {
@@ -177,7 +178,7 @@ export class ProjectThumbnailService {
 
     try {
       // 若项目已存在 DataURL 形式的缩略图（默认或用户自定义），无需再生成
-      const existing = await DexieService.getRecord<any>('qi-qiao-ban', 'projects', projectId)
+      const existing = await DexieService.getRecord<any>(DEFAULT_DB_NAME, 'projects', projectId)
       if (existing?.thumbnail && existing.thumbnail.startsWith('data:')) {
         return
       }
@@ -206,7 +207,7 @@ export class ProjectThumbnailService {
 
       try {
         await DexieService.updateRecord(
-          'qi-qiao-ban',
+          DEFAULT_DB_NAME,
           'projects',
           projectId,
           { thumbnail: dataUrl }

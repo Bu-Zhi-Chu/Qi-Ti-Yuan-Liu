@@ -4,7 +4,8 @@
  */
 
 import { exportDB } from 'dexie-export-import';
-import DexieService from '../database/dexie-service';
+import DexieService from '../database/dexie-service'
+import { DEFAULT_DB_NAME } from '../database/database.config';
 
 /**
  * 精简导出数据结构
@@ -38,7 +39,7 @@ export class LiteExportService {
 
             // 在导出前更新项目的 exportTime，方便后续导入时比较时间戳
             await DexieService.updateRecord(
-                'qi-qiao-ban',
+                DEFAULT_DB_NAME,
                 'projects',
                 projectId,
                 { exportTime: new Date().toISOString() }
@@ -72,7 +73,7 @@ export class LiteExportService {
     async exportTablesWithDexie(tables: string[], projectId: string): Promise<Blob> {
         try {
             // 获取现有的数据库实例
-            const db = await DexieService.getDatabase('qi-qiao-ban');
+            const db = await DexieService.getDatabase(DEFAULT_DB_NAME);
             if (!db) {
                 throw new Error('无法获取数据库实例');
             }

@@ -12,6 +12,7 @@
     import ResponsiveBox from '../core/ResponsiveBox.svelte'
     import GenericCard from './GenericCard.svelte'
     import DexieService from '../../services/database/dexie-service'
+import { DEFAULT_DB_NAME } from '../../services/database/database.config'
     import { Toast } from './Toast.svelte'
 
     // Props定义
@@ -44,7 +45,7 @@
     onMount(async () => {
         try {
             console.log('📥【数据交互】加载模板列表')
-            const data = await DexieService.queryRecords<TemplateInfo>('qi-qiao-ban', 'templates')
+            const data = await DexieService.queryRecords<TemplateInfo>(DEFAULT_DB_NAME, 'templates')
             templates = data
             if (data.length > 0) {
                 selected = data[0].id

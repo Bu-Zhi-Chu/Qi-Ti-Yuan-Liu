@@ -6,6 +6,7 @@
 
 import type { ScreenInfo, ScreenChangeCallback, DeviceType, PixelDensityLevel } from './screen.types.js'
 import DexieService from '../database/dexie-service'
+import { DEFAULT_DB_NAME } from '../database/database.config'
 import { get } from 'svelte/store'
 import { projectId } from '../../stores/dom-tree.store.svelte'
 
@@ -201,7 +202,7 @@ class ScreenDetector {
         if (!currentProjectId) return
 
         try {
-            const project: any = await DexieService.getRecord('qi-qiao-ban', 'projects', currentProjectId)
+            const project: any = await DexieService.getRecord(DEFAULT_DB_NAME, 'projects', currentProjectId)
             if (project && project.designWidth && project.designHeight) {
                 this.setDesignSize(project.designWidth, project.designHeight)
             }

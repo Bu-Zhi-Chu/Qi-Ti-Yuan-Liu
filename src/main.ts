@@ -10,6 +10,7 @@ import { applyLogConfig } from './services/utils/log-switch'
 import { authService } from './services/auth/auth.service'
 import { getStableDeviceKey, getStableDeviceKeyHash } from './services/fingerprint/browser-fingerprint.service'
 import { ENABLE_AUTH_VERIFICATION } from './config/auth.config'
+import { DEFAULT_DB_NAME } from './services/database/database.config'
 
 // 根据环境初始化日志：开发环境默认开启，其余环境默认关闭
 applyLogConfig(import.meta.env.DEV === true)
@@ -220,12 +221,12 @@ async function initializeDatabase() {
 
 
                 // 检查数据库是否存在，不存在则创建
-                const dbExists = await DexieService.databaseExists('qi-qiao-ban')
+                const dbExists = await DexieService.databaseExists(DEFAULT_DB_NAME)
                 if (!dbExists) {
-                    await DexieService.createDatabase('qi-qiao-ban', true)
+                    await DexieService.createDatabase(DEFAULT_DB_NAME, true)
                 }
 
-                const db = await DexieService.getDatabase('qi-qiao-ban')
+                const db = await DexieService.getDatabase(DEFAULT_DB_NAME)
                 if (db) {
                     // 读取并应用日志配置
                     try {
@@ -332,14 +333,14 @@ async function initializeDatabase() {
                 console.warn('⚠️【数据交互】精简模式：数据库导入失败，应用将以无数据状态运行')
             }
         } else {
-            if (!(await DexieService.databaseExists('qi-qiao-ban'))) {
-                await DexieService.createDatabase('qi-qiao-ban', false)
-            } else {
-            }
+            if (!(await DexieService.databaseExists(DEFAULT_DB_NAME))) {
+            await DexieService.createDatabase(DEFAULT_DB_NAME, false)
+        } else {
+        }
 
-            // 再次读取并应用日志配置（数据库已存在场景）
-            try {
-                const db = await DexieService.getDatabase('qi-qiao-ban')
+        // 再次读取并应用日志配置（数据库已存在场景）
+        try {
+            const db = await DexieService.getDatabase(DEFAULT_DB_NAME)
                 if (db) {
                     const cfgRecord = (await db.table('config').toArray())[0]
                     applyLogConfig(cfgRecord ? (cfgRecord.showLogs ?? cfgRecord.value) === true : import.meta.env.DEV === true)

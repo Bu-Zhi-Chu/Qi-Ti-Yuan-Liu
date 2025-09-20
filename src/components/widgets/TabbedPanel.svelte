@@ -23,6 +23,7 @@
     import { addNodeToParent } from '../../stores/dom-tree.store.svelte'
     import { projectId } from '../../stores/dom-tree.store.svelte'
     import DexieService from '../../services/database/dexie-service'
+import { DEFAULT_DB_NAME } from '../../services/database/database.config'
     import { get } from 'svelte/store'
 
     // 当前激活的页签
@@ -141,7 +142,7 @@
             const pid = get(projectId)
             if (pid) {
                 try {
-                    const project = await DexieService.getRecord<any>('qi-qiao-ban', 'projects', pid)
+                    const project = await DexieService.getRecord<any>(DEFAULT_DB_NAME, 'projects', pid)
                     if (project?.name) {
                         resolvedTextContent = resolvedTextContent.replace(/\{\{projectName\}\}/g, project.name as string)
                     }

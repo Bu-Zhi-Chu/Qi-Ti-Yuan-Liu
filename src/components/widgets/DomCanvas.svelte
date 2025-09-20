@@ -35,6 +35,7 @@
     import AlignmentOverlay from './AlignmentOverlay.svelte'
     import { isDrawMode } from '../../stores/draw-mode.store.svelte'
     import DexieService from '../../services/database/dexie-service'
+import { DEFAULT_DB_NAME } from '../../services/database/database.config'
     import { canvasScale } from '../../stores/canvas-state.store.svelte'
     import { screenDetector } from '../../services/screen/screen-detector.service'
 </script>
@@ -124,7 +125,7 @@
 
             // 恢复上次选中的节点
 
-            const project = await DexieService.getRecord<any>('qi-qiao-ban', 'projects', localProjectId)
+            const project = await DexieService.getRecord<any>(DEFAULT_DB_NAME, 'projects', localProjectId)
 
             // 恢复上次选中的节点ID
             // 恢复上次选中的节点ID
@@ -181,7 +182,7 @@
         try {
             const canvasState = { x: offsetX, y: offsetY, scale: scale }
             console.log(`💾【数据交互】保存画布状态`)
-            await DexieService.updateRecord('qi-qiao-ban', 'projects', localProjectId, {
+            await DexieService.updateRecord(DEFAULT_DB_NAME, 'projects', localProjectId, {
                 canvasState,
                 updatedAt: Date.now()
             })
