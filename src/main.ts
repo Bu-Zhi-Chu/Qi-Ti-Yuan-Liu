@@ -383,7 +383,7 @@ async function initializeApp() {
             'color:#6b7280;font-size:12px;',
             'color:#f59e0b;font-size:12px;font-weight:bold;',
             'color:#6b7280;font-size:12px;')
-        console.log('%c2. 七巧板软件包，任何个人或组织在遵守下列条件的前提下可以永久免费使用：',
+        console.log('%c2. 七巧板软件包，任何个人或组织获取授权后在遵守下列条件的前提下可以使用：',
             'color:#6b7280;font-size:12px;')
         console.log('%c   • 不进行任何形式的破解和裁剪，程序包完整引用；', 'color:#6b7280;font-size:12px;')
         console.log('%c   • 保留此版权信息在控制台输出。', 'color:#6b7280;font-size:12px;')
