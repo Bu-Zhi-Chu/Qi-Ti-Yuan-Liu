@@ -81,7 +81,7 @@ export function getSeriesCount(code: string | undefined): number {
 }
 
 /**
- * 从代码中提取数据匹配项（排除legend和tooltip相关的数据）
+ * 从代码中提取数据匹配项（排除tooltip相关的数据）
  * @param code - JavaScript代码
  * @returns 过滤后的匹配结果
  */
@@ -90,6 +90,6 @@ export function extractDataMatches(code: string): RegExpMatchArray[] {
   return allMatches.filter((match) => {
     const matchStart = match.index!
     const beforeMatch = code.substring(Math.max(0, matchStart - 20), matchStart)
-    return !beforeMatch.includes('legend') && !beforeMatch.includes('tooltip')
+    return !beforeMatch.includes('tooltip')
   })
 }
