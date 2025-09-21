@@ -207,11 +207,7 @@
             // 如果有数据映射，则应用它
             if (result && Array.isArray(seriesMapping) && data) {
                 // 先提取出所有的data数组，保持它们在代码中的原始顺序
-                const dataMatches = [...code.matchAll(/data\s*:\s*(\[[^\]]*\])/g)].filter((match) => {
-                    const matchStart = match.index!
-                    const beforeMatch = code.substring(Math.max(0, matchStart - 20), matchStart)
-                    return !beforeMatch.includes('legend') && !beforeMatch.includes('tooltip')
-                })
+                const dataMatches = extractDataMatches(code)
 
                 console.log('需要映射的数组数量:', dataMatches.length)
 
@@ -421,7 +417,7 @@
     })
 
     // 导入序列提取服务
-    import { extractSeriesFromCode, getSeriesCount } from '../../services/property-panel/series-extractor.service'
+    import { extractSeriesFromCode, getSeriesCount, extractDataMatches } from '../../services/property-panel/series-extractor.service'
 
     // 最终 ECharts option，支持JavaScript代码和真实数据
     const option = $derived(

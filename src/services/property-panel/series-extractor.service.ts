@@ -30,15 +30,8 @@ export function extractSeriesFromCode(
     }
   }
 
-  // 使用正则表达式匹配 data: [...] 模式
-  const allMatches = [...code.matchAll(/data\s*:\s*(\[[^\]]*\])/g)]
-
-  // 过滤掉legend和tooltip相关的数据
-  const matches = allMatches.filter((match) => {
-    const matchStart = match.index!
-    const beforeMatch = code.substring(Math.max(0, matchStart - 20), matchStart)
-    return !beforeMatch.includes('legend') && !beforeMatch.includes('tooltip')
-  })
+  // 使用通用方法提取数据匹配项
+  const matches = extractDataMatches(code)
 
   // 提取数据数组
   const parsed = matches.map((m) => m[1])
@@ -74,15 +67,7 @@ export function getChineseOrdinal(num: number): string {
  */
 export function hasValidSeries(code: string | undefined): boolean {
   if (!code) return false
-
-  const allMatches = [...code.matchAll(/data\s*:\s*(\[[^\]]*\])/g)]
-  const matches = allMatches.filter((match) => {
-    const matchStart = match.index!
-    const beforeMatch = code.substring(Math.max(0, matchStart - 20), matchStart)
-    return !beforeMatch.includes('legend') && !beforeMatch.includes('tooltip')
-  })
-
-  return matches.length > 0
+  return extractDataMatches(code).length > 0
 }
 
 /**
@@ -92,13 +77,19 @@ export function hasValidSeries(code: string | undefined): boolean {
  */
 export function getSeriesCount(code: string | undefined): number {
   if (!code) return 0
+  return extractDataMatches(code).length
+}
 
+/**
+ * 从代码中提取数据匹配项（排除legend和tooltip相关的数据）
+ * @param code - JavaScript代码
+ * @returns 过滤后的匹配结果
+ */
+export function extractDataMatches(code: string): RegExpMatchArray[] {
   const allMatches = [...code.matchAll(/data\s*:\s*(\[[^\]]*\])/g)]
-  const matches = allMatches.filter((match) => {
+  return allMatches.filter((match) => {
     const matchStart = match.index!
     const beforeMatch = code.substring(Math.max(0, matchStart - 20), matchStart)
     return !beforeMatch.includes('legend') && !beforeMatch.includes('tooltip')
   })
-
-  return matches.length
 }
