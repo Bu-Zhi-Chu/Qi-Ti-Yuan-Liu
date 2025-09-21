@@ -10,6 +10,8 @@ export interface SeriesExtractionResult {
   matches: RegExpMatchArray[]
   /** 是否需要回写 */
   needsWriteBack: boolean
+  /** 提取到的 legend 数据 */
+  legendData?: string[] | null
 }
 
 /**
@@ -26,12 +28,14 @@ export function extractSeriesFromCode(
     return {
       dataArrays: existingSeriesData || [],
       matches: [],
-      needsWriteBack: false
+      needsWriteBack: false,
+      legendData: null,
     }
   }
 
   // 使用通用方法提取数据匹配项
   const matches = extractDataMatches(code)
+  const legendData = extractLegendData(code)
 
   // 提取数据数组
   const parsed = matches.map((m) => m[1])
@@ -46,7 +50,8 @@ export function extractSeriesFromCode(
   return {
     dataArrays: finalData,
     matches,
-    needsWriteBack
+    needsWriteBack,
+    legendData,
   }
 }
 
@@ -58,6 +63,32 @@ export function extractSeriesFromCode(
 export function getChineseOrdinal(num: number): string {
   const ordinals = ['第一', '第二', '第三', '第四', '第五', '第六', '第七', '第八', '第九', '第十']
   return ordinals[num] || `第${num + 1}`
+}
+
+/**
+ * 从代码中提取 legend.data 的数据
+ * @param code - JavaScript代码
+ * @returns legend 数据数组, 如果没有则返回 null
+ */
+export function extractLegendData(code: string): string[] | null {
+  // 正则表达式匹配 legend.data，处理各种空格和换行
+  const legendMatch = code.match(/legend\s*:\s*\{(?:.|\n)*?data\s*:\s*(\[(?:.|\n)*?\])/);
+
+  if (legendMatch && legendMatch[1]) {
+    try {
+      // 使用Function构造器安全地解析数组字符串，比eval更安全
+      // 它可以处理单引号、尾随逗号等情况
+      const parsedData = new Function(`return ${legendMatch[1]}`)();
+      if (Array.isArray(parsedData)) {
+        // 确保数组内容是字符串
+        return parsedData.map(item => String(item));
+      }
+    } catch (e) {
+      console.error("解析legend数据时出错:", e);
+      return null;
+    }
+  }
+  return null;
 }
 
 /**

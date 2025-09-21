@@ -429,11 +429,13 @@
 
             // 准备最终执行的 code
             let finalCode = code
+            let legendData: string[] | null | undefined = null
 
             // 如果是虚拟数据模式，且有独立数据源，则进行代码覆盖
             if (dataSource === 'json' && finalCode && seriesData && seriesData.length > 0) {
                 // 使用序列提取服务来替换数据
                 const extraction = extractSeriesFromCode(finalCode, seriesData)
+                legendData = extraction.legendData
 
                 if (extraction.dataArrays.length > 0) {
                     let seriesIndex = 0
@@ -539,6 +541,14 @@
             if (finalCode && typeof finalCode === 'string' && finalCode.trim()) {
                 const codeResult = executeJavaScriptCode(finalCode)
                 if (codeResult && typeof codeResult === 'object') {
+                    // 如果是json模式，并且提取到了legendData，则用它来覆盖series.name
+                    if (dataSource === 'json' && legendData && codeResult.series && Array.isArray(codeResult.series)) {
+                        codeResult.series.forEach((s: any, i: number) => {
+                            if (legendData && legendData[i]) {
+                                s.name = legendData[i]
+                            }
+                        })
+                    }
                     // 处理标题和图例的默认位置
                     return processOptionDefaults(codeResult)
                 }
