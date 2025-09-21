@@ -607,7 +607,7 @@
     }
 </script>
 
-<!-- 外层容器用于应用缩放变换 -->
+<!-- 外层容器用于应用缩放变换         bind:chart={chartInstance} -->
 <div class="scale-container" bind:this={containerRef}>
     <!-- 使用一个禁用指针事件的包装层，确保仅图表本身可以交互 -->
     <div class="wrapper" {style} {...restProps} {id}>
