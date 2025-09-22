@@ -179,9 +179,16 @@
                 }
             })
         }
+        // 标记这是从DOM树同步的过程，避免清空seriesData
+        syncingFromCodeEditor = true
         currentValues = merged
+        // 同步完成后重置标志
+        queueMicrotask(() => {
+            syncingFromCodeEditor = false
+        })
     })
     let syncingFromDomTree = false
+    let syncingFromCodeEditor = false // 标记正在由代码编辑器同步，避免清空seriesData
     let editingButtonCount = false // 标记正在由输入框主动修改中
     // 新增：哈希校验正则
     const hashRegex = /^[a-f0-9]{40,}$/
@@ -223,7 +230,8 @@
             const attributesToUpdate: { [k: string]: any } = { [key]: value }
 
             // 当 code 属性变化时，清空 seriesData，以便从新代码中重新解析
-            if (key === 'code') {
+            // 但只有在用户手动修改（来自代码编辑器）时才清空，切换页签时不清空
+            if (key === 'code' && !syncingFromCodeEditor) {
                 attributesToUpdate.seriesData = undefined
             }
 
