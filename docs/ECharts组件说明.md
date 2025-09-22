@@ -6,8 +6,8 @@
 
 | 字段 | 说明 |
 | ---- | ---- |
-| `featureProps` | 控制 **特性面板 (FeatureEditor)** 的表单项。当前包含 `designWidth/Height`、`renderer`、`code` 等。 |
-| `dataSource`  | 控制 **数据面板 (DataEditor)** 的表单项。提供三种数据接入方式：`json / mock / real`。|
+| `featureProps` | 控制 **特性面板 (FeatureEditor)** 的表单项。当前包含 `designWidth/Height`、`renderer`、`code`、图表案例链接等。 |
+| `dataSource`  | 控制 **数据面板 (DataEditor)** 的表单项。提供三种数据接入方式：`json / mock / real`，通过 `dataAccess` 字段配置。|
 
 依赖元数据的优势：
 
@@ -23,7 +23,8 @@
 * 对 ECharts 特有逻辑：
   * 调整 `designWidth / designHeight` → 影响渲染组件的缩放；
   * 代码编辑框 `code`：存储 JS 配置片段；
-  * `renderer`：Canvas / SVG 渲染器切换。
+  * `renderer`：Canvas / SVG 渲染器切换（通过开关控制）；
+  * 图表案例链接：提供官方案例和社区案例的外部链接。
 
 > 所有更改均通过 `updateNodeProps` 写回 **DOM Tree**。
 
@@ -33,25 +34,68 @@
 
 ### 3.1 数据源切换
 
-* `dataSource` = `json`：直接编辑 `seriesData`（由代码中 `data: [...]` 自动解析提取）。
-* `dataSource` = `mock`：填写接口路径 & 映射 `mockSeriesMapping` 字段。
-* `dataSource` = `real`：填写真实请求路径 & 映射 `requestSeriesMapping` 字段。
+* `dataAccess` = `json`：直接编辑 `seriesData`（由代码中 `data: [...]` 自动解析提取）。
+* `dataAccess` = `mock`：填写接口路径 & 映射 `mockSeriesMapping` 字段。
+* `dataAccess` = `real`：填写真实请求路径 & 映射 `requestSeriesMapping` 字段。
+
+> **注意**：配置中使用 `dataAccess` 字段，但在组件内部统一映射为 `dataSource` 进行处理。
 
 ### 3.2 序列提取逻辑
 
 通过 `series-extractor.service`：
 
-1. 正则扫描 `code` 中的 `data: [...]`；
-2. 将结果写入 `seriesData`，供面板 JSON 编辑；
-3. 支持多序列、一键同步写回。
+1. **正则扫描** `code` 中的 `data: [...]`（排除 tooltip 相关数据）；
+2. **数据提取** 使用 `extractDataMatches(code)` 函数，该函数：
+   - 使用正则表达式 `/data\s*:\s*(\[[^\]]*\])/g` 匹配所有 `data: [...]` 结构
+   - **过滤机制**：检查每个匹配项前20个字符，排除包含 `tooltip` 的数据（避免提取 tooltip 中的示例数据）
+   - **返回结果**：`RegExpMatchArray[]` 数组，每个匹配项包含完整的数据数组字符串
+3. **legend 数据提取**：额外调用 `extractLegendData(code)` 提取 `legend.data` 配置用于图例显示
+4. **数据解析**：将提取到的数据字符串通过 `JSON.parse` 或 `Function` 构造器解析为可用的数组格式
+5. **结果整合**：返回包含 `dataArrays`（数据数组）、`matches`（匹配结果）、`legendData`（图例数据）的完整提取结果
+6. **支持多序列、一键同步写回**；
+
+**extractDataMatches 函数详解**：
+```typescript
+export function extractDataMatches(code: string): RegExpMatchArray[] {
+  const allMatches = [...code.matchAll(/data\s*:\s*(\[[^\]]*\])/g)]
+  return allMatches.filter((match) => {
+    const matchStart = match.index!
+    const beforeMatch = code.substring(Math.max(0, matchStart - 20), matchStart)
+    return !beforeMatch.includes('tooltip')
+  })
+}
+```
+- **输入**：ECharts 配置代码字符串
+- **输出**：过滤后的数据数组匹配结果
+- **核心逻辑**：匹配 → 过滤 tooltip → 返回有效数据
+
+**使用场景**：
+- 在 `DataEditor.svelte` 中用于计算序列数量：`getSeriesCount(code)` → 调用 `extractDataMatches(code).length`
+- 在 `extractSeriesFromCode` 中用于提取数据：`const matches = extractDataMatches(code)`
+- 过滤 tooltip 数据的原因：避免将 tooltip 中的示例数据误识别为图表数据序列
+
+**示例**：
+```javascript
+// 输入代码
+option = {
+  series: [{
+    data: [120, 200, 150, 80, 70, 110, 130],  // ✓ 会被提取
+    type: 'bar'
+  }],
+  tooltip: {
+    data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日']  // ✗ 会被过滤
+  }
+};
+
+// 提取结果：只返回 series 中的 data 数组，忽略 tooltip 中的 data
 
 ### 3.3 `第 X 序列 / 第 X 映射` 动态属性编辑流程
 
 
-1. **序列数量计算**：DataEditor 使用 `getSeriesCount(code)` 计算当前图表的序列个数（基于正则扫描用户 JS 中的 `series: [ ... ]` 结构，返回子数组个数）。
+1. **序列数量计算**：DataEditor 使用 `getSeriesCount(code)` 计算当前图表的序列个数（基于正则扫描用户 JS 中的 `data: [...]` 结构，返回匹配个数）。
 2. **渲染输入控件**：
-   * 当 `dataSource === 'json'` 时，为每条序列渲染一个 `<CodeEditor>`，标题显示为「第一序列 / 第二序列 …」。
-   * 当 `dataSource === 'mock'` 或 `real` 时，为每条序列渲染一个 `<PropertySelect>` 或输入框，标题显示为「第一映射 / 第二映射 …」。
+   * 当 `dataAccess === 'json'` 时，为每条序列渲染一个 `<CodeEditor>`，标题显示为「第一序列 / 第二序列 …」。
+   * 当 `dataAccess === 'mock'` 或 `real` 时，为每条序列渲染一个 `<PropertySelect>` 或输入框，标题显示为「第一映射 / 第二映射 …」。
      * `PropertySelect` 的下拉选项来源于全局 `dataMappingKeysStore`，该 store 在运行时由 `ECharts.svelte` 根据实际请求到的数据字段动态填充，确保可视化选择。
 3. **序列/映射数据来源**：
    * `seriesData`：来自 `extractSeriesFromCode` 对用户 JS 的解析结果，初次加载即写入节点属性；
@@ -62,8 +106,8 @@
    * `updateMockSeriesMapping(idx, path)` → 更新 `mockSeriesMapping`；
    * `updateRequestSeriesMapping(idx, path)` → 更新 `requestSeriesMapping`。
    这些函数均通过 `handleAttrChange(key, value)` 调用 `updateNodeProps()` 将新值写入节点 `attributes`。
-4. **状态同步**：`updateNodeProps` 更新 **DOM Tree Store**，触发 `getNodePropsStore` 的订阅，DataEditor 与 `ECharts.svelte` 均会收到最新属性。
-5. **图表刷新**：`ECharts.svelte` 在 `$derived(option)` 阶段根据最新 `seriesData` / 映射数组重新注入数据后执行 `chart.setOption()`，从而实现图表的实时更新。
+5. **状态同步**：`updateNodeProps` 更新 **DOM Tree Store**，触发 `getNodePropsStore` 的订阅，DataEditor 与 `ECharts.svelte` 均会收到最新属性。
+6. **图表刷新**：`ECharts.svelte` 在 `$derived(option)` 阶段根据最新 `seriesData` / 映射数组重新注入数据后执行 `chart.setOption()`，从而实现图表的实时更新。
 
 ---
 
@@ -76,8 +120,9 @@
 | 尺寸缩放 | 依据 `designWidth/Height` 或全局 store 计算 `scale`，在外层容器应用 `transform: scale()`，保证多分辨率自适应。 |
 | 数据接入 | ① `json`：用 `seriesData` 替换代码里的 `data` 数组；② `mock/real`：调用 `cachedFetch` 拉取数据，并暴露字段到 `dataMappingKeysStore` 供面板下拉。 |
 | 代码执行 | `executeJavaScriptCode` 在 **沙箱**（with + Function）中运行用户 JS，注入 `echarts.graphic` & `data` 等安全对象，返回最终 option。 |
-| Option 生成 | 统一在 `$derived(option)` 中完成：loading / error / legendData 补齐 / data 替换等。
-| 渲染 | 当 `chartReady`（容器有尺寸）后渲染 `<Chart this={ECharts}>`。支持 `bind:ready` 事件获取实例。
+| Option 生成 | 统一在 `$derived(option)` 中完成：loading / error / legendData 补齐 / data 替换 / 映射数据注入等。 |
+| 渲染 | 当 `chartReady`（容器有尺寸）后渲染 `<Chart this={ECharts}>`。支持 `bind:ready` 事件获取实例。 |
+| 错误处理 | 提供详细的错误提示和加载状态管理，包括代码执行错误和数据加载失败处理。
 
 ---
 
@@ -108,6 +153,8 @@ graph LR
   B -->|updateNodeProps| C(DOM Tree Store)
   C --> D(ECharts.svelte)
   D --> E[渲染效果]
+  D --> F[dataMappingKeysStore]
+  F --> B
 ```
 
 ---
@@ -128,13 +175,31 @@ graph LR
 
 ---
 
+## 9. 条件显示机制
 
+配置支持 `showIf` 条件显示，可根据其他字段的值动态控制字段的显示/隐藏：
+
+```json
+{
+  "showIf": {
+    "key": "dataAccess",      // 依赖的字段名
+    "value": "mock"          // 依赖字段的值
+  }
+}
+```
+
+---
+
+## 10. 扩展指南
 
 1. **添加面板字段**：在 `blocks.config.json` 的 `featureProps` 或 `dataSource` 添加条目即可；面板 UI 自动更新。
+   - 支持字段类型：`switch / select / number / size / image / code / text / linkGroup`
+   - 支持条件显示：`showIf` 机制
 2. **支持新图表类型**：
    * 在 `echarts-core.ts` 引入并 `echarts.use()`；
    * 在示例 JS `code` 中按 ECharts 规则书写即可。
 3. **自定义数据解析**：若标准 `seriesData` 替换无法满足，可修改 `extractSeriesFromCode` 实现更复杂解析逻辑。
+4. **添加辅助链接**：通过 `linkGroup` 类型可添加外部链接，如图表案例和模拟平台链接。
 
 ---
 
