@@ -124,12 +124,14 @@ export function extractDataMatches(code: string): RegExpMatchArray[] {
   let instanceSeriesData: any[] = []
   let instanceLegendData: any[] | undefined = undefined
   let instanceXAxisData: any[] | undefined = undefined
+  let originalOption: any = null
 
   if (currentId) {
     const chartInst = getEChartsInstance(currentId)
     if (chartInst && typeof chartInst.getOption === 'function') {
       try {
         const option = chartInst.getOption()
+        originalOption = option
         // series
         let series = (option?.series ?? []) as any
         if (!Array.isArray(series)) {
@@ -156,11 +158,6 @@ export function extractDataMatches(code: string): RegExpMatchArray[] {
     }
   }
 
-  console.log('[series-extractor] 实例数据提取结果', {
-    series: instanceSeriesData,
-    legend: instanceLegendData,
-    xAxis: instanceXAxisData,
-  })
 
   // 将实例数据转换为伪 RegExpMatchArray，保持旧接口兼容，顺序：legend → xAxis → series
   const fakeMatches: RegExpMatchArray[] = []
@@ -168,6 +165,18 @@ export function extractDataMatches(code: string): RegExpMatchArray[] {
   if (instanceLegendData && Array.isArray(instanceLegendData)) {
     const legendStr = JSON.stringify(instanceLegendData)
     fakeMatches.push([`legend.data: ${legendStr}`, legendStr] as unknown as RegExpMatchArray)
+
+    // 同步更新series[].name（只更新这里的fake数据，实际会在ECharts组件中回写）
+    if (originalOption && originalOption.series && Array.isArray(originalOption.series)) {
+
+
+      // 更新series的name属性，确保与legend.data同步
+      originalOption.series.forEach((series: any, index: number) => {
+        if (instanceLegendData && instanceLegendData[index]) {
+          series.name = instanceLegendData[index]
+        }
+      })
+    }
   }
   if (instanceXAxisData && Array.isArray(instanceXAxisData)) {
     const xAxisStr = JSON.stringify(instanceXAxisData)

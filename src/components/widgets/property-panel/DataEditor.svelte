@@ -50,7 +50,7 @@
     let currentValues = $derived(dataSnapshot ? { ...(dataSnapshot.attributes || {}), ...(dataSnapshot.styles || {}) } : {})
 
     // 导入序列提取服务
-    import { extractSeriesFromCode, getSeriesCount } from '../../../services/property-panel/series-extractor.service'
+    import { extractSeriesFromCode } from '../../../services/property-panel/series-extractor.service'
 
     const derivedState = $derived(() => {
         const code = currentValues.code as string | undefined
@@ -74,9 +74,12 @@
     let dataArrays = $derived(derivedState().finalData)
     let codeMatches = $derived(derivedState().matches)
 
+    // 派生：序列数量，避免多次调用 getSeriesCount
+    let seriesCount = $derived(() => derivedState().matches.length)
+
     let mockSeriesMapping = $derived(() => {
         const mapping = currentValues.mockSeriesMapping as string[] | undefined
-        const count = getSeriesCount(currentValues.code as string)
+        const count = seriesCount()
         if (mapping && Array.isArray(mapping) && mapping.length === count) {
             return mapping
         }
@@ -85,7 +88,7 @@
 
     let requestSeriesMapping = $derived(() => {
         const mapping = currentValues.requestSeriesMapping as string[] | undefined
-        const count = getSeriesCount(currentValues.code as string)
+        const count = seriesCount()
         if (mapping && Array.isArray(mapping) && mapping.length === count) {
             return mapping
         }
@@ -216,8 +219,8 @@
 
     <!-- 动态数据(mock)模式：编辑 mockSeriesMapping -->
     {#if dataSource === 'mock'}
-        {#if getSeriesCount(currentValues.code as string) > 0}
-            {#each Array(getSeriesCount(currentValues.code as string)) as _, idx}
+        {#if seriesCount() > 0}
+            {#each Array(seriesCount()) as _, idx}
                 <PropertyRow label={`${getChineseOrdinal(idx)}映射`}>
                     {#if dataMappingKeys.length > 0}
                         <PropertySelect value={mockSeriesMapping()[idx] || ''} options={dataMappingKeys.map((k) => ({ label: k, value: k }))} change={(v) => updateMockSeriesMapping(idx, v)} placeholder="选择数据字段" />
@@ -231,8 +234,8 @@
 
     <!-- 动态数据(real)模式：编辑 requestSeriesMapping -->
     {#if dataSource === 'real'}
-        {#if getSeriesCount(currentValues.code as string) > 0}
-            {#each Array(getSeriesCount(currentValues.code as string)) as _, idx}
+        {#if seriesCount() > 0}
+            {#each Array(seriesCount()) as _, idx}
                 <PropertyRow label={`${getChineseOrdinal(idx)}映射`}>
                     {#if dataMappingKeys.length > 0}
                         <PropertySelect value={requestSeriesMapping()[idx] || ''} options={dataMappingKeys.map((k) => ({ label: k, value: k }))} change={(v) => updateRequestSeriesMapping(idx, v)} placeholder="选择数据字段" />

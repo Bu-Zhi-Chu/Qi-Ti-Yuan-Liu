@@ -51,7 +51,7 @@
     // 不再使用默认模板和数据生成函数，JavaScript代码是唯一渲染方式
 
     /**
-     * 图表组件封装（基于 svelte-echarts）
+     * 图表组件封装（基于 svelte-echarts）  
      *
      * Props:
      * - id: 节点唯一标识
@@ -445,30 +445,13 @@
             let finalCode = code
             let legendData: string[] | null | undefined = null
 
-            // 如果是虚拟数据模式，且有独立数据源，则进行代码覆盖
+            // 如果是虚拟数据模式，且有独立数据源，则进行数据覆盖（不再使用正则直接替换代码）
             if (dataSource === 'json' && finalCode && seriesData && seriesData.length > 0) {
-                // 使用序列提取服务来替换数据
+                // 直接执行代码，稍后根据 seriesData 覆盖结果
                 const extraction = extractSeriesFromCode(finalCode, seriesData)
                 legendData = extraction.legendData
-
-                if (extraction.dataArrays.length > 0) {
-                    let seriesIndex = 0
-                    // 使用正则表达式替换 code 中的 data: [...] 部分
-                    finalCode = finalCode.replace(/data\s*:\s*(\[[^\]]*\])/g, (match, offset) => {
-                        const beforeMatch = finalCode!.substring(Math.max(0, offset - 20), offset)
-
-                        if (beforeMatch.includes('legend') || beforeMatch.includes('tooltip')) {
-                            return match // 跳过非系列数据
-                        }
-
-                        if (seriesIndex < extraction.dataArrays.length) {
-                            const newSeries = `data: ${extraction.dataArrays[seriesIndex]}`
-                            seriesIndex++
-                            return newSeries
-                        }
-                        return match // 如果 seriesData 长度不够，则保留原始数据
-                    })
-                }
+            } else {
+                // 其他模式直接执行原始 code
             }
 
             // 如果数据源是真实请求或模拟接口
@@ -555,6 +538,51 @@
             if (finalCode && typeof finalCode === 'string' && finalCode.trim()) {
                 const codeResult = executeJavaScriptCode(finalCode)
                 if (codeResult && typeof codeResult === 'object') {
+                    // ---------- 新增：根据 props.seriesData 覆盖结果 ----------
+                    if (dataSource === 'json' && Array.isArray(seriesData) && seriesData.length > 0) {
+                        const parseArr = (str: string) => {
+                            try {
+                                return JSON.parse(str)
+                            } catch {
+                                try {
+                                    return new Function('return ' + str)()
+                                } catch {
+                                    return null
+                                }
+                            }
+                        }
+                        // 约定：0 => legend, 1 => xAxis, 其余 => series.data
+                        if (seriesData[0]) {
+                            const ld = parseArr(seriesData[0])
+                            if (ld && Array.isArray(ld)) {
+                                if (!codeResult.legend) codeResult.legend = {}
+                                codeResult.legend.data = ld
+                            }
+                        }
+                        if (seriesData[1]) {
+                            const xd = parseArr(seriesData[1])
+                            if (xd && Array.isArray(xd)) {
+                                if (!codeResult.xAxis) codeResult.xAxis = { type: 'category' }
+                                if (Array.isArray(codeResult.xAxis)) {
+                                    codeResult.xAxis[0].data = xd
+                                } else {
+                                    codeResult.xAxis.data = xd
+                                }
+                            }
+                        }
+                        // series
+                        if (codeResult.series && Array.isArray(codeResult.series)) {
+                            codeResult.series.forEach((s: any, idx: number) => {
+                                const targetStr = seriesData[idx + 2]
+                                if (targetStr) {
+                                    const parsed = parseArr(targetStr)
+                                    if (parsed && Array.isArray(parsed)) {
+                                        s.data = parsed
+                                    }
+                                }
+                            })
+                        }
+                    }
                     // 如果是json模式，并且提取到了legendData，则用它来覆盖series.name
                     if (dataSource === 'json' && legendData && codeResult.series && Array.isArray(codeResult.series)) {
                         codeResult.series.forEach((s: any, i: number) => {
