@@ -1,7 +1,7 @@
 /** 应用配置 */
 
 /** 授权验证开关 */
-export const ENABLE_AUTH_VERIFICATION = true
+export const ENABLE_AUTH_VERIFICATION = false
 /** 授权验证目标URL */
 export const TARGET_URL = 'https://buzhichu.netlify.app/societies/99%20asset/json/qi-qiao-ban.json'
 /** 授权验证间隔时间（毫秒） */
