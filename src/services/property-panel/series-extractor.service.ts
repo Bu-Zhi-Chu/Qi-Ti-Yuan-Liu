@@ -41,9 +41,15 @@ export function extractSeriesFromCode(
   // 提取数据数组
   const parsed = matches.map((m) => m[1])
 
-  // 决定最终数据：如果 existingSeriesData 有值，则优先使用
+  // 保底：若没抽到任何数据但解析到图例，用图例长度生成空壳，避免输入框消失
+  const fallbackData =
+    parsed.length === 0 && legendData && legendData.length > 0
+      ? Array(legendData.length).fill('[]')   // 空数组字符串，保持格式一致
+      : parsed
+
+  // 决定最终数据：如果 existingSeriesData 有值，则优先使用；否则用保底数据
   const finalData =
-    existingSeriesData && existingSeriesData.length > 0 ? existingSeriesData : parsed
+    existingSeriesData && existingSeriesData.length > 0 ? existingSeriesData : fallbackData
 
   // 检查是否需要回写
   const needsWriteBack = JSON.stringify(existingSeriesData) !== JSON.stringify(finalData)

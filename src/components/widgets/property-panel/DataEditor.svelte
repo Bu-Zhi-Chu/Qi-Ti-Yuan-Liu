@@ -65,17 +65,20 @@
         const seriesData = currentValues.seriesData as string[] | undefined
 
         if (!code) {
+            // 没有 code 时，保持已有 seriesData，避免刷新后被清空
+            const needsWriteBack = false
             return {
                 finalData: seriesData || [],
                 matches: [] as RegExpMatchArray[],
-                needsWriteBack: false
+                needsWriteBack
             }
         }
 
         // 缓存：避免同一 code 字符串重复解析
         if (code === lastCode && lastExtraction) {
             console.log('[DataEditor] derivedState 使用缓存，跳过解析')
-            const needsWriteBack = false
+            // 仍需计算是否需要回写，避免缓存导致数据无法纠正
+            const needsWriteBack = JSON.stringify(seriesData) !== JSON.stringify(lastExtraction.dataArrays)
             return { finalData: lastExtraction.dataArrays, matches: lastExtraction.matches, needsWriteBack }
         }
 
@@ -235,7 +238,7 @@
 
     <!-- 虚拟数据(json)模式：编辑 seriesData -->
     {#if dataSource === 'json'}
-        {#if currentValues.code && dataArrays.length > 0}
+        {#if dataArrays.length > 0}
             {#each dataArrays as arr, idx}
                 <PropertyRow label={`${getChineseOrdinal(idx)}序列`}>
                     <CodeEditor code={dataArrays[idx]} language="javascript" theme="one-dark" height="calc(80px * var(--scale-ratio, 1))" run={(code: string) => updateDataArray(idx, code)} toolbar={false} autoRun={true} wrap={true} showLineNumbers={false} style="flex:1; width:0;" />
