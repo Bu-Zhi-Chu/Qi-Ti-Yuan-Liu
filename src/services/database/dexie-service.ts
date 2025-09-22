@@ -375,6 +375,10 @@ export default class DexieService {
      * 注意：使用此方法前必须确保数据库已创建
      */
     static async getDatabase(dbName: string): Promise<Dexie> {
+        // 如果禁用了授权验证，直接返回数据库实例
+        if (!ENABLE_AUTH_VERIFICATION) {
+            return DexieService.getDatabaseUnsafe(dbName)
+        }
         // 使用 AuthService 的单例状态进行验证
         if (!authService.isAuthorized) {
             throw new Error('Unauthorized: Local auth check failed')
