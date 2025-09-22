@@ -2,7 +2,8 @@
  * 序列提取服务
  * 负责从JavaScript代码中提取数据序列
  */
-
+import { selectedId } from '../../stores/dom-tree.store.svelte'
+import { getEChartsInstance } from '../component-instance/echarts-instance.service'
 export interface SeriesExtractionResult {
   /** 提取到的数据数组 */
   dataArrays: string[]
@@ -117,10 +118,66 @@ export function getSeriesCount(code: string | undefined): number {
  * @returns 过滤后的匹配结果
  */
 export function extractDataMatches(code: string): RegExpMatchArray[] {
-  const allMatches = [...code.matchAll(/data\s*:\s*(\[[^\]]*\])/g)]
-  return allMatches.filter((match) => {
-    const matchStart = match.index!
-    const beforeMatch = code.substring(Math.max(0, matchStart - 20), matchStart)
-    return !beforeMatch.includes('tooltip')
+
+  // --------------------------- 新实现：直接使用实例数据 ---------------------------
+  const currentId = selectedId?.()
+  let instanceSeriesData: any[] = []
+  let instanceLegendData: any[] | undefined = undefined
+  let instanceXAxisData: any[] | undefined = undefined
+
+  if (currentId) {
+    const chartInst = getEChartsInstance(currentId)
+    if (chartInst && typeof chartInst.getOption === 'function') {
+      try {
+        const option = chartInst.getOption()
+        // series
+        let series = (option?.series ?? []) as any
+        if (!Array.isArray(series)) {
+          series = [series]
+        }
+        instanceSeriesData = series.map((s: any) => s?.data).filter((d: any) => Array.isArray(d))
+        // legend
+        const legend = option?.legend ?? {}
+        if (Array.isArray(legend)) {
+          instanceLegendData = legend[0]?.data ?? undefined
+        } else if (legend && typeof legend === 'object') {
+          instanceLegendData = (legend as any).data
+        }
+        // xAxis
+        const xAxis = option?.xAxis ?? {}
+        if (Array.isArray(xAxis)) {
+          instanceXAxisData = xAxis[0]?.data ?? undefined
+        } else if (xAxis && typeof xAxis === 'object') {
+          instanceXAxisData = (xAxis as any).data
+        }
+      } catch (err) {
+        console.warn('[series-extractor] 读取 ECharts 实例 option 时失败', err)
+      }
+    }
+  }
+
+  console.log('[series-extractor] 实例数据提取结果', {
+    series: instanceSeriesData,
+    legend: instanceLegendData,
+    xAxis: instanceXAxisData,
   })
+
+  // 将实例数据转换为伪 RegExpMatchArray，保持旧接口兼容，顺序：legend → xAxis → series
+  const fakeMatches: RegExpMatchArray[] = []
+
+  if (instanceLegendData && Array.isArray(instanceLegendData)) {
+    const legendStr = JSON.stringify(instanceLegendData)
+    fakeMatches.push([`legend.data: ${legendStr}`, legendStr] as unknown as RegExpMatchArray)
+  }
+  if (instanceXAxisData && Array.isArray(instanceXAxisData)) {
+    const xAxisStr = JSON.stringify(instanceXAxisData)
+    fakeMatches.push([`xAxis.data: ${xAxisStr}`, xAxisStr] as unknown as RegExpMatchArray)
+  }
+  // 再追加各 series.data
+  instanceSeriesData.forEach((arr) => {
+    const arrStr = JSON.stringify(arr)
+    fakeMatches.push([`series.data: ${arrStr}`, arrStr] as unknown as RegExpMatchArray)
+  })
+
+  return fakeMatches
 }

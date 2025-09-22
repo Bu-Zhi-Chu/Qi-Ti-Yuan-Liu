@@ -4,6 +4,20 @@
     import { cachedFetch } from '../../services/cache/cached-fetch'
     import * as echarts from 'echarts/core'
     import { graphic } from 'echarts'
+    import { setEChartsInstance, removeEChartsInstance } from '../../services/component-instance/echarts-instance.service'
+
+    let chartInstance = $state<any>(null)
+
+    $effect(() => {
+        if (chartInstance) {
+            setEChartsInstance(id, chartInstance)
+        } else {
+            removeEChartsInstance(id)
+        }
+        return () => {
+            removeEChartsInstance(id)
+        }
+    })
 
     // 定义API响应的接口
     interface ApiResponse<T = any> {
@@ -614,6 +628,7 @@
         {#if chartReady}
             <ECharts
                 class="chart"
+                bind:chart={chartInstance}
                 options={option}
                 theme={theme as any}
                 init={((dom: HTMLElement, theme?: string, opts?: any) => {
