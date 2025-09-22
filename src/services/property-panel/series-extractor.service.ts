@@ -108,6 +108,7 @@ export function hasValidSeries(code: string | undefined): boolean {
  * @returns 序列数量
  */
 export function getSeriesCount(code: string | undefined): number {
+  console.log(1)
   if (!code) return 0
   return extractDataMatches(code).length
 }
@@ -118,6 +119,8 @@ export function getSeriesCount(code: string | undefined): number {
  * @returns 过滤后的匹配结果
  */
 export function extractDataMatches(code: string): RegExpMatchArray[] {
+  console.log(2)
+
 
   // --------------------------- 新实现：直接使用实例数据 ---------------------------
   const currentId = selectedId?.()

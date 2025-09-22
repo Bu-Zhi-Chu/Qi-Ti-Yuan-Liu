@@ -51,7 +51,7 @@
     // 不再使用默认模板和数据生成函数，JavaScript代码是唯一渲染方式
 
     /**
-     * 图表组件封装（基于 svelte-echarts）  
+     * 图表组件封装（基于 svelte-echarts）
      *
      * Props:
      * - id: 节点唯一标识
