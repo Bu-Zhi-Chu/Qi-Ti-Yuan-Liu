@@ -7,7 +7,7 @@
 | 字段 | 说明 |
 | ---- | ---- |
 | `featureProps` | 控制 **特性面板 (FeatureEditor)** 的表单项。当前包含 `designWidth/Height`、`renderer`、`code`、图表案例链接等。 |
-| `dataSource`  | 控制 **数据面板 (DataEditor)** 的表单项。提供三种数据接入方式：`json / mock / real`，通过 `dataAccess` 字段配置。|
+| `dataSource`  | 控制 **数据面板 (DataEditor)** 的表单项。提供三种数据接入方式：`json / mock / real`，通过 `dataSource.dataAccess` 字段配置。|
 
 依赖元数据的优势：
 
@@ -34,11 +34,11 @@
 
 ### 3.1 数据源切换
 
-* `dataAccess` = `json`：直接编辑 `seriesData`（由代码中 `data: [...]` 自动解析提取）。
-* `dataAccess` = `mock`：填写接口路径 & 映射 `mockSeriesMapping` 字段。
-* `dataAccess` = `real`：填写真实请求路径 & 映射 `requestSeriesMapping` 字段。
+* `dataSource.dataAccess` = `json`：直接编辑 `seriesData`（由代码中 `data: [...]` 自动解析提取）。
+* `dataSource.dataAccess` = `mock`：填写接口路径 & 映射 `mockSeriesMapping` 字段。
+* `dataSource.dataAccess` = `real`：填写真实请求路径 & 映射 `requestSeriesMapping` 字段。
 
-> **注意**：配置中使用 `dataAccess` 字段，但在组件内部统一映射为 `dataSource` 进行处理。
+> **注意**：配置中使用 `dataSource.dataAccess` 字段定义，但在组件代码中通过 `dataSource` 属性读取，并提供了兼容性处理：`restProps.dataSource || restProps.dataAccess`。
 
 ### 3.2 序列提取逻辑
 
@@ -94,8 +94,8 @@ option = {
 
 1. **序列数量计算**：DataEditor 使用 `getSeriesCount(code)` 计算当前图表的序列个数（基于正则扫描用户 JS 中的 `data: [...]` 结构，返回匹配个数）。
 2. **渲染输入控件**：
-   * 当 `dataAccess === 'json'` 时，为每条序列渲染一个 `<CodeEditor>`，标题显示为「第一序列 / 第二序列 …」。
-   * 当 `dataAccess === 'mock'` 或 `real` 时，为每条序列渲染一个 `<PropertySelect>` 或输入框，标题显示为「第一映射 / 第二映射 …」。
+   * 当 `dataSource === 'json'` 时，为每条序列渲染一个 `<CodeEditor>`，标题显示为「第一序列 / 第二序列 …」。
+   * 当 `dataSource === 'mock'` 或 `real` 时，为每条序列渲染一个 `<PropertySelect>` 或输入框，标题显示为「第一映射 / 第二映射 …」。
      * `PropertySelect` 的下拉选项来源于全局 `dataMappingKeysStore`，该 store 在运行时由 `ECharts.svelte` 根据实际请求到的数据字段动态填充，确保可视化选择。
 3. **序列/映射数据来源**：
    * `seriesData`：来自 `extractSeriesFromCode` 对用户 JS 的解析结果，初次加载即写入节点属性；
@@ -182,7 +182,7 @@ graph LR
 ```json
 {
   "showIf": {
-    "key": "dataAccess",      // 依赖的字段名
+    "key": "dataSource",      // 依赖的字段名（实际存储的是dataSource值）
     "value": "mock"          // 依赖字段的值
   }
 }
