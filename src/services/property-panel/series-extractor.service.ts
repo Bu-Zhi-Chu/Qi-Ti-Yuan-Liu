@@ -119,9 +119,6 @@ export function getSeriesCount(code: string | undefined): number {
  * @returns 过滤后的匹配结果
  */
 export function extractDataMatches(code: string): RegExpMatchArray[] {
-  console.log(2)
-
-
   // --------------------------- 新实现：直接使用实例数据 ---------------------------
   const currentId = selectedId?.()
   let instanceSeriesData: any[] = []

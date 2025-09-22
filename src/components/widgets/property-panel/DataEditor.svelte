@@ -46,8 +46,16 @@
         }
     })
 
-    // 2. 使用 $derived 进行响应式状态派生
-    let currentValues = $derived(dataSnapshot ? { ...(dataSnapshot.attributes || {}), ...(dataSnapshot.styles || {}) } : {})
+    // 2. currentValues 改为 $state，在 dataSnapshot 变化时一次性写入，减少派生链深度
+    let currentValues = $state<Record<string, any>>({})
+    $effect(() => {
+        currentValues = dataSnapshot ? { ...(dataSnapshot.attributes || {}), ...(dataSnapshot.styles || {}) } : {}
+    })
+
+    // -------------------- 解析缓存 --------------------
+    // 上一次解析的 code 与结果，用于 memo
+    let lastCode: string | undefined
+    let lastExtraction: { dataArrays: string[]; matches: RegExpMatchArray[] } | null = null
 
     // 导入序列提取服务
     import { extractSeriesFromCode } from '../../../services/property-panel/series-extractor.service'
@@ -64,22 +72,35 @@
             }
         }
 
+        // 缓存：避免同一 code 字符串重复解析
+        if (code === lastCode && lastExtraction) {
+            console.log('[DataEditor] derivedState 使用缓存，跳过解析')
+            const needsWriteBack = false
+            return { finalData: lastExtraction.dataArrays, matches: lastExtraction.matches, needsWriteBack }
+        }
+
         // JSON 模式下，使用序列提取服务
         const extraction = extractSeriesFromCode(code, seriesData)
-        const needsWriteBack = JSON.stringify(seriesData) !== JSON.stringify(extraction.dataArrays)
+        lastCode = code
+        lastExtraction = extraction
+        console.log('[DataEditor] derivedState 解析 code，得到', extraction)
 
+        const needsWriteBack = JSON.stringify(seriesData) !== JSON.stringify(extraction.dataArrays)
         return { finalData: extraction.dataArrays, matches: extraction.matches, needsWriteBack }
     })
 
     let dataArrays = $derived(derivedState().finalData)
     let codeMatches = $derived(derivedState().matches)
 
-    // 派生：序列数量，避免多次调用 getSeriesCount
-    let seriesCount = $derived(() => derivedState().matches.length)
+    // 序列数量：仅在 derivedState 变化时更新一次，避免模板多次调用导致重复解析
+    let seriesCount = $state(0)
+    $effect(() => {
+        seriesCount = derivedState().matches.length
+    })
 
     let mockSeriesMapping = $derived(() => {
         const mapping = currentValues.mockSeriesMapping as string[] | undefined
-        const count = seriesCount()
+        const count = seriesCount
         if (mapping && Array.isArray(mapping) && mapping.length === count) {
             return mapping
         }
@@ -88,7 +109,7 @@
 
     let requestSeriesMapping = $derived(() => {
         const mapping = currentValues.requestSeriesMapping as string[] | undefined
-        const count = seriesCount()
+        const count = seriesCount
         if (mapping && Array.isArray(mapping) && mapping.length === count) {
             return mapping
         }
@@ -96,7 +117,12 @@
     })
 
     // 3. 使用 $effect 单独处理副作用（回写）
+    let firstRender = true
     $effect(() => {
+        if (firstRender) {
+            firstRender = false
+            return
+        }
         if (selectedId && derivedState().needsWriteBack) {
             handleAttrChange('seriesData', dataArrays)
         }
@@ -148,6 +174,7 @@
 
     function handleAttrChange(key: string, value: any) {
         if (!selectedId) return
+        if (currentValues[key] === value) return // 无变化则跳过
         // DataEditor 只改 attributes；styles 由别的面板处理
         const attributesToUpdate: { [k: string]: any } = { [key]: value }
         updateNodeProps(selectedId, { attributes: attributesToUpdate })
@@ -219,8 +246,8 @@
 
     <!-- 动态数据(mock)模式：编辑 mockSeriesMapping -->
     {#if dataSource === 'mock'}
-        {#if seriesCount() > 0}
-            {#each Array(seriesCount()) as _, idx}
+        {#if seriesCount > 0}
+            {#each Array(seriesCount) as _, idx}
                 <PropertyRow label={`${getChineseOrdinal(idx)}映射`}>
                     {#if dataMappingKeys.length > 0}
                         <PropertySelect value={mockSeriesMapping()[idx] || ''} options={dataMappingKeys.map((k) => ({ label: k, value: k }))} change={(v) => updateMockSeriesMapping(idx, v)} placeholder="选择数据字段" />
@@ -234,8 +261,8 @@
 
     <!-- 动态数据(real)模式：编辑 requestSeriesMapping -->
     {#if dataSource === 'real'}
-        {#if seriesCount() > 0}
-            {#each Array(seriesCount()) as _, idx}
+        {#if seriesCount > 0}
+            {#each Array(seriesCount) as _, idx}
                 <PropertyRow label={`${getChineseOrdinal(idx)}映射`}>
                     {#if dataMappingKeys.length > 0}
                         <PropertySelect value={requestSeriesMapping()[idx] || ''} options={dataMappingKeys.map((k) => ({ label: k, value: k }))} change={(v) => updateRequestSeriesMapping(idx, v)} placeholder="选择数据字段" />
