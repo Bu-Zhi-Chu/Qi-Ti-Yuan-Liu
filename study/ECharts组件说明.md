@@ -38,56 +38,87 @@
 * `dataSource.dataAccess` = `mock`：填写接口路径 & 映射 `mockSeriesMapping` 字段。
 * `dataSource.dataAccess` = `real`：填写真实请求路径 & 映射 `requestSeriesMapping` 字段。
 
-> **注意**：配置中使用 `dataSource.dataAccess` 字段定义，但在组件代码中通过 `dataSource` 属性读取，并提供了兼容性处理：`restProps.dataSource || restProps.dataAccess`。
+> **注意**：配置中使用 `dataSource.dataAccess` 字段定义，但在组件代码中通过 `dataSource` 属性读取，并提供了兼容性处理：`currentValues.dataSource ?? dataSourceConfig?.default ?? 'json'`。在 DataEditor 中，优先使用节点属性中的 `dataSource` 值，如果没有则使用组件配置的默认值，最后回退到 `'json'`。
 
 ### 3.2 序列提取逻辑
 
 通过 `series-extractor.service`：
 
-1. **正则扫描** `code` 中的 `data: [...]`（排除 tooltip 相关数据）；
+1. **实例数据提取**（新实现）：优先从 ECharts 实例中获取实际数据，包括 series.data、legend.data、xAxis.data；
 2. **数据提取** 使用 `extractDataMatches(code)` 函数，该函数：
-   - 使用正则表达式 `/data\s*:\s*(\[[^\]]*\])/g` 匹配所有 `data: [...]` 结构
-   - **过滤机制**：检查每个匹配项前20个字符，排除包含 `tooltip` 的数据（避免提取 tooltip 中的示例数据）
-   - **返回结果**：`RegExpMatchArray[]` 数组，每个匹配项包含完整的数据数组字符串
+   - **实例数据优先**：如果存在 ECharts 实例，直接读取 `chartInst.getOption()` 获取真实数据
+   - **多类型数据支持**：提取 series.data、legend.data、xAxis.data 等不同类型的数据
+   - **返回结果**：`RegExpMatchArray[]` 数组，保持与旧接口兼容
 3. **legend 数据提取**：额外调用 `extractLegendData(code)` 提取 `legend.data` 配置用于图例显示
 4. **数据解析**：将提取到的数据字符串通过 `JSON.parse` 或 `Function` 构造器解析为可用的数组格式
 5. **结果整合**：返回包含 `dataArrays`（数据数组）、`matches`（匹配结果）、`legendData`（图例数据）的完整提取结果
 6. **支持多序列、一键同步写回**；
 
-**extractDataMatches 函数详解**：
+**extractDataMatches 函数详解**（新实现）：
 ```typescript
 export function extractDataMatches(code: string): RegExpMatchArray[] {
-  const allMatches = [...code.matchAll(/data\s*:\s*(\[[^\]]*\])/g)]
-  return allMatches.filter((match) => {
-    const matchStart = match.index!
-    const beforeMatch = code.substring(Math.max(0, matchStart - 20), matchStart)
-    return !beforeMatch.includes('tooltip')
+  // 优先使用 ECharts 实例中的真实数据
+  const currentId = selectedId?.()
+  let instanceSeriesData: any[] = []
+  let instanceLegendData: any[] | undefined = undefined
+  let instanceXAxisData: any[] | undefined = undefined
+
+  if (currentId) {
+    const chartInst = getEChartsInstance(currentId)
+    if (chartInst && typeof chartInst.getOption === 'function') {
+      try {
+        const option = chartInst.getOption()
+        // 提取 series、legend、xAxis 数据
+        const series = (option?.series ?? []) as any[]
+        instanceSeriesData = series.map((s: any) => s?.data).filter((d: any) => Array.isArray(d))
+        
+        const legend = option?.legend ?? {}
+        if (Array.isArray(legend)) {
+          instanceLegendData = legend[0]?.data ?? undefined
+        } else if (legend && typeof legend === 'object') {
+          instanceLegendData = (legend as any).data
+        }
+        
+        const xAxis = option?.xAxis ?? {}
+        if (Array.isArray(xAxis)) {
+          instanceXAxisData = xAxis[0]?.data ?? undefined
+        } else if (xAxis && typeof xAxis === 'object') {
+          instanceXAxisData = (xAxis as any).data
+        }
+      } catch (err) {
+        console.warn('[series-extractor] 读取 ECharts 实例 option 时失败', err)
+      }
+    }
+  }
+
+  // 将实例数据转换为伪 RegExpMatchArray，保持旧接口兼容
+  const fakeMatches: RegExpMatchArray[] = []
+
+  if (instanceLegendData && Array.isArray(instanceLegendData)) {
+    const legendStr = JSON.stringify(instanceLegendData)
+    fakeMatches.push([`legend.data: ${legendStr}`, legendStr] as unknown as RegExpMatchArray)
+  }
+  if (instanceXAxisData && Array.isArray(instanceXAxisData)) {
+    const xAxisStr = JSON.stringify(instanceXAxisData)
+    fakeMatches.push([`xAxis.data: ${xAxisStr}`, xAxisStr] as unknown as RegExpMatchArray)
+  }
+  // 再追加各 series.data
+  instanceSeriesData.forEach((arr) => {
+    const arrStr = JSON.stringify(arr)
+    fakeMatches.push([`series.data: ${arrStr}`, arrStr] as unknown as RegExpMatchArray)
   })
+
+  return fakeMatches
 }
 ```
-- **输入**：ECharts 配置代码字符串
-- **输出**：过滤后的数据数组匹配结果
-- **核心逻辑**：匹配 → 过滤 tooltip → 返回有效数据
+- **输入**：ECharts 配置代码字符串（备用）
+- **输出**：从实例获取的真实数据，格式化为 RegExpMatchArray
+- **核心逻辑**：实例数据优先 → 转换为兼容格式 → 返回有效数据
 
 **使用场景**：
 - 在 `DataEditor.svelte` 中用于计算序列数量：`getSeriesCount(code)` → 调用 `extractDataMatches(code).length`
 - 在 `extractSeriesFromCode` 中用于提取数据：`const matches = extractDataMatches(code)`
-- 过滤 tooltip 数据的原因：避免将 tooltip 中的示例数据误识别为图表数据序列
-
-**示例**：
-```javascript
-// 输入代码
-option = {
-  series: [{
-    data: [120, 200, 150, 80, 70, 110, 130],  // ✓ 会被提取
-    type: 'bar'
-  }],
-  tooltip: {
-    data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日']  // ✗ 会被过滤
-  }
-};
-
-// 提取结果：只返回 series 中的 data 数组，忽略 tooltip 中的 data
+- **优势**：使用真实运行时的数据，比正则提取更准确可靠
 
 ### 3.3 `第 X 序列 / 第 X 映射` 动态属性编辑流程
 
@@ -96,7 +127,7 @@ option = {
 2. **渲染输入控件**：
    * 当 `dataSource === 'json'` 时，为每条序列渲染一个 `<CodeEditor>`，标题显示为「第一序列 / 第二序列 …」。
    * 当 `dataSource === 'mock'` 或 `real` 时，为每条序列渲染一个 `<PropertySelect>` 或输入框，标题显示为「第一映射 / 第二映射 …」。
-     * `PropertySelect` 的下拉选项来源于全局 `dataMappingKeysStore`，该 store 在运行时由 `ECharts.svelte` 根据实际请求到的数据字段动态填充，确保可视化选择。
+     * `PropertySelect` 的下拉选项来源于全局 `dataMappingKeysStore`，该 store 在运行时由 `ECharts.svelte` 根据实际请求到的数据字段动态填充，确保可视化选择。store 实现采用简单的键值对结构，以节点 ID 为键，字段数组为值，提供 `setKeys`、`clearKeys`、`clearAll` 等方法进行状态管理。
 3. **序列/映射数据来源**：
    * `seriesData`：来自 `extractSeriesFromCode` 对用户 JS 的解析结果，初次加载即写入节点属性；
    * `mockSeriesMapping` / `requestSeriesMapping`：初始为空，由用户在面板选择或输入后产生；
