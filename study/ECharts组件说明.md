@@ -71,14 +71,14 @@ export function extractDataMatches(code: string): RegExpMatchArray[] {
         // 提取 series、legend、xAxis 数据
         const series = (option?.series ?? []) as any[]
         instanceSeriesData = series.map((s: any) => s?.data).filter((d: any) => Array.isArray(d))
-        
+
         const legend = option?.legend ?? {}
         if (Array.isArray(legend)) {
           instanceLegendData = legend[0]?.data ?? undefined
         } else if (legend && typeof legend === 'object') {
           instanceLegendData = (legend as any).data
         }
-        
+
         const xAxis = option?.xAxis ?? {}
         if (Array.isArray(xAxis)) {
           instanceXAxisData = xAxis[0]?.data ?? undefined

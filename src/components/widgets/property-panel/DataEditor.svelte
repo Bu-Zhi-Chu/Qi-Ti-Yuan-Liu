@@ -120,14 +120,15 @@
     })
 
     // 3. 使用 $effect 单独处理副作用（回写）
+    //    - 如果初始化时 seriesData 缺失（needsWriteBack 为 true），首渲染立即写回
+    //    - 否则首渲染不做任何操作，避免多余写入
     let firstRender = true
     $effect(() => {
-        if (firstRender) {
-            firstRender = false
-            return
-        }
         if (selectedId && derivedState().needsWriteBack) {
             handleAttrChange('seriesData', dataArrays)
+        }
+        if (firstRender) {
+            firstRender = false
         }
     })
 
