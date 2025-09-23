@@ -540,6 +540,12 @@
                 if (codeResult && typeof codeResult === 'object') {
                     // ---------- 新增：根据 props.seriesData 覆盖结果 ----------
                     if (dataSource === 'json' && Array.isArray(seriesData) && seriesData.length > 0) {
+                        // 约定映射：
+                        //    1) 若已存在 legend（legendData 非空或 codeResult 自带 legend），则
+                        //       0 => legend.data，1 => xAxis.data，2+ => series[i-2].data
+                        //    2) 否则（无 legend），则
+                        //       0 => xAxis.data，1+ => series[i-1].data
+                        const hasLegend = (legendData && legendData.length > 0) || !!codeResult.legend
                         const parseArr = (str: string) => {
                             try {
                                 return JSON.parse(str)
@@ -551,16 +557,21 @@
                                 }
                             }
                         }
-                        // 约定：0 => legend, 1 => xAxis, 其余 => series.data
-                        if (seriesData[0]) {
-                            const ld = parseArr(seriesData[0])
-                            if (ld && Array.isArray(ld)) {
-                                if (!codeResult.legend) codeResult.legend = {}
-                                codeResult.legend.data = ld
+                        let dataStartIdx = 0
+                        // legend 映射
+                        if (hasLegend) {
+                            if (seriesData[0]) {
+                                const ld = parseArr(seriesData[0])
+                                if (ld && Array.isArray(ld)) {
+                                    if (!codeResult.legend) codeResult.legend = {}
+                                    codeResult.legend.data = ld
+                                }
                             }
+                            dataStartIdx = 1 // xAxis 开始于索引 1
                         }
-                        if (seriesData[1]) {
-                            const xd = parseArr(seriesData[1])
+                        // xAxis 映射
+                        if (seriesData[dataStartIdx]) {
+                            const xd = parseArr(seriesData[dataStartIdx])
                             if (xd && Array.isArray(xd)) {
                                 if (!codeResult.xAxis) codeResult.xAxis = { type: 'category' }
                                 if (Array.isArray(codeResult.xAxis)) {
@@ -573,7 +584,7 @@
                         // series
                         if (codeResult.series && Array.isArray(codeResult.series)) {
                             codeResult.series.forEach((s: any, idx: number) => {
-                                const targetStr = seriesData[idx + 2]
+                                const targetStr = seriesData[idx + dataStartIdx + 1]
                                 if (targetStr) {
                                     const parsed = parseArr(targetStr)
                                     if (parsed && Array.isArray(parsed)) {
@@ -591,6 +602,8 @@
                             }
                         })
                     }
+                    // === 调试输出：查看最终 option 中的数据 ===
+                    console.log('[ECharts] option(after seriesData override):', codeResult)
                     // 处理标题和图例的默认位置
                     return processOptionDefaults(codeResult)
                 }

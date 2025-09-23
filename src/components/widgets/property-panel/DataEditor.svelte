@@ -179,6 +179,9 @@
     function handleAttrChange(key: string, value: any) {
         if (!selectedId) return
         if (currentValues[key] === value) return // 无变化则跳过
+
+        // === 调试输出：记录属性写入 ===
+        console.log(`[DataEditor] updateNodeProps → id: ${selectedId}, key: ${key}, value:`, value)
         // DataEditor 只改 attributes；styles 由别的面板处理
         const attributesToUpdate: { [k: string]: any } = { [key]: value }
         updateNodeProps(selectedId, { attributes: attributesToUpdate })
