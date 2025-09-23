@@ -379,7 +379,7 @@ async function initializeApp() {
         )
 
         console.group('%c📜 版权声明', 'color:#16a34a;font-weight:bold;font-size:14px;')
-        console.log('%c1. 七巧板(QiQiaoBan)版权完全属于 %c"步知处社团"%c 独自所有。',
+        console.log('%c1. 七巧板版权完全属于 %c"步知处社团"%c 全体开发成员所有。',
             'color:#6b7280;font-size:12px;',
             'color:#f59e0b;font-size:12px;font-weight:bold;',
             'color:#6b7280;font-size:12px;')

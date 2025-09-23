@@ -436,7 +436,7 @@
     // 防抖控制：避免短时间内多次触发option计算
     let optionUpdateTimestamp = 0
     let lastOptionValue: any = null
-    
+
     // 最终 ECharts option，支持JavaScript代码和真实数据
     const option = $derived(
         (() => {
@@ -598,11 +598,21 @@
                             })
                         }
                     }
-                    // 如果是json模式，并且提取到了legendData，则用它来覆盖series.name
-                    if (dataSource === 'json' && legendData && codeResult.series && Array.isArray(codeResult.series)) {
+                    // 调试输出：查看更新后的legend数据
+                    if (dataSource === 'json' && codeResult.legend && codeResult.legend.data) {
+                        console.log(`[ECharts] 使用更新后的legend数据同步系列名称:`, codeResult.legend.data)
+                    }
+                    // 如果是json模式，并且已经有更新后的legend数据，则用它来覆盖series.name
+                    // 使用更新后的codeResult.legend.data，而不是从代码提取的legendData
+                    if (dataSource === 'json' && codeResult.legend && codeResult.legend.data && Array.isArray(codeResult.legend.data) && codeResult.series && Array.isArray(codeResult.series)) {
                         codeResult.series.forEach((s: any, i: number) => {
-                            if (legendData && legendData[i]) {
-                                s.name = legendData[i]
+                            if (codeResult.legend.data[i]) {
+                                const oldName = s.name
+                                s.name = codeResult.legend.data[i]
+                                // 调试输出：记录系列名称的变更
+                                if (oldName !== s.name) {
+                                    console.log(`[ECharts] 系列 ${i} 名称更新: "${oldName}" -> "${s.name}"`)
+                                }
                             }
                         })
                     }

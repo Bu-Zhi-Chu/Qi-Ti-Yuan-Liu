@@ -69,13 +69,15 @@
             const needsWriteBack = false
             // 当没有code时，使用seriesData的长度来创建空的matches数组，确保seriesCount正确
             const seriesLength = seriesData?.length || 0
-            const emptyMatches: RegExpMatchArray[] = Array(seriesLength).fill(null).map(() => {
-                // 创建一个空的RegExpMatchArray，只包含必要的属性
-                const emptyMatch: any = ['', '']
-                emptyMatch.index = 0
-                emptyMatch.input = ''
-                return emptyMatch as RegExpMatchArray
-            })
+            const emptyMatches: RegExpMatchArray[] = Array(seriesLength)
+                .fill(null)
+                .map(() => {
+                    // 创建一个空的RegExpMatchArray，只包含必要的属性
+                    const emptyMatch: any = ['', '']
+                    emptyMatch.index = 0
+                    emptyMatch.input = ''
+                    return emptyMatch as RegExpMatchArray
+                })
             return {
                 finalData: seriesData || [],
                 matches: emptyMatches,
@@ -88,19 +90,21 @@
             console.log('[DataEditor] derivedState 使用缓存，跳过解析')
             // 仍需计算是否需要回写，避免缓存导致数据无法纠正
             const needsWriteBack = JSON.stringify(seriesData) !== JSON.stringify(lastExtraction.dataArrays)
-            
+
             // 如果缓存中的matches为空，但seriesData有数据，创建空的matches数组
             if (lastExtraction.matches.length === 0 && (seriesData?.length || 0) > 0) {
                 const seriesLength = seriesData?.length || 0
-                const emptyMatches: RegExpMatchArray[] = Array(seriesLength).fill(null).map(() => {
-                    const emptyMatch: any = ['', '']
-                    emptyMatch.index = 0
-                    emptyMatch.input = ''
-                    return emptyMatch as RegExpMatchArray
-                })
+                const emptyMatches: RegExpMatchArray[] = Array(seriesLength)
+                    .fill(null)
+                    .map(() => {
+                        const emptyMatch: any = ['', '']
+                        emptyMatch.index = 0
+                        emptyMatch.input = ''
+                        return emptyMatch as RegExpMatchArray
+                    })
                 return { finalData: lastExtraction.dataArrays, matches: emptyMatches, needsWriteBack }
             }
-            
+
             return { finalData: lastExtraction.dataArrays, matches: lastExtraction.matches, needsWriteBack }
         }
 
@@ -111,19 +115,21 @@
         console.log('[DataEditor] derivedState 解析 code，得到', extraction)
 
         const needsWriteBack = JSON.stringify(seriesData) !== JSON.stringify(extraction.dataArrays)
-        
+
         // 如果解析得到的matches为空，但seriesData有数据，创建空的matches数组
         if (extraction.matches.length === 0 && (seriesData?.length || 0) > 0) {
             const seriesLength = seriesData?.length || 0
-            const emptyMatches: RegExpMatchArray[] = Array(seriesLength).fill(null).map(() => {
-                const emptyMatch: any = ['', '']
-                emptyMatch.index = 0
-                emptyMatch.input = ''
-                return emptyMatch as RegExpMatchArray
-            })
+            const emptyMatches: RegExpMatchArray[] = Array(seriesLength)
+                .fill(null)
+                .map(() => {
+                    const emptyMatch: any = ['', '']
+                    emptyMatch.index = 0
+                    emptyMatch.input = ''
+                    return emptyMatch as RegExpMatchArray
+                })
             return { finalData: extraction.dataArrays, matches: emptyMatches, needsWriteBack }
         }
-        
+
         return { finalData: extraction.dataArrays, matches: extraction.matches, needsWriteBack }
     })
 
@@ -202,12 +208,15 @@
         const newDataArrays = [...dataArrays]
         newDataArrays[index] = newValue
 
-        // 直接更新 seriesData 属性，同时更新缓存避免循环
-        lastCode = currentValues.code as string | undefined
-        lastExtraction = {
-            dataArrays: newDataArrays,
-            matches: lastExtraction?.matches || []
+        // 关键修复：清除缓存，强制重新解析代码以同步系列名称
+        lastCode = undefined // 清除代码缓存，确保重新解析
+        lastExtraction = null // 清除提取缓存
+
+        // 特别处理：如果修改的是图例数据（index === 0），需要确保系列名称同步
+        if (index === 0 && dataSource === 'json') {
+            console.log(`[DataEditor] 图例数据已更新，将触发系列名称同步: ${newValue}`)
         }
+
         handleAttrChange('seriesData', newDataArrays)
     }
 
@@ -237,10 +246,10 @@
 
         // === 调试输出：记录属性写入 ===
         console.log(`[DataEditor] updateNodeProps → id: ${selectedId}, key: ${key}, value:`, value)
-        
+
         // 立即更新本地状态，避免响应式循环
         currentValues = { ...currentValues, [key]: value }
-        
+
         // DataEditor 只改 attributes；styles 由别的面板处理
         const attributesToUpdate: { [k: string]: any } = { [key]: value }
         updateNodeProps(selectedId, { attributes: attributesToUpdate })
