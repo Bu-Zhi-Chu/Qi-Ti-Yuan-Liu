@@ -116,14 +116,14 @@ export function extractDataMatches(code: string): RegExpMatchArray[] {
 - **核心逻辑**：实例数据优先 → 转换为兼容格式 → 返回有效数据
 
 **使用场景**：
-- 在 `DataEditor.svelte` 中用于计算序列数量：`getSeriesCount(code)` → 调用 `extractDataMatches(code).length`
+- 在 `DataEditor.svelte` 中用于计算序列数量：调用 `extractSeriesFromCode(code)` 后使用 `matches.length` 获取序列个数
 - 在 `extractSeriesFromCode` 中用于提取数据：`const matches = extractDataMatches(code)`
 - **优势**：使用真实运行时的数据，比正则提取更准确可靠
 
 ### 3.3 `第 X 序列 / 第 X 映射` 动态属性编辑流程
 
 
-1. **序列数量计算**：DataEditor 使用 `getSeriesCount(code)` 计算当前图表的序列个数（基于正则扫描用户 JS 中的 `data: [...]` 结构，返回匹配个数）。
+1. **序列数量计算**：DataEditor 调用 `extractSeriesFromCode(code)`，并以其 `matches.length` 作为序列个数（优先使用实例数据，回退到代码解析）。
 2. **渲染输入控件**：
    * 当 `dataSource === 'json'` 时，为每条序列渲染一个 `<CodeEditor>`，标题显示为「第一序列 / 第二序列 …」。
    * 当 `dataSource === 'mock'` 或 `real` 时，为每条序列渲染一个 `<PropertySelect>` 或输入框，标题显示为「第一映射 / 第二映射 …」。
