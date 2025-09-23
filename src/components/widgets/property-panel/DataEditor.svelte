@@ -123,9 +123,15 @@
     //    - 如果初始化时 seriesData 缺失（needsWriteBack 为 true），首渲染立即写回
     //    - 否则首渲染不做任何操作，避免多余写入
     let firstRender = true
+    let isUpdating = false // 防止循环更新的标志
     $effect(() => {
-        if (selectedId && derivedState().needsWriteBack) {
+        if (selectedId && derivedState().needsWriteBack && !isUpdating) {
+            isUpdating = true
             handleAttrChange('seriesData', dataArrays)
+            // 使用微任务确保在DOM更新后重置标志
+            Promise.resolve().then(() => {
+                isUpdating = false
+            })
         }
         if (firstRender) {
             firstRender = false
@@ -152,7 +158,12 @@
         const newDataArrays = [...dataArrays]
         newDataArrays[index] = newValue
 
-        // 直接更新 seriesData 属性
+        // 直接更新 seriesData 属性，同时更新缓存避免循环
+        lastCode = currentValues.code as string | undefined
+        lastExtraction = {
+            dataArrays: newDataArrays,
+            matches: lastExtraction?.matches || []
+        }
         handleAttrChange('seriesData', newDataArrays)
     }
 
@@ -182,6 +193,10 @@
 
         // === 调试输出：记录属性写入 ===
         console.log(`[DataEditor] updateNodeProps → id: ${selectedId}, key: ${key}, value:`, value)
+        
+        // 立即更新本地状态，避免响应式循环
+        currentValues = { ...currentValues, [key]: value }
+        
         // DataEditor 只改 attributes；styles 由别的面板处理
         const attributesToUpdate: { [k: string]: any } = { [key]: value }
         updateNodeProps(selectedId, { attributes: attributesToUpdate })
