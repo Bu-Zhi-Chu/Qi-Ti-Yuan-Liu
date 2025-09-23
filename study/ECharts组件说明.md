@@ -40,23 +40,19 @@
 
 > **注意**：配置中使用 `dataSource.dataAccess` 字段定义，但在组件代码中通过 `dataSource` 属性读取，并提供了兼容性处理：`currentValues.dataSource ?? dataSourceConfig?.default ?? 'json'`。在 DataEditor 中，优先使用节点属性中的 `dataSource` 值，如果没有则使用组件配置的默认值，最后回退到 `'json'`。
 
-### 3.2 序列提取逻辑（series-extractor.service）
+### 3.2 序列提取逻辑
 
-`extractSeriesFromCode(code, seriesData)` 负责将用户在代码编辑器中填写的 JS 字符串解析成可供表格渲染的“数组”格式，并返回三组信息：
+通过 `series-extractor.service`：
 
-1. `dataArrays`：解析后得到的二维数据（对应表格中每一行）
-2. `matches`：正则匹配结果数组（`RegExpMatchArray[]`），用于反向写回代码
-3. `legendData`：从代码中提取的 `legend.data` 数组
-
-该函数内部会：
-
-- 优先使用 **ECharts 实例中的 option**（如果实例存在且包含有效数据），构造“伪”`RegExpMatchArray`，保证实时预览时数据不丢失；
-- 若实例不存在，则退而使用正则从 `code` 字符串中提取 `legend.data`、`xAxis.data` 及各 `series[i].data`；
-- 提取 `legendData` 时，使用 `extractLegendData(code)` 正则解析 `legend.data = [...]` 语句；
-- 在 `extractDataMatches` 函数中，当使用 ECharts 实例数据时，会**使用实例中的 legendData 更新原始 option 中的 series.name**，确保系列名称与图例数据同步；
-- 最终返回统一结构，供 `DataEditor` 渲染表格及后续写回。
-
-**重要更新**：当 ECharts 实例存在时，`extractDataMatches` 会使用实例中的 `legend.data` 来同步更新 `originalOption.series` 中的系列名称，解决系列名称与图例数据不同步的问题。
+1. **实例数据提取**（新实现）：优先从 ECharts 实例中获取实际数据，包括 series.data、legend.data、xAxis.data；
+2. **数据提取** 使用 `extractDataMatches(code)` 函数，该函数：
+   - **实例数据优先**：如果存在 ECharts 实例，直接读取 `chartInst.getOption()` 获取真实数据
+   - **多类型数据支持**：提取 series.data、legend.data、xAxis.data 等不同类型的数据
+   - **返回结果**：`RegExpMatchArray[]` 数组，保持与旧接口兼容
+3. **legend 数据提取**：额外调用 `extractLegendData(code)` 提取 `legend.data` 配置用于图例显示
+4. **数据解析**：将提取到的数据字符串通过 `JSON.parse` 或 `Function` 构造器解析为可用的数组格式
+5. **结果整合**：返回包含 `dataArrays`（数据数组）、`matches`（匹配结果）、`legendData`（图例数据）的完整提取结果
+6. **支持多序列、一键同步写回**；
 
 **DataEditor 中的序列计数修复**：
 - **问题**：当切换数据源或刷新页面时，`seriesCount` 可能为 0，导致无法显示动态映射字段
@@ -133,7 +129,7 @@ export function extractDataMatches(code: string): RegExpMatchArray[] {
 - 在 `extractSeriesFromCode` 中用于提取数据：`const matches = extractDataMatches(code)`
 - **优势**：使用真实运行时的数据，比正则提取更准确可靠
 
-### 3.3 数据配置清理与缓存机制
+### 3.3 数据配置清理机制
 
 当用户在 **FeatureEditor** 中清空 `code` 字段时，系统会自动清除所有相关的数据配置，包括：
 - `seriesData`：序列数据
@@ -143,11 +139,6 @@ export function extractDataMatches(code: string): RegExpMatchArray[] {
 - `requestSeriesMapping`：真实数据字段映射
 
 这种清理机制确保了当图表配置被重置时，不会残留无效的数据映射配置，保持数据一致性。该逻辑在 `FeatureEditor.svelte` 的 `handleAttrChange` 函数中实现，仅在用户手动修改 `code` 时触发（切换页签等操作不会触发清理）。
-
-**新增缓存清除机制**：
-- 当用户修改图例数据（`index === 0`）时，DataEditor 会自动清除解析缓存（`lastCode = undefined` 和 `lastExtraction = null`）
-- 这确保下次解析时使用最新的代码内容，避免缓存导致系列名称同步问题
-- 特别适用于图例数据更新后需要立即同步系列名称的场景
 
 ### 3.4 `第 X 序列 / 第 X 映射` 动态属性编辑流程
 
@@ -172,93 +163,16 @@ export function extractDataMatches(code: string): RegExpMatchArray[] {
 
 **修复效果**：通过以上机制，解决了切换数据源或刷新页面时动态映射字段不显示的问题，确保在各种场景下都能正确显示「第 X 映射」输入框。
 
-### 3.8 调试与错误处理
+### 3.5 防抖优化机制
 
-**日志输出增强**：
-- **DataEditor**：增加详细的调试日志，记录图例数据更新、系列名称同步等关键操作
-- **ECharts.svelte**：增加系列名称同步过程的调试输出，便于追踪问题
-- **缓存清除日志**：记录缓存清除操作，确保调试时可追踪缓存机制的工作状态
+为了解决切换组件或数据源时 `[ECharts] option(after seriesData override)` 日志重复打印的问题，在 `ECharts.svelte` 中实现了防抖机制：
 
-**错误处理**：
-- 当数据解析失败时，提供回退机制，确保图表能正常初始化
-- 当映射配置不完整时，提供默认值和友好的错误提示
-- 当网络请求失败时，显示加载错误状态，避免界面卡死
-
-**关键调试信息**：
-```
-[DataEditor] derivedState 使用缓存，跳过解析
-[DataEditor] derivedState 解析 code，得到 {dataArrays: [...], matches: [...]}
-[DataEditor] seriesCount 更新为: 3, dataSource: json, code存在: true
-[DataEditor] 图例数据已更新，将触发系列名称同步: ["Line 1","Line 2","Line 3"]
-[DataEditor] updateNodeProps → id: chart1, key: seriesData, value: [...]
-[ECharts] 使用更新后的legend数据同步系列名称: ["Line 1","Line 2","Line 3"]  
-[ECharts] 系列 0 名称更新: "Lin1e 1" -> "Line 1"
-[ECharts] option(after seriesData override): {title: {...}, legend: {...}, series: [...]}
-```
-
-**常见问题排查**：
-1. **系列名称不同步**：检查控制台是否有上述调试日志，确认图例数据更新是否触发了系列名称同步
-2. **缓存问题**：如果修改后数据未更新，查看是否有缓存清除相关的日志（如 `derivedState 解析 code` 表示缓存被清除并重新解析）
-3. **解析失败**：检查代码格式是否正确，确认 `extractSeriesFromCode` 返回的数据结构
-4. **防抖机制**：注意 `seriesCount` 的更新是有防抖的，只有当数量真正变化时才会更新和打印日志
-5. **数据映射问题**：确保 `seriesData` 数组的顺序与代码中的数据顺序一致，特别是图例数据（索引 0）对应 `legend.data`
-
-### 3.5 系列名称同步优化
-
-**问题背景**：当用户更新图例数据（legend.data）时，系列名称（series.name）未能同步更新，导致图表显示异常。具体表现为：即使用户修正了图例数据中的拼写错误（如将 "Lin1e 1" 改为 "Line 1"），系列名称仍然保持旧值。
-
-**根本原因**：`ECharts.svelte` 原本使用从代码字符串提取的 `legendData`（旧数据）来同步系列名称，而不是使用更新后的 `codeResult.legend.data`。
+**问题原因**：
+- 当切换组件或数据源时，多个属性（`dataSource`、`seriesData`、`code`、映射配置等）会依次更新
+- Svelte 的 `$derived(option)` 会在每个依赖项变化时重新计算
+- 由于属性更新不是原子性的，中间状态会触发多次计算
 
 **解决方案**：
-1. **使用更新后的 legend 数据**：在 `ECharts.svelte` 中，改用 `codeResult.legend.data`（更新后的数据）而不是 `legendData`（从代码提取的旧数据）来同步系列名称
-2. **添加调试日志**：增加详细的调试输出，记录系列名称的变更过程
-3. **DataEditor 缓存清除**：当图例数据更新时，自动清除解析缓存，确保下次使用最新数据
-
-**代码实现**：
-```ts
-// ECharts.svelte - 使用更新后的legend数据同步系列名称
-if (dataSource === 'json' && codeResult.legend && codeResult.legend.data && Array.isArray(codeResult.legend.data) && codeResult.series && Array.isArray(codeResult.series)) {
-    codeResult.series.forEach((s: any, i: number) => {
-        if (codeResult.legend.data[i]) {
-            const oldName = s.name
-            s.name = codeResult.legend.data[i]
-            // 调试输出：记录系列名称的变更
-            if (oldName !== s.name) {
-                console.log(`[ECharts] 系列 ${i} 名称更新: "${oldName}" -> "${s.name}"`)
-            }
-        }
-    })
-}
-```
-
-```ts
-// DataEditor.svelte - 图例数据更新时清除缓存
-if (index === 0 && dataSource === 'json') {
-    // 关键修复：清除缓存，强制重新解析代码以同步系列名称
-    lastCode = undefined // 清除代码缓存，确保重新解析
-    lastExtraction = null // 清除提取缓存
-    console.log(`[DataEditor] 图例数据已更新，将触发系列名称同步: ${newValue}`)
-}
-```
-
-**修复效果**：现在当用户更新图例数据时，系列名称会实时同步更新，解决了 "系列不存在" 的警告问题。
-
-**缓存清理机制**：
-`DataEditor.svelte` 中的缓存清理机制确保了：
-1. 当图例数据被修改时，强制重新解析代码
-2. 避免使用过期的缓存数据
-3. 确保系列名称同步的及时性和准确性
-
-这种双重保障机制（ECharts组件内的同步 + DataEditor组件内的缓存清理）确保了系列名称与图例数据的完美同步。
-
-### 3.6 防抖优化机制
-
-**问题背景**：
-切换组件或数据源时，多个属性（`dataSource`、`seriesData`、`code`、映射配置等）会依次更新，导致 `[ECharts] option(after seriesData override)` 日志重复打印。
-
-**解决方案**：
-在 `ECharts.svelte` 中实现防抖机制，通过比较前后值，只在真正有变化时才打印日志：
-
 ```typescript
 // 通过比较前后值，只在真正有变化时才打印日志
 const codeResultStr = JSON.stringify(codeResult)
@@ -269,34 +183,9 @@ if (codeResultStr !== lastOptionStr) {
 }
 ```
 
-**效果**：
-- 避免了短时间内重复打印相同的 option 数据
-- 让调试日志更加清晰，同时不影响功能
-- **系列名称同步的防抖处理**：由于系列名称同步是在 `option` 计算过程中完成的，因此也受益于上述防抖机制。只有当数据真正发生变化时，才会触发系列名称的同步操作和相应的调试日志输出
+**效果**：避免了短时间内重复打印相同的 option 数据，让调试日志更加清晰，同时不影响功能。
 
-**DataEditor 中的防抖优化**：
-在 `DataEditor.svelte` 中也实现了防抖机制，避免 `seriesCount` 的频繁更新：
-
-```typescript
-let seriesCount = $state(0)
-let lastSeriesCount = $state(0) // 用于防抖，记录上一次的seriesCount值
-$effect(() => {
-    const newSeriesCount = derivedStateResult.matches.length
-    // 防抖机制：只有当seriesCount真正发生变化时才更新和打印日志
-    if (newSeriesCount !== lastSeriesCount) {
-        seriesCount = newSeriesCount
-        lastSeriesCount = newSeriesCount
-        console.log(`[DataEditor] seriesCount 更新为: ${seriesCount}, dataSource: ${dataSource}, code存在: ${!!currentValues.code}`)
-    }
-})
-```
-
-这种双重防抖机制确保了：
-1. 减少不必要的计算和日志输出
-2. 提高性能，特别是在频繁切换组件时
-3. 保持调试信息的准确性和可读性
-
-### 3.7 调试和错误处理
+### 3.6 调试和错误处理
 
 **调试日志**：在 `DataEditor.svelte` 中添加了详细的调试日志，帮助开发者追踪数据流：
 ```typescript

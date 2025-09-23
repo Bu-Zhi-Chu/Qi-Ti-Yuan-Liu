@@ -13,9 +13,24 @@ import { ENABLE_AUTH_VERIFICATION } from './config/config'
 import { DEFAULT_DB_NAME } from './config/config'
 
 // 根据环境初始化日志：开发环境默认开启，其余环境默认关闭
+// 保存原始console.log用于版权信息显示
+const originalLog = console.log;
 applyLogConfig(import.meta.env.DEV === true)
 
-// 控制台日志始终开启，便于调试和监控
+// 重写console.log，保留版权信息输出
+console.log = function (...args) {
+    // 如果是版权信息，总是显示
+    if (args[0] && typeof args[0] === 'string' &&
+        (args[0].includes('七巧板') || args[0].includes('版权声明') ||
+            args[0].includes('欢迎使用') || args[0].includes('最终解释权') ||
+            args[0].includes('不进行任何形式的破解') || args[0].includes('保留此版权信息'))) {
+        originalLog.apply(console, args);
+    } else if (import.meta.env.DEV === true) {
+        // 开发环境下显示所有日志
+        originalLog.apply(console, args);
+    }
+    // 生产环境下非版权信息不显示
+}
 
 // 增强的Alt+Tab检测系统
 let isHidden = false
@@ -372,23 +387,6 @@ async function initializeApp() {
 // 主初始化流程 - 数据库优先创建，再进行授权验证
 ; (async () => {
     try {
-        // 欢迎横幅
-        console.log(
-            '%c 🧩  欢迎使用七巧板 · 低代码开发工具 ',
-            'background:linear-gradient(90deg,#f97316,#fb923c);color:#fff;font-weight:bold;font-size:16px;padding:4px 10px;border-radius:6px'
-        )
-
-        console.group('%c📜 版权声明', 'color:#16a34a;font-weight:bold;font-size:14px;')
-        console.log('%c1. 七巧板版权完全属于 %c"步知处社团"%c 全体开发成员所有。',
-            'color:#6b7280;font-size:12px;',
-            'color:#f59e0b;font-size:12px;font-weight:bold;',
-            'color:#6b7280;font-size:12px;')
-        console.log('%c2. 七巧板软件包，任何个人或组织获取授权后在遵守下列条件的前提下可以使用：',
-            'color:#6b7280;font-size:12px;')
-        console.log('%c   • 不进行任何形式的破解和裁剪，程序包完整引用；', 'color:#6b7280;font-size:12px;')
-        console.log('%c   • 保留此版权信息在控制台输出。', 'color:#6b7280;font-size:12px;')
-        console.log('%c3. 我们保留对此版权信息的最终解释权。', 'color:#6b7280;font-size:12px;')
-        console.groupEnd()
 
 
 
@@ -428,7 +426,7 @@ async function initializeApp() {
             })
         } else {
             // ⚙️ 验证被关闭：直接放行
-            console.log('⚙️【应用启动】授权验证已关闭，直接放行')
+            console.log('⚙️【应用启动】授权验证已关闭')
         }
 
         await initializeApp()
