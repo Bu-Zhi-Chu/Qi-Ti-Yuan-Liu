@@ -67,9 +67,18 @@
         if (!code) {
             // 没有 code 时，保持已有 seriesData，避免刷新后被清空
             const needsWriteBack = false
+            // 当没有code时，使用seriesData的长度来创建空的matches数组，确保seriesCount正确
+            const seriesLength = seriesData?.length || 0
+            const emptyMatches: RegExpMatchArray[] = Array(seriesLength).fill(null).map(() => {
+                // 创建一个空的RegExpMatchArray，只包含必要的属性
+                const emptyMatch: any = ['', '']
+                emptyMatch.index = 0
+                emptyMatch.input = ''
+                return emptyMatch as RegExpMatchArray
+            })
             return {
                 finalData: seriesData || [],
-                matches: [] as RegExpMatchArray[],
+                matches: emptyMatches,
                 needsWriteBack
             }
         }
@@ -79,6 +88,19 @@
             console.log('[DataEditor] derivedState 使用缓存，跳过解析')
             // 仍需计算是否需要回写，避免缓存导致数据无法纠正
             const needsWriteBack = JSON.stringify(seriesData) !== JSON.stringify(lastExtraction.dataArrays)
+            
+            // 如果缓存中的matches为空，但seriesData有数据，创建空的matches数组
+            if (lastExtraction.matches.length === 0 && (seriesData?.length || 0) > 0) {
+                const seriesLength = seriesData?.length || 0
+                const emptyMatches: RegExpMatchArray[] = Array(seriesLength).fill(null).map(() => {
+                    const emptyMatch: any = ['', '']
+                    emptyMatch.index = 0
+                    emptyMatch.input = ''
+                    return emptyMatch as RegExpMatchArray
+                })
+                return { finalData: lastExtraction.dataArrays, matches: emptyMatches, needsWriteBack }
+            }
+            
             return { finalData: lastExtraction.dataArrays, matches: lastExtraction.matches, needsWriteBack }
         }
 
@@ -89,6 +111,19 @@
         console.log('[DataEditor] derivedState 解析 code，得到', extraction)
 
         const needsWriteBack = JSON.stringify(seriesData) !== JSON.stringify(extraction.dataArrays)
+        
+        // 如果解析得到的matches为空，但seriesData有数据，创建空的matches数组
+        if (extraction.matches.length === 0 && (seriesData?.length || 0) > 0) {
+            const seriesLength = seriesData?.length || 0
+            const emptyMatches: RegExpMatchArray[] = Array(seriesLength).fill(null).map(() => {
+                const emptyMatch: any = ['', '']
+                emptyMatch.index = 0
+                emptyMatch.input = ''
+                return emptyMatch as RegExpMatchArray
+            })
+            return { finalData: extraction.dataArrays, matches: emptyMatches, needsWriteBack }
+        }
+        
         return { finalData: extraction.dataArrays, matches: extraction.matches, needsWriteBack }
     })
 
@@ -99,6 +134,7 @@
     let seriesCount = $state(0)
     $effect(() => {
         seriesCount = derivedState().matches.length
+        console.log(`[DataEditor] seriesCount 更新为: ${seriesCount}, dataSource: ${dataSource}, code存在: ${!!currentValues.code}`)
     })
 
     let mockSeriesMapping = $derived(() => {
