@@ -340,5 +340,32 @@
                 }
             }
         }
+    },
+    {
+        "type": "DatePicker",
+        "nameZh": "日期选择器",
+        "path": "../blocks/DatePicker.svelte",
+        "preview": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><rect x='2' y='4' width='28' height='24' fill='none' stroke='%2338bdf8' stroke-width='2' rx='2'/><text x='16' y='20' text-anchor='middle' fill='%2338bdf8' font-size='10' font-weight='bold'>2025-06-15</text></svg>",
+        "showFeatureTab": true,
+        "positionAtOrigin": false,
+        "presetStyles": {
+            "width": "20%",
+            "height": "8%",
+            "display": "flex",
+            "justifyContent": "center",
+            "alignItems": "center"
+        },
+        "featureProps": {
+            "placeholder": {
+                "label": "占位符",
+                "type": "text",
+                "default": "请选择日期"
+            },
+            "disabled": {
+                "label": "禁用",
+                "type": "switch",
+                "default": false
+            }
+        }
     }
 ]
