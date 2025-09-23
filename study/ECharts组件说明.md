@@ -54,6 +54,15 @@
 5. **结果整合**：返回包含 `dataArrays`（数据数组）、`matches`（匹配结果）、`legendData`（图例数据）的完整提取结果
 6. **支持多序列、一键同步写回**；
 
+**DataEditor 中的序列计数修复**：
+- **问题**：当切换数据源或刷新页面时，`seriesCount` 可能为 0，导致无法显示动态映射字段
+- **原因**：`extractSeriesFromCode` 返回的 `matches` 数组为空，但 `seriesData` 实际有数据
+- **解决方案**：在 `DataEditor.svelte` 的 `derivedState` 函数中添加多重保护机制：
+  1. **无 code 情况**：当 `!code` 时，使用 `seriesData.length` 创建空的 `matches` 数组
+  2. **缓存修复**：当使用缓存且 `matches.length === 0` 但 `seriesData` 有数据时，创建空的 `matches` 数组
+  3. **解析修复**：当 `extractSeriesFromCode` 返回空 `matches` 但 `seriesData` 有数据时，创建空的 `matches` 数组
+- **实现**：创建兼容的 `RegExpMatchArray` 对象，确保 `seriesCount = matches.length` 正确反映实际序列数量
+
 **extractDataMatches 函数详解**（新实现）：
 ```typescript
 export function extractDataMatches(code: string): RegExpMatchArray[] {
@@ -122,8 +131,9 @@ export function extractDataMatches(code: string): RegExpMatchArray[] {
 
 ### 3.3 `第 X 序列 / 第 X 映射` 动态属性编辑流程
 
-
 1. **序列数量计算**：DataEditor 调用 `extractSeriesFromCode(code)`，并以其 `matches.length` 作为序列个数（优先使用实例数据，回退到代码解析）。
+   - **修复机制**：当 `matches` 为空但 `seriesData` 有数据时，系统会创建空的 `matches` 数组确保 `seriesCount` 正确
+   - **多重保护**：在无 code、缓存命中、解析结果为空等情况下都会确保 `seriesCount` 反映真实序列数量
 2. **渲染输入控件**：
    * 当 `dataSource === 'json'` 时，为每条序列渲染一个 `<CodeEditor>`，标题显示为「第一序列 / 第二序列 …」。
    * 当 `dataSource === 'mock'` 或 `real` 时，为每条序列渲染一个 `<PropertySelect>` 或输入框，标题显示为「第一映射 / 第二映射 …」。
@@ -139,6 +149,23 @@ export function extractDataMatches(code: string): RegExpMatchArray[] {
    这些函数均通过 `handleAttrChange(key, value)` 调用 `updateNodeProps()` 将新值写入节点 `attributes`。
 5. **状态同步**：`updateNodeProps` 更新 **DOM Tree Store**，触发 `getNodePropsStore` 的订阅，DataEditor 与 `ECharts.svelte` 均会收到最新属性。
 6. **图表刷新**：`ECharts.svelte` 在 `$derived(option)` 阶段根据最新 `seriesData` / 映射数组重新注入数据后执行 `chart.setOption()`，从而实现图表的实时更新。
+
+**修复效果**：通过以上机制，解决了切换数据源或刷新页面时动态映射字段不显示的问题，确保在各种场景下都能正确显示「第 X 映射」输入框。
+
+### 3.4 调试和错误处理
+
+**调试日志**：在 `DataEditor.svelte` 中添加了详细的调试日志，帮助开发者追踪数据流：
+```typescript
+console.log('[DataEditor] derivedState 使用缓存，跳过解析')
+console.log('[DataEditor] derivedState 解析 code，得到', extraction)
+console.log(`[DataEditor] seriesCount 更新为: ${seriesCount}, dataSource: ${dataSource}, code存在: ${!!currentValues.code}`)
+console.log(`[DataEditor] updateNodeProps → id: ${selectedId}, key: ${key}, value:`, value)
+```
+
+**错误处理**：
+- **循环更新保护**：使用 `isUpdating` 标志防止 `seriesData` 回写时的循环更新
+- **缓存机制**：通过 `lastCode` 和 `lastExtraction` 避免重复解析相同的代码
+- **空值保护**：在所有可能为空的地方提供默认值，确保 UI 稳定性
 
 ---
 
