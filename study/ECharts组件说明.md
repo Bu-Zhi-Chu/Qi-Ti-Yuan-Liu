@@ -163,7 +163,29 @@ export function extractDataMatches(code: string): RegExpMatchArray[] {
 
 **修复效果**：通过以上机制，解决了切换数据源或刷新页面时动态映射字段不显示的问题，确保在各种场景下都能正确显示「第 X 映射」输入框。
 
-### 3.4 调试和错误处理
+### 3.5 防抖优化机制
+
+为了解决切换组件或数据源时 `[ECharts] option(after seriesData override)` 日志重复打印的问题，在 `ECharts.svelte` 中实现了防抖机制：
+
+**问题原因**：
+- 当切换组件或数据源时，多个属性（`dataSource`、`seriesData`、`code`、映射配置等）会依次更新
+- Svelte 的 `$derived(option)` 会在每个依赖项变化时重新计算
+- 由于属性更新不是原子性的，中间状态会触发多次计算
+
+**解决方案**：
+```typescript
+// 通过比较前后值，只在真正有变化时才打印日志
+const codeResultStr = JSON.stringify(codeResult)
+const lastOptionStr = JSON.stringify(lastOptionValue)
+if (codeResultStr !== lastOptionStr) {
+    console.log('[ECharts] option(after seriesData override):', codeResult)
+    lastOptionValue = codeResult
+}
+```
+
+**效果**：避免了短时间内重复打印相同的 option 数据，让调试日志更加清晰，同时不影响功能。
+
+### 3.6 调试和错误处理
 
 **调试日志**：在 `DataEditor.svelte` 中添加了详细的调试日志，帮助开发者追踪数据流：
 ```typescript

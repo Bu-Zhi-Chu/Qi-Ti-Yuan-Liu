@@ -433,6 +433,10 @@
     // 导入序列提取服务
     import { extractSeriesFromCode, getSeriesCount, extractDataMatches } from '../../services/property-panel/series-extractor.service'
 
+    // 防抖控制：避免短时间内多次触发option计算
+    let optionUpdateTimestamp = 0
+    let lastOptionValue: any = null
+    
     // 最终 ECharts option，支持JavaScript代码和真实数据
     const option = $derived(
         (() => {
@@ -603,7 +607,13 @@
                         })
                     }
                     // === 调试输出：查看最终 option 中的数据 ===
-                    console.log('[ECharts] option(after seriesData override):', codeResult)
+                    // 添加防抖：只在数据真正有变化时才打印日志
+                    const codeResultStr = JSON.stringify(codeResult)
+                    const lastOptionStr = JSON.stringify(lastOptionValue)
+                    if (codeResultStr !== lastOptionStr) {
+                        console.log('[ECharts] option(after seriesData override):', codeResult)
+                        lastOptionValue = codeResult
+                    }
                     // 处理标题和图例的默认位置
                     return processOptionDefaults(codeResult)
                 }

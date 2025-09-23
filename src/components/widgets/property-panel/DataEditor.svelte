@@ -127,13 +127,15 @@
         return { finalData: extraction.dataArrays, matches: extraction.matches, needsWriteBack }
     })
 
-    let dataArrays = $derived(derivedState().finalData)
-    let codeMatches = $derived(derivedState().matches)
+    // 只调用一次 derivedState 并缓存结果，避免多次调用
+    let derivedStateResult = $derived(derivedState())
+    let dataArrays = $derived(derivedStateResult.finalData)
+    let codeMatches = $derived(derivedStateResult.matches)
 
     // 序列数量：仅在 derivedState 变化时更新一次，避免模板多次调用导致重复解析
     let seriesCount = $state(0)
     $effect(() => {
-        seriesCount = derivedState().matches.length
+        seriesCount = derivedStateResult.matches.length
         console.log(`[DataEditor] seriesCount 更新为: ${seriesCount}, dataSource: ${dataSource}, code存在: ${!!currentValues.code}`)
     })
 
@@ -161,7 +163,7 @@
     let firstRender = true
     let isUpdating = false // 防止循环更新的标志
     $effect(() => {
-        if (selectedId && derivedState().needsWriteBack && !isUpdating) {
+        if (selectedId && derivedStateResult.needsWriteBack && !isUpdating) {
             isUpdating = true
             handleAttrChange('seriesData', dataArrays)
             // 使用微任务确保在DOM更新后重置标志
