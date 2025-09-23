@@ -129,7 +129,18 @@ export function extractDataMatches(code: string): RegExpMatchArray[] {
 - 在 `extractSeriesFromCode` 中用于提取数据：`const matches = extractDataMatches(code)`
 - **优势**：使用真实运行时的数据，比正则提取更准确可靠
 
-### 3.3 `第 X 序列 / 第 X 映射` 动态属性编辑流程
+### 3.3 数据配置清理机制
+
+当用户在 **FeatureEditor** 中清空 `code` 字段时，系统会自动清除所有相关的数据配置，包括：
+- `seriesData`：序列数据
+- `mockPath`：模拟数据接口路径
+- `mockSeriesMapping`：模拟数据字段映射
+- `requestPath`：真实数据接口路径
+- `requestSeriesMapping`：真实数据字段映射
+
+这种清理机制确保了当图表配置被重置时，不会残留无效的数据映射配置，保持数据一致性。该逻辑在 `FeatureEditor.svelte` 的 `handleAttrChange` 函数中实现，仅在用户手动修改 `code` 时触发（切换页签等操作不会触发清理）。
+
+### 3.4 `第 X 序列 / 第 X 映射` 动态属性编辑流程
 
 1. **序列数量计算**：DataEditor 调用 `extractSeriesFromCode(code)`，并以其 `matches.length` 作为序列个数（优先使用实例数据，回退到代码解析）。
    - **修复机制**：当 `matches` 为空但 `seriesData` 有数据时，系统会创建空的 `matches` 数组确保 `seriesCount` 正确
