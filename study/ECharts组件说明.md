@@ -254,7 +254,7 @@ graph LR
 
 ---
 
-## 9. 图表初始化流程
+## 8. 图表初始化流程
 
 1. **DOM 挂载**：`ECharts.svelte` 在 Svelte `onMount` 阶段将 `div.chart` 挂入文档，并通过 `<ECharts>` 组件的 `init` 回调执行 `echartsInit(dom, theme, opts)`（封装于 `echarts-core.ts`）。
 2. **实例创建**：`echartsInit` 内部调用 `echarts.init(dom, theme, { renderer, useCoarsePointer: true, ...opts })` 获得 `chartInstance` 并返回。
@@ -266,7 +266,7 @@ graph LR
 
 ---
 
-## 10. legend.data 自动补全机制（json 模式）
+## 9. legend.data 自动补全机制（json 模式）
 
 **背景**：用户常在 `code` 里只写 `legend: {}`，导致 ECharts 用 `series.name` 自动生成的图例与 `legend.data` 不一致，出现“xxx series not exists”警告。
 
@@ -283,7 +283,7 @@ graph LR
 
 ---
 
-## 9. 条件显示机制
+## 10. 条件显示机制
 
 配置支持 `showIf` 条件显示，可根据其他字段的值动态控制字段的显示/隐藏：
 
@@ -298,7 +298,7 @@ graph LR
 
 ---
 
-## 10. 扩展指南
+## 11. 扩展指南
 
 1. **添加面板字段**：在 `blocks.config.json` 的 `featureProps` 或 `dataSource` 添加条目即可；面板 UI 自动更新。
    - 支持字段类型：`switch / select / number / size / image / code / text / linkGroup`
