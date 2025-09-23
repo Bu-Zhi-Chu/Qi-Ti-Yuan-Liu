@@ -356,13 +356,8 @@
             "alignItems": "center"
         },
         "featureProps": {
-            "placeholder": {
-                "label": "占位符",
-                "type": "text",
-                "default": "请选择日期"
-            },
             "disabled": {
-                "label": "禁用",
+                "label": "禁用组件",
                 "type": "switch",
                 "default": false
             }

@@ -16,11 +16,10 @@
  *
  * 属性说明：
  * - value: Date 类型，可绑定
- * - placeholder: 占位符文本
  * - disabled: 是否禁用
  * - min: 最小日期 Date
  * - max: 最大日期 Date
- -->
+ */-->
 
 <script lang="ts">
     import { onMount, createEventDispatcher } from 'svelte'
@@ -29,7 +28,6 @@
 
     interface Props {
         value?: Date
-        placeholder?: string
         disabled?: boolean
         min?: Date
         max?: Date
@@ -38,7 +36,7 @@
         [key: string]: any
     }
 
-    const { value = new Date(), placeholder = '请选择日期', disabled = false, min, max, id, style = '', ...rest } = $props()
+    const { value = new Date(), disabled = false, min, max, id, style = '', ...rest } = $props()
 
     const dispatch = createEventDispatcher<{ change: Date }>()
 
