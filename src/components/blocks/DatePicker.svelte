@@ -5,13 +5,17 @@
  * 功能特性：
  * - 原生 <input type="date"> 的替代，完全可控样式
  * - 响应式尺寸，所有 px 均使用 calc(px * var(--scale-ratio, 1))
- * - 支持 SvelteDate 响应式绑定
+ * - 支持 bind:value 双向绑定
  * - 中文显示（年月日）
+ * - 提供 getValue()、setValue() 方法
+ * - 支持年份和月份切换
+ * - 支持 change 事件和 onChange 回调
  *
  * 使用方法：
  * <DatePicker
  *   bind:value={date}
  *   placeholder="请选择日期"
+ *   onChange={(date) => console.log('日期改变:', date)}
  * />
  *
  * 属性说明：
@@ -19,11 +23,18 @@
  * - disabled: 是否禁用
  * - min: 最小日期 Date
  * - max: 最大日期 Date
+ * - onChange: 日期改变回调函数
+ *
+ * 方法说明：
+ * - getValue(): Date - 获取当前日期值
+ * - setValue(date: Date | string): void - 设置日期值
+ *
+ * 事件说明：
+ * - change: 日期改变时触发，参数为新的日期值
  */-->
 
 <script lang="ts">
     import { onMount, createEventDispatcher } from 'svelte'
-    import { SvelteDate } from 'svelte/reactivity'
     import ResponsiveBox from '../core/ResponsiveBox.svelte'
 
     interface Props {
@@ -33,10 +44,11 @@
         max?: Date
         id?: string
         style?: string
+        onChange?: (date: Date) => void
         [key: string]: any
     }
 
-    const { value = new Date(), disabled = false, min, max, id, style = '', ...rest } = $props()
+    let { value = $bindable(new Date()), disabled = false, min, max, id, style = '', onChange, ...rest }: Props = $props()
 
     const dispatch = createEventDispatcher<{ change: Date }>()
 
@@ -44,23 +56,51 @@
     let pickerRef = $state<HTMLDivElement>()
     let buttonRef = $state<HTMLButtonElement>()
 
-    // 响应式日期对象
-    const sDate = new SvelteDate(value)
+    // 内部日期状态
+    let internalDate = $state(new Date(value))
 
-    // 同步外部 value 变化
+    // 同步外部 value 变化到内部
     $effect(() => {
-        if (value && value.getTime() !== sDate.getTime()) {
-            sDate.setTime(value.getTime())
+        if (value && value.getTime() !== internalDate.getTime()) {
+            internalDate = new Date(value)
         }
     })
 
+    // 获取当前日期值
+    export function getValue(): Date {
+        return new Date(internalDate)
+    }
+
+    // 设置日期值
+    export function setValue(newDate: Date | string): void {
+        const date = typeof newDate === 'string' ? new Date(newDate) : newDate
+        if (isValidDate(date)) {
+            internalDate = date
+            updateValue(date)
+        }
+    }
+
+    // 验证日期是否有效
+    function isValidDate(date: Date): boolean {
+        return date instanceof Date && !isNaN(date.getTime())
+    }
+
+    // 同步内部日期变化到外部
+    function updateValue(newDate: Date) {
+        value = new Date(newDate) // 这会自动触发 bind:value 更新
+        dispatch('change', new Date(newDate))
+        if (onChange) {
+            onChange(new Date(newDate))
+        }
+    }
+
     // 格式化显示文本（中文）
-    let displayText = $derived(formatDateChinese(sDate))
+    let displayText = $derived(formatDateChinese(internalDate))
 
     // 生成年月数据
-    let year = $derived(sDate.getFullYear())
-    let month = $derived(sDate.getMonth())
-    let date = $derived(sDate.getDate())
+    let year = $derived(internalDate.getFullYear())
+    let month = $derived(internalDate.getMonth())
+    let date = $derived(internalDate.getDate())
 
     // 面板数据
     let daysInMonth = $derived(new Date(year, month + 1, 0).getDate())
@@ -104,7 +144,7 @@
     }
 
     function isSelected(d: Date): boolean {
-        return isSameDay(d, sDate)
+        return isSameDay(d, internalDate)
     }
 
     function isDisabled(d: Date): boolean {
@@ -116,19 +156,33 @@
     function selectDate(day: number) {
         const newDate = new Date(year, month, day)
         if (isDisabled(newDate)) return
-        sDate.setTime(newDate.getTime())
-        dispatch('change', newDate)
+        internalDate = newDate
+        updateValue(newDate)
         isOpen = false
     }
 
     function prevMonth() {
         const newDate = new Date(year, month - 1, Math.min(date, new Date(year, month, 0).getDate()))
-        sDate.setTime(newDate.getTime())
+        internalDate = newDate
+        updateValue(newDate)
     }
 
     function nextMonth() {
         const newDate = new Date(year, month + 1, Math.min(date, new Date(year, month + 2, 0).getDate()))
-        sDate.setTime(newDate.getTime())
+        internalDate = newDate
+        updateValue(newDate)
+    }
+
+    function prevYear() {
+        const newDate = new Date(year - 1, month, Math.min(date, new Date(year - 1, month + 1, 0).getDate()))
+        internalDate = newDate
+        updateValue(newDate)
+    }
+
+    function nextYear() {
+        const newDate = new Date(year + 1, month, Math.min(date, new Date(year + 1, month + 1, 0).getDate()))
+        internalDate = newDate
+        updateValue(newDate)
     }
 
     function togglePanel() {
@@ -157,9 +211,11 @@
     {#if isOpen}
         <div class="date-picker-panel">
             <div class="panel-header">
+                <button class="nav-button" onclick={prevYear} type="button">«</button>
                 <button class="nav-button" onclick={prevMonth} type="button">‹</button>
                 <span class="month-year">{year}年 {monthNames[month]}</span>
                 <button class="nav-button" onclick={nextMonth} type="button">›</button>
+                <button class="nav-button" onclick={nextYear} type="button">»</button>
             </div>
 
             <div class="weekdays">
