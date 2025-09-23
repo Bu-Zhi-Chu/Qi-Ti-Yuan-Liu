@@ -254,7 +254,7 @@ graph LR
 
 ---
 
-## 8. 图表初始化流程
+## 9. 图表初始化流程
 
 1. **DOM 挂载**：`ECharts.svelte` 在 Svelte `onMount` 阶段将 `div.chart` 挂入文档，并通过 `<ECharts>` 组件的 `init` 回调执行 `echartsInit(dom, theme, opts)`（封装于 `echarts-core.ts`）。
 2. **实例创建**：`echartsInit` 内部调用 `echarts.init(dom, theme, { renderer, useCoarsePointer: true, ...opts })` 获得 `chartInstance` 并返回。
@@ -263,6 +263,23 @@ graph LR
 5. **尺寸监听**：`svelte-echarts` 默认监听父容器 ResizeObserver；在 `ECharts.svelte` 内也会根据缩放 `scale` 变化调用 `chart.resize()`，确保在编辑器缩放场景下不会出现错位。
 
 这样即可实现「挂载→实例→首渲→更新→销毁」的完整生命周期管理，无需手动调用 `setOption()`。
+
+---
+
+## 10. legend.data 自动补全机制（json 模式）
+
+**背景**：用户常在 `code` 里只写 `legend: {}`，导致 ECharts 用 `series.name` 自动生成的图例与 `legend.data` 不一致，出现“xxx series not exists”警告。
+
+**解决**：在 `ECharts.svelte` 的 `$derived(option)` 阶段追加补全逻辑：
+
+- **触发条件**：仅当 `dataSource === 'json'` 且 `codeResult.series.length > 0` 且用户**未提供** `legend.data` 时生效；
+- **补全内容**：`legend.data = series.map(s => s.name || '')`，保证图例与系列一一对应；
+- **优先级**：若用户已写 `legend.data`（非空数组），则完全尊重，不做覆盖；
+- **日志**：控制台打印 `[ECharts] 自动填充 legend.data: [...]` 便于调试确认。
+
+**代码位置**：`ECharts.svelte` → `// ---------- 自动补全 legend.data（仅 json 模式且用户未写时） ----------` 注释块。
+
+**效果**：切换页签或刷新后，图例与系列保持同步，浏览器控制台不再出现图例警告，图表结构正常显示。
 
 ---
 
