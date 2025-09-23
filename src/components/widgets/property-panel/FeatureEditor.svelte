@@ -229,10 +229,14 @@
         } else {
             const attributesToUpdate: { [k: string]: any } = { [key]: value }
 
-            // 当 code 属性变化时，清空 seriesData，以便从新代码中重新解析
+            // 当 code 属性变化时，清空 seriesData 和相关数据配置，以便从新代码中重新解析
             // 但只有在用户手动修改（来自代码编辑器）时才清空，切换页签时不清空
             if (key === 'code' && !syncingFromCodeEditor) {
                 attributesToUpdate.seriesData = undefined
+                attributesToUpdate.mockPath = undefined
+                attributesToUpdate.mockSeriesMapping = undefined
+                attributesToUpdate.requestPath = undefined
+                attributesToUpdate.requestSeriesMapping = undefined
             }
 
             updateNodeProps(selectedId, { attributes: attributesToUpdate })
