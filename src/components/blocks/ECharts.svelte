@@ -624,6 +624,24 @@
                         console.log('[ECharts] option(after seriesData override):', codeResult)
                         lastOptionValue = codeResult
                     }
+                    /* ---------- 自动补全 legend.data（仅 json 模式且用户未写时） ---------- */
+                    if (
+                      dataSource === 'json' &&
+                      codeResult.series &&
+                      codeResult.series.length > 0
+                    ) {
+                      // 只有用户没写 legend.data 时才自动填充
+                      const needFillLegend =
+                        !codeResult.legend ||
+                        !Array.isArray(codeResult.legend.data) ||
+                        codeResult.legend.data.length === 0
+                      if (needFillLegend) {
+                        if (!codeResult.legend) codeResult.legend = {}
+                        codeResult.legend.data = codeResult.series.map((s: any) => s.name || '')
+                        console.log('[ECharts] 自动填充 legend.data:', codeResult.legend.data)
+                      }
+                    }
+
                     // 处理标题和图例的默认位置
                     return processOptionDefaults(codeResult)
                 }
