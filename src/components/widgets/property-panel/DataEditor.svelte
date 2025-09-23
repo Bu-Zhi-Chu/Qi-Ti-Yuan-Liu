@@ -134,9 +134,15 @@
 
     // 序列数量：仅在 derivedState 变化时更新一次，避免模板多次调用导致重复解析
     let seriesCount = $state(0)
+    let lastSeriesCount = $state(0) // 用于防抖，记录上一次的seriesCount值
     $effect(() => {
-        seriesCount = derivedStateResult.matches.length
-        console.log(`[DataEditor] seriesCount 更新为: ${seriesCount}, dataSource: ${dataSource}, code存在: ${!!currentValues.code}`)
+        const newSeriesCount = derivedStateResult.matches.length
+        // 防抖机制：只有当seriesCount真正发生变化时才更新和打印日志
+        if (newSeriesCount !== lastSeriesCount) {
+            seriesCount = newSeriesCount
+            lastSeriesCount = newSeriesCount
+            console.log(`[DataEditor] seriesCount 更新为: ${seriesCount}, dataSource: ${dataSource}, code存在: ${!!currentValues.code}`)
+        }
     })
 
     let mockSeriesMapping = $derived(() => {
