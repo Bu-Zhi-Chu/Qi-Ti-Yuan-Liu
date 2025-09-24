@@ -47,11 +47,39 @@
         style?: string
         dateRecording?: boolean
         recordedDate?: string | Date
+        /**
+         * 选择模式
+         * - "date": 年月日（默认）
+         * - "year": 仅选择年份
+         * - "month": 仅选择年份+月份
+         * - "datetime": 年月日时分秒
+         */
+        mode?: 'date' | 'year' | 'month' | 'datetime'
         onChange?: (date: Date) => void
         [key: string]: any
     }
 
-    let { value = $bindable(new Date()), disabled = false, min, max, id, style = '', dateRecording = false, recordedDate, onChange, ...rest }: Props = $props()
+    let {
+        value = $bindable(new Date()),
+        disabled = false,
+        min,
+        max,
+        id,
+        style = '',
+        dateRecording = false,
+        recordedDate,
+        mode = 'date',
+        onChange,
+        panelBgColor = '#1a202c',
+        panelBorderColor = 'rgba(255, 255, 255, 0.1)',
+        panelShadowColor = 'rgba(0, 0, 0, 0.5)',
+        textColor = '#e2e8f0',
+        controlColor = '#94a3b8',
+        controlBgColor = 'rgba(45, 55, 72, 0.5)',
+        controlHoverBgColor = 'rgba(255, 255, 255, 0.1)',
+        accentColor = '#38bdf8',
+        ...rest
+    }: Props = $props()
 
     const dispatch = createEventDispatcher<{ change: Date }>()
 
@@ -76,6 +104,12 @@
         const newVal = normalizeDate(value)
         if (newVal.getTime() !== internalDate.getTime()) {
             internalDate = new Date(newVal)
+            // 如果是 datetime 模式，同步时分秒状态
+            if (mode === 'datetime') {
+                hours = internalDate.getHours()
+                minutes = internalDate.getMinutes()
+                seconds = internalDate.getSeconds()
+            }
         }
     })
 
@@ -89,6 +123,12 @@
         const date = typeof newDate === 'string' ? new Date(newDate) : newDate
         if (isValidDate(date)) {
             internalDate = date
+            // 如果是 datetime 模式，同步时分秒状态
+            if (mode === 'datetime') {
+                hours = internalDate.getHours()
+                minutes = internalDate.getMinutes()
+                seconds = internalDate.getSeconds()
+            }
             updateValue(date)
         }
     }
@@ -100,6 +140,10 @@
 
     // 同步内部日期变化到外部
     function updateValue(newDate: Date) {
+        // 如果是 datetime 模式，应用当前时分秒
+        if (mode === 'datetime') {
+            newDate.setHours(hours, minutes, seconds)
+        }
         value = new Date(newDate) // 这会自动触发 bind:value 更新
         dispatch('change', new Date(newDate))
         if (onChange) {
@@ -111,8 +155,8 @@
         }
     }
 
-    // 格式化显示文本（中文）
-    let displayText = $derived(formatDateChinese(internalDate))
+    // 格式化显示文本
+    let displayText = $derived(formatDisplay(internalDate))
 
     // 生成年月数据
     let year = $derived(internalDate.getFullYear())
@@ -125,7 +169,22 @@
     let today = $derived(new Date())
 
     // 选择年/月模式
-    let selectingYearMonth = $state(false)
+    // 选择年/月模式：当 mode 为 year 或 month 时默认进入年/月选择界面
+    let selectingYearMonth = $state(mode !== 'date')
+
+    // 时分秒状态（仅 datetime 模式使用）
+    let hours = $state(0)
+    let minutes = $state(0)
+    let seconds = $state(0)
+
+    // 同步时间状态与 internalDate
+    $effect(() => {
+        if (mode === 'datetime') {
+            hours = internalDate.getHours()
+            minutes = internalDate.getMinutes()
+            seconds = internalDate.getSeconds()
+        }
+    })
     let yearListRef = $state<HTMLDivElement>()
     let monthListRef = $state<HTMLDivElement>()
 
@@ -137,6 +196,22 @@
 
     // 星期名称
     const weekdayNames = ['日', '一', '二', '三', '四', '五', '六']
+
+    /**
+     * 根据当前 mode 输出显示文本
+     */
+    function formatDisplay(date: Date): string {
+        switch (mode) {
+            case 'year':
+                return `${date.getFullYear()}年`
+            case 'month':
+                return `${String(date.getMonth() + 1).padStart(2, '0')}月`
+            case 'datetime':
+                return `${formatDateChinese(date)} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`
+            default:
+                return formatDateChinese(date)
+        }
+    }
 
     function formatDateChinese(date: Date): string {
         const y = date.getFullYear()
@@ -214,8 +289,9 @@
         if (disabled) return
         isOpen = !isOpen
         if (isOpen) {
-            // When opening, default to day view
-            selectingYearMonth = false
+            // 当模式为 date 或 datetime 时，始终默认显示日期选择界面
+            // 当模式为 year 或 month 时，显示对应的年/月选择界面
+            selectingYearMonth = mode === 'year' || mode === 'month'
         }
     }
 
@@ -234,6 +310,8 @@
     onMount(() => {
         function handleClickOutside(event: MouseEvent) {
             if (isOpen && pickerRef && !pickerRef.contains(event.target as Node) && !buttonRef?.contains(event.target as Node)) {
+                // 应用当前选择的结果
+                updateValue(internalDate)
                 isOpen = false
                 // Reset to day view so next open shows calendar
                 selectingYearMonth = false
@@ -242,38 +320,120 @@
         document.addEventListener('mousedown', handleClickOutside)
         return () => document.removeEventListener('mousedown', handleClickOutside)
     })
+
+    // 当面板打开时，确保当前选中的年份/月份在可视区域内
+    $effect(() => {
+        if (isOpen) {
+            // 等待 DOM 更新
+            tick().then(() => {
+                // 年份模式：滚动到当前年份
+                if (mode === 'year' && yearListRef) {
+                    yearListRef.querySelector('.year-item.selected')?.scrollIntoView({ block: 'center' })
+                }
+                // 月份模式：滚动到当前月份
+                if (mode === 'month' && monthListRef) {
+                    monthListRef.querySelector('.month-item.selected')?.scrollIntoView({ block: 'center' })
+                }
+            })
+        }
+    })
 </script>
 
-<ResponsiveBox {id} {style} class="date-picker" {...rest}>
-    <button bind:this={buttonRef} class="date-picker-button" class:disabled onclick={togglePanel} type="button" style="width: 100%; height: 100%;">
+<ResponsiveBox
+    {id}
+    class="date-picker"
+    style="{style}; --panel-bg: {panelBgColor}; --panel-border: {panelBorderColor}; --panel-shadow: {panelShadowColor}; --text-color: {textColor}; --control-color: {controlColor}; --control-bg: {controlBgColor}; --control-hover-bg: {controlHoverBgColor}; --accent-color: {accentColor};"
+    {...rest}
+>
+    <button bind:this={buttonRef} class="date-picker-button" class:disabled onclick={togglePanel} type="button">
         <span class="date-text">{displayText}</span>
-        <span class="date-icon">📅</span>
+        <span class="date-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+        </span>
     </button>
 
     {#if isOpen}
         <div class="date-picker-panel">
-            <div class="panel-header">
-                <button class="nav-button" onclick={prevYear} type="button">«</button>
-                <button class="nav-button" onclick={prevMonth} type="button">‹</button>
-                <span
-                    class="month-year"
-                    role="button"
-                    tabindex="0"
-                    onclick={openYearMonthSelect}
-                    onkeydown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                            openYearMonthSelect()
-                        }
-                    }}
-                    style="cursor: pointer;"
-                >
-                    {year}年 {monthNames[month]}
-                </span>
-                <button class="nav-button" onclick={nextMonth} type="button">›</button>
-                <button class="nav-button" onclick={nextYear} type="button">»</button>
-            </div>
+            {#if mode === 'year'}
+                <div class="panel-header">
+                    <span class="mode-title">选择年份</span>
+                </div>
+            {:else if mode === 'month'}
+                <div class="panel-header">
+                    <span class="mode-title">选择月份</span>
+                </div>
+            {:else}
+                <div class="panel-header">
+                    <button class="nav-button" onclick={prevYear} type="button">«</button>
+                    <button class="nav-button" onclick={prevMonth} type="button">‹</button>
+                    <span
+                        class="month-year"
+                        role="button"
+                        tabindex="0"
+                        onclick={openYearMonthSelect}
+                        onkeydown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                openYearMonthSelect()
+                            }
+                        }}
+                        style="cursor: pointer;"
+                    >
+                        {year}年 {String(month + 1).padStart(2, '0')}月
+                    </span>
+                    <button class="nav-button" onclick={nextMonth} type="button">›</button>
+                    <button class="nav-button" onclick={nextYear} type="button">»</button>
+                </div>
+            {/if}
 
-            {#if selectingYearMonth}
+            {#if mode === 'year'}
+                <!-- 年份选择模式 -->
+                <div class="year-list" bind:this={yearListRef}>
+                    {#each yearsRange as y}
+                        <button
+                            class="year-item"
+                            class:selected={y === year}
+                            onclick={() => {
+                                internalDate = new Date(y, month, date)
+                                isOpen = false
+                                updateValue(internalDate)
+                            }}
+                            type="button"
+                        >
+                            {y}
+                        </button>
+                    {/each}
+                </div>
+            {:else if mode === 'month'}
+                <!-- 月份选择模式 -->
+                <div class="year-display">
+                    <button class="nav-button year-nav" onclick={prevYear} type="button">‹</button>
+                    <span class="current-year">{year}年</span>
+                    <button class="nav-button year-nav" onclick={nextYear} type="button">›</button>
+                </div>
+                <div class="month-list" bind:this={monthListRef}>
+                    {#each Array(12) as _, idx}
+                        <button
+                            class="month-item"
+                            class:selected={idx === month}
+                            onclick={() => {
+                                // 只改变月份，不改变年份
+                                internalDate = new Date(year, idx, Math.min(date, new Date(year, idx + 1, 0).getDate()))
+                                isOpen = false
+                                updateValue(internalDate)
+                            }}
+                            type="button"
+                        >
+                            {String(idx + 1).padStart(2, '0')}月
+                        </button>
+                    {/each}
+                </div>
+            {:else if selectingYearMonth}
+                <!-- 年月选择模式（用于 date 和 datetime 模式） -->
                 <div class="year-month-select">
                     <div class="year-list" bind:this={yearListRef}>
                         {#each yearsRange as y}
@@ -292,7 +452,7 @@
                         {/each}
                     </div>
                     <div class="month-list" bind:this={monthListRef}>
-                        {#each monthNames as m, idx}
+                        {#each Array(12) as _, idx}
                             <button
                                 class="month-item"
                                 class:selected={idx === month}
@@ -303,12 +463,13 @@
                                 }}
                                 type="button"
                             >
-                                {m}
+                                {String(idx + 1).padStart(2, '0')}月
                             </button>
                         {/each}
                     </div>
                 </div>
             {:else}
+                <!-- 日期选择模式（用于 date 和 datetime 模式） -->
                 <div class="weekdays">
                     {#each weekdayNames as day}
                         <div class="weekday">{day}</div>
@@ -328,6 +489,71 @@
                     {/each}
                 </div>
             {/if}
+
+            <!-- 时分秒输入（仅 datetime 模式） -->
+            {#if mode === 'datetime'}
+                <div class="time-inputs">
+                    <div class="time-group">
+                        <label for="hours-{id}" class="time-label">时</label>
+                        <input
+                            id="hours-{id}"
+                            type="number"
+                            class="time-input"
+                            min="0"
+                            max="23"
+                            bind:value={hours}
+                            oninput={(e) => {
+                                const target = e.target as HTMLInputElement
+                                const val = parseInt(target.value)
+                                if (!isNaN(val) && val >= 0 && val <= 23) {
+                                    hours = val
+                                    updateValue(internalDate)
+                                }
+                            }}
+                        />
+                    </div>
+                    <div class="time-separator">:</div>
+                    <div class="time-group">
+                        <label for="minutes-{id}" class="time-label">分</label>
+                        <input
+                            id="minutes-{id}"
+                            type="number"
+                            class="time-input"
+                            min="0"
+                            max="59"
+                            bind:value={minutes}
+                            oninput={(e) => {
+                                const target = e.target as HTMLInputElement
+                                const val = parseInt(target.value)
+                                if (!isNaN(val) && val >= 0 && val <= 59) {
+                                    minutes = val
+                                    updateValue(internalDate)
+                                }
+                            }}
+                        />
+                    </div>
+                    <div class="time-separator">:</div>
+                    <div class="time-group">
+                        <label for="seconds-{id}" class="time-label">秒</label>
+                        <input
+                            id="seconds-{id}"
+                            type="number"
+                            class="time-input"
+                            min="0"
+                            max="59"
+                            bind:value={seconds}
+                            oninput={(e) => {
+                                const target = e.target as HTMLInputElement
+                                const val = parseInt(target.value)
+                                if (!isNaN(val) && val >= 0 && val <= 59) {
+                                    seconds = val
+                                    updateValue(internalDate)
+                                }
+                            }}
+                        />
+                    </div>
+                </div>
+            {/if}
         </div>
     {/if}
 </ResponsiveBox>
@@ -339,20 +565,26 @@
         width: 100%;
         height: 100%;
         min-width: 0;
-        padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
-        border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.2);
-        border-radius: calc(6px * var(--scale-ratio, 1));
-        background: rgba(45, 55, 72, 0.9);
-        color: #e2e8f0;
-        font-size: calc(11px * var(--scale-ratio, 1));
+        padding: inherit;
+        border: inherit;
+        border-radius: inherit;
+        background: inherit;
+        color: inherit;
+        font-size: inherit;
+        font-family: inherit;
+        font-weight: inherit;
+        line-height: inherit;
+        text-align: inherit;
         cursor: pointer;
         transition: all 0.3s ease;
-        gap: calc(8px * var(--scale-ratio, 1));
+        gap: calc(16px * var(--scale-ratio, 1));
+        padding-left: calc(12px * var(--scale-ratio, 1));
+        padding-right: calc(12px * var(--scale-ratio, 1));
     }
 
     .date-picker-button:hover:not(.disabled) {
-        background: rgba(45, 55, 72, 0.95);
-        border-color: rgba(255, 255, 255, 0.3);
+        background: inherit;
+        border-color: inherit;
     }
 
     .date-picker-button.disabled {
@@ -362,17 +594,32 @@
 
     .date-text {
         flex: 1;
-        text-align: left;
+        text-align: inherit;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
         min-width: 0;
+        color: inherit;
+        font-size: inherit;
+        font-family: inherit;
+        font-weight: inherit;
+        line-height: inherit;
     }
 
     .date-icon {
         flex-shrink: 0;
-        font-size: calc(12px * var(--scale-ratio, 1));
+        width: calc(16px * var(--scale-ratio, 1));
+        height: calc(16px * var(--scale-ratio, 1));
         opacity: 0.7;
+        color: inherit;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .date-icon svg {
+        width: 100%;
+        height: 100%;
     }
 
     .date-picker-panel {
@@ -380,15 +627,16 @@
         top: 100%;
         left: 0;
         margin-top: calc(4px * var(--scale-ratio, 1));
-        background: #0f172a;
-        border: calc(1px * var(--scale-ratio, 1)) solid #334155;
+        background: var(--panel-bg, #0f172a);
+        border: calc(1px * var(--scale-ratio, 1)) solid var(--panel-border, #334155);
         border-radius: calc(8px * var(--scale-ratio, 1));
         padding: calc(16px * var(--scale-ratio, 1));
-        box-shadow: 0 calc(10px * var(--scale-ratio, 1)) calc(25px * var(--scale-ratio, 1)) rgba(0, 0, 0, 0.5);
+        box-shadow: 0 calc(10px * var(--scale-ratio, 1)) calc(25px * var(--scale-ratio, 1)) var(--panel-shadow, rgba(0, 0, 0, 0.5));
         z-index: 1000;
         width: 100%;
         max-width: calc(280px * var(--scale-ratio, 1));
         min-width: calc(240px * var(--scale-ratio, 1));
+        color: var(--text-color, #e2e8f0);
     }
 
     .panel-header {
@@ -401,7 +649,7 @@
     .nav-button {
         background: none;
         border: none;
-        color: #94a3b8;
+        color: var(--control-color, #94a3b8);
         cursor: pointer;
         padding: calc(4px * var(--scale-ratio, 1));
         border-radius: calc(4px * var(--scale-ratio, 1));
@@ -410,14 +658,22 @@
     }
 
     .nav-button:hover {
-        color: #e2e8f0;
-        background-color: rgba(45, 55, 72, 0.9);
+        color: var(--text-color, #e2e8f0);
+        background-color: var(--control-hover-bg, rgba(45, 55, 72, 0.9));
     }
 
     .month-year {
         font-size: calc(13px * var(--scale-ratio, 1));
         font-weight: 600;
-        color: #e2e8f0;
+        color: var(--text-color, #e2e8f0);
+    }
+
+    .mode-title {
+        font-size: calc(14px * var(--scale-ratio, 1));
+        font-weight: 600;
+        color: var(--text-color, #e2e8f0);
+        text-align: center;
+        flex: 1;
     }
 
     .weekdays {
@@ -430,7 +686,7 @@
     .weekday {
         text-align: center;
         font-size: calc(10px * var(--scale-ratio, 1));
-        color: #94a3b8;
+        color: var(--control-color, #94a3b8);
         padding: calc(4px * var(--scale-ratio, 1));
     }
 
@@ -449,7 +705,7 @@
         aspect-ratio: 1;
         border: none;
         background: transparent;
-        color: #e2e8f0;
+        color: var(--text-color, #e2e8f0);
         font-size: calc(11px * var(--scale-ratio, 1));
         cursor: pointer;
         border-radius: calc(4px * var(--scale-ratio, 1));
@@ -460,17 +716,17 @@
     }
 
     .day:hover:not(.disabled) {
-        background: rgba(45, 55, 72, 0.9);
+        background: var(--control-hover-bg, rgba(45, 55, 72, 0.9));
     }
 
     .day.today {
-        color: #38bdf8;
+        color: var(--accent-color, #38bdf8);
         font-weight: 600;
     }
 
     .day.selected {
-        background: #38bdf8;
-        color: #0f172a;
+        background: var(--accent-color, #38bdf8);
+        color: var(--panel-bg, #0f172a);
         font-weight: 600;
     }
 
@@ -493,29 +749,113 @@
         flex: 1;
         max-height: calc(200px * var(--scale-ratio, 1));
         overflow-y: auto;
+        padding: calc(4px * var(--scale-ratio, 1));
+    }
+
+    /* 单独的年份列表（年份模式） */
+    .year-list:only-child {
+        max-height: calc(250px * var(--scale-ratio, 1));
+    }
+
+    /* 单独的月份列表（月份模式） */
+    .month-list:only-child {
+        max-height: calc(220px * var(--scale-ratio, 1));
     }
 
     .year-item,
     .month-item {
         padding: calc(6px * var(--scale-ratio, 1));
+        text-align: center;
         border: none;
-        border-radius: calc(4px * var(--scale-ratio, 1));
         background: transparent;
-        color: #e2e8f0;
-        font-size: calc(11px * var(--scale-ratio, 1));
+        color: var(--text-color, #e2e8f0);
         cursor: pointer;
-        transition: background 0.2s ease;
+        border-radius: calc(4px * var(--scale-ratio, 1));
+        transition: all 0.2s ease;
+        font-size: calc(11px * var(--scale-ratio, 1));
     }
 
     .year-item:hover,
     .month-item:hover {
-        background: rgba(45, 55, 72, 0.9);
+        background: var(--control-hover-bg, rgba(45, 55, 72, 0.9));
     }
 
     .year-item.selected,
     .month-item.selected {
-        background: #38bdf8;
-        color: #0f172a;
+        background: var(--accent-color, #38bdf8);
+        color: var(--panel-bg, #0f172a);
         font-weight: 600;
+    }
+
+    /* 年份显示（月份模式） */
+    .year-display {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: calc(8px * var(--scale-ratio, 1));
+        margin-bottom: calc(16px * var(--scale-ratio, 1));
+        padding: calc(8px * var(--scale-ratio, 1));
+        background: var(--control-bg, rgba(45, 55, 72, 0.5));
+        border-radius: calc(4px * var(--scale-ratio, 1));
+    }
+
+    .current-year {
+        font-size: calc(14px * var(--scale-ratio, 1));
+        font-weight: 600;
+        color: var(--text-color, #e2e8f0);
+        min-width: calc(60px * var(--scale-ratio, 1));
+        text-align: center;
+    }
+
+    .year-nav {
+        font-size: calc(14px * var(--scale-ratio, 1));
+        padding: calc(4px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));
+    }
+
+    /* 时分秒输入 */
+    .time-inputs {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: calc(8px * var(--scale-ratio, 1));
+        margin-top: calc(16px * var(--scale-ratio, 1));
+        padding-top: calc(16px * var(--scale-ratio, 1));
+        border-top: calc(1px * var(--scale-ratio, 1)) solid var(--panel-border, #334155);
+    }
+
+    .time-group {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: calc(4px * var(--scale-ratio, 1));
+    }
+
+    .time-label {
+        font-size: calc(10px * var(--scale-ratio, 1));
+        color: var(--control-color, #94a3b8);
+        margin: 0;
+    }
+
+    .time-input {
+        width: calc(50px * var(--scale-ratio, 1));
+        padding: calc(6px * var(--scale-ratio, 1));
+        border: calc(1px * var(--scale-ratio, 1)) solid var(--panel-border, #334155);
+        border-radius: calc(4px * var(--scale-ratio, 1));
+        background: var(--control-bg, rgba(45, 55, 72, 0.9));
+        color: var(--text-color, #e2e8f0);
+        font-size: calc(12px * var(--scale-ratio, 1));
+        text-align: center;
+        outline: none;
+        transition: border-color 0.2s ease;
+    }
+
+    .time-input:focus {
+        border-color: var(--accent-color, #38bdf8);
+    }
+
+    .time-separator {
+        font-size: calc(14px * var(--scale-ratio, 1));
+        color: var(--control-color, #94a3b8);
+        margin-top: calc(16px * var(--scale-ratio, 1));
     }
 </style>

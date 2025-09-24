@@ -20,6 +20,7 @@
     import { findParentById } from '../../../stores/dom-tree.store.svelte'
     import { getDesignSize } from '../../../stores/dom-tree.store.svelte'
     import CodeEditor from '../CodeEditor.svelte'
+    import ColorPicker from '../ColorPicker.svelte'
 
     // 派生当前选中节点的 featureProps
     const featureProps = $derived(() => {
@@ -507,6 +508,8 @@
                     val = `${p.default}px`
                 } else if (p.type === 'switch') {
                     val = p.default !== undefined ? p.default : false
+                } else if (p.type === 'color' && p.default !== undefined) {
+                    val = p.default
                 } // add
                 else if ((p.type === 'text' || p.type === 'json') && p.default !== undefined) {
                     val = p.default
@@ -647,6 +650,8 @@
                             showLineNumbers={false}
                             style="flex:1; width:0;"
                         />
+                    {:else if p.type === 'color'}
+                        <ColorPicker value={currentValues[p.key] || p.default} projectId={$projectId} componentId={`${selectedId || 'default'}-${p.key}`} onchange={(color: string) => handleAttrChange(p.key, color)} />
                     {/if}
                     <!-- 其他类型控件可在此扩展 -->
                 </PropertyRow>
@@ -663,6 +668,12 @@
     /* 行间距：仅作用于本页签，其他面板已自带 */
     :global(.feature-editor .property-row:not(:last-child)) {
         margin-bottom: calc(12px * var(--scale-ratio, 1));
+    }
+
+    /* 确保ColorPicker组件宽度一致 */
+    :global(.feature-editor .color-picker-container) {
+        flex: 1;
+        min-width: 0;
     }
     .image-uploader {
         display: flex;
