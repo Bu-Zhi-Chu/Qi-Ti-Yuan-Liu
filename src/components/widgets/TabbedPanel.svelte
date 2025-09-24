@@ -112,6 +112,11 @@ import { DEFAULT_DB_NAME } from '../../config/config'
             cleanupListeners = null
         }
 
+        // 记录拖拽起始位置，用于判断拖拽距离
+        const dragStartX = e.clientX
+        const dragStartY = e.clientY
+        let hasMovedEnough = false
+
         /* 1. 计算父节点与尺寸百分比 */
         const presetStyles = item.presetStyles || {}
         let widthPercent = 10
@@ -262,6 +267,21 @@ import { DEFAULT_DB_NAME } from '../../config/config'
         parentEl.appendChild(previewEl)
 
         function updatePreview(clientX: number, clientY: number) {
+            // 检查拖拽距离是否足够（至少200px）
+            const distance = Math.sqrt(
+                Math.pow(clientX - dragStartX, 2) + Math.pow(clientY - dragStartY, 2)
+            )
+            
+            // 如果拖拽距离不够，不显示预览也不更新位置
+            if (distance < 200) {
+                if (previewEl) previewEl.style.display = 'none'
+                return
+            }
+            
+            // 距离足够，显示预览并标记为已移动足够距离
+            hasMovedEnough = true
+            if (previewEl) previewEl.style.display = 'block'
+
             const relX = (clientX - parentRect.left) / parentRect.width
             const relY = (clientY - parentRect.top) / parentRect.height
             const leftPercent = relX * 100 - widthPercent / 2
@@ -294,7 +314,8 @@ import { DEFAULT_DB_NAME } from '../../config/config'
                 previewEl.remove()
                 previewEl = null
             }
-            if (addNode && pendingNode) {
+            // 只有当拖拽距离足够（200px）时才真正添加节点，防止误触
+            if (addNode && pendingNode && hasMovedEnough) {
                 // 根据配置决定是否将组件放置在父容器左上角
                 const blockConfig = blocksConfig.find((b: any) => b.type === pendingNode.componentType)
                 if (blockConfig?.positionAtOrigin) {
