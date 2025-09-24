@@ -36,7 +36,7 @@
 <script lang="ts">
     import { onMount, createEventDispatcher, tick } from 'svelte'
     import ResponsiveBox from '../core/ResponsiveBox.svelte'
-import { updateNodeProps } from '../../services/property-panel/property-panel.service'
+    import { updateNodeProps } from '../../services/property-panel/property-panel.service'
 
     interface Props {
         value?: Date | string
@@ -45,8 +45,8 @@ import { updateNodeProps } from '../../services/property-panel/property-panel.se
         max?: Date
         id?: string
         style?: string
-        dateRecording?: boolean;
-        recordedDate?: string | Date;
+        dateRecording?: boolean
+        recordedDate?: string | Date
         onChange?: (date: Date) => void
         [key: string]: any
     }
@@ -127,7 +127,7 @@ import { updateNodeProps } from '../../services/property-panel/property-panel.se
     // 选择年/月模式
     let selectingYearMonth = $state(false)
     let yearListRef = $state<HTMLDivElement>()
-     let monthListRef = $state<HTMLDivElement>()
+    let monthListRef = $state<HTMLDivElement>()
 
     // 以当前年份为中心，上下各 10 年
     let yearsRange = $derived(Array.from({ length: 21 }, (_, i) => year - 10 + i))
@@ -255,7 +255,20 @@ import { updateNodeProps } from '../../services/property-panel/property-panel.se
             <div class="panel-header">
                 <button class="nav-button" onclick={prevYear} type="button">«</button>
                 <button class="nav-button" onclick={prevMonth} type="button">‹</button>
-                <span class="month-year" role="button" tabindex="0" onclick={openYearMonthSelect} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { openYearMonthSelect(); } }} style="cursor: pointer;">{year}年 {monthNames[month]}</span>
+                <span
+                    class="month-year"
+                    role="button"
+                    tabindex="0"
+                    onclick={openYearMonthSelect}
+                    onkeydown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            openYearMonthSelect()
+                        }
+                    }}
+                    style="cursor: pointer;"
+                >
+                    {year}年 {monthNames[month]}
+                </span>
                 <button class="nav-button" onclick={nextMonth} type="button">›</button>
                 <button class="nav-button" onclick={nextYear} type="button">»</button>
             </div>
@@ -263,15 +276,37 @@ import { updateNodeProps } from '../../services/property-panel/property-panel.se
             {#if selectingYearMonth}
                 <div class="year-month-select">
                     <div class="year-list" bind:this={yearListRef}>
-                         {#each yearsRange as y}
-                             <button class="year-item" class:selected={y === year} onclick={() => { internalDate = new Date(y, month, date); selectingYearMonth = false; updateValue(internalDate); }} type="button">{y}</button>
-                         {/each}
-                     </div>
+                        {#each yearsRange as y}
+                            <button
+                                class="year-item"
+                                class:selected={y === year}
+                                onclick={() => {
+                                    internalDate = new Date(y, month, date)
+                                    selectingYearMonth = false
+                                    updateValue(internalDate)
+                                }}
+                                type="button"
+                            >
+                                {y}
+                            </button>
+                        {/each}
+                    </div>
                     <div class="month-list" bind:this={monthListRef}>
-                         {#each monthNames as m, idx}
-                             <button class="month-item" class:selected={idx === month} onclick={() => { internalDate = new Date(year, idx, date); selectingYearMonth = false; updateValue(internalDate); }} type="button">{m}</button>
-                         {/each}
-                     </div>
+                        {#each monthNames as m, idx}
+                            <button
+                                class="month-item"
+                                class:selected={idx === month}
+                                onclick={() => {
+                                    internalDate = new Date(year, idx, date)
+                                    selectingYearMonth = false
+                                    updateValue(internalDate)
+                                }}
+                                type="button"
+                            >
+                                {m}
+                            </button>
+                        {/each}
+                    </div>
                 </div>
             {:else}
                 <div class="weekdays">
