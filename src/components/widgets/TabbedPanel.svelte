@@ -23,7 +23,7 @@
     import { addNodeToParent } from '../../stores/dom-tree.store.svelte'
     import { projectId } from '../../stores/dom-tree.store.svelte'
     import DexieService from '../../services/database/dexie-service'
-import { DEFAULT_DB_NAME } from '../../config/config'
+    import { DEFAULT_DB_NAME } from '../../config/config'
     import { get } from 'svelte/store'
 
     // 当前激活的页签
@@ -268,16 +268,14 @@ import { DEFAULT_DB_NAME } from '../../config/config'
 
         function updatePreview(clientX: number, clientY: number) {
             // 检查拖拽距离是否足够（至少200px）
-            const distance = Math.sqrt(
-                Math.pow(clientX - dragStartX, 2) + Math.pow(clientY - dragStartY, 2)
-            )
-            
+            const distance = Math.sqrt(Math.pow(clientX - dragStartX, 2) + Math.pow(clientY - dragStartY, 2))
+
             // 如果拖拽距离不够，不显示预览也不更新位置
-            if (distance < 200) {
+            if (distance < 25) {
                 if (previewEl) previewEl.style.display = 'none'
                 return
             }
-            
+
             // 距离足够，显示预览并标记为已移动足够距离
             hasMovedEnough = true
             if (previewEl) previewEl.style.display = 'block'
