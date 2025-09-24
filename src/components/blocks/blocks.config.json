@@ -435,54 +435,5 @@
                 "default": "#38bdf8"
             }
         }
-    },
-    {
-        "type": "Table",
-        "nameZh": "表格",
-        "path": "../blocks/Table.svelte",
-        "preview": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSczMicgaGVpZ2h0PSczMic+PHJlY3QgeD0nMicgeT0nMicgd2lkdGg9JzI4JyBoZWlnaHQ9JzI4JyBmaWxsPSdub25lJyBzdHJva2U9JyM2MzY2ZjEnIHN0cm9rZS13aWR0aD0nMicgcng9JzInLz48bGluZSB4MT0nMicgeTE9JzgnIHgyPSczMCcgeTI9JzgnIHN0cm9rZT0nIzYzNjZmMScgc3Ryb2tlLXdpZHRoPScxLjUnLz48bGluZSB4MT0nOCcgeTE9JzInIHgyPSc4JyB5Mj0nMzAnIHN0cm9rZT0nIzYzNjZmMScgc3Ryb2tlLXdpZHRoPScxLjUnLz48bGluZSB4MT0nMTYnIHkxPScyJyB4Mj0nMTYnIHkyPSczMCcgc3Ryb2tlPScjNjM2NmYxJyBzdHJva2Utd2lkdGg9JzEuNScvPjxsaW5lIHgxPScyNCcgeTE9JzInIHgyPScyNCcgeTI9JzMwJyBzdHJva2U9JyM2MzY2ZjEnIHN0cm9rZS13aWR0aD0nMS41Jy8+PC9zdmc+",
-        "showFeatureTab": true,
-        "positionAtOrigin": true,
-        "presetStyles": {
-            "width": "80%",
-            "height": "60%",
-            "position": "absolute"
-        },
-        "featureProps": {
-            "height": {
-                "label": "表格高度",
-                "type": "size",
-                "default": "400px",
-                "min": "200px",
-                "max": "800px"
-            },
-            "striped": {
-                "label": "斑马纹",
-                "type": "switch",
-                "default": true
-            },
-            "bordered": {
-                "label": "显示边框",
-                "type": "switch",
-                "default": true
-            },
-            "hover": {
-                "label": "悬停效果",
-                "type": "switch",
-                "default": true
-            }
-        },
-        "dataSource": {
-            "columns": {
-                "label": "表格列配置",
-                "type": "code",
-                "default": "[{\"key\":\"name\",\"title\":\"姓名\"},{\"key\":\"age\",\"title\":\"年龄\"},{\"key\":\"email\",\"title\":\"邮箱\"}]"
-            },
-            "data": {
-                "label": "表格数据",
-                "type": "code",
-                "default": "[{\"name\":\"张三\",\"age\":25,\"email\":\"zhangsan@example.com\"},{\"name\":\"李四\",\"age\":30,\"email\":\"lisi@example.com\"}]"
-            }
-        }
     }
 ]
