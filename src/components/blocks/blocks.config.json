@@ -360,6 +360,11 @@
                 "label": "禁用组件",
                 "type": "switch",
                 "default": false
+            },
+            "dateRecording": {
+                "label": "日期记录",
+                "type": "switch",
+                "default": false
             }
         }
     }

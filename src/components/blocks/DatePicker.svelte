@@ -36,19 +36,22 @@
 <script lang="ts">
     import { onMount, createEventDispatcher, tick } from 'svelte'
     import ResponsiveBox from '../core/ResponsiveBox.svelte'
+import { updateNodeProps } from '../../services/property-panel/property-panel.service'
 
     interface Props {
-        value?: Date
+        value?: Date | string
         disabled?: boolean
         min?: Date
         max?: Date
         id?: string
         style?: string
+        dateRecording?: boolean;
+        recordedDate?: string | Date;
         onChange?: (date: Date) => void
         [key: string]: any
     }
 
-    let { value = $bindable(new Date()), disabled = false, min, max, id, style = '', onChange, ...rest }: Props = $props()
+    let { value = $bindable(new Date()), disabled = false, min, max, id, style = '', dateRecording = false, recordedDate, onChange, ...rest }: Props = $props()
 
     const dispatch = createEventDispatcher<{ change: Date }>()
 
@@ -57,12 +60,22 @@
     let buttonRef = $state<HTMLButtonElement>()
 
     // 内部日期状态
-    let internalDate = $state(new Date(value))
+    function normalizeDate(v: Date | string): Date {
+        return typeof v === 'string' ? new Date(v) : new Date(v)
+    }
+
+    const initialDate: Date = dateRecording && recordedDate ? normalizeDate(recordedDate) : normalizeDate(value)
+    let internalDate = $state(initialDate)
+    // 如果使用记录值，确保外部 value 同步
+    if (dateRecording && recordedDate) {
+        value = new Date(initialDate)
+    }
 
     // 同步外部 value 变化到内部
     $effect(() => {
-        if (value && value.getTime() !== internalDate.getTime()) {
-            internalDate = new Date(value)
+        const newVal = normalizeDate(value)
+        if (newVal.getTime() !== internalDate.getTime()) {
+            internalDate = new Date(newVal)
         }
     })
 
@@ -91,6 +104,10 @@
         dispatch('change', new Date(newDate))
         if (onChange) {
             onChange(new Date(newDate))
+        }
+        // Persist to doms attr if dateRecording enabled
+        if (dateRecording && id) {
+            updateNodeProps(id, { attributes: { recordedDate: toInputValue(newDate) } })
         }
     }
 
