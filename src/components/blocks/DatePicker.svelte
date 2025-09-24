@@ -34,7 +34,7 @@
  */-->
 
 <script lang="ts">
-    import { onMount, createEventDispatcher } from 'svelte'
+    import { onMount, createEventDispatcher, tick } from 'svelte'
     import ResponsiveBox from '../core/ResponsiveBox.svelte'
 
     interface Props {
@@ -106,6 +106,14 @@
     let daysInMonth = $derived(new Date(year, month + 1, 0).getDate())
     let firstDay = $derived(new Date(year, month, 1).getDay())
     let today = $derived(new Date())
+
+    // 选择年/月模式
+    let selectingYearMonth = $state(false)
+    let yearListRef = $state<HTMLDivElement>()
+     let monthListRef = $state<HTMLDivElement>()
+
+    // 以当前年份为中心，上下各 10 年
+    let yearsRange = $derived(Array.from({ length: 21 }, (_, i) => year - 10 + i))
 
     // 月份名称
     const monthNames = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月']
@@ -188,6 +196,21 @@
     function togglePanel() {
         if (disabled) return
         isOpen = !isOpen
+        if (isOpen) {
+            // When opening, default to day view
+            selectingYearMonth = false
+        }
+    }
+
+    async function openYearMonthSelect() {
+        selectingYearMonth = true
+        await tick()
+        if (yearListRef) {
+            yearListRef.querySelector('.year-item.selected')?.scrollIntoView({ block: 'center' })
+        }
+        if (monthListRef) {
+            monthListRef.querySelector('.month-item.selected')?.scrollIntoView({ block: 'center' })
+        }
     }
 
     // 点击外部关闭
@@ -195,6 +218,8 @@
         function handleClickOutside(event: MouseEvent) {
             if (isOpen && pickerRef && !pickerRef.contains(event.target as Node) && !buttonRef?.contains(event.target as Node)) {
                 isOpen = false
+                // Reset to day view so next open shows calendar
+                selectingYearMonth = false
             }
         }
         document.addEventListener('mousedown', handleClickOutside)
@@ -213,29 +238,44 @@
             <div class="panel-header">
                 <button class="nav-button" onclick={prevYear} type="button">«</button>
                 <button class="nav-button" onclick={prevMonth} type="button">‹</button>
-                <span class="month-year">{year}年 {monthNames[month]}</span>
+                <span class="month-year" role="button" tabindex="0" onclick={openYearMonthSelect} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { openYearMonthSelect(); } }} style="cursor: pointer;">{year}年 {monthNames[month]}</span>
                 <button class="nav-button" onclick={nextMonth} type="button">›</button>
                 <button class="nav-button" onclick={nextYear} type="button">»</button>
             </div>
 
-            <div class="weekdays">
-                {#each weekdayNames as day}
-                    <div class="weekday">{day}</div>
-                {/each}
-            </div>
+            {#if selectingYearMonth}
+                <div class="year-month-select">
+                    <div class="year-list" bind:this={yearListRef}>
+                         {#each yearsRange as y}
+                             <button class="year-item" class:selected={y === year} onclick={() => { internalDate = new Date(y, month, date); selectingYearMonth = false; updateValue(internalDate); }} type="button">{y}</button>
+                         {/each}
+                     </div>
+                    <div class="month-list" bind:this={monthListRef}>
+                         {#each monthNames as m, idx}
+                             <button class="month-item" class:selected={idx === month} onclick={() => { internalDate = new Date(year, idx, date); selectingYearMonth = false; updateValue(internalDate); }} type="button">{m}</button>
+                         {/each}
+                     </div>
+                </div>
+            {:else}
+                <div class="weekdays">
+                    {#each weekdayNames as day}
+                        <div class="weekday">{day}</div>
+                    {/each}
+                </div>
 
-            <div class="days">
-                {#each Array(firstDay) as _}
-                    <div class="day-spacer"></div>
-                {/each}
-                {#each Array(daysInMonth) as _, i}
-                    {@const day = i + 1}
-                    {@const dayDate = new Date(year, month, day)}
-                    <button class="day" class:today={isToday(dayDate)} class:selected={isSelected(dayDate)} class:disabled={isDisabled(dayDate)} onclick={() => selectDate(day)} type="button">
-                        {day}
-                    </button>
-                {/each}
-            </div>
+                <div class="days">
+                    {#each Array(firstDay) as _}
+                        <div class="day-spacer"></div>
+                    {/each}
+                    {#each Array(daysInMonth) as _, i}
+                        {@const day = i + 1}
+                        {@const dayDate = new Date(year, month, day)}
+                        <button class="day" class:today={isToday(dayDate)} class:selected={isSelected(dayDate)} class:disabled={isDisabled(dayDate)} onclick={() => selectDate(day)} type="button">
+                            {day}
+                        </button>
+                    {/each}
+                </div>
+            {/if}
         </div>
     {/if}
 </ResponsiveBox>
@@ -385,5 +425,45 @@
     .day.disabled {
         opacity: 0.3;
         cursor: not-allowed;
+    }
+
+    /* 年/月选择面板 */
+    .year-month-select {
+        display: flex;
+        gap: calc(8px * var(--scale-ratio, 1));
+    }
+
+    .year-list,
+    .month-list {
+        display: flex;
+        flex-direction: column;
+        gap: calc(4px * var(--scale-ratio, 1));
+        flex: 1;
+        max-height: calc(200px * var(--scale-ratio, 1));
+        overflow-y: auto;
+    }
+
+    .year-item,
+    .month-item {
+        padding: calc(6px * var(--scale-ratio, 1));
+        border: none;
+        border-radius: calc(4px * var(--scale-ratio, 1));
+        background: transparent;
+        color: #e2e8f0;
+        font-size: calc(11px * var(--scale-ratio, 1));
+        cursor: pointer;
+        transition: background 0.2s ease;
+    }
+
+    .year-item:hover,
+    .month-item:hover {
+        background: rgba(45, 55, 72, 0.9);
+    }
+
+    .year-item.selected,
+    .month-item.selected {
+        background: #38bdf8;
+        color: #0f172a;
+        font-weight: 600;
     }
 </style>
