@@ -23,7 +23,7 @@
     ></SimpleBox>
     <SimpleBox
         class="tangram-shape tangram-parallelogram"
-        style="position: absolute; left: 70%; top: calc(-30px * var(--scale-ratio, 1)); width: calc(100px * var(--scale-ratio, 1)); height: calc(60px * var(--scale-ratio, 1)); background: rgba(245, 158, 11, 0.3); transform: skew(-20deg); animation: tangram-fall-5 25s linear infinite;"
+        style="position: absolute; left: 70%; top: calc(-30px * var(--scale-ratio, 1)); width: calc(100px * var(--scale-ratio, 1)); height: calc(60px * var(--scale-ratio, 1)); background: rgba(245, 158, 11, 0.3); clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 100%, 20px 100%); animation: tangram-fall-5 25s linear infinite;"
     ></SimpleBox>
     <SimpleBox
         class="tangram-shape tangram-medium-triangle"
@@ -48,7 +48,7 @@
     ></SimpleBox>
     <SimpleBox
         class="tangram-shape tangram-parallelogram"
-        style="position: absolute; left: 60%; top: calc(-70px * var(--scale-ratio, 1)); width: calc(100px * var(--scale-ratio, 1)); height: calc(60px * var(--scale-ratio, 1)); background: rgba(245, 158, 11, 0.3); transform: skew(-20deg); animation: tangram-fall-5 25s linear infinite; animation-delay: -20s;"
+        style="position: absolute; left: 60%; top: calc(-70px * var(--scale-ratio, 1)); width: calc(100px * var(--scale-ratio, 1)); height: calc(60px * var(--scale-ratio, 1)); background: rgba(245, 158, 11, 0.3); clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 100%, 20px 100%); animation: tangram-fall-5 25s linear infinite; animation-delay: -20s;"
     ></SimpleBox>
     <SimpleBox
         class="tangram-shape tangram-medium-triangle"
@@ -69,6 +69,6 @@
     ></SimpleBox>
     <SimpleBox
         class="tangram-shape tangram-parallelogram"
-        style="position: absolute; left: 88%; top: calc(-95px * var(--scale-ratio, 1)); width: calc(100px * var(--scale-ratio, 1)); height: calc(60px * var(--scale-ratio, 1)); background: rgba(245, 158, 11, 0.3); transform: skew(-20deg); animation: tangram-fall-5 25s linear infinite; animation-delay: -30s;"
+        style="position: absolute; left: 88%; top: calc(-95px * var(--scale-ratio, 1)); width: calc(100px * var(--scale-ratio, 1)); height: calc(60px * var(--scale-ratio, 1)); background: rgba(245, 158, 11, 0.3); clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 100%, 20px 100%); animation: tangram-fall-5 25s linear infinite; animation-delay: -30s;"
     ></SimpleBox>
 </ResponsiveBox>
