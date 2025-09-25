@@ -10,6 +10,64 @@
     import blocksConfig from '../../blocks/blocks.config.json'
     import { dataMappingKeysStore } from '../../../stores/data-mapping.store.svelte'
 
+    const defaultDataSourceConfig = {
+        dataAccess: {
+            label: '数据接入',
+            type: 'select',
+            options: [
+                {
+                    value: 'json',
+                    label: '临时数据'
+                },
+                {
+                    value: 'mock',
+                    label: '模拟接口'
+                },
+                {
+                    value: 'real',
+                    label: '真实请求'
+                }
+            ],
+            default: 'json'
+        },
+        mockPlatforms: {
+            label: '模拟平台',
+            type: 'linkGroup',
+            links: [
+                {
+                    label: 'Easy Mock',
+                    url: 'https://mock.presstime.cn/'
+                },
+                {
+                    label: 'Apifox',
+                    url: 'https://app.apifox.com/'
+                }
+            ],
+            showIf: {
+                key: 'dataAccess',
+                value: 'mock'
+            }
+        },
+        mockPath: {
+            label: '接口路径',
+            type: 'text',
+            default: '',
+            showIf: {
+                key: 'dataAccess',
+                value: 'mock'
+            }
+        },
+        requestPath: {
+            label: '请求路径',
+            type: 'text',
+            default: '',
+            showIf: {
+                key: 'dataAccess',
+                value: 'real'
+            }
+        }
+    }
+
     let { selectedId = null } = $props<{ selectedId?: string | null }>()
 
     // 1. 快照 + 订阅（完全照抄 FeatureEditor）
@@ -257,14 +315,18 @@
 
     // 工具函数：获取组件级别的 dataSource 配置
     function getComponentDataSourceConfig(componentType: string): any | null {
-        const componentConfig = (blocksConfig as any[]).find((b) => b.type === componentType)
-        return componentConfig?.dataSource?.dataAccess || null
+        const fullConfig = getFullDataSourceConfig(componentType)
+        return fullConfig?.dataAccess || null
     }
 
     // 工具函数：获取完整的 dataSource 配置
     function getFullDataSourceConfig(componentType: string): any | null {
         const componentConfig = (blocksConfig as any[]).find((b) => b.type === componentType)
-        return componentConfig?.dataSource || null
+        if (!componentConfig?.dataBindable) {
+            return null
+        }
+        const componentDataSource = componentConfig?.dataSource || {}
+        return { ...defaultDataSourceConfig, ...componentDataSource }
     }
 
     // 获取中文序数词函数

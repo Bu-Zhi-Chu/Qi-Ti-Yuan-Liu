@@ -624,14 +624,14 @@
                         console.log('[ECharts] option(after seriesData override):', codeResult)
                         lastOptionValue = codeResult
                     }
-                    /* ---------- 自动补全 legend.data（仅 json 模式且用户未写时） ---------- */
-                    if (dataSource === 'json' && codeResult.series && codeResult.series.length > 0) {
-                        // 只有用户没写 legend.data 时才自动填充
-                        const needFillLegend = !codeResult.legend || !Array.isArray(codeResult.legend.data) || codeResult.legend.data.length === 0
-                        if (needFillLegend) {
-                            if (!codeResult.legend) codeResult.legend = {}
-                            codeResult.legend.data = codeResult.series.map((s: any) => s.name || '')
-                            console.log('[ECharts] 自动填充 legend.data:', codeResult.legend.data)
+                    /* ---------- 自动补全 legend.data（仅 json 模式且用户提供了 legend 对象但 data 缺失时） ---------- */
+                    if (dataSource === 'json' && codeResult.series && codeResult.series.length > 0 && codeResult.legend) {
+                        // 只有当用户提供了 legend 对象，但没有提供 legend.data，或者 data 为空数组时，才进行自动填充
+                        const needFillLegendData = !Array.isArray(codeResult.legend.data) || codeResult.legend.data.length === 0;
+                        if (needFillLegendData) {
+                            if (!codeResult.legend) codeResult.legend = {}; // 安全起见，虽然条件已经判断了legend存在
+                            codeResult.legend.data = codeResult.series.map((s: any) => s.name || '');
+                            console.log('[ECharts] 自动填充 legend.data:', codeResult.legend.data);
                         }
                     }
 

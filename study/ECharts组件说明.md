@@ -268,18 +268,21 @@ graph LR
 
 ## 9. legend.data 自动补全机制（json 模式）
 
-**背景**：用户常在 `code` 里只写 `legend: {}`，导致 ECharts 用 `series.name` 自动生成的图例与 `legend.data` 不一致，出现“xxx series not exists”警告。
+**背景**：用户常在 `code` 里只写 `legend: {}`，导致 ECharts 用 `series.name` 自动生成的图例与 `legend.data` 不一致，出现"xxx series not exists"警告。
 
 **解决**：在 `ECharts.svelte` 的 `$derived(option)` 阶段追加补全逻辑：
 
-- **触发条件**：仅当 `dataSource === 'json'` 且 `codeResult.series.length > 0` 且用户**未提供** `legend.data` 时生效；
+- **触发条件**：仅当 `dataSource === 'json'` 且 `codeResult.series.length > 0` **且用户提供了 `legend` 对象**（即使是空对象 `{}`）但 `legend.data` 缺失或为空数组时生效；
 - **补全内容**：`legend.data = series.map(s => s.name || '')`，保证图例与系列一一对应；
 - **优先级**：若用户已写 `legend.data`（非空数组），则完全尊重，不做覆盖；
+- **关键区别**：
+  - 当 `legend` 属性为 `{}`（缺省）：视为用户希望显示图例但没有提供具体数据，会触发自动补全机制；
+  - 当 `legend` 属性**完全不存在**（缺失）：视为用户不希望显示图例，组件不会进行任何处理，图表将不显示图例；
 - **日志**：控制台打印 `[ECharts] 自动填充 legend.data: [...]` 便于调试确认。
 
-**代码位置**：`ECharts.svelte` → `// ---------- 自动补全 legend.data（仅 json 模式且用户未写时） ----------` 注释块。
+**代码位置**：`ECharts.svelte` → `// ---------- 自动补全 legend.data（仅 json 模式且用户提供了 legend 对象但 data 缺失时） ----------` 注释块。
 
-**效果**：切换页签或刷新后，图例与系列保持同步，浏览器控制台不再出现图例警告，图表结构正常显示。
+**效果**：切换页签或刷新后，图例与系列保持同步，浏览器控制台不再出现图例警告，图表结构正常显示。同时确保当用户不希望显示图例时（即不提供 `legend` 属性），图表不会显示任何图例。
 
 ---
 

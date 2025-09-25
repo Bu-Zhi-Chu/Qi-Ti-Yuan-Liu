@@ -282,63 +282,6 @@
                 "label": "图表代码",
                 "type": "code"
             }
-        },
-        "dataSource": {
-            "dataAccess": {
-                "label": "数据接入",
-                "type": "select",
-                "options": [
-                    {
-                        "value": "json",
-                        "label": "临时数据"
-                    },
-                    {
-                        "value": "mock",
-                        "label": "模拟接口"
-                    },
-                    {
-                        "value": "real",
-                        "label": "真实请求"
-                    }
-                ],
-                "default": "json"
-            },
-            "mockPlatforms": {
-                "label": "模拟平台",
-                "type": "linkGroup",
-                "links": [
-                    {
-                        "label": "Easy Mock",
-                        "url": "https://mock.presstime.cn/"
-                    },
-                    {
-                        "label": "Apifox",
-                        "url": "https://app.apifox.com/"
-                    }
-                ],
-                "showIf": {
-                    "key": "dataAccess",
-                    "value": "mock"
-                }
-            },
-            "mockPath": {
-                "label": "接口路径",
-                "type": "text",
-                "default": "",
-                "showIf": {
-                    "key": "dataAccess",
-                    "value": "mock"
-                }
-            },
-            "requestPath": {
-                "label": "请求路径",
-                "type": "text",
-                "default": "",
-                "showIf": {
-                    "key": "dataAccess",
-                    "value": "real"
-                }
-            }
         }
     },
     {
@@ -470,63 +413,6 @@
                 "label": "数据文字",
                 "type": "color",
                 "default": "white"
-            }
-        },
-        "dataSource": {
-            "dataAccess": {
-                "label": "数据访问",
-                "type": "select",
-                "options": [
-                    {
-                        "value": "json",
-                        "label": "临时数据"
-                    },
-                    {
-                        "value": "mock",
-                        "label": "模拟接口"
-                    },
-                    {
-                        "value": "real",
-                        "label": "真实请求"
-                    }
-                ],
-                "default": "json"
-            },
-            "mockPlatforms": {
-                "label": "模拟平台",
-                "type": "linkGroup",
-                "links": [
-                    {
-                        "label": "Easy Mock",
-                        "url": "https://mock.presstime.cn/"
-                    },
-                    {
-                        "label": "Apifox",
-                        "url": "https://app.apifox.com/"
-                    }
-                ],
-                "showIf": {
-                    "key": "dataAccess",
-                    "value": "mock"
-                }
-            },
-            "mockPath": {
-                "label": "接口路径",
-                "type": "text",
-                "default": "",
-                "showIf": {
-                    "key": "dataAccess",
-                    "value": "mock"
-                }
-            },
-            "requestPath": {
-                "label": "请求路径",
-                "type": "text",
-                "default": "",
-                "showIf": {
-                    "key": "dataAccess",
-                    "value": "real"
-                }
             }
         }
     }
