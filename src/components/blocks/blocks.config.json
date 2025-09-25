@@ -413,6 +413,15 @@
                 "label": "数据文字",
                 "type": "color",
                 "default": "white"
+            },
+            "columnLabels": {
+                "label": "表头列名",
+                "type": "columnLabels",
+                "default": [
+                    "列1",
+                    "列2",
+                    "列3"
+                ]
             }
         }
     }

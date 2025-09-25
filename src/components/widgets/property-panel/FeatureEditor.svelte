@@ -58,6 +58,23 @@
     // 派生属性描述数组
     type PropEntry = { key: string; label: string; type: string; url?: string; links?: { label: string; url: string }[]; options?: any[]; min?: number; max?: number; default?: any; showIf?: { key: string; value: any } }
 
+    // 动态表格列管理
+    let columnLabels = $state<string[]>([])
+
+    // 添加新列
+    function addColumn() {
+        const currentLabels = currentValues['columnLabels'] || []
+        const newLabels = [...currentLabels, `列${currentLabels.length + 1}`]
+        handleAttrChange('columnLabels', newLabels)
+    }
+
+    // 移除列
+    function removeColumn(index: number) {
+        const currentLabels = currentValues['columnLabels'] || []
+        const newLabels = currentLabels.filter((_: any, i: number) => i !== index)
+        handleAttrChange('columnLabels', newLabels)
+    }
+
     // 工具函数：检查节点是否匹配 showIf 条件（复用现有的 showIf 逻辑）
     function matchesShowIf(node: any, showIfConfig: { key: string; value: any }): boolean {
         if (!showIfConfig || !node) return false
@@ -180,6 +197,12 @@
                 }
             })
         }
+
+        // 同步columnLabels状态
+        if (merged.columnLabels && Array.isArray(merged.columnLabels)) {
+            columnLabels = merged.columnLabels
+        }
+
         // 标记这是从DOM树同步的过程，避免清空seriesData
         syncingFromCodeEditor = true
         currentValues = merged
@@ -652,6 +675,38 @@
                         />
                     {:else if p.type === 'color'}
                         <ColorPicker value={currentValues[p.key] || p.default} projectId={$projectId} componentId={`${selectedId || 'default'}-${p.key}`} onchange={(color: string) => handleAttrChange(p.key, color)} />
+                    {:else if p.type === 'columnLabels'}
+                        <!-- 动态表格列标签管理 -->
+                        <div class="column-labels-editor">
+                            {#if currentValues[p.key] && currentValues[p.key].length > 0}
+                                <div class="column-labels-list">
+                                    {#each currentValues[p.key] as label, index}
+                                        <div class="column-label-item">
+                                            <input
+                                                type="text"
+                                                class="column-label-input"
+                                                value={label}
+                                                oninput={(e) => {
+                                                    const newLabels = [...currentValues[p.key]]
+                                                    newLabels[index] = (e.currentTarget as HTMLInputElement).value
+                                                    handleAttrChange(p.key, newLabels)
+                                                }}
+                                                placeholder="列名"
+                                            />
+                                            {#if index === 0}
+                                                <button class="unit-toggle add-btn" onclick={addColumn} title="添加新行" style="background: rgba(34, 197, 94, 0.2); color: #4ade80;">+</button>
+                                            {:else}
+                                                <button class="unit-toggle remove-btn" onclick={() => removeColumn(index)} title="移除列" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">−</button>
+                                            {/if}
+                                        </div>
+                                    {/each}
+                                </div>
+                            {:else}
+                                <div class="column-labels-header">
+                                    <button class="unit-toggle add-btn" onclick={addColumn} title="添加新行" style="background: rgba(34, 197, 94, 0.2); color: #4ade80;">+</button>
+                                </div>
+                            {/if}
+                        </div>
                     {/if}
                     <!-- 其他类型控件可在此扩展 -->
                 </PropertyRow>
@@ -768,5 +823,59 @@
     .json-input::placeholder {
         color: #9ca3af;
         white-space: pre-wrap;
+    }
+
+    /* 动态表格列标签编辑器样式 */
+    .column-labels-editor {
+        display: flex;
+        flex-direction: column;
+        gap: calc(8px * var(--scale-ratio, 1));
+        flex: 1;
+        width: 0;
+    }
+
+    .column-labels-header {
+        display: flex;
+        gap: calc(8px * var(--scale-ratio, 1));
+        align-items: center;
+    }
+
+    .column-labels-list {
+        display: flex;
+        flex-direction: column;
+        gap: calc(6px * var(--scale-ratio, 1));
+    }
+
+    .column-label-item {
+        display: flex;
+        gap: calc(8px * var(--scale-ratio, 1));
+        align-items: center;
+        padding: calc(6px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: calc(4px * var(--scale-ratio, 1));
+        border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.1);
+    }
+
+    .column-label-input {
+        flex: 1;
+        padding: calc(6px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));
+        border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.2);
+        border-radius: calc(4px * var(--scale-ratio, 1));
+        font-size: calc(13px * var(--scale-ratio, 1));
+        background: rgba(255, 255, 255, 0.1);
+        color: #e2e8f0;
+        transition: all 0.3s ease;
+        min-width: 0;
+    }
+
+    .column-label-input:focus {
+        outline: none;
+        border-color: #6366f1;
+        background: rgba(255, 255, 255, 0.15);
+        box-shadow: 0 0 0 calc(2px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.2);
+    }
+
+    .column-label-input::placeholder {
+        color: #9ca3af;
     }
 </style>
