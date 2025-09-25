@@ -9,12 +9,14 @@
     /**
      * 属性行组件 Props
      * @prop label 行左侧文字标签
+     * @prop labelVisible 是否显示标签，默认为 true
      */
     export let label: string
+    export let labelVisible: boolean = true
 </script>
 
 <div class="attr-item property-row">
-    <span class="row-label">{label}</span>
+    <span class="row-label" style={labelVisible ? '' : 'visibility: hidden;'}>{label}</span>
 
     <!-- 默认插槽：表单控件 -->
     <slot></slot>

@@ -75,6 +75,16 @@
         handleAttrChange('columnLabels', newLabels)
     }
 
+    function handlePropertyChange(event: CustomEvent) {
+        const { key, value } = event.detail
+        handleAttrChange(key, value)
+    }
+
+    function handlePropertyInput(event: CustomEvent) {
+        const { key, value } = event.detail
+        handleAttrChange(key, value)
+    }
+
     // 工具函数：检查节点是否匹配 showIf 条件（复用现有的 showIf 逻辑）
     function matchesShowIf(node: any, showIfConfig: { key: string; value: any }): boolean {
         if (!showIfConfig || !node) return false
@@ -607,109 +617,113 @@
         <h3>特性设置</h3>
         {#each propEntries() as p (p.key)}
             {#if !p.showIf || currentValues[p.showIf.key] === p.showIf.value}
-                <PropertyRow label={`${p.label}`}>
-                    {#if p.type === 'select'}
-                        <PropertySelect value={currentValues[p.key]} options={p.options} change={(v) => handleAttrChange(p.key, v)} />
-                    {:else if p.type === 'number'}
-                        <input type="number" min={p.min} max={p.max} value={currentValues[p.key] ?? ''} oninput={(e) => handleAttrChange(p.key, +(e.currentTarget as HTMLInputElement).value)} class="number-input" />
-                    {:else if p.type === 'size'}
-                        <SizeInput value={parseSize(currentValues[p.key])[0]} unit="px" unitOptions={['px']} convert={(v) => v} on:change={({ detail: { value, unit } }) => handleAttrChange(p.key, value ? `${value}${unit}` : '')} />
-                    {:else if p.type === 'image'}
-                        <div class="image-uploader">
-                            {#if !currentValues[p.key]}
-                                <button class="input-style" onclick={() => triggerUpload(p.key)} ondragover={handleDragOver} ondrop={(e) => handleDrop(p.key, e)} title="点击上传或拖拽图片到此处">上传图片</button>
-                            {:else}
-                                <div class="remove-image-wrapper">
-                                    <button class="input-style remove-button" onclick={() => handleRemoveImage(p.key)} title="移除图片" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">移除</button>
-                                </div>
-                            {/if}
-                            <input type="file" accept="image/*" style="display:none" use:bindFileInput={p.key} onchange={(e) => handleImageFileChange(p.key, e)} />
-                            {#if isUploading && p.key === 'highlightImage'}
-                                <div class="upload-progress" style="margin-top: calc(8px * var(--scale-ratio, 1));">
-                                    <div style="flex: 1; position: relative; height: calc(4px * var(--scale-ratio, 1)); background: rgba(255, 255, 255, 0.1); border-radius: calc(2px * var(--scale-ratio, 1));">
-                                        <div style="height: 100%; background: linear-gradient(90deg, #6366f1, #7c3aed); border-radius: calc(2px * var(--scale-ratio, 1)); transition: width 0.3s ease; width: {uploadProgress}%"></div>
+                {#if p.type === 'columnLabels'}
+                    <!-- 动态表格列标签管理 -->
+                    <div class="column-labels-editor">
+                        {#if currentValues[p.key] && currentValues[p.key].length > 0}
+                            {#each currentValues[p.key] as label, index}
+                                <PropertyRow label={p.label} labelVisible={index === 0}>
+                                    <div class="column-label-item">
+                                        <input
+                                            type="text"
+                                            class="column-label-input"
+                                            value={label}
+                                            oninput={(e) => {
+                                                const newLabels = [...currentValues[p.key]];
+                                                newLabels[index] = (e.currentTarget as HTMLInputElement).value;
+                                                handleAttrChange(p.key, newLabels);
+                                            }}
+                                            placeholder="列名"
+                                        />
+                                        {#if index === 0}
+                                            <button class="unit-toggle add-btn" onclick={addColumn} title="添加新行" style="background: rgba(34, 197, 94, 0.2); color: #4ade80;">+</button>
+                                        {:else}
+                                            <button class="unit-toggle remove-btn" onclick={() => removeColumn(index)} title="移除列" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">−</button>
+                                        {/if}
                                     </div>
-                                    <span style="font-size: calc(12px * var(--scale-ratio, 1)); color: rgba(255, 255, 255, 0.7); margin-left: calc(8px * var(--scale-ratio, 1));">{uploadProgress}%</span>
-                                </div>
-                            {/if}
-                        </div>
-                    {:else if p.type === 'switch'}
-                        <ToggleSwitch checked={currentValues[p.key] ?? false} on:change={(e) => handleAttrChange(p.key, e.detail)} />
-                    {:else if p.type === 'link'}
-                        <a class="input-style" href={p.url} target="_blank" rel="noopener noreferrer">{p.label ?? '打开'}</a>
-                    {:else if p.type === 'linkGroup'}
-                        <div class="link-group" style="display:flex; gap: calc(8px * var(--scale-ratio, 1)); flex:1 1 0; width:0;">
-                            {#each p.links || [] as l}
-                                <a class="input-style link-btn" href={l.url} target="_blank" rel="noopener noreferrer" style="flex:1;">{l.label}</a>
+                                </PropertyRow>
                             {/each}
-                        </div>
-                    {:else if p.type === 'text'}
-                        <input type="text" class="text-input" value={currentValues[p.key] ?? ''} oninput={(e) => handleAttrChange(p.key, (e.currentTarget as HTMLInputElement).value)} />
-                    {:else if p.type === 'json' || p.type === 'object'}
-                        <textarea
-                            rows="6"
-                            class="json-input"
-                            oninput={(e) => {
-                                const str = (e.currentTarget as HTMLTextAreaElement).value
-                                try {
-                                    handleAttrChange(p.key, JSON.parse(str))
-                                } catch (err) {
-                                    /* ignore parse error */
-                                }
-                            }}
-                        >
-                            {JSON.stringify(currentValues[p.key] ?? p.default ?? {}, null, 2)}
-                        </textarea>
-                    {:else if p.type === 'code'}
-                        <CodeEditor
-                            bind:code={currentValues[p.key]}
-                            language="javascript"
-                            theme="one-dark"
-                            height="calc(200px * var(--scale-ratio, 1))"
-                            run={(code: string) => handleAttrChange(p.key, code)}
-                            toolbar={false}
-                            autoRun={true}
-                            wrap={true}
-                            showLineNumbers={false}
-                            style="flex:1; width:0;"
-                        />
-                    {:else if p.type === 'color'}
-                        <ColorPicker value={currentValues[p.key] || p.default} projectId={$projectId} componentId={`${selectedId || 'default'}-${p.key}`} onchange={(color: string) => handleAttrChange(p.key, color)} />
-                    {:else if p.type === 'columnLabels'}
-                        <!-- 动态表格列标签管理 -->
-                        <div class="column-labels-editor">
-                            {#if currentValues[p.key] && currentValues[p.key].length > 0}
-                                <div class="column-labels-list">
-                                    {#each currentValues[p.key] as label, index}
-                                        <div class="column-label-item">
-                                            <input
-                                                type="text"
-                                                class="column-label-input"
-                                                value={label}
-                                                oninput={(e) => {
-                                                    const newLabels = [...currentValues[p.key]]
-                                                    newLabels[index] = (e.currentTarget as HTMLInputElement).value
-                                                    handleAttrChange(p.key, newLabels)
-                                                }}
-                                                placeholder="列名"
-                                            />
-                                            {#if index === 0}
-                                                <button class="unit-toggle add-btn" onclick={addColumn} title="添加新行" style="background: rgba(34, 197, 94, 0.2); color: #4ade80;">+</button>
-                                            {:else}
-                                                <button class="unit-toggle remove-btn" onclick={() => removeColumn(index)} title="移除列" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">−</button>
-                                            {/if}
-                                        </div>
-                                    {/each}
-                                </div>
-                            {:else}
+                        {:else}
+                            <PropertyRow label={p.label}>
                                 <div class="column-labels-header">
                                     <button class="unit-toggle add-btn" onclick={addColumn} title="添加新行" style="background: rgba(34, 197, 94, 0.2); color: #4ade80;">+</button>
                                 </div>
-                            {/if}
-                        </div>
-                    {/if}
-                    <!-- 其他类型控件可在此扩展 -->
-                </PropertyRow>
+                            </PropertyRow>
+                        {/if}
+                    </div>
+                {:else}
+                    <PropertyRow label={`${p.label}`}>
+                        {#if p.type === 'select'}
+                            <PropertySelect value={currentValues[p.key]} options={p.options} change={(v) => handleAttrChange(p.key, v)} />
+                        {:else if p.type === 'number'}
+                            <input type="number" min={p.min} max={p.max} value={currentValues[p.key] ?? ''} oninput={(e) => handleAttrChange(p.key, +(e.currentTarget as HTMLInputElement).value)} class="number-input" />
+                        {:else if p.type === 'size'}
+                            <SizeInput value={parseSize(currentValues[p.key])[0]} unit="px" unitOptions={['px']} convert={(v) => v} on:change={({ detail: { value, unit } }) => handleAttrChange(p.key, value ? `${value}${unit}` : '')} />
+                        {:else if p.type === 'image'}
+                            <div class="image-uploader">
+                                {#if !currentValues[p.key]}
+                                    <button class="input-style" onclick={() => triggerUpload(p.key)} ondragover={handleDragOver} ondrop={(e) => handleDrop(p.key, e)} title="点击上传或拖拽图片到此处">上传图片</button>
+                                {:else}
+                                    <div class="remove-image-wrapper">
+                                        <button class="input-style remove-button" onclick={() => handleRemoveImage(p.key)} title="移除图片" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">移除</button>
+                                    </div>
+                                {/if}
+                                <input type="file" accept="image/*" style="display:none" use:bindFileInput={p.key} onchange={(e) => handleImageFileChange(p.key, e)} />
+                                {#if isUploading && p.key === 'highlightImage'}
+                                    <div class="upload-progress" style="margin-top: calc(8px * var(--scale-ratio, 1));">
+                                        <div style="flex: 1; position: relative; height: calc(4px * var(--scale-ratio, 1)); background: rgba(255, 255, 255, 0.1); border-radius: calc(2px * var(--scale-ratio, 1));">
+                                            <div style="height: 100%; background: linear-gradient(90deg, #6366f1, #7c3aed); border-radius: calc(2px * var(--scale-ratio, 1)); transition: width 0.3s ease; width: {uploadProgress}%"></div>
+                                        </div>
+                                        <span style="font-size: calc(12px * var(--scale-ratio, 1)); color: rgba(255, 255, 255, 0.7); margin-left: calc(8px * var(--scale-ratio, 1));">{uploadProgress}%</span>
+                                    </div>
+                                {/if}
+                            </div>
+                        {:else if p.type === 'switch'}
+                            <ToggleSwitch checked={currentValues[p.key] ?? false} on:change={(e) => handleAttrChange(p.key, e.detail)} />
+                        {:else if p.type === 'link'}
+                            <a class="input-style" href={p.url} target="_blank" rel="noopener noreferrer">{p.label ?? '打开'}</a>
+                        {:else if p.type === 'linkGroup'}
+                            <div class="link-group" style="display:flex; gap: calc(8px * var(--scale-ratio, 1)); flex:1 1 0; width:0;">
+                                {#each p.links || [] as l}
+                                    <a class="input-style link-btn" href={l.url} target="_blank" rel="noopener noreferrer" style="flex:1;">{l.label}</a>
+                                {/each}
+                            </div>
+                        {:else if p.type === 'text'}
+                            <input type="text" class="text-input" value={currentValues[p.key] ?? ''} oninput={(e) => handleAttrChange(p.key, (e.currentTarget as HTMLInputElement).value)} />
+                        {:else if p.type === 'json' || p.type === 'object'}
+                            <textarea
+                                rows="6"
+                                class="json-input"
+                                oninput={(e) => {
+                                    const str = (e.currentTarget as HTMLTextAreaElement).value
+                                    try {
+                                        handleAttrChange(p.key, JSON.parse(str))
+                                    } catch (err) {
+                                        /* ignore parse error */
+                                    }
+                                }}
+                            >
+                                {JSON.stringify(currentValues[p.key] ?? p.default ?? {}, null, 2)}
+                            </textarea>
+                        {:else if p.type === 'code'}
+                            <CodeEditor
+                                bind:code={currentValues[p.key]}
+                                language="javascript"
+                                theme="one-dark"
+                                height="calc(200px * var(--scale-ratio, 1))"
+                                run={(code: string) => handleAttrChange(p.key, code)}
+                                toolbar={false}
+                                autoRun={true}
+                                wrap={true}
+                                showLineNumbers={false}
+                                style="flex:1; width:0;"
+                            />
+                        {:else if p.type === 'color'}
+                            <ColorPicker value={currentValues[p.key] || p.default} projectId={$projectId} componentId={`${selectedId || 'default'}-${p.key}`} onchange={(color: string) => handleAttrChange(p.key, color)} />
+                        {/if}
+                        <!-- 其他类型控件可在此扩展 -->
+                    </PropertyRow>
+                {/if}
             {/if}
         {/each}
     </div>
@@ -830,8 +844,7 @@
         display: flex;
         flex-direction: column;
         gap: calc(8px * var(--scale-ratio, 1));
-        flex: 1;
-        width: 0;
+        width: 100%;
     }
 
     .column-labels-header {
@@ -840,27 +853,18 @@
         align-items: center;
     }
 
-    .column-labels-list {
-        display: flex;
-        flex-direction: column;
-        gap: calc(6px * var(--scale-ratio, 1));
-    }
-
     .column-label-item {
         display: flex;
         gap: calc(8px * var(--scale-ratio, 1));
         align-items: center;
-        padding: calc(6px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: calc(4px * var(--scale-ratio, 1));
-        border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.1);
+        flex: 1;
     }
 
     .column-label-input {
         flex: 1;
-        padding: calc(6px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));
+        padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
         border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.2);
-        border-radius: calc(4px * var(--scale-ratio, 1));
+        border-radius: calc(6px * var(--scale-ratio, 1));
         font-size: calc(13px * var(--scale-ratio, 1));
         background: rgba(255, 255, 255, 0.1);
         color: #e2e8f0;
