@@ -629,9 +629,9 @@
                                             class="column-label-input"
                                             value={label}
                                             oninput={(e) => {
-                                                const newLabels = [...currentValues[p.key]];
-                                                newLabels[index] = (e.currentTarget as HTMLInputElement).value;
-                                                handleAttrChange(p.key, newLabels);
+                                                const newLabels = [...currentValues[p.key]]
+                                                newLabels[index] = (e.currentTarget as HTMLInputElement).value
+                                                handleAttrChange(p.key, newLabels)
                                             }}
                                             placeholder="列名"
                                         />

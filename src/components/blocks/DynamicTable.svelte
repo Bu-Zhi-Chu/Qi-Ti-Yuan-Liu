@@ -2,6 +2,7 @@
     interface Props {
         tableIdPrefix?: string
         headers?: string[]
+        columnLabels?: string[]
         bodyData?: (string | number)[][]
         columnFlexRatios?: number[] | null
         rowBackgroundImageUrl?: string
@@ -25,6 +26,7 @@
     let {
         tableIdPrefix = 'dynamic-table',
         headers = [],
+        columnLabels = [],
         bodyData = [],
         columnFlexRatios = null,
         rowBackgroundImageUrl = '',
@@ -41,6 +43,7 @@
         bodyHeight = 'calc(250px * var(--scale-ratio, 1))',
         showScrollbar = true,
         emptyText = '暂无数据',
+
         id = '',
         'data-name': dataName = 'DynamicTable',
         style = '',
@@ -51,72 +54,48 @@
 
     // 调试信息：检查接收到的数据
     $effect(() => {
-        console.log('[DynamicTable] 接收到的数据:', { headers, bodyData, headersLength: headers?.length, bodyDataLength: bodyData?.length })
+        console.log('[DynamicTable] 接收到的数据:', { headers, columnLabels, bodyData, headersLength: headers?.length, bodyDataLength: bodyData?.length })
         console.log('[DynamicTable] 显示的数据:', { displayHeaders, displayBodyData })
     })
 
-    // 计算列数
-    let numColumns = $derived(headers && headers.length > 0 ? headers.length : 1)
-    let useFlexRatios = $derived(columnFlexRatios && Array.isArray(columnFlexRatios) && columnFlexRatios.length === numColumns)
-
     // 默认数据，确保组件能正常显示
-    let displayHeaders = $derived(headers && headers.length > 0 ? headers : ['列1', '列2', '列3'])
-    let displayBodyData = $derived(
-        bodyData && bodyData.length > 0
-            ? bodyData
-            : [
-                  ['示例数据1', '示例数据2', '示例数据3'],
-                  ['示例数据4', '示例数据5', '示例数据6'],
-                  ['示例数据7', '示例数据8', '示例数据9'],
-                  ['示例数据10', '示例数据11', '示例数据12'],
-                  ['示例数据13', '示例数据14', '示例数据15'],
-                  ['示例数据16', '示例数据17', '示例数据18'],
-                  ['示例数据19', '示例数据20', '示例数据21'],
-                  ['示例数据22', '示例数据23', '示例数据24'],
-                  ['示例数据25', '示例数据26', '示例数据27'],
-                  ['示例数据28', '示例数据29', '示例数据30'],
-                  ['示例数据31', '示例数据32', '示例数据33'],
-                  ['示例数据34', '示例数据35', '示例数据36'],
-                  ['示例数据37', '示例数据38', '示例数据39'],
-                  ['示例数据40', '示例数据41', '示例数据42'],
-                  ['示例数据43', '示例数据44', '示例数据45'],
-                  ['示例数据46', '示例数据47', '示例数据48'],
-                  ['示例数据49', '示例数据50', '示例数据51'],
-                  ['示例数据52', '示例数据53', '示例数据54'],
-                  ['示例数据55', '示例数据56', '示例数据57'],
-                  ['示例数据58', '示例数据59', '示例数据60'],
-                  ['示例数据61', '示例数据62', '示例数据63'],
-                  ['示例数据64', '示例数据65', '示例数据66'],
-                  ['示例数据67', '示例数据68', '示例数据69'],
-                  ['示例数据70', '示例数据71', '示例数据72'],
-                  ['示例数据73', '示例数据74', '示例数据75'],
-                  ['示例数据76', '示例数据77', '示例数据78'],
-                  ['示例数据79', '示例数据80', '示例数据81'],
-                  ['示例数据82', '示例数据83', '示例数据84'],
-                  ['示例数据85', '示例数据86', '示例数据87'],
-                  ['示例数据88', '示例数据89', '示例数据90'],
-                  ['示例数据91', '示例数据92', '示例数据93'],
-                  ['示例数据94', '示例数据95', '示例数据96'],
-                  ['示例数据97', '示例数据98', '示例数据99'],
-                  ['示例数据100', '示例数据101', '示例数据102'],
-                  ['示例数据103', '示例数据104', '示例数据105'],
-                  ['示例数据106', '示例数据107', '示例数据108'],
-                  ['示例数据109', '示例数据110', '示例数据111'],
-                  ['示例数据112', '示例数据113', '示例数据114'],
-                  ['示例数据115', '示例数据116', '示例数据117'],
-                  ['示例数据118', '示例数据119', '示例数据120'],
-                  ['示例数据121', '示例数据122', '示例数据123'],
-                  ['示例数据124', '示例数据125', '示例数据126'],
-                  ['示例数据127', '示例数据128', '示例数据129'],
-                  ['示例数据130', '示例数据131', '示例数据132'],
-                  ['示例数据133', '示例数据134', '示例数据135'],
-                  ['示例数据136', '示例数据137', '示例数据138'],
-                  ['示例数据139', '示例数据140', '示例数据141'],
-                  ['示例数据142', '示例数据143', '示例数据144'],
-                  ['示例数据145', '示例数据146', '示例数据147'],
-                  ['示例数据148', '示例数据149', '示例数据150']
-              ]
-    )
+    let displayHeaders = $derived.by(() => {
+        // 优先使用 columnLabels，然后使用 headers，最后生成默认值
+        if (columnLabels && columnLabels.length > 0) {
+            return columnLabels
+        }
+        if (headers && headers.length > 0) {
+            return headers
+        }
+        if (bodyData && bodyData.length > 0 && bodyData[0].length > 0) {
+            return Array.from({ length: bodyData[0].length }, (_, i) => `列${i + 1}`)
+        }
+        return ['列1', '列2', '列3']
+    })
+
+    let displayBodyData = $derived.by(() => {
+        if (bodyData && bodyData.length > 0) {
+            return bodyData;
+        }
+
+        const numCols = displayHeaders.length;
+        const numRows = 50; // Match original default data row count
+        return Array.from({ length: numRows }, (_, rowIndex) => 
+            Array.from({ length: numCols }, (_, colIndex) => `示例 ${rowIndex + 1}-${colIndex + 1}`)
+        );
+    });
+
+    // 计算列数
+    let numColumns = $derived(displayHeaders.length)
+
+    // 监听 columnLabels 变化，确保动态更新
+    $effect(() => {
+        // 这个 effect 会追踪 columnLabels 的变化，确保 displayHeaders 重新计算
+        if (columnLabels) {
+            console.log('[DynamicTable] columnLabels 已更新:', columnLabels)
+        }
+    })
+    let useFlexRatios = $derived(columnFlexRatios && Array.isArray(columnFlexRatios) && columnFlexRatios.length === numColumns)
 
     // 生成表头样式
     function getHeaderCellStyle(index: number): string {

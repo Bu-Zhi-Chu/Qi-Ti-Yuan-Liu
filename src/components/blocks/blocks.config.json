@@ -417,11 +417,7 @@
             "columnLabels": {
                 "label": "表头列名",
                 "type": "columnLabels",
-                "default": [
-                    "列1",
-                    "列2",
-                    "列3"
-                ]
+                "default": ["列1", "列2", "列3"]
             }
         }
     }
