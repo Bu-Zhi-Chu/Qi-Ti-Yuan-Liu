@@ -7,8 +7,8 @@
     import PropertyRow from './PropertyRow.svelte'
     import PropertySelect from './PropertySelect.svelte'
     import CodeEditor from '../widgets/CodeEditor.svelte'
-import blocksConfig from '../blocks/blocks.config.json'
-import { dataMappingKeysStore } from '../../stores/data-mapping.store.svelte'
+    import blocksConfig from '../blocks/blocks.config.json'
+    import { dataMappingKeysStore } from '../../stores/data-mapping.store.svelte'
 
     const defaultDataSourceConfig = {
         dataAccess: {
@@ -104,10 +104,45 @@ import { dataMappingKeysStore } from '../../stores/data-mapping.store.svelte'
         }
     })
 
+    // Remove stray token and fix loop
     // 2. currentValues 改为 $state，在 dataSnapshot 变化时一次性写入，减少派生链深度
     let currentValues = $state<Record<string, any>>({})
     $effect(() => {
         currentValues = dataSnapshot ? { ...(dataSnapshot.attributes || {}), ...(dataSnapshot.styles || {}) } : {}
+    })
+
+    // -------------------- DynamicTable JSON 模式新增状态 --------------------
+    let jsonMappingKeys = $state<string[]>([]) // 从临时数据解析出的可用字段
+
+    // 获取 DynamicTable 的默认 columnLabels（从 blocks.config.json）
+    let defaultColumnLabels = $derived(() => {
+        if (componentType === 'DynamicTable') {
+            const comp: any = (blocksConfig as any[]).find((b) => b.type === 'DynamicTable')
+            const labels = comp?.featureProps?.columnLabels?.default
+            return Array.isArray(labels) ? labels : []
+        }
+        return []
+    })
+
+    // 表格的表头：优先使用 currentValues.columnLabels，其次根据 bodyData 推断，再退回 DynamicTable 默认
+    let tableHeaders = $derived(() => {
+        if (currentValues.columnLabels && currentValues.columnLabels.length) {
+            return currentValues.columnLabels
+        }
+        if (currentValues.bodyData && Array.isArray(currentValues.bodyData[0]) && currentValues.bodyData[0].length > 0) {
+            return Array.from({ length: currentValues.bodyData[0].length }, (_, i) => `列${i + 1}`)
+        }
+        return defaultColumnLabels()
+    })
+
+    // 派生状态：确保 jsonColumnMapping 数组的长度与列数一致
+    let jsonColumnMapping = $derived(() => {
+        const mapping = currentValues.jsonColumnMapping as string[] | undefined
+        const count = tableHeaders.length
+        if (mapping && Array.isArray(mapping) && mapping.length === count) {
+            return mapping
+        }
+        return Array(count).fill('')
     })
 
     // -------------------- 解析缓存 --------------------
@@ -117,7 +152,7 @@ import { dataMappingKeysStore } from '../../stores/data-mapping.store.svelte'
 
     // 导入序列提取服务
     import { extractSeriesFromCode } from '../../services/parser/series-extractor.service'
-import { extractResultArray } from '../../services/parser/data-extractor.service'
+    import { extractResultArray } from '../../services/parser/data-extractor.service'
 
     const derivedState = $derived(() => {
         const code = currentValues.code as string | undefined
@@ -289,39 +324,84 @@ import { extractResultArray } from '../../services/parser/data-extractor.service
         handleAttrChange('mockSeriesMapping', newMapping)
     }
 
+    // 新增：根据当前映射立即重算并写回 bodyData
+    function regenerateBodyData() {
+        const mapping = jsonColumnMapping()
+        const data = currentValues.jsonData as any[] | undefined
+        const headers = tableHeaders()
+    
+        if (!data || !mapping || !headers.length) {
+            return // 无数据或映射不全时直接返回，不做清空
+        }
+    
+        // 允许部分映射为空，只把映射命中的列写进表格
+        const newBody = data.map((row) =>
+            mapping.map((key) => (key && jsonMappingKeys.includes(key) ? row[key] ?? '' : ''))
+        )
+        handleAttrChange('bodyData', [headers, ...newBody])
+    }
+    
+    /** (新增) 实时更新第 index 个 json data 映射路径 */
+    function updateJsonColumnMapping(index: number, path: string) {
+        if (!selectedId || jsonColumnMapping()[index] === path) return
+    
+        const newMapping = [...jsonColumnMapping()]
+        newMapping[index] = path
+    
+        handleAttrChange('jsonColumnMapping', newMapping)
+        // 关键：立即重算并写回 bodyData，保证 doms 表同步
+        regenerateBodyData()
+    }
+
     // 统一数据抽取逻辑已下沉到 data-extractor.service.ts
 
-    /** 更新 DynamicTable 的临时数据 */
+    /** 改造：更新 DynamicTable 的临时数据，现在只解析并提取 key，不直接写 bodyData */
     function updateDynamicTableData(code: string) {
         if (!selectedId) return
+
+        handleAttrChange('bodyDataCode', code) // 始终保存原始代码
+
         // 当输入为空时，清空数据并触发更新
         if (code.trim() === '') {
             handleAttrChange('bodyData', [])
-            handleAttrChange('bodyDataCode', '')
+            handleAttrChange('jsonData', []) // 清空原始数据
+            jsonMappingKeys = [] // 清空可用字段
             return
         }
         try {
             // 优先使用通用抽取
             const resultArray = extractResultArray(code)
+            console.log('[DataEditor] extractResultArray 结果:', resultArray)
             // 简单校验：必须是对象数组才能继续
-            if (!resultArray.length) {
-                handleAttrChange('bodyData', [])
-            } else if (typeof resultArray[0] !== 'object') {
-                throw new Error('result 必须是对象数组')
-            } else {
-                // 自动把对象数组转成二维数组：第一行表头，后面行数据
-                const keys = Object.keys(resultArray[0])
-                const body: any[][] = [keys]
-                resultArray.forEach((row: any) => body.push(keys.map((k) => row[k] ?? '')))
-                handleAttrChange('bodyData', body)
+            if (!resultArray.length || typeof resultArray[0] !== 'object') {
+                jsonMappingKeys = []
+                handleAttrChange('jsonData', [])
+                if (resultArray.length > 0) {
+                    throw new Error('result 必须是对象数组')
+                }
+                return
             }
-            handleAttrChange('bodyDataCode', code)
+
+            // 成功解析，提取 key 并保存原始数据
+            const keys = Object.keys(resultArray[0])
+            console.log('[DataEditor] 提取到的字段:', keys)
+            jsonMappingKeys = keys
+            handleAttrChange('jsonData', resultArray)
+
+            // 保持现有的表头设置，不根据JSON字段数改变列数
+            // 表格列数由tableHeaders决定，JSON字段只是绑定数据源
         } catch (err) {
             console.error('[DataEditor] 更新 DynamicTable 数据失败', err)
-            // 若解析失败，也同步保存原始代码，便于用户修复
-            handleAttrChange('bodyDataCode', code)
+            // 解析失败，清空相关状态
+            jsonMappingKeys = []
+            handleAttrChange('jsonData', [])
         }
     }
+
+    // Effect：当列映射或原始数据变化时，重新生成 bodyData
+    $effect(() => {
+        // 逻辑已下沉到 regenerateBodyData，由映射变动时主动调用，无需再监听
+    })
 
     /** 实时更新第 index 个 request data 映射路径 */
     function updateRequestSeriesMapping(index: number, path: string) {
@@ -411,6 +491,15 @@ import { extractResultArray } from '../../services/parser/data-extractor.service
             <PropertyRow label="临时数据">
                 <CodeEditor code={currentValues.bodyDataCode ?? ''} language="javascript" theme="one-dark" height="calc(120px * var(--scale-ratio, 1))" run={(code: string) => updateDynamicTableData(code)} toolbar={false} autoRun={true} wrap={true} showLineNumbers={false} style="flex:1; width:0;" />
             </PropertyRow>
+            <!-- 新增：列映射 -->
+            <!-- 调试信息: jsonMappingKeys={jsonMappingKeys}, tableHeaders={tableHeaders} -->
+            {#if jsonMappingKeys.length > 0}
+                {#each tableHeaders() as header, idx}
+                    <PropertyRow label={`${getChineseOrdinal(idx)}映射`}>
+                        <PropertySelect value={jsonColumnMapping()[idx] || ''} options={jsonMappingKeys.map((k) => ({ label: k, value: k }))} change={(v) => updateJsonColumnMapping(idx, v)} placeholder="选择数据字段" />
+                    </PropertyRow>
+                {/each}
+            {/if}
         {:else if dataArrays.length > 0}
             {#each dataArrays as arr, idx}
                 <PropertyRow label={`${getChineseOrdinal(idx)}序列`}>

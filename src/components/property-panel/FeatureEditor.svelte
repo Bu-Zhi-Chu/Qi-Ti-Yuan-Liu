@@ -20,7 +20,7 @@
     import { findParentById } from '../../stores/dom-tree.store.svelte'
     import { getDesignSize } from '../../stores/dom-tree.store.svelte'
     import CodeEditor from '../widgets/CodeEditor.svelte'
-import ColorPicker from '../widgets/ColorPicker.svelte'
+    import ColorPicker from '../widgets/ColorPicker.svelte'
 
     // 派生当前选中节点的 featureProps
     const featureProps = $derived(() => {

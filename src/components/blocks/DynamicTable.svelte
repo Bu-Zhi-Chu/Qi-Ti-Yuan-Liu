@@ -75,15 +75,13 @@
 
     let displayBodyData = $derived.by(() => {
         if (bodyData && bodyData.length > 0) {
-            return bodyData;
+            return bodyData
         }
 
-        const numCols = displayHeaders.length;
-        const numRows = 50; // Match original default data row count
-        return Array.from({ length: numRows }, (_, rowIndex) => 
-            Array.from({ length: numCols }, (_, colIndex) => `示例 ${rowIndex + 1}-${colIndex + 1}`)
-        );
-    });
+        const numCols = displayHeaders.length
+        const numRows = 50 // Match original default data row count
+        return Array.from({ length: numRows }, (_, rowIndex) => Array.from({ length: numCols }, (_, colIndex) => `示例 ${rowIndex + 1}-${colIndex + 1}`))
+    })
 
     // 计算列数
     let numColumns = $derived(displayHeaders.length)
