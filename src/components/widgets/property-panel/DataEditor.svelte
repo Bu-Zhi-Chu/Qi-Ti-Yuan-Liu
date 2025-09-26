@@ -288,6 +288,27 @@
         handleAttrChange('mockSeriesMapping', newMapping)
     }
 
+    /** 更新 DynamicTable 的临时数据 */
+    function updateDynamicTableData(code: string) {
+        if (!selectedId) return
+        // 当输入为空时，清空数据并触发更新
+        if (code.trim() === '') {
+            handleAttrChange('bodyData', [])
+            handleAttrChange('bodyDataCode', '')
+            return
+        }
+        try {
+            const parsed = eval(code)
+            if (!Array.isArray(parsed)) throw new Error('数据必须是二维数组')
+            handleAttrChange('bodyData', parsed)
+            handleAttrChange('bodyDataCode', code)
+        } catch (err) {
+            console.error('[DataEditor] 更新 DynamicTable 数据失败', err)
+            // 若解析失败，也同步保存原始代码，便于用户修复
+            handleAttrChange('bodyDataCode', code)
+        }
+    }
+
     /** 实时更新第 index 个 request data 映射路径 */
     function updateRequestSeriesMapping(index: number, path: string) {
         if (!selectedId || requestSeriesMapping()[index] === path) return
@@ -370,14 +391,20 @@
 
     <!-- 根据数据源显示不同的编辑器 -->
 
-    <!-- 虚拟数据(json)模式：编辑 seriesData -->
+    <!-- 虚拟数据(json)模式 -->
     {#if dataSource === 'json'}
-        {#if dataArrays.length > 0}
-            {#each dataArrays as arr, idx}
-                <PropertyRow label={`${getChineseOrdinal(idx)}序列`}>
-                    <CodeEditor code={dataArrays[idx]} language="javascript" theme="one-dark" height="calc(80px * var(--scale-ratio, 1))" run={(code: string) => updateDataArray(idx, code)} toolbar={false} autoRun={true} wrap={true} showLineNumbers={false} style="flex:1; width:0;" />
-                </PropertyRow>
-            {/each}
+        {#if componentType === 'DynamicTable'}
+            <PropertyRow label="临时数据">
+                <CodeEditor code={currentValues.bodyDataCode ?? ''} language="javascript" theme="one-dark" height="calc(120px * var(--scale-ratio, 1))" run={(code: string) => updateDynamicTableData(code)} toolbar={false} autoRun={true} wrap={true} showLineNumbers={false} style="flex:1; width:0;" />
+            </PropertyRow>
+        {:else}
+            {#if dataArrays.length > 0}
+                {#each dataArrays as arr, idx}
+                    <PropertyRow label={`${getChineseOrdinal(idx)}序列`}>
+                        <CodeEditor code={dataArrays[idx]} language="javascript" theme="one-dark" height="calc(80px * var(--scale-ratio, 1))" run={(code: string) => updateDataArray(idx, code)} toolbar={false} autoRun={true} wrap={true} showLineNumbers={false} style="flex:1; width:0;" />
+                    </PropertyRow>
+                {/each}
+            {/if}
         {/if}
     {/if}
 
