@@ -36,7 +36,7 @@
 <script lang="ts">
     import { onMount, createEventDispatcher, tick } from 'svelte'
     import ResponsiveBox from '../core/ResponsiveBox.svelte'
-    import { updateNodeProps } from '../../services/property-panel/property-panel.service'
+    import { updateNodeProps } from '../../services/parser/property-panel.service'
 
     interface Props {
         value?: Date | string

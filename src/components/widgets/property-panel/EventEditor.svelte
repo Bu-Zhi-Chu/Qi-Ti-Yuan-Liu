@@ -4,7 +4,7 @@
 -->
 <script lang="ts">
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { getNodePropsStore, getNodeProps as _getNodeProps } from '../../../services/property-panel/property-panel.service'
+import { getNodePropsStore, getNodeProps as _getNodeProps } from '../../../services/parser/property-panel.service'
 
     let { selectedId = null } = $props<{ selectedId?: string | null }>()
     let eventSnapshot = $state<ReturnType<typeof _getNodeProps> | null>(null)

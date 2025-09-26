@@ -4,6 +4,7 @@
  */
 import { selectedId } from '../../stores/dom-tree.store.svelte'
 import { getEChartsInstance } from '../component-instance/echarts-instance.service'
+import { extractResultArray } from '../parser/data-extractor.service'
 export interface SeriesExtractionResult {
   /** 提取到的数据数组 */
   dataArrays: string[]
@@ -34,24 +35,36 @@ export function extractSeriesFromCode(
     }
   }
 
-  // 使用通用方法提取数据匹配项
+  // 1. 优先读实例数据
   const matches = extractDataMatches(code)
   const legendData = extractLegendData(code)
 
-  // 提取数据数组
-  const parsed = matches.map((m) => m[1])
+  // 2. 如果实例里没有数据，再用统一抽取器从代码里拿 result
+  let parsed: string[] = matches.length
+    ? matches.map((m) => m[1])
+    : (() => {
+      try {
+        // 把代码当模块跑，拿到 result 数组后转成字符串数组（保持旧接口）
+        const resultArr = extractResultArray(code)
+        if (!Array.isArray(resultArr) || resultArr.length === 0) return []
+        // 一维/二维都先整体 JSON.stringify，后续 ECharts 会再 parse
+        return [JSON.stringify(resultArr)]
+      } catch {
+        return []
+      }
+    })()
 
-  // 保底：若没抽到任何数据但解析到图例，用图例长度生成空壳，避免输入框消失
+  // 3. 保底：若没抽到任何数据但解析到图例，用图例长度生成空壳，避免输入框消失
   const fallbackData =
     parsed.length === 0 && legendData && legendData.length > 0
       ? Array(legendData.length).fill('[]')   // 空数组字符串，保持格式一致
       : parsed
 
-  // 决定最终数据：如果 existingSeriesData 有值，则优先使用；否则用保底数据
+  // 4. 决定最终数据：如果 existingSeriesData 有值，则优先使用；否则用保底数据
   const finalData =
     existingSeriesData && existingSeriesData.length > 0 ? existingSeriesData : fallbackData
 
-  // 检查是否需要回写
+  // 5. 检查是否需要回写
   const needsWriteBack = JSON.stringify(existingSeriesData) !== JSON.stringify(finalData)
 
   return {

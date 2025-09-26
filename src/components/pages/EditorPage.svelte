@@ -18,7 +18,7 @@
     import { registerShortcut } from '../../services/interactions/shortcut.service'
     import { isStandardProdMode, isDevMode, isLiteMode } from '../../services/env/environment.service'
     import { copySelectedNode, pasteNodeToSelectedParent, cutSelectedNode } from '../../stores/dom-tree.store.svelte'
-    import { updateNodeProps } from '../../services/property-panel/property-panel.service'
+    import { updateNodeProps } from '../../services/parser/property-panel.service'
 
     /* 新增：Dom 区域与 Dom 树列表组件 */
     import DomCanvas from '../widgets/DomCanvas.svelte'

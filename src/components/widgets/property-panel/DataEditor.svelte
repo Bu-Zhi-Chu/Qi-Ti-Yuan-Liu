@@ -3,7 +3,7 @@
      现在只支持JavaScript代码方式，不再处理dataProps
 -->
 <script lang="ts">
-    import { getNodeProps as _getNodeProps, getNodePropsStore, updateNodeProps, getFullNode } from '../../../services/property-panel/property-panel.service'
+    import { getNodeProps as _getNodeProps, getNodePropsStore, updateNodeProps, getFullNode } from '../../../services/parser/property-panel.service'
     import PropertyRow from './PropertyRow.svelte'
     import PropertySelect from './PropertySelect.svelte'
     import CodeEditor from '../CodeEditor.svelte'
@@ -116,7 +116,8 @@
     let lastExtraction: { dataArrays: string[]; matches: RegExpMatchArray[] } | null = null
 
     // 导入序列提取服务
-    import { extractSeriesFromCode } from '../../../services/property-panel/series-extractor.service'
+    import { extractSeriesFromCode } from '../../../services/parser/series-extractor.service'
+    import { extractResultArray } from '../../../services/parser/data-extractor.service'
 
     const derivedState = $derived(() => {
         const code = currentValues.code as string | undefined
@@ -288,6 +289,8 @@
         handleAttrChange('mockSeriesMapping', newMapping)
     }
 
+    // 统一数据抽取逻辑已下沉到 data-extractor.service.ts
+
     /** 更新 DynamicTable 的临时数据 */
     function updateDynamicTableData(code: string) {
         if (!selectedId) return
@@ -298,9 +301,20 @@
             return
         }
         try {
-            const parsed = eval(code)
-            if (!Array.isArray(parsed)) throw new Error('数据必须是二维数组')
-            handleAttrChange('bodyData', parsed)
+            // 优先使用通用抽取
+            const resultArray = extractResultArray(code)
+            // 简单校验：必须是对象数组才能继续
+            if (!resultArray.length) {
+                handleAttrChange('bodyData', [])
+            } else if (typeof resultArray[0] !== 'object') {
+                throw new Error('result 必须是对象数组')
+            } else {
+                // 自动把对象数组转成二维数组：第一行表头，后面行数据
+                const keys = Object.keys(resultArray[0])
+                const body: any[][] = [keys]
+                resultArray.forEach((row: any) => body.push(keys.map((k) => row[k] ?? '')))
+                handleAttrChange('bodyData', body)
+            }
             handleAttrChange('bodyDataCode', code)
         } catch (err) {
             console.error('[DataEditor] 更新 DynamicTable 数据失败', err)
@@ -397,14 +411,12 @@
             <PropertyRow label="临时数据">
                 <CodeEditor code={currentValues.bodyDataCode ?? ''} language="javascript" theme="one-dark" height="calc(120px * var(--scale-ratio, 1))" run={(code: string) => updateDynamicTableData(code)} toolbar={false} autoRun={true} wrap={true} showLineNumbers={false} style="flex:1; width:0;" />
             </PropertyRow>
-        {:else}
-            {#if dataArrays.length > 0}
-                {#each dataArrays as arr, idx}
-                    <PropertyRow label={`${getChineseOrdinal(idx)}序列`}>
-                        <CodeEditor code={dataArrays[idx]} language="javascript" theme="one-dark" height="calc(80px * var(--scale-ratio, 1))" run={(code: string) => updateDataArray(idx, code)} toolbar={false} autoRun={true} wrap={true} showLineNumbers={false} style="flex:1; width:0;" />
-                    </PropertyRow>
-                {/each}
-            {/if}
+        {:else if dataArrays.length > 0}
+            {#each dataArrays as arr, idx}
+                <PropertyRow label={`${getChineseOrdinal(idx)}序列`}>
+                    <CodeEditor code={dataArrays[idx]} language="javascript" theme="one-dark" height="calc(80px * var(--scale-ratio, 1))" run={(code: string) => updateDataArray(idx, code)} toolbar={false} autoRun={true} wrap={true} showLineNumbers={false} style="flex:1; width:0;" />
+                </PropertyRow>
+            {/each}
         {/if}
     {/if}
 

@@ -5,13 +5,13 @@
 -->
 <script lang="ts">
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    import { getNodePropsStore, getNodeProps as _getNodeProps, updateNodeProps } from '../../../services/property-panel/property-panel.service'
+    import { getNodePropsStore, getNodeProps as _getNodeProps, updateNodeProps } from '../../../services/parser/property-panel.service'
     import { onMount } from 'svelte'
     import PropertyRow from './PropertyRow.svelte'
     import PropertySelect from './PropertySelect.svelte'
     import SizeInput from './SizeInput.svelte'
     import { addNodeToParent, removeNodeById } from '../../../stores/dom-tree.store.svelte'
-    import { getFullNode } from '../../../services/property-panel/property-panel.service'
+    import { getFullNode } from '../../../services/parser/property-panel.service'
 
     interface Props {
         selectedId: string | null

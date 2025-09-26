@@ -38,7 +38,7 @@ import { moveDomByOffset } from '../utils/move-dom.util'
 import { getElementByNodeId } from '../utils/dom-geometry.util'
 import { domTree, findNodeById } from '../../stores/dom-tree.store.svelte'
 import { copySelectedNode, pasteNodeToSelectedParent } from '../../stores/dom-tree.store.svelte'
-import { updateNodeProps } from '../../services/property-panel/property-panel.service'
+import { updateNodeProps } from '../../services/parser/property-panel.service'
 
 
 // 提取数值工具函数，兼容 calc(...) 表达式，文件级复用

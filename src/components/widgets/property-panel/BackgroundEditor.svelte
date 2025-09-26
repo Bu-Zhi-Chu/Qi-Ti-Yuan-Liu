@@ -17,7 +17,7 @@
     import { onDestroy } from 'svelte'
     import { get } from 'svelte/store'
 
-    import { getNodePropsStore, getNodeProps as _getNodeProps, updateNodeProps, getFullNode } from '../../../services/property-panel/property-panel.service'
+    import { getNodePropsStore, getNodeProps as _getNodeProps, updateNodeProps, getFullNode } from '../../../services/parser/property-panel.service'
     import { getElementByNodeId } from '../../../services/utils/dom-geometry.util'
     import { getScaleRatio } from '../../../services/utils/get-scale-ratio.util'
     import { projectId } from '../../../stores/dom-tree.store.svelte'

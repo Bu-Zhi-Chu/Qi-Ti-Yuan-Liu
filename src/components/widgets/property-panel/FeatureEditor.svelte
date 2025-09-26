@@ -2,7 +2,7 @@
      根据不同节点类型展示特性设置行
 -->
 <script lang="ts">
-    import { getNodePropsStore, getNodeProps as _getNodeProps, getFullNode, updateNodeProps } from '../../../services/property-panel/property-panel.service'
+    import { getNodePropsStore, getNodeProps as _getNodeProps, getFullNode, updateNodeProps } from '../../../services/parser/property-panel.service'
     import { addNodeToParent, removeNodeById } from '../../../stores/dom-tree.store.svelte'
     import blocksConfig from '../../blocks/blocks.config.json'
     import PropertyRow from './PropertyRow.svelte'

@@ -431,7 +431,7 @@
     })
 
     // 导入序列提取服务
-    import { extractSeriesFromCode, getSeriesCount, extractDataMatches } from '../../services/property-panel/series-extractor.service'
+    import { extractSeriesFromCode, getSeriesCount, extractDataMatches } from '../../services/parser/series-extractor.service'
 
     // 防抖控制：避免短时间内多次触发option计算
     let optionUpdateTimestamp = 0
