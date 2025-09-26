@@ -15,10 +15,10 @@
 -->
 <script lang="ts">
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    import { getNodePropsStore, getNodeProps as _getNodeProps, updateNodeProps } from '../../../services/parser/property-panel.service'
-    import { domTree } from '../../../stores/dom-tree.store.svelte'
-    import { getElementByNodeId } from '../../../services/utils/dom-geometry.util'
-    import { getScaleRatio } from '../../../services/utils/get-scale-ratio.util'
+    import { getNodePropsStore, getNodeProps as _getNodeProps, updateNodeProps } from '../../services/parser/property-panel.service'
+    import { domTree } from '../../stores/dom-tree.store.svelte'
+    import { getElementByNodeId } from '../../services/utils/dom-geometry.util'
+    import { getScaleRatio } from '../../services/utils/get-scale-ratio.util'
     import PropertyRow from './PropertyRow.svelte'
     import SizeInput from './SizeInput.svelte'
     import PropertySelect from './PropertySelect.svelte'
@@ -88,7 +88,7 @@
         unsubscribe()
         if (selectedId) {
             const store = getNodePropsStore(selectedId)
-            unsubscribe = store.subscribe((snapshot) => {
+            unsubscribe = store.subscribe((snapshot: any) => {
                 styleSnapshot = snapshot
                 currentPosition = (snapshot?.styles?.position as any) || 'static'
                 ;[currentTop, currentTopUnit] = parseSize(snapshot?.styles?.top)

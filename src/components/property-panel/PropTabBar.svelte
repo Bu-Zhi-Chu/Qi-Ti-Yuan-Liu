@@ -18,7 +18,7 @@
  -->
 
 <script lang="ts">
-    import Icon from '../Icon.svelte'
+    import Icon from '../widgets/Icon.svelte'
 
     /**
      * 标签项类型

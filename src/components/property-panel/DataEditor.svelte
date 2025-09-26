@@ -3,12 +3,12 @@
      现在只支持JavaScript代码方式，不再处理dataProps
 -->
 <script lang="ts">
-    import { getNodeProps as _getNodeProps, getNodePropsStore, updateNodeProps, getFullNode } from '../../../services/parser/property-panel.service'
+    import { getNodeProps as _getNodeProps, getNodePropsStore, updateNodeProps, getFullNode } from '../../services/parser/property-panel.service'
     import PropertyRow from './PropertyRow.svelte'
     import PropertySelect from './PropertySelect.svelte'
-    import CodeEditor from '../CodeEditor.svelte'
-    import blocksConfig from '../../blocks/blocks.config.json'
-    import { dataMappingKeysStore } from '../../../stores/data-mapping.store.svelte'
+    import CodeEditor from '../widgets/CodeEditor.svelte'
+import blocksConfig from '../blocks/blocks.config.json'
+import { dataMappingKeysStore } from '../../stores/data-mapping.store.svelte'
 
     const defaultDataSourceConfig = {
         dataAccess: {
@@ -85,7 +85,7 @@
             })
 
             // 订阅数据映射键
-            const dataMappingUnsubscribe = dataMappingKeysStore.subscribe((allKeys) => {
+            const dataMappingUnsubscribe = dataMappingKeysStore.subscribe((allKeys: any) => {
                 dataMappingKeys = allKeys[selectedId] || []
             })
 
@@ -116,8 +116,8 @@
     let lastExtraction: { dataArrays: string[]; matches: RegExpMatchArray[] } | null = null
 
     // 导入序列提取服务
-    import { extractSeriesFromCode } from '../../../services/parser/series-extractor.service'
-    import { extractResultArray } from '../../../services/parser/data-extractor.service'
+    import { extractSeriesFromCode } from '../../services/parser/series-extractor.service'
+import { extractResultArray } from '../../services/parser/data-extractor.service'
 
     const derivedState = $derived(() => {
         const code = currentValues.code as string | undefined

@@ -24,16 +24,16 @@
 -->
 <script lang="ts">
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    import { getNodePropsStore, getNodeProps as _getNodeProps, updateNodeProps, getFullNode } from '../../../services/parser/property-panel.service'
-    import { updateNodeProperties } from '../../../stores/dom-tree.store.svelte'
-    import { projectId } from '../../../stores/dom-tree.store.svelte'
-    import ColorPicker from '../ColorPicker.svelte'
-    import { getScaleRatio } from '../../../services/utils/get-scale-ratio.util'
+    import { getNodePropsStore, getNodeProps as _getNodeProps, updateNodeProps, getFullNode } from '../../services/parser/property-panel.service'
+    import { updateNodeProperties } from '../../stores/dom-tree.store.svelte'
+    import { projectId } from '../../stores/dom-tree.store.svelte'
+    import ColorPicker from '../widgets/ColorPicker.svelte'
+    import { getScaleRatio } from '../../services/utils/get-scale-ratio.util'
     import PropertyRow from './PropertyRow.svelte'
     import PropertySelect from './PropertySelect.svelte'
     import SizeInput from './SizeInput.svelte'
-    import blocksConfig from '../../blocks/blocks.config.json'
-    import fontsConfig from '../../fonts/fonts.config.json'
+    import blocksConfig from '../blocks/blocks.config.json'
+    import fontsConfig from '../fonts/fonts.config.json'
 
     interface Props {
         selectedId: string | null

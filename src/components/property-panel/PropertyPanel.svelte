@@ -16,8 +16,8 @@
     import EventEditor from './EventEditor.svelte'
     import DataEditor from './DataEditor.svelte'
     import FeatureEditor from './FeatureEditor.svelte'
-    import { selectedId as getSelectedId } from '../../../stores/dom-tree.store.svelte'
-    import { getFullNode } from '../../../services/parser/property-panel.service'
+    import { selectedId as getSelectedId } from '../../stores/dom-tree.store.svelte'
+    import { getFullNode } from '../../services/parser/property-panel.service'
 
     // Runes props - 使用 $props 代替 export let
     // 新增 showToolbar，用于控制是否显示顶部工具栏，默认为 true

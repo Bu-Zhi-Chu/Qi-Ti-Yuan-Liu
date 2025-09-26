@@ -23,7 +23,7 @@
     /* 新增：Dom 区域与 Dom 树列表组件 */
     import DomCanvas from '../widgets/DomCanvas.svelte'
     import TabbedPanel from '../widgets/TabbedPanel.svelte'
-    import PropertyPanel from '../widgets/property-panel/PropertyPanel.svelte'
+    import PropertyPanel from '../property-panel/PropertyPanel.svelte'
     import Icon from '../widgets/Icon.svelte'
     import blocksConfig from '../blocks/blocks.config.json'
     import { applyLogConfig } from '../../services/utils/log-switch'

@@ -6,12 +6,14 @@
 -->
 <script lang="ts">
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    import { getNodePropsStore, getNodeProps as _getNodeProps, updateNodeProps } from '../../../services/parser/property-panel.service'
-    import ColorPicker from '../ColorPicker.svelte'
+    import { getNodePropsStore, getNodeProps as _getNodeProps, updateNodeProps } from '../../services/parser/property-panel.service'
+    import { projectId } from '../../stores/dom-tree.store.svelte'
+    import { getScaleRatio } from '../../services/utils/get-scale-ratio.util'
+    import ColorPicker from '../widgets/ColorPicker.svelte'
     import PropertyRow from './PropertyRow.svelte'
     import SizeInput from './SizeInput.svelte'
     import PropertySelect from './PropertySelect.svelte'
-    import ToggleSwitch from '../ToggleSwitch.svelte'
+    import ToggleSwitch from '../widgets/ToggleSwitch.svelte'
     import { onMount } from 'svelte'
 
     interface Props {

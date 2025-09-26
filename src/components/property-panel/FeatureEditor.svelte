@@ -2,25 +2,25 @@
      根据不同节点类型展示特性设置行
 -->
 <script lang="ts">
-    import { getNodePropsStore, getNodeProps as _getNodeProps, getFullNode, updateNodeProps } from '../../../services/parser/property-panel.service'
-    import { addNodeToParent, removeNodeById } from '../../../stores/dom-tree.store.svelte'
-    import blocksConfig from '../../blocks/blocks.config.json'
+    import { getNodePropsStore, getNodeProps as _getNodeProps, getFullNode, updateNodeProps } from '../../services/parser/property-panel.service'
+    import { addNodeToParent, removeNodeById } from '../../stores/dom-tree.store.svelte'
+    import blocksConfig from '../blocks/blocks.config.json'
     import PropertyRow from './PropertyRow.svelte'
     import PropertySelect from './PropertySelect.svelte'
-    import ToggleSwitch from '../ToggleSwitch.svelte'
+    import ToggleSwitch from '../widgets/ToggleSwitch.svelte'
     import SizeInput from './SizeInput.svelte'
-    import { processImageUpload } from '../../../services/image/upload-image.service'
+    import { processImageUpload } from '../../services/image/upload-image.service'
     import { get } from 'svelte/store'
-    import { hashBlob, canDecode, convertTo } from '../../../services/image/image-utils'
-    import { getImage, addOrIncrement, decrementOrDelete } from '../../../services/database/image-store.service'
-    import { getImageSize } from '../../../services/image/upload-image.service'
-    import { projectId } from '../../../stores/dom-tree.store.svelte'
-    import { domTree } from '../../../stores/dom-tree.store.svelte'
-    import { setCurrentPage } from '../../../stores/dom-tree.store.svelte'
-    import { findParentById } from '../../../stores/dom-tree.store.svelte'
-    import { getDesignSize } from '../../../stores/dom-tree.store.svelte'
-    import CodeEditor from '../CodeEditor.svelte'
-    import ColorPicker from '../ColorPicker.svelte'
+    import { hashBlob, canDecode, convertTo } from '../../services/image/image-utils'
+    import { getImage, addOrIncrement, decrementOrDelete } from '../../services/database/image-store.service'
+    import { getImageSize } from '../../services/image/upload-image.service'
+    import { projectId } from '../../stores/dom-tree.store.svelte'
+    import { domTree } from '../../stores/dom-tree.store.svelte'
+    import { setCurrentPage } from '../../stores/dom-tree.store.svelte'
+    import { findParentById } from '../../stores/dom-tree.store.svelte'
+    import { getDesignSize } from '../../stores/dom-tree.store.svelte'
+    import CodeEditor from '../widgets/CodeEditor.svelte'
+import ColorPicker from '../widgets/ColorPicker.svelte'
 
     // 派生当前选中节点的 featureProps
     const featureProps = $derived(() => {
@@ -679,7 +679,7 @@
                                 {/if}
                             </div>
                         {:else if p.type === 'switch'}
-                            <ToggleSwitch checked={currentValues[p.key] ?? false} on:change={(e) => handleAttrChange(p.key, e.detail)} />
+                            <ToggleSwitch checked={currentValues[p.key] ?? false} on:change={(e: CustomEvent<boolean>) => handleAttrChange(p.key, e.detail)} />
                         {:else if p.type === 'link'}
                             <a class="input-style" href={p.url} target="_blank" rel="noopener noreferrer">{p.label ?? '打开'}</a>
                         {:else if p.type === 'linkGroup'}

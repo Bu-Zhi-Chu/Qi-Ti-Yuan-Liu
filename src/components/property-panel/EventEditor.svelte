@@ -4,28 +4,28 @@
 -->
 <script lang="ts">
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { getNodePropsStore, getNodeProps as _getNodeProps } from '../../../services/parser/property-panel.service'
+    import { getNodePropsStore, getNodeProps as _getNodeProps } from '../../services/parser/property-panel.service'
 
     let { selectedId = null } = $props<{ selectedId?: string | null }>()
     let eventSnapshot = $state<ReturnType<typeof _getNodeProps> | null>(null)
 
     let unsubscribe = () => {}
-$effect(() => {
-    unsubscribe()
-    if (selectedId) {
-        const store = getNodePropsStore(selectedId)
-        eventSnapshot = _getNodeProps(selectedId)
-        unsubscribe = store.subscribe(() => {
-            eventSnapshot = _getNodeProps(selectedId)
-        })
-    } else {
-        eventSnapshot = null
-    }
-    return () => {
+    $effect(() => {
         unsubscribe()
-        unsubscribe = () => {}
-    }
-})
+        if (selectedId) {
+            const store = getNodePropsStore(selectedId)
+            eventSnapshot = _getNodeProps(selectedId)
+            unsubscribe = store.subscribe(() => {
+                eventSnapshot = _getNodeProps(selectedId)
+            })
+        } else {
+            eventSnapshot = null
+        }
+        return () => {
+            unsubscribe()
+            unsubscribe = () => {}
+        }
+    })
 </script>
 
 <div class="event-editor">
