@@ -248,20 +248,20 @@
 
     let mockSeriesMapping = $derived(() => {
         const mapping = currentValues.mockSeriesMapping as string[] | undefined
-        const count = seriesCount
+        const count = componentType === 'DynamicTable' ? tableHeaders().length : seriesCount
         if (mapping && Array.isArray(mapping) && mapping.length === count) {
             return mapping
         }
-        return Array(count).fill('')
+        return Array(count).fill(null)
     })
 
     let requestSeriesMapping = $derived(() => {
         const mapping = currentValues.requestSeriesMapping as string[] | undefined
-        const count = seriesCount
+        const count = componentType === 'DynamicTable' ? tableHeaders().length : seriesCount
         if (mapping && Array.isArray(mapping) && mapping.length === count) {
             return mapping
         }
-        return Array(count).fill('')
+        return Array(count).fill(null)
     })
 
     // 3. 使用 $effect 单独处理副作用（回写）
@@ -423,11 +423,22 @@
         // === 调试输出：记录属性写入 ===
         console.log(`[DataEditor] updateNodeProps → id: ${selectedId}, key: ${key}, value:`, value)
 
-        // 立即更新本地状态，避免响应式循环
-        currentValues = { ...currentValues, [key]: value }
-
         // DataEditor 只改 attributes；styles 由别的面板处理
         const attributesToUpdate: { [k: string]: any } = { [key]: value }
+
+        // 当 mockPath 或 requestPath 变化时，清空对应的映射
+        if (key === 'mockPath') {
+            attributesToUpdate.mockSeriesMapping = null
+            console.log('[DataEditor] mockPath changed, clearing mockSeriesMapping')
+        }
+        if (key === 'requestPath') {
+            attributesToUpdate.requestSeriesMapping = null
+            console.log('[DataEditor] requestPath changed, clearing requestSeriesMapping')
+        }
+
+        // 立即更新本地状态，避免响应式循环
+        currentValues = { ...currentValues, ...attributesToUpdate }
+
         updateNodeProps(selectedId, { attributes: attributesToUpdate })
     }
 
@@ -514,7 +525,16 @@
 
     <!-- 动态数据(mock)模式：编辑 mockSeriesMapping -->
     {#if dataSource === 'mock'}
-        {#if seriesCount > 0}
+        {#if componentType === 'DynamicTable'}
+            <!-- DynamicTable 的列映射 -->
+            {#if dataMappingKeys.length > 0}
+                {#each tableHeaders() as header, idx}
+                    <PropertyRow label={`${getChineseOrdinal(idx)}映射`}>
+                        <PropertySelect value={mockSeriesMapping()[idx] || ''} options={dataMappingKeys.map((k) => ({ label: k, value: k }))} change={(v) => updateMockSeriesMapping(idx, v)} placeholder="选择数据字段" />
+                    </PropertyRow>
+                {/each}
+            {/if}
+        {:else if seriesCount > 0}
             {#each Array(seriesCount) as _, idx}
                 <PropertyRow label={`${getChineseOrdinal(idx)}映射`}>
                     {#if dataMappingKeys.length > 0}
@@ -529,7 +549,16 @@
 
     <!-- 动态数据(real)模式：编辑 requestSeriesMapping -->
     {#if dataSource === 'real'}
-        {#if seriesCount > 0}
+        {#if componentType === 'DynamicTable'}
+            <!-- DynamicTable 的列映射 -->
+            {#if dataMappingKeys.length > 0}
+                {#each tableHeaders() as header, idx}
+                    <PropertyRow label={`${getChineseOrdinal(idx)}映射`}>
+                        <PropertySelect value={requestSeriesMapping()[idx] || ''} options={dataMappingKeys.map((k) => ({ label: k, value: k }))} change={(v) => updateRequestSeriesMapping(idx, v)} placeholder="选择数据字段" />
+                    </PropertyRow>
+                {/each}
+            {/if}
+        {:else if seriesCount > 0}
             {#each Array(seriesCount) as _, idx}
                 <PropertyRow label={`${getChineseOrdinal(idx)}映射`}>
                     {#if dataMappingKeys.length > 0}

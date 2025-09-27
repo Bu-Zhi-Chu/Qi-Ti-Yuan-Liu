@@ -1,4 +1,7 @@
 <script lang="ts">
+    import { dataMappingKeysStore } from '../../stores/data-mapping.store.svelte'
+    import { cachedFetch } from '../../services/cache/cached-fetch'
+
     interface Props {
         tableIdPrefix?: string
         headers?: string[]
@@ -20,6 +23,12 @@
         style?: string
         class?: string
         onclick?: (event: MouseEvent) => void
+        // 数据源相关属性
+        dataSource?: string
+        requestPath?: string
+        mockPath?: string
+        requestSeriesMapping?: string[]
+        mockSeriesMapping?: string[]
         [key: string]: any
     }
 
@@ -49,6 +58,12 @@
         style = '',
         class: className = '',
         onclick,
+        // 数据源相关属性
+        dataSource = 'json',
+        requestPath = '',
+        mockPath = '',
+        requestSeriesMapping = [],
+        mockSeriesMapping = [],
         ...rest
     }: Props = $props()
 
@@ -92,6 +107,123 @@
         if (columnLabels) {
             console.log('[DynamicTable] columnLabels 已更新:', columnLabels)
         }
+    })
+
+    // 数据查询状态管理
+    let tableData = $state<any>(null)
+    let isLoading = $state(false)
+    let loadError = $state<string | null>(null)
+
+    // 数据请求函数
+    async function fetchTableData(requestPath: string) {
+        if (!requestPath || requestPath.trim() === '') {
+            tableData = null
+            return
+        }
+
+        isLoading = true
+        loadError = null
+
+        try {
+            const data = await cachedFetch(
+                requestPath,
+                {},
+                {
+                    onUpdate: (updatedData: any) => {
+                        if (JSON.stringify(updatedData) !== JSON.stringify(data)) {
+                            console.log('[DynamicTable] 数据有变，更新UI')
+                            tableData = updatedData
+                        }
+                    }
+                }
+            )
+            tableData = data
+        } catch (error) {
+            console.error('[DynamicTable] 数据请求失败:', error)
+            loadError = error instanceof Error ? error.message : '数据请求失败'
+            tableData = null
+        } finally {
+            isLoading = false
+        }
+    }
+
+    // 监听数据相关属性变化，发起数据请求
+    $effect(() => {
+        const dataSource = rest.dataSource || 'json'
+        const requestPath = rest.requestPath
+        const mockPath = rest.mockPath
+
+        const handleDataFetch = (path: string | undefined) => {
+            if (!path) {
+                tableData = null
+                return
+            }
+            fetchTableData(path)
+        }
+
+        if (dataSource === 'real' && requestPath) {
+            handleDataFetch(requestPath)
+        } else if (dataSource === 'mock' && mockPath) {
+            handleDataFetch(mockPath)
+        } else {
+            tableData = null
+        }
+    })
+
+    // 监听 tableData 变化，处理副作用和数据映射
+    $effect(() => {
+        const data = tableData
+
+        if (data && data.isSuccess && Array.isArray(data.result) && data.result.length > 0) {
+            const keys = Object.keys(data.result[0])
+            dataMappingKeysStore.setKeys(id, keys)
+            console.log('[DynamicTable] 提取数据字段:', keys)
+        } else {
+            dataMappingKeysStore.clearKeys(id)
+        }
+    })
+
+    // 根据数据源和映射配置生成最终表格数据
+    let processedTableData = $derived.by(() => {
+        const dataSource = rest.dataSource || 'json'
+
+        // JSON 模式：使用现有的 bodyData
+        if (dataSource === 'json') {
+            return displayBodyData
+        }
+
+        // 处理加载状态和错误状态
+        if (isLoading) {
+            return [['数据加载中...']]
+        }
+
+        if (loadError) {
+            return [[`加载失败: ${loadError}`]]
+        }
+
+        // Mock 或 Real 模式：根据映射配置处理数据
+        if ((dataSource === 'mock' || dataSource === 'real') && tableData && tableData.isSuccess && Array.isArray(tableData.result)) {
+            const resultData = tableData.result
+            const mapping = dataSource === 'mock' ? rest.mockSeriesMapping : rest.requestSeriesMapping
+
+            if (!mapping || mapping.length === 0) {
+                // 如果没有映射配置，显示原始数据的前几列
+                return resultData.slice(0, 10).map((row: any) => {
+                    const keys = Object.keys(row)
+                    return keys.slice(0, numColumns).map((key: string) => row[key] ?? '')
+                })
+            }
+
+            // 根据映射配置生成表格数据
+            return resultData.slice(0, 50).map((row: any) => {
+                return mapping.map((key: string) => {
+                    if (!key) return ''
+                    return row[key] ?? ''
+                })
+            })
+        }
+
+        return displayBodyData
     })
     let useFlexRatios = $derived(columnFlexRatios && Array.isArray(columnFlexRatios) && columnFlexRatios.length === numColumns)
 
@@ -152,8 +284,8 @@
 
     <!-- 表体 -->
     <div class="styled-table-body" style="font-size: {fontSize}; width: 100%; height: {bodyHeight}; overflow-y: {showScrollbar ? 'scroll' : 'hidden'};">
-        {#if displayBodyData && displayBodyData.length > 0}
-            {#each displayBodyData as rowData}
+        {#if processedTableData && processedTableData.length > 0}
+            {#each processedTableData as rowData}
                 <div class="styled-table-row-body" style="margin-top: calc(0.5% * var(--scale-ratio, 1)); width: {tableWidth}; height: {bodyRowHeight}; {getBodyBackgroundStyle()} display: flex;">
                     {#each Array(displayHeaders.length) as _, colIndex}
                         {@const cellData = rowData[colIndex] !== undefined ? rowData[colIndex] : ''}

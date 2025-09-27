@@ -6,27 +6,21 @@ DynamicTable 是一个功能强大的动态表格组件，支持多种数据源�
 
 ## 核心特性
 
-### 1. 多数据源支持
-- **JSON 模式**：直接编写 JavaScript 代码生成对象数组
-- **Mock 模式**：连接模拟接口获取数据
-- **Real 模式**：连接真实 API 获取数据
+### 1. 强大的数据源支持
+- **JSON 模式**：在属性面板中直接编写 JavaScript 代码（返回一个对象数组）作为数据源。
+- **Mock 模式**：配置一个模拟接口的 URL (`mockPath`)，组件将自动发起请求获取数据。
+- **Real 模式**：配置一个真实 API 的 URL (`requestPath`)，组件将自动发起请求获取数据。
 
-### 2. 智能列映射
-- 支持动态表头配置
-- JSON 数据字段映射到表格列
-- 自动推断列数和表头
-- 支持部分映射（允许空映射）
+### 2. 智能数据与列映射
+- **自动字段提取**：无论是 JSON、Mock 还是 Real 模式，组件都会自动解析返回数据的第一个对象，提取所有字段作为可映射项。
+- **可视化映射**：在属性面板中，表格的每一列都会对应一个下拉框，可将从数据源中提取的字段映射到指定列。
+- **动态更新**：当数据源的 URL (`mockPath` 或 `requestPath`) 变更时，旧的列映射会自动清除，需要重新进行映射。
+- **部分映射支持**：允许某些列不选择任何映射字段，该列将显示为空。
 
 ### 3. 灵活样式配置
-- 表头和数据行独立背景色设置
-- 文字颜色自定义
-- 列宽比例配置（columnFlexRatios）
-- 背景图片支持（rowBackgroundImageUrl）
-
-### 4. 响应式设计
-- 自动适应不同屏幕尺寸
-- 移动端优化显示
-- 自定义滚动条样式
+- 表头和数据行独立背景色、文字颜色自定义。
+- 通过 `columnFlexRatios` 属性精确控制各列的宽度比例。
+- 支持通过 `rowBackgroundImageUrl` 为每一行设置统一的背景图片。
 
 ## 组件属性
 
@@ -34,11 +28,21 @@ DynamicTable 是一个功能强大的动态表格组件，支持多种数据源�
 
 | 属性名 | 类型 | 默认值 | 说明 |
 |--------|------|--------|------|
-| `tableIdPrefix` | `string` | `""` | 表格 ID 前缀 |
-| `headers` | `string[]` | `[]` | 表头数组 |
-| `columnLabels` | `string[]` | `[]` | 列标签数组（优先级高于 headers） |
-| `bodyData` | `any[][]` | `[]` | 表格数据（二维数组） |
-| `columnFlexRatios` | `number[]` | `[]` | 列宽比例配置 |
+| `id` | `string` | - | 组件唯一标识 |
+| `headers` | `string[]` | `[]` | 表头数组（当 `columnLabels` 未提供时生效） |
+| `columnLabels` | `string[]` | `[]` | 列标签数组（优先级高于 `headers`） |
+| `bodyData` | `any[][]` | `[]` | 表格数据（二维数组），主要用于 JSON 模式的初始化和回写。 |
+| `columnFlexRatios` | `number[]` | `[]` | 列宽比例配置数组，如 `[2, 1, 1]` |
+
+### 数据源属性
+
+| 属性名 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| `dataSource` | `'json' \| 'mock' \| 'real'` | `'json'` | 数据源类型 |
+| `requestPath` | `string` | `''` | “真实”模式下的数据请求 URL |
+| `mockPath` | `string` | `''` | “模拟”模式下的数据请求 URL |
+| `requestSeriesMapping` | `(string \| null)[]` | `[]` | “真实”模式下的列映射关系数组 |
+| `mockSeriesMapping` | `(string \| null)[]` | `[]` | “模拟”模式下的列映射关系数组 |
 
 ### 样式属性
 
@@ -54,248 +58,89 @@ DynamicTable 是一个功能强大的动态表格组件，支持多种数据源�
 | `className` | `string` | `""` | 自定义 CSS 类名 |
 | `style` | `string` | `""` | 内联样式 |
 
-### 事件属性
+## 数据处理与映射机制
 
-| 属性名 | 类型 | 默认值 | 说明 |
-|--------|------|--------|------|
-| `onclick` | `function` | `undefined` | 点击事件处理函数 |
+### JSON 模式数据流
 
-## 数据源配置
+1. **代码编写**：用户在“临时数据”编辑器中输入一段返回对象数组的 JavaScript 代码。
+2. **数据提取**：`DataEditor` 解析代码，提取 `result` 数组，并分析第一个对象，获取所有 `key` 作为“可映射字段” (`jsonMappingKeys`)。
+3. **列映射**：用户在属性面板为每一列选择一个 `key` 进行映射，映射关系保存在 `jsonColumnMapping` 中。
+4. **数据生成**：`DataEditor` 根据 `jsonColumnMapping` 和原始的 `jsonData`，生成最终的二维数组 `bodyData` 并传递给 `DynamicTable`。
 
-### JSON 数据源配置
+### Mock/Real 模式数据流
 
-在 `blocks.config.json` 中的配置：
-
-```json
-{
-  "type": "DynamicTable",
-  "nameZh": "动态表格",
-  "dataBindable": true,
-  "featureProps": {
-    "columnLabels": {
-      "label": "表头列名",
-      "type": "columnLabels",
-      "default": ["列1", "列2", "列3"]
-    }
-  }
-}
-```
-
-### 数据映射机制
-
-#### JSON 模式数据流
-
-1. **代码解析**：用户在临时数据编辑器中输入 JavaScript 代码
-2. **数据提取**：通过 `extractResultArray` 服务提取对象数组
-3. **字段映射**：将 JSON 对象的 key 映射到表格列
-4. **数据生成**：根据映射关系生成 `bodyData`
-
-#### 核心代码逻辑
-
-```javascript
-// 数据提取和映射流程
-function updateDynamicTableData(code: string) {
-  // 1. 提取对象数组
-  const resultArray = extractResultArray(code)
-  
-  // 2. 提取字段 key
-  const keys = Object.keys(resultArray[0])
-  jsonMappingKeys = keys
-  
-  // 3. 保存原始数据
-  handleAttrChange('jsonData', resultArray)
-}
-
-// 根据映射生成表格数据
-function regenerateBodyData() {
-  const mapping = jsonColumnMapping()
-  const data = currentValues.jsonData
-  const headers = tableHeaders()
-
-  // 根据映射关系生成二维数组
-  const newBody = data.map((row) => 
-    mapping.map((key) => 
-      key && jsonMappingKeys.includes(key) ? (row[key] ?? '') : ''
-    )
-  )
-  handleAttrChange('bodyData', newBody)
-}
-```
+1. **配置 URL**：用户在属性面板中将 `dataSource` 切换为 `mock` 或 `real`，并填入 `mockPath` 或 `requestPath`。
+2. **数据请求**：`DynamicTable` 组件监听到 `dataSource` 或路径变化，自动调用 `fetchTableData` 函数，通过 `cachedFetch` 服务请求数据。
+3. **字段提取**：请求成功后，`DynamicTable` 解析返回的 JSON 数据，提取第一个对象的 `key`，并通过 `dataMappingKeysStore` 将这些 `key` 共享出去。
+4. **UI 更新**：`DataEditor` 监听到 `dataMappingKeysStore` 的变化，为表格的每一列动态生成一个下拉选择框，选项即为提取到的 `key`。
+5. **用户映射**：用户为每一列选择映射字段，映射关系保存在 `mockSeriesMapping` 或 `requestSeriesMapping` 中。
+6. **数据渲染**：`DynamicTable` 内部的 `processedTableData`派生状态会根据当前选定的映射关系，实时处理从接口获取的原始数据，生成最终在表格中显示的二维数组。
 
 ## 使用示例
 
-### 基础使用
-
-```svelte
-<DynamicTable
-  headers={['姓名', '年龄', '城市']}
-  bodyData={[
-    ['张三', '25', '北京'],
-    ['李四', '30', '上海'],
-    ['王五', '28', '广州']
-  ]}
-/>
-```
-
 ### JSON 数据源
 
-```javascript
-// 在临时数据编辑器中输入
-const data = [
-  { name: '张三', age: 25, city: '北京' },
-  { name: '李四', age: 30, city: '上海' },
-  { name: '王五', age: 28, city: '广州' }
-];
-return data;
-```
+1.  在属性面板中，将数据源设置为 `json`。
+2.  在“临时数据”编辑器中输入以下代码：
+    ```javascript
+    const data = [
+      { name: '张三', age: 25, city: '北京' },
+      { name: '李四', age: 30, city: '上海' },
+      { name: '王五', age: 28, city: '广州' }
+    ];
+    return data;
+    ```
+3.  在下方出现的“列映射”部分，进行如下配置：
+    -   第一映射 → `name`
+    -   第二映射 → `age`
+    -   第三映射 → `city`
 
-然后配置列映射：
-- 第一列映射 → name
-- 第二列映射 → age  
-- 第三列映射 → city
+### Mock/Real 数据源
 
-### 样式自定义
+1.  在属性面板中，将数据源设置为 `mock` 或 `real`。
+2.  在 `mockPath` 或 `requestPath` 输入框中，填入一个返回对象数组的 API 地址，例如 `https://api.example.com/users`。
+3.  组件会自动请求数据。请求成功后，下方会为表格的每一列生成一个映射下拉框。
+4.  假设接口返回的数据结构为 `{ "id": 1, "username": "john.doe", "email": "john.doe@example.com" }`，则下拉框中会包含 `id`, `username`, `email` 等选项。
+5.  根据需要，将接口字段映射到表格的相应列。
 
-```svelte
-<DynamicTable
-  columnLabels={['产品', '价格', '库存']}
-  bodyData={productData}
-  headerBackgroundColor="rgba(59, 130, 246, 0.3)"
-  bodyBackgroundColor="rgba(255, 255, 255, 0.05)"
-  headerTextColor="#3b82f6"
-  bodyTextColor="#e2e8f0"
-  columnFlexRatios={[2, 1, 1]}
-/>
-```
+## 最近更新
 
-## 组件实现细节
-
-### 数据优先级
-
-1. `columnLabels`（最高优先级）
-2. `headers`（次要优先级）
-3. 根据 `bodyData` 自动推断
-4. `blocks.config.json` 中的默认值
-
-### 响应式处理
-
-```javascript
-// 显示表头计算
-let displayHeaders = $derived(() => {
-  if (columnLabels && columnLabels.length > 0) {
-    return columnLabels;
-  }
-  if (headers && headers.length > 0) {
-    return headers;
-  }
-  // 根据 bodyData 推断
-  if (bodyData && bodyData.length > 0) {
-    return Array.from({ length: bodyData[0].length }, (_, i) => `列${i + 1}`);
-  }
-  // 默认列名
-  return ['列1', '列2', '列3'];
-});
-```
-
-### 样式计算
-
-```javascript
-// 单元格样式生成
-function getHeaderCellStyle(index: number) {
-  if (useFlexRatios && columnFlexRatios[index] !== undefined) {
-    return `flex: ${columnFlexRatios[index]};`;
-  }
-  return `flex: 1;`;
-}
-
-// 背景样式
-function getRowBackgroundStyle(rowIndex: number) {
-  if (rowBackgroundImageUrl) {
-    return `background-image: url(${rowBackgroundImageUrl}); background-size: cover; background-position: center;`;
-  }
-  return rowIndex % 2 === 0 ? 'var(--bg-even)' : 'var(--bg-odd)';
-}
-```
-
-## 最近更新 (2025年)
+### `mock` 和 `real` 数据源集成
+- **动态数据查询**: `DynamicTable` 组件现在可以直接从 `mockPath` 或 `requestPath` 配置的 URL 中获取数据。
+- **自动字段提取与映射**: 与 JSON 模式类似，组件会自动从接口返回的数据中提取字段，并在属性面板提供可视化界面，用于将数据字段映射到表格列。
+- **统一数据处理流程**: 组件内部实现了 `processedTableData` 派生状态，用于统一处理来自 `json`、`mock`、`real` 等不同数据源的数据和映射逻辑。
+- **编辑器智能联动**: `DataEditor` 现在完全支持 `DynamicTable` 的新数据模式。当 `mockPath` 或 `requestPath` 发生改变时，之前配置的列映射会自动清空，以确保数据一致性。
 
 ### JSON 数据映射优化
-- **智能数据提取**：新增 `extractResultArray` 服务，支持从复杂 JavaScript 代码中提取对象数组
-- **字段映射机制**：支持将 JSON 对象的 key 动态映射到表格列
-- **部分映射支持**：允许某些列映射为空，提高灵活性
-- **实时数据同步**：列映射变更时立即重新生成表格数据
-
-### 数据编辑器增强
-- **临时数据编辑器**：新增 JavaScript 代码编辑器，支持语法高亮
-- **自动字段提取**：自动识别 JSON 数据中的可用字段
-- **中文序数词支持**：映射选择器使用中文序数词（第一、第二等）
-- **错误处理优化**：完善的错误提示和异常处理机制
-
-### 性能优化
-- **缓存机制**：避免重复解析相同的代码字符串
-- **防抖处理**：减少不必要的数据更新操作
-- **响应式优化**：使用 `$derived` 和 `$effect` 优化响应式性能
-
-## 扩展指南
-
-### 添加新的数据处理器
-
-在 `data-extractor.service.ts` 中添加自定义数据提取逻辑：
-
-```typescript
-export function extractCustomData(code: string): any[] {
-  // 自定义数据提取逻辑
-  // return 提取的数据数组
-}
-```
-
-### 扩展样式配置
-
-在组件的样式部分添加新的 CSS 变量：
-
-```css
-.dynamic-table-cell {
-  --custom-color: v-bind(customColor);
-  --custom-border: v-bind(customBorder);
-}
-```
-
-### 添加新的事件处理
-
-扩展组件的 props 接口：
-
-```typescript
-export interface Props {
-  // ... 现有属性
-  onRowClick?: (rowData: any[], rowIndex: number) => void;
-  onCellClick?: (cellData: any, rowIndex: number, colIndex: number) => void;
-}
-```
+- **智能数据提取**：新增 `extractResultArray` 服务，支持从复杂 JavaScript 代码中提取对象数组。
+- **实时数据同步**：列映射变更时立即重新生成表格数据。
 
 ## 调试与错误处理
 
 ### 调试信息
 
-组件提供详细的调试日志：
+组件在关键步骤提供了详细的控制台日志，方便调试：
 
 ```
-[DynamicTable] 接收到的数据: { headers, columnLabels, bodyData }
-[DynamicTable] 显示的数据: { displayHeaders, displayBodyData }
-[DataEditor] extractResultArray 结果: [提取的数据]
-[DataEditor] 提取到的字段: [可用的 key 列表]
+// DynamicTable 组件日志
+[DynamicTable] 接收到的数据: { ... }
+[DynamicTable] 数据请求中...
+[DynamicTable] 数据请求成功: { ... }
+[DynamicTable] 数据请求失败: ...
+[DynamicTable] 提取数据字段: [ ... ]
+
+// DataEditor 编辑器日志
+[DataEditor] extractResultArray 结果: [ ... ]
+[DataEditor] 提取到的字段: [ ... ]
+[DataEditor] mockPath changed, clearing mockSeriesMapping
+[DataEditor] requestPath changed, clearing requestSeriesMapping
 ```
 
 ### 常见问题
 
-1. **数据不显示**：检查 JSON 代码是否正确返回对象数组
-2. **映射不生效**：确认列映射配置是否正确
-3. **样式异常**：检查颜色值格式和 CSS 变量设置
-4. **响应式问题**：验证 viewport 设置和 CSS 媒体查询
-
-## 最佳实践
-
-1. **数据格式规范**：确保 JSON 数据为统一的对象数组结构
-2. **映射配置**：合理配置列映射，避免过多空映射
-3. **样式一致性**：保持表头和数据行的视觉协调
-4. **性能考虑**：避免频繁的大数据量更新操作
-5. **错误处理**：添加适当的错误边界和用户体验优化
+1.  **数据不显示**：
+    -   **JSON 模式**：检查代码是否正确返回了对象数组。
+    -   **Mock/Real 模式**：检查网络请求是否成功，以及返回的数据是否为对象数组格式。
+2.  **映射下拉框不出现**：
+    -   检查数据源是否已正确配置并成功返回数据。只有成功获取到数据并提取出字段后，映射选项才会出现。
+3.  **样式异常**：检查颜色值格式和 CSS 变量设置。
