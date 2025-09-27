@@ -1,5 +1,19 @@
 # ECharts 图表组件说明
 
+## 1. 组件概述
+
+ECharts 组件是一个基于 Apache ECharts 的数据可视化组件，支持通过 JavaScript 代码配置图表，并提供数据源切换、动态数据映射、实时编辑等功能。
+
+### 1.1 最近更新（2025年）
+
+**数据映射机制重大改进**：
+- **实例数据优先**：优先从 ECharts 实例获取真实数据，而非从代码解析
+- **智能数据替换**：通过深度比较定位数据位置，支持更复杂的数据结构
+- **多轴支持**：支持替换 series.data、xAxis.data、yAxis.data 中的数据
+- **数据完整性**：移除数据长度限制，保持原始数据长度，避免数据截断
+- **图例同步**：自动根据 `legend.data` 更新 `series.name`，保持显示一致性
+- **调试增强**：提供详细的匹配调试信息，帮助开发者追踪数据替换过程
+
 > 本文档梳理了项目中 **ECharts** 图表区块从「元数据定义 → 编辑器面板 → 运行时渲染」的完整链路，便于后续二次开发与排错。
 
 ## 1. 元数据：`blocks.config.json`
@@ -54,6 +68,12 @@
 5. **结果整合**：返回包含 `dataArrays`（数据数组）、`matches`（匹配结果）、`legendData`（图例数据）的完整提取结果
 6. **支持多序列、一键同步写回**；
 
+**数据映射机制**（新实现）：
+- **智能数据匹配**：`executeJavaScriptCode` 函数通过深度比较来定位数据位置，而非简单的正则替换
+- **多位置支持**：支持替换 series.data、xAxis.data、yAxis.data 中的数据
+- **数据兼容性**：移除数据长度限制，保持原始数据长度，避免截断或填充
+- **调试信息**：提供详细的匹配调试信息，帮助开发者追踪数据替换过程
+
 **DataEditor 中的序列计数修复**：
 - **问题**：当切换数据源或刷新页面时，`seriesCount` 可能为 0，导致无法显示动态映射字段
 - **原因**：`extractSeriesFromCode` 返回的 `matches` 数组为空，但 `seriesData` 实际有数据
@@ -63,24 +83,37 @@
   3. **解析修复**：当 `extractSeriesFromCode` 返回空 `matches` 但 `seriesData` 有数据时，创建空的 `matches` 数组
 - **实现**：创建兼容的 `RegExpMatchArray` 对象，确保 `seriesCount = matches.length` 正确反映实际序列数量
 
+**ECharts 实例数据优先级**（新实现）：
+- **实例数据优先**：`extractDataMatches` 函数优先从 ECharts 实例获取数据，而非从代码解析
+- **实时同步**：在数据编辑时，ECharts 实例数据会实时更新，确保提取的数据是最新的
+- **图例同步**：自动根据 `legend.data` 更新 `series.name`，保持图例与序列名称一致
+- **兼容性保证**：即使无法获取实例数据，也会回退到代码解析模式
+
 **extractDataMatches 函数详解**（新实现）：
 ```typescript
 export function extractDataMatches(code: string): RegExpMatchArray[] {
-  // 优先使用 ECharts 实例中的真实数据
+  // 1. 优先从 ECharts 实例获取数据
   const currentId = selectedId?.()
   let instanceSeriesData: any[] = []
   let instanceLegendData: any[] | undefined = undefined
   let instanceXAxisData: any[] | undefined = undefined
+  let originalOption: any = null
 
   if (currentId) {
     const chartInst = getEChartsInstance(currentId)
     if (chartInst && typeof chartInst.getOption === 'function') {
       try {
         const option = chartInst.getOption()
-        // 提取 series、legend、xAxis 数据
-        const series = (option?.series ?? []) as any[]
-        instanceSeriesData = series.map((s: any) => s?.data).filter((d: any) => Array.isArray(d))
+        originalOption = option
 
+        // 提取 series 数据
+        let series = (option?.series ?? []) as any[]
+        if (!Array.isArray(series)) series = [series]
+        instanceSeriesData = series
+          .filter(s => Array.isArray(s?.data))
+          .map(s => s.data)
+
+        // 提取 legend 数据
         const legend = option?.legend ?? {}
         if (Array.isArray(legend)) {
           instanceLegendData = legend[0]?.data ?? undefined
@@ -88,6 +121,7 @@ export function extractDataMatches(code: string): RegExpMatchArray[] {
           instanceLegendData = (legend as any).data
         }
 
+        // 提取 xAxis 数据
         const xAxis = option?.xAxis ?? {}
         if (Array.isArray(xAxis)) {
           instanceXAxisData = xAxis[0]?.data ?? undefined
@@ -100,18 +134,31 @@ export function extractDataMatches(code: string): RegExpMatchArray[] {
     }
   }
 
-  // 将实例数据转换为伪 RegExpMatchArray，保持旧接口兼容
+  // 2. 将实例数据转换为伪 RegExpMatchArray，保持旧接口兼容
   const fakeMatches: RegExpMatchArray[] = []
 
+  // 优先添加 legend 数据
   if (instanceLegendData && Array.isArray(instanceLegendData)) {
     const legendStr = JSON.stringify(instanceLegendData)
     fakeMatches.push([`legend.data: ${legendStr}`, legendStr] as unknown as RegExpMatchArray)
+
+    // 同步更新 series[].name，确保与 legend.data 一致
+    if (originalOption && originalOption.series && Array.isArray(originalOption.series)) {
+      originalOption.series.forEach((series: any, index: number) => {
+        if (instanceLegendData && instanceLegendData[index]) {
+          series.name = instanceLegendData[index]
+        }
+      })
+    }
   }
+
+  // 添加 xAxis 数据
   if (instanceXAxisData && Array.isArray(instanceXAxisData)) {
     const xAxisStr = JSON.stringify(instanceXAxisData)
     fakeMatches.push([`xAxis.data: ${xAxisStr}`, xAxisStr] as unknown as RegExpMatchArray)
   }
-  // 再追加各 series.data
+
+  // 添加各 series.data
   instanceSeriesData.forEach((arr) => {
     const arrStr = JSON.stringify(arr)
     fakeMatches.push([`series.data: ${arrStr}`, arrStr] as unknown as RegExpMatchArray)
@@ -140,6 +187,12 @@ export function extractDataMatches(code: string): RegExpMatchArray[] {
 
 这种清理机制确保了当图表配置被重置时，不会残留无效的数据映射配置，保持数据一致性。该逻辑在 `FeatureEditor.svelte` 的 `handleAttrChange` 函数中实现，仅在用户手动修改 `code` 时触发（切换页签等操作不会触发清理）。
 
+**数据替换优化**（新实现）：
+- **智能匹配**：`executeJavaScriptCode` 函数使用深度比较来定位数据位置，而非简单的正则匹配
+- **原始数据解析**：尝试解析原始数据字符串，支持单引号格式，提高兼容性
+- **多轴支持**：支持替换 series.data、xAxis.data、yAxis.data 中的数据
+- **数据完整性**：移除数据长度限制，保持原始数据长度，避免数据截断或填充
+
 ### 3.4 `第 X 序列 / 第 X 映射` 动态属性编辑流程
 
 1. **序列数量计算**：DataEditor 调用 `extractSeriesFromCode(code)`，并以其 `matches.length` 作为序列个数（优先使用实例数据，回退到代码解析）。
@@ -163,9 +216,19 @@ export function extractDataMatches(code: string): RegExpMatchArray[] {
 
 **修复效果**：通过以上机制，解决了切换数据源或刷新页面时动态映射字段不显示的问题，确保在各种场景下都能正确显示「第 X 映射」输入框。
 
-### 3.5 防抖优化机制
+### 3.5 性能优化：防抖机制
 
-为了解决切换组件或数据源时 `[ECharts] option(after seriesData override)` 日志重复打印的问题，在 `ECharts.svelte` 中实现了防抖机制：
+**防抖机制**：
+- **实现位置**：`ECharts.svelte` 组件中
+- **作用**：避免频繁的 option 变化导致重复渲染和日志输出
+- **实现方式**：使用防抖逻辑对 `console.log('[ECharts] option(after seriesData override):', codeResult)` 进行节流处理
+- **防抖延迟**：通过值比较实现，确保用户操作完成后再输出日志
+
+**数据处理优化**（新实现）：
+- **实例数据缓存**：`extractDataMatches` 函数优先使用 ECharts 实例数据，避免重复解析代码
+- **智能数据映射**：`executeJavaScriptCode` 函数通过深度比较定位数据，提高替换效率
+- **数据完整性保护**：保持原始数据长度，避免不必要的数据处理开销
+- **调试信息优化**：提供详细的匹配调试信息，帮助快速定位问题
 
 **问题原因**：
 - 当切换组件或数据源时，多个属性（`dataSource`、`seriesData`、`code`、映射配置等）会依次更新
@@ -187,18 +250,32 @@ if (codeResultStr !== lastOptionStr) {
 
 ### 3.6 调试和错误处理
 
-**调试日志**：在 `DataEditor.svelte` 中添加了详细的调试日志，帮助开发者追踪数据流：
-```typescript
-console.log('[DataEditor] derivedState 使用缓存，跳过解析')
-console.log('[DataEditor] derivedState 解析 code，得到', extraction)
-console.log(`[DataEditor] seriesCount 更新为: ${seriesCount}, dataSource: ${dataSource}, code存在: ${!!currentValues.code}`)
-console.log(`[DataEditor] updateNodeProps → id: ${selectedId}, key: ${key}, value:`, value)
-```
+**详细日志**：
+- **日志位置**：`DataEditor.svelte` 中提供了详细的调试日志
+- **日志内容**：
+  - `seriesCount` 计算日志
+  - `dataSource` 切换日志
+  - `seriesData` 更新日志
+  - 数据映射过程日志
+- **日志格式**：使用 `[DataEditor]` 前缀标识数据来源
 
 **错误处理**：
-- **循环更新保护**：使用 `isUpdating` 标志防止 `seriesData` 回写时的循环更新
-- **缓存机制**：通过 `lastCode` 和 `lastExtraction` 避免重复解析相同的代码
-- **空值保护**：在所有可能为空的地方提供默认值，确保 UI 稳定性
+- **空值保护**：对 `null` 或 `undefined` 值进行处理，避免程序崩溃
+- **类型检查**：对数组类型进行严格检查，确保数据格式正确
+- **异常捕获**：使用 `try-catch` 块捕获可能的异常
+- **回退机制**：当数据提取失败时提供默认值或空数组
+
+**缓存机制**：
+- **缓存位置**：`series-extractor.service.ts` 中实现了缓存机制
+- **缓存作用**：避免重复解析相同的代码
+- **缓存键**：使用代码内容作为缓存键
+- **缓存策略**：在代码不变的情况下直接返回缓存结果
+
+**数据映射调试**（新实现）：
+- **匹配调试**：`executeJavaScriptCode` 函数提供详细的匹配调试信息
+- **数据追踪**：显示哪些数据被成功替换，哪些数据未找到匹配
+- **错误提示**：当数据替换失败时，提供具体的错误信息和位置
+- **兼容性处理**：支持单引号格式的数据解析，提高代码兼容性
 
 ---
 
@@ -238,15 +315,26 @@ export default function (dom, theme, opts) {
 
 ## 6. 数据流概览
 
-```mermaid
-graph LR
-  A[blocks.config.json] --> B(FeatureEditor / DataEditor)
-  B -->|updateNodeProps| C(DOM Tree Store)
-  C --> D(ECharts.svelte)
-  D --> E[渲染效果]
-  D --> F[dataMappingKeysStore]
-  F --> B
+### 4.2 数据流概览
+
 ```
+blocks.config.json (元数据)
+    ↓
+FeatureEditor (特性面板) ←→ DataEditor (数据面板)
+    ↓                           ↓
+ECharts.svelte (渲染组件) ←→ series-extractor.service.ts
+    ↓                           ↑
+echarts-core.ts (核心初始化)   │
+    ↓                           │
+ECharts 实例 ←→ getOption() ────┘
+```
+
+**数据映射流程**（新实现）：
+1. **实例数据优先**：`series-extractor.service.ts` 优先从 ECharts 实例获取真实数据
+2. **智能数据替换**：`ECharts.svelte` 中的 `executeJavaScriptCode` 函数通过深度比较定位数据位置
+3. **多轴支持**：支持替换 series.data、xAxis.data、yAxis.data 中的数据
+4. **数据完整性**：保持原始数据长度，避免数据截断或填充
+5. **实时同步**：图例数据与序列名称自动同步，确保显示一致性
 
 ---
 
@@ -311,6 +399,13 @@ graph LR
    * 在示例 JS `code` 中按 ECharts 规则书写即可。
 3. **自定义数据解析**：若标准 `seriesData` 替换无法满足，可修改 `extractSeriesFromCode` 实现更复杂解析逻辑。
 4. **添加辅助链接**：通过 `linkGroup` 类型可添加外部链接，如图表案例和模拟平台链接。
+
+### 11.1 数据映射扩展（新实现）
+
+1. **扩展数据位置**：在 `executeJavaScriptCode` 函数中添加新的数据位置支持
+2. **自定义匹配逻辑**：修改深度比较算法，支持更复杂的数据结构
+3. **实例数据扩展**：在 `extractDataMatches` 函数中添加新的 ECharts 组件数据提取
+4. **调试信息扩展**：添加自定义的调试输出，帮助追踪数据映射过程
 
 ---
 
