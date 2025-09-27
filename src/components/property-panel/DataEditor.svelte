@@ -137,10 +137,11 @@
 
     // 派生状态：确保 jsonColumnMapping 数组的长度与列数一致
     let jsonColumnMapping = $derived(() => {
-        const mapping = currentValues.jsonColumnMapping as string[] | undefined
-        const count = tableHeaders.length
+        const mapping = currentValues.jsonColumnMapping as (string | null)[] | undefined
+        const count = tableHeaders().length
         if (mapping && Array.isArray(mapping) && mapping.length === count) {
-            return mapping
+            // 把 null 转成空串，方便模板<select>匹配
+            return mapping.map((v) => (v == null ? '' : v))
         }
         return Array(count).fill('')
     })
@@ -329,25 +330,26 @@
         const mapping = jsonColumnMapping()
         const data = currentValues.jsonData as any[] | undefined
         const headers = tableHeaders()
-    
+
         if (!data || !mapping || !headers.length) {
             return // 无数据或映射不全时直接返回，不做清空
         }
-    
-        // 允许部分映射为空，只把映射命中的列写进表格
-        const newBody = data.map((row) =>
-            mapping.map((key) => (key && jsonMappingKeys.includes(key) ? row[key] ?? '' : ''))
-        )
-        handleAttrChange('bodyData', [headers, ...newBody])
+
+        // 允许部分映射为空，只把映射命中的列写进表格（不再带表头）
+        const newBody = data.map((row) => mapping.map((key) => (key && jsonMappingKeys.includes(key) ? (row[key] ?? '') : '')))
+        handleAttrChange('bodyData', newBody)
     }
-    
+
     /** (新增) 实时更新第 index 个 json data 映射路径 */
     function updateJsonColumnMapping(index: number, path: string) {
-        if (!selectedId || jsonColumnMapping()[index] === path) return
-    
+        if (!selectedId) return
+        // 把空串或'null'统一转成null，其余保持原值
+        const realPath = path === '' || path === 'null' ? null : path
+        if (jsonColumnMapping()[index] === realPath) return
+
         const newMapping = [...jsonColumnMapping()]
-        newMapping[index] = path
-    
+        newMapping[index] = realPath
+
         handleAttrChange('jsonColumnMapping', newMapping)
         // 关键：立即重算并写回 bodyData，保证 doms 表同步
         regenerateBodyData()
@@ -365,6 +367,7 @@
         if (code.trim() === '') {
             handleAttrChange('bodyData', [])
             handleAttrChange('jsonData', []) // 清空原始数据
+            handleAttrChange('jsonColumnMapping', []) // 清空列映射
             jsonMappingKeys = [] // 清空可用字段
             return
         }
