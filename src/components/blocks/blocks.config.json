@@ -121,7 +121,6 @@
             "display": "flex",
             "justifyContent": "center",
             "alignItems": "center",
-            "cursor": "pointer",
             "backgroundColor": "rgba(99, 102, 241, 0.75)",
             "gap": "8px"
         },
