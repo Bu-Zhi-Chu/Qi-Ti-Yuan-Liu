@@ -10,12 +10,13 @@
  *   prop5: 标签/徽章文本
  * 事件：
  *   onClick: 点击事件回调
+ *   onRename: 重命名事件回调
  * 样式：现代化玻璃态设计，支持悬停效果
 -->
 
 <script lang="ts">
     import ResponsiveBox from '../core/ResponsiveBox.svelte'
-    import { onDestroy } from 'svelte'
+    import { onDestroy, createEventDispatcher } from 'svelte'
 
     interface Props {
         prop1?: string | number
@@ -27,9 +28,10 @@
         selected?: boolean
         onDelete?: (id?: string | number) => void | Promise<void>
         onClick?: () => void
+        onRename?: (id: string | number, newName: string) => void | Promise<void>
     }
 
-    let { prop1, prop2, prop3, prop4, prop5, onClick, showDelete = false, selected = false, onDelete }: Props = $props()
+    let { prop1, prop2, prop3, prop4, prop5, onClick, showDelete = false, selected = false, onDelete, onRename }: Props = $props()
 
     import { getImage } from '../../services/database/image-store.service'
     import { registerBlobUrl } from '../../services/utils/blob-url-manager'
@@ -39,6 +41,11 @@
     let imageSrc = $state<string | undefined>()
     let objectUrls: string[] = []
     let isHovered = $state(false)
+    
+    // 编辑状态管理
+    let isEditing = $state(false)
+    let editValue = $state('')
+    let originalValue = ''
 
     /** 根据 prop4 更新 imageSrc，可解析 Blob、普通 URL、哈希 */
     async function updateImage() {
@@ -90,6 +97,62 @@
     function handleDelete() {
         onDelete?.(prop1)
     }
+
+    /** 开始编辑项目名称 */
+    function startEdit() {
+        if (!prop2 || !onRename) return
+        isEditing = true
+        editValue = prop2
+        originalValue = prop2
+        // 延迟聚焦和选中
+        queueMicrotask(() => {
+            const input = document.querySelector<HTMLInputElement>(`#edit-${prop1}`)
+            if (input) {
+                input.focus()
+                input.select()
+            }
+        })
+    }
+
+    /** 确认编辑 */
+    function confirmEdit() {
+        if (!isEditing || !onRename || !prop1) return
+        if (editValue.trim() && editValue !== originalValue) {
+            onRename(prop1, editValue.trim())
+        }
+        cancelEdit()
+    }
+
+    /** 取消编辑 */
+    function cancelEdit() {
+        isEditing = false
+        editValue = ''
+        originalValue = ''
+    }
+
+    /** 编辑框键盘事件 */
+    function handleEditKeydown(event: KeyboardEvent) {
+        switch (event.key) {
+            case 'Enter':
+                confirmEdit()
+                break
+            case 'Escape':
+                cancelEdit()
+                break
+        }
+    }
+
+    /** 全局F2键盘监听 */
+    $effect(() => {
+        function onKeyDown(e: KeyboardEvent) {
+            if (e.key === 'F2' && prop2 && onRename && !isEditing) {
+                e.preventDefault()
+                startEdit()
+            }
+        }
+        window.addEventListener('keydown', onKeyDown)
+        return () => window.removeEventListener('keydown', onKeyDown)
+    })
 </script>
 
 <ResponsiveBox
@@ -145,8 +208,39 @@
 
     <!-- 主标题 -->
     {#if prop2}
-        <ResponsiveBox style="font-size: 16px; font-weight: 600; color: #f8fafc; margin-bottom: 8px; line-height: 1.4;">
-            {prop2}
+        <ResponsiveBox style="font-size: 16px; font-weight: 600; color: #f8fafc; margin-bottom: 8px; line-height: 1.4; position: relative;">
+            {#if isEditing}
+                <ResponsiveBox style="display: flex; align-items: center; gap: 8px;">
+                    <input 
+                        id="edit-{prop1}" 
+                        type="text" 
+                        bind:value={editValue}
+                        onkeydown={handleEditKeydown}
+                        style="flex: 1; background: rgba(15, 23, 42, 0.8); color: #f8fafc; border: 1px solid rgba(99, 102, 241, 0.5); border-radius: 6px; padding: 6px 10px; font-size: 14px; font-weight: 600; outline: none;"
+                        onclick={(e: MouseEvent) => e.stopPropagation()}
+                    />
+                    <ResponsiveBox 
+                        style="background: rgba(34, 197, 94, 0.8); color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; cursor: pointer;"
+                        onclick={(e: MouseEvent) => {
+                            e.stopPropagation()
+                            confirmEdit()
+                        }}
+                    >
+                        ✓
+                    </ResponsiveBox>
+                    <ResponsiveBox 
+                        style="background: rgba(239, 68, 68, 0.8); color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; cursor: pointer;"
+                        onclick={(e: MouseEvent) => {
+                            e.stopPropagation()
+                            cancelEdit()
+                        }}
+                    >
+                        ✕
+                    </ResponsiveBox>
+                </ResponsiveBox>
+            {:else}
+                {prop2}
+            {/if}
         </ResponsiveBox>
     {/if}
 

@@ -223,6 +223,30 @@
         }
     }
 
+    /** 重命名项目 */
+    async function renameProject(projectId: string | number, newName: string) {
+        if (!projectId || !newName.trim()) return
+
+        const dbName = DEFAULT_DB_NAME
+        console.log(`✏️【数据交互】重命名项目: 项目ID=${projectId}, 新名称=${newName}`)
+
+        try {
+            // 更新数据库中的项目名称
+            await DexieService.updateRecord(dbName, 'projects', projectId, {
+                name: newName.trim(),
+                updatedAt: Date.now()
+            })
+
+            // 更新本地项目列表
+            projects = projects.map((p) => (p.id === String(projectId) ? { ...p, name: newName.trim() } : p))
+
+            console.log(`✅【数据交互】项目重命名成功: 项目ID=${projectId}`)
+        } catch (error) {
+            console.error('重命名项目失败:', error)
+            alert('重命名失败，请重试')
+        }
+    }
+
     async function confirmNewProject(name: string, templateId: string = 'blank', width: number = 1920, height: number = 1000) {
         // 清理内存中的旧项目数据
         clearMemoryState()
@@ -375,7 +399,7 @@
         <ResponsiveBox style="flex: 1; overflow-y: auto; padding: 20px 10px 0 0; ">
             <ResponsiveBox style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 30px; justify-items: center; padding: 10px;">
                 {#each projects as project}
-                    <GenericCard prop1={project.id} prop2={project.name} prop3={project.createTime} prop4={project.thumbnail} showDelete={true} onDelete={deleteProject} onClick={() => openProject(project.id)} />
+                    <GenericCard prop1={project.id} prop2={project.name} prop3={project.createTime} prop4={project.thumbnail} showDelete={true} onDelete={deleteProject} onClick={() => openProject(project.id)} onRename={renameProject} />
                 {/each}
             </ResponsiveBox>
 
