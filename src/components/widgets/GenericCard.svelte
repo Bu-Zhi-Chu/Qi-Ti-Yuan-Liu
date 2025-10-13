@@ -41,7 +41,7 @@
     let imageSrc = $state<string | undefined>()
     let objectUrls: string[] = []
     let isHovered = $state(false)
-    
+
     // 编辑状态管理
     let isEditing = $state(false)
     let editValue = $state('')
@@ -158,11 +158,11 @@
     $effect(() => {
         function handleClickOutside(e: MouseEvent) {
             if (!isEditing) return
-            
+
             const target = e.target as HTMLElement
             const editContainer = document.querySelector(`#edit-container-${prop1}`)
             const cardElement = document.querySelector(`#card-${prop1}`)
-            
+
             // 如果点击的是卡片元素但不是编辑容器内的元素，则取消编辑
             if (cardElement && cardElement.contains(target) && editContainer && !editContainer.contains(target)) {
                 cancelEdit()
@@ -254,15 +254,15 @@
         <ResponsiveBox style="font-size: 16px; font-weight: 600; color: #f8fafc; margin-bottom: 8px; line-height: 1.4; position: relative;">
             {#if isEditing}
                 <ResponsiveBox id="edit-container-{prop1}" style="display: flex; align-items: center; gap: 8px;">
-                    <input 
-                        id="edit-{prop1}" 
-                        type="text" 
+                    <input
+                        id="edit-{prop1}"
+                        type="text"
                         bind:value={editValue}
                         onkeydown={handleEditKeydown}
                         style="flex: 1; background: rgba(15, 23, 42, 0.8); color: #f8fafc; border: 1px solid rgba(99, 102, 241, 0.5); border-radius: 6px; padding: 6px 10px; font-size: 14px; font-weight: 600; outline: none;"
                         onclick={(e: MouseEvent) => e.stopPropagation()}
                     />
-                    <ResponsiveBox 
+                    <ResponsiveBox
                         style="background: rgba(34, 197, 94, 0.8); color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; cursor: pointer;"
                         onclick={(e: MouseEvent) => {
                             e.stopPropagation()
@@ -271,7 +271,7 @@
                     >
                         ✓
                     </ResponsiveBox>
-                    <ResponsiveBox 
+                    <ResponsiveBox
                         style="background: rgba(239, 68, 68, 0.8); color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; cursor: pointer;"
                         onclick={(e: MouseEvent) => {
                             e.stopPropagation()
