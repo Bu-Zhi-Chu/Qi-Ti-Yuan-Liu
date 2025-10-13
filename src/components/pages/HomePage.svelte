@@ -326,7 +326,7 @@
         <ResponsiveBox
             style="font-size: 20px; color: #94a3b8; font-weight: 300; max-width: 600px; line-height: 1.6; background: linear-gradient(90deg, #94a3b8, #e2e8f0, #94a3b8); background-size: 200% 200%; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: text-shimmer 2s ease-in-out infinite;"
         >
-            快搭快建 所想所现
+            快搭快建 所想所念
         </ResponsiveBox>
     </ResponsiveBox>
 
