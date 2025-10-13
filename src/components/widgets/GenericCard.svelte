@@ -153,13 +153,56 @@
         window.addEventListener('keydown', onKeyDown)
         return () => window.removeEventListener('keydown', onKeyDown)
     })
+
+    /** 点击外部取消编辑 */
+    $effect(() => {
+        function handleClickOutside(e: MouseEvent) {
+            if (!isEditing) return
+            
+            const target = e.target as HTMLElement
+            const editContainer = document.querySelector(`#edit-container-${prop1}`)
+            const cardElement = document.querySelector(`#card-${prop1}`)
+            
+            // 如果点击的是卡片元素但不是编辑容器内的元素，则取消编辑
+            if (cardElement && cardElement.contains(target) && editContainer && !editContainer.contains(target)) {
+                cancelEdit()
+            }
+        }
+
+        if (isEditing) {
+            // 使用 setTimeout 延迟添加事件监听，避免当前点击事件立即触发
+            setTimeout(() => {
+                document.addEventListener('click', handleClickOutside)
+            }, 0)
+            return () => document.removeEventListener('click', handleClickOutside)
+        }
+    })
 </script>
 
 <ResponsiveBox
+    id="card-{prop1}"
     style="position: relative; background: {selected ? 'rgba(30, 41, 59, 0.8)' : 'rgba(30, 41, 59, 0.5)'}; border-radius: 16px; padding: 20px; box-shadow: {selected
         ? '0 0 20px rgba(99, 102, 241, 0.6), 0 0 40px rgba(139, 92, 246, 0.4)'
         : '0 8px 32px rgba(0,0,0,0.3)'}; cursor: pointer; transition: all 0.3s ease; width: 100%; border: 1px solid {selected ? 'rgba(99, 102, 241, 1)' : 'rgba(99, 102, 241, 0.2)'}; backdrop-filter: blur(10px); transform: translateY(0px);"
-    onclick={onClick}
+    onclick={(e: MouseEvent) => {
+        // 如果在编辑模式下点击了非编辑区域，则取消编辑
+        if (isEditing) {
+            const target = e.target as HTMLElement
+            const editContainer = document.querySelector(`#edit-container-${prop1}`)
+            if (editContainer && !editContainer.contains(target)) {
+                cancelEdit()
+                return
+            }
+        }
+        // 如果点击的是编辑容器内的元素，不触发卡片的点击事件
+        const target = e.target as HTMLElement
+        const editContainer = document.querySelector(`#edit-container-${prop1}`)
+        if (editContainer && editContainer.contains(target)) {
+            return
+        }
+        // 正常点击事件
+        onClick?.()
+    }}
     onmouseenter={(e: MouseEvent) => {
         isHovered = true
         const target = e.currentTarget as HTMLElement
@@ -210,7 +253,7 @@
     {#if prop2}
         <ResponsiveBox style="font-size: 16px; font-weight: 600; color: #f8fafc; margin-bottom: 8px; line-height: 1.4; position: relative;">
             {#if isEditing}
-                <ResponsiveBox style="display: flex; align-items: center; gap: 8px;">
+                <ResponsiveBox id="edit-container-{prop1}" style="display: flex; align-items: center; gap: 8px;">
                     <input 
                         id="edit-{prop1}" 
                         type="text" 
