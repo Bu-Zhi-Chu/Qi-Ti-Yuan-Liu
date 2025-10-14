@@ -516,6 +516,8 @@ export function toggleExpanded(nodeId: string): boolean {
   const node = findNodeById(domTreeData, nodeId);
   if (node) {
     node.expanded = !node.expanded;
+    // 同步到 attributes.expanded，确保持久化
+    node.attributes = { ...(node.attributes ?? {}), expanded: node.expanded };
     // 自动保存到doms表（不影响projects表）
     autoSaveToDomsTable();
     return true;
