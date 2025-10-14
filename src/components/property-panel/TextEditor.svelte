@@ -57,7 +57,7 @@
 
     // 文字样式状态
     let textContent = $state('')
-    let fontFamily = $state('')
+    let fontFamily = $state('')  // 保持空字符串，对应"默认"选项
     let fontSize = $state('16')
     let fontWeight = $state('400')
     let fontColor = $state('#000000')
@@ -193,7 +193,7 @@
         }
 
         // 使用局部变量避免触发响应式更新
-        let newFontFamily = getStringValue(styles.fontFamily) || 'Arial, sans-serif'
+        let newFontFamily = getStringValue(styles.fontFamily) || ''  // 默认为空字符串，对应"默认"选项
         let newFontSize = '16'
         let newFontWeight = getStringValue(styles.fontWeight) || '400'
         let newFontColor = '#000000'
@@ -294,7 +294,7 @@
         } else {
             // 重置所有属性
             textContent = ''
-            fontFamily = 'Arial, sans-serif'
+            fontFamily = ''  // 重置为空字符串，对应"默认"选项
             fontSize = '16'
             fontWeight = '400'
             fontColor = '#000000'
