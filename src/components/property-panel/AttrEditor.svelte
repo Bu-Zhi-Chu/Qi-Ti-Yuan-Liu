@@ -44,7 +44,7 @@
     ]
     const pointerEventsOptions = [
         { value: 'auto', label: '自动 (auto)' },
-        { value: 'none', label: '禁止 (none)' }
+        { value: 'none', label: '允许 (none)' }
     ]
     // 新增：鼠标光标类型下拉框选项
     const cursorOptions = [
