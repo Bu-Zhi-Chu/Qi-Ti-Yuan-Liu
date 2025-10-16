@@ -34,8 +34,10 @@
     import { DEFAULT_DB_NAME } from '../../config/config'
     import StatusBar from '../widgets/StatusBar.svelte'
     import { screenDetector } from '../../services/screen/screen-detector.service'
-    // 是否显示工作区，默认显示工作区
-    let showWorkspace = $state(true)
+    // 是否显示工作区，默认不显示，避免普通模式刷新时闪现
+    let showWorkspace = $state(false)
+    // 模式初始化完成标记，避免在未初始化前渲染工作区
+    let modeInitialized = $state(false)
 
     // 属性面板标签控制
     const tabs = [
@@ -555,9 +557,12 @@
             } else {
                 showWorkspace = false
             }
+            // 初始化完成
+            modeInitialized = true
         } catch (error) {
             console.error('初始化项目模式失败:', error)
             showWorkspace = false
+            modeInitialized = true
         }
     }
 
@@ -821,7 +826,7 @@
 </div>
 
 <!-- 工作区 -->
-{#if showWorkspace}
+{#if modeInitialized && showWorkspace}
     <div class="workspace" style="position: absolute;width: 100%;height: 100%;z-index: 10;pointer-events: none;">
         <!-- 顶部导航区 -->
         <div style="display: flex;align-items: center;justify-content: flex-start;gap: 10px;padding: 0 10px;width: 100%;height: 4%;background:rgb(15, 20, 29);pointer-events: auto;">
