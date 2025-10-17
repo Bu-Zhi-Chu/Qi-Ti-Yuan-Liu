@@ -187,14 +187,19 @@ export function extractDataMatches(code: string): RegExpMatchArray[] {
 
     // 同步更新series[].name（只更新这里的fake数据，实际会在ECharts组件中回写）
     if (originalOption && originalOption.series && Array.isArray(originalOption.series)) {
-
-
-      // 更新series的name属性，确保与legend.data同步
-      originalOption.series.forEach((series: any, index: number) => {
-        if (instanceLegendData && instanceLegendData[index]) {
-          series.name = instanceLegendData[index]
-        }
-      })
+      // 仅在安全条件下更新series的name属性：
+      // 1) 不存在饼图系列（饼图的图例项对应的是数据项而非系列）；
+      // 2) legend.data长度与系列数量一致
+      const seriesArr = Array.isArray(originalOption.series) ? originalOption.series : [originalOption.series]
+      const hasPieSeries = seriesArr.some((s: any) => s?.type === 'pie' || (Array.isArray(s?.data) && s.data.some((d: any) => d && typeof d === 'object' && 'name' in d)))
+      const canSyncSeriesNames = !hasPieSeries && Array.isArray(instanceLegendData) && instanceLegendData.length === seriesArr.length
+      if (canSyncSeriesNames) {
+        seriesArr.forEach((series: any, index: number) => {
+          if (instanceLegendData && instanceLegendData[index]) {
+            series.name = instanceLegendData[index]
+          }
+        })
+      }
     }
   }
   if (instanceXAxisData && Array.isArray(instanceXAxisData)) {

@@ -602,19 +602,25 @@
                     if (dataSource === 'json' && codeResult.legend && codeResult.legend.data) {
                         console.log(`[ECharts] 使用更新后的legend数据同步系列名称:`, codeResult.legend.data)
                     }
-                    // 如果是json模式，并且已经有更新后的legend数据，则用它来覆盖series.name
-                    // 使用更新后的codeResult.legend.data，而不是从代码提取的legendData
-                    if (dataSource === 'json' && codeResult.legend && codeResult.legend.data && Array.isArray(codeResult.legend.data) && codeResult.series && Array.isArray(codeResult.series)) {
-                        codeResult.series.forEach((s: any, i: number) => {
-                            if (codeResult.legend.data[i]) {
-                                const oldName = s.name
-                                s.name = codeResult.legend.data[i]
-                                // 调试输出：记录系列名称的变更
-                                if (oldName !== s.name) {
-                                    console.log(`[ECharts] 系列 ${i} 名称更新: "${oldName}" -> "${s.name}"`)
+                    // 如果是json模式，并且已经有更新后的legend数据，则在安全条件下覆盖series.name
+                    // 条件：不存在饼图系列，且 legend.data 与系列数量一致
+                    if (dataSource === 'json' && codeResult.legend && Array.isArray(codeResult.legend.data) && codeResult.series && Array.isArray(codeResult.series)) {
+                        const hasPieSeries = codeResult.series.some((s: any) => s?.type === 'pie' || (Array.isArray(s?.data) && s.data.some((d: any) => d && typeof d === 'object' && 'name' in d)))
+                        const canSyncSeriesNames = !hasPieSeries && codeResult.legend.data.length === codeResult.series.length
+                        if (canSyncSeriesNames) {
+                            codeResult.series.forEach((s: any, i: number) => {
+                                if (codeResult.legend.data[i]) {
+                                    const oldName = s.name
+                                    s.name = codeResult.legend.data[i]
+                                    // 调试输出：记录系列名称的变更
+                                    if (oldName !== s.name) {
+                                        console.log(`[ECharts] 系列 ${i} 名称更新: "${oldName}" -> "${s.name}"`)
+                                    }
                                 }
-                            }
-                        })
+                            })
+                        } else {
+                            console.log('[ECharts] 跳过系列名称同步：检测到饼图或图例数量与系列数量不匹配')
+                        }
                     }
                     // === 调试输出：查看最终 option 中的数据 ===
                     // 添加防抖：只在数据真正有变化时才打印日志
@@ -630,8 +636,30 @@
                         const needFillLegendData = !Array.isArray(codeResult.legend.data) || codeResult.legend.data.length === 0;
                         if (needFillLegendData) {
                             if (!codeResult.legend) codeResult.legend = {}; // 安全起见，虽然条件已经判断了legend存在
-                            codeResult.legend.data = codeResult.series.map((s: any) => s.name || '');
-                            console.log('[ECharts] 自动填充 legend.data:', codeResult.legend.data);
+                            // 优先：饼图规则，从 series[].data[].name 提取唯一名称序列
+                            const pieNames: string[] = []
+                            const seen = new Set<string>()
+                            codeResult.series.forEach((s: any) => {
+                                const isPieLike = s?.type === 'pie' || (Array.isArray(s?.data) && s.data.some((d: any) => d && typeof d === 'object' && 'name' in d))
+                                if (isPieLike && Array.isArray(s?.data)) {
+                                    s.data.forEach((item: any) => {
+                                        const nm = item && typeof item === 'object' ? item.name : null
+                                        if (typeof nm === 'string' && nm.trim() && !seen.has(nm)) {
+                                            pieNames.push(nm)
+                                            seen.add(nm)
+                                        }
+                                    })
+                                }
+                            })
+
+                            if (pieNames.length > 0) {
+                                codeResult.legend.data = pieNames
+                                console.log('[ECharts] 自动填充 legend.data(饼图):', codeResult.legend.data)
+                            } else {
+                                // 回退：按系列名补齐
+                                codeResult.legend.data = codeResult.series.map((s: any) => s.name || '')
+                                console.log('[ECharts] 自动填充 legend.data(系列名):', codeResult.legend.data)
+                            }
                         }
                     }
 
