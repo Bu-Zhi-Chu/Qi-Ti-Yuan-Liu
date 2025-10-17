@@ -89,6 +89,26 @@
     let isOpen = $state(false)
     let pickerRef = $state<HTMLDivElement>()
     let buttonRef = $state<HTMLButtonElement>()
+    // 面板定位样式（挂载到 body 后使用 fixed 定位）
+    let panelStyle = $state('')
+
+    // 简易 portal action：将节点挂载到指定目标（此处为 document.body）
+    function portal(node: HTMLElement, target: HTMLElement | null) {
+        if (!target) return {}
+        target.appendChild(node)
+        let current = target
+        return {
+            update(newTarget: HTMLElement | null) {
+                if (!newTarget || newTarget === current) return
+                if (node.parentNode === current) current.removeChild(node)
+                newTarget.appendChild(node)
+                current = newTarget
+            },
+            destroy() {
+                if (node.parentNode === current) current.removeChild(node)
+            }
+        }
+    }
 
     // 内部日期状态
     function normalizeDate(v: Date | string): Date {
@@ -300,6 +320,8 @@
             // 当模式为 date 或 datetime 时，始终默认显示日期选择界面
             // 当模式为 year 或 month 时，显示对应的年/月选择界面
             selectingYearMonth = mode === 'year' || mode === 'month'
+            // 面板初始定位：挂载后再测量尺寸并计算位置
+            tick().then(() => updatePanelPosition())
         }
     }
 
@@ -326,7 +348,19 @@
             }
         }
         document.addEventListener('mousedown', handleClickOutside)
-        return () => document.removeEventListener('mousedown', handleClickOutside)
+
+        // 当窗口滚动或尺寸变化时，重新定位面板（仅打开时生效）
+        const recalc = () => {
+            if (isOpen) updatePanelPosition()
+        }
+        const options: AddEventListenerOptions = { passive: true, capture: true }
+        window.addEventListener('scroll', recalc, options)
+        window.addEventListener('resize', recalc)
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside)
+            window.removeEventListener('scroll', recalc, options)
+            window.removeEventListener('resize', recalc)
+        }
     })
 
     // 当面板打开时，确保当前选中的年份/月份在可视区域内
@@ -342,9 +376,40 @@
                 if (mode === 'month' && monthListRef) {
                     monthListRef.querySelector('.month-item.selected')?.scrollIntoView({ block: 'center' })
                 }
+                // 再次确保定位正确（面板内容可能改变尺寸）
+                updatePanelPosition()
             })
         }
     })
+
+    // 计算并设置面板的 fixed 定位样式，使其不受父级 overflow 限制
+    function updatePanelPosition() {
+        if (!buttonRef || !pickerRef) return
+        const rect = buttonRef.getBoundingClientRect()
+        // 先设置一个最小样式以获得面板实际尺寸
+        panelStyle = 'position:fixed;left:-9999px;top:-9999px;z-index:10000'
+        // 下一帧读取尺寸
+        tick().then(() => {
+            const panelEl = pickerRef
+            if (!panelEl) return
+            const pw = panelEl.offsetWidth
+            const ph = panelEl.offsetHeight
+            const margin = 8
+            let left = rect.left
+            let top = rect.bottom
+            // 视口边界处理：水平
+            if (left + pw + margin > window.innerWidth) {
+                left = Math.max(margin, window.innerWidth - pw - margin)
+            }
+            if (left < margin) left = margin
+            // 视口边界处理：垂直（下边缘放不下时，改为显示在按钮上方）
+            if (top + ph + margin > window.innerHeight) {
+                top = Math.max(margin, rect.top - ph)
+            }
+            if (top < margin) top = margin
+            panelStyle = `position:fixed;left:${Math.round(left)}px;top:${Math.round(top)}px;z-index:10000`
+        })
+    }
 </script>
 
 <ResponsiveBox
@@ -368,7 +433,7 @@
     </button>
 
     {#if isOpen}
-        <div class="date-picker-panel">
+        <div bind:this={pickerRef} use:portal={document.body} class="date-picker-panel portal" style={panelStyle}>
             {#if mode === 'year'}
                 <div class="panel-header">
                     <span class="mode-title">选择年份</span>
@@ -644,6 +709,15 @@
         color: var(--text-color, #e2e8f0);
     }
 
+    /* 当以 portal 方式挂载到 body 时，使用 fixed 定位并按内容宽度显示 */
+    .date-picker-panel.portal {
+        position: fixed;
+        width: auto;
+        max-width: calc(320px * var(--scale-ratio, 1));
+        min-width: calc(240px * var(--scale-ratio, 1));
+        margin-top: 0;
+    }
+
     .panel-header {
         display: flex;
         justify-content: space-between;
@@ -792,30 +866,7 @@
         font-weight: 600;
     }
 
-    /* 年份显示（月份模式） */
-    .year-display {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: calc(8px * var(--scale-ratio, 1));
-        margin-bottom: calc(16px * var(--scale-ratio, 1));
-        padding: calc(8px * var(--scale-ratio, 1));
-        background: var(--control-bg, rgba(45, 55, 72, 0.5));
-        border-radius: calc(4px * var(--scale-ratio, 1));
-    }
-
-    .current-year {
-        font-size: calc(14px * var(--scale-ratio, 1));
-        font-weight: 600;
-        color: var(--text-color, #e2e8f0);
-        min-width: calc(60px * var(--scale-ratio, 1));
-        text-align: center;
-    }
-
-    .year-nav {
-        font-size: calc(14px * var(--scale-ratio, 1));
-        padding: calc(4px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));
-    }
+    /* （已移除年份显示相关样式，避免未使用选择器警告） */
 
     /* 时分秒输入 */
     .time-inputs {
