@@ -89,11 +89,16 @@ const useWheelZoom: Action<HTMLElement, WheelZoomOptions> = (node, opts) => {
     if (e.key === options.key && !keyPressed && !altActivationTimer) {
       // Alt 必须独立按下（按下时集合里只有 Alt 本身）
       if (pressedKeys.size > 1) return
-      // 移除editingAccessor检查 - 画布缩放不应受编辑模式限制
-      // if (options.editingAccessor && !options.editingAccessor()) return;
+      // 仅在编辑模式下响应 Alt 以激活缩放准备光标
+      if (options.editingAccessor && !options.editingAccessor()) return
       e.preventDefault()
       // 避免误触和快捷键冲突
       altActivationTimer = window.setTimeout(() => {
+        // 定时器触发时再次确认编辑模式，避免模式切换导致误激活
+        if (options.editingAccessor && !options.editingAccessor()) {
+          keyPressed = false
+          return
+        }
         keyPressed = true
         node.style.cursor = 'ns-resize';
         document.body.style.cursor = 'ns-resize'

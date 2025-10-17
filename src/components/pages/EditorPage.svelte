@@ -596,6 +596,7 @@
     let vPressing = false // track V key state for adjust tool
 
     function onSpaceDown(e: KeyboardEvent) {
+        if (!showWorkspace) return
         if (!e.isTrusted) return // 忽略 ourselves派发的合成事件
         const target = e.target as HTMLElement | null
         if (target && (['INPUT', 'TEXTAREA'].includes(target.tagName) || (typeof (target as any).closest === 'function' && target.closest('[contenteditable="true"]')))) {
@@ -618,6 +619,7 @@
     }
 
     function onSpaceUp(e: KeyboardEvent) {
+        if (!showWorkspace) return
         if (!e.isTrusted) return
         const target = e.target as HTMLElement | null
         if (target && (['INPUT', 'TEXTAREA'].includes(target.tagName) || (typeof (target as any).closest === 'function' && target.closest('[contenteditable="true"]')))) {
@@ -640,6 +642,7 @@
         }
     }
     function onAltDown(e: KeyboardEvent) {
+        if (!showWorkspace) return
         if (!e.isTrusted) return
         if (e.key === 'Alt' && !altPressing) {
             altPressing = true
@@ -658,6 +661,7 @@
     }
 
     function onAltUp(e: KeyboardEvent) {
+        if (!showWorkspace) return
         if (!e.isTrusted) return
         if (e.key === 'Alt' && altPressing) {
             altPressing = false
@@ -683,6 +687,7 @@
 
     // 按住 B 进入绘制节点准备模式
     function onBDown(e: KeyboardEvent) {
+        if (!showWorkspace) return
         if (!e.isTrusted) return
         const target = e.target as HTMLElement | null
         if (target && (['INPUT', 'TEXTAREA'].includes(target.tagName) || (typeof (target as any).closest === 'function' && target.closest('[contenteditable="true"]')))) {
@@ -702,6 +707,7 @@
     }
 
     function onBUp(e: KeyboardEvent) {
+        if (!showWorkspace) return
         if (!e.isTrusted) return
         const target = e.target as HTMLElement | null
         if (target && (['INPUT', 'TEXTAREA'].includes(target.tagName) || (typeof (target as any).closest === 'function' && target.closest('[contenteditable="true"]')))) {
@@ -717,6 +723,7 @@
 
     // 按住 V 进入调整节点准备模式（仅当选中非根节点时生效）
     function onVDown(e: KeyboardEvent) {
+        if (!showWorkspace) return
         if (!e.isTrusted) return
         const target = e.target as HTMLElement | null
         if (target && (['INPUT', 'TEXTAREA'].includes(target.tagName) || (typeof (target as any).closest === 'function' && target.closest('[contenteditable="true"]')))) {
@@ -733,6 +740,7 @@
     }
 
     function onVUp(e: KeyboardEvent) {
+        if (!showWorkspace) return
         if (!e.isTrusted) return
         const target = e.target as HTMLElement | null
         if (target && (['INPUT', 'TEXTAREA'].includes(target.tagName) || (typeof (target as any).closest === 'function' && target.closest('[contenteditable="true"]')))) {
@@ -745,6 +753,28 @@
             }
         }
     }
+
+    // 切换到普通模式时，释放可能的快捷键状态并恢复光标
+    $effect(() => {
+        if (!showWorkspace) {
+            // 重置工具与状态
+            activeTool = null
+            spacePressing = false
+            altPressing = false
+            bPressing = false
+            vPressing = false
+
+            // 派发 keyup，确保动作内的光标恢复
+            const spaceUp = new KeyboardEvent('keyup', { key: ' ', code: 'Space', bubbles: true, cancelable: true })
+            const altUp = new KeyboardEvent('keyup', { key: 'Alt', code: 'AltLeft', bubbles: true, cancelable: true })
+            const bUp = new KeyboardEvent('keyup', { key: 'b', code: 'KeyB', bubbles: true, cancelable: true })
+            const vUp = new KeyboardEvent('keyup', { key: 'v', code: 'KeyV', bubbles: true, cancelable: true })
+            document.dispatchEvent(spaceUp)
+            document.dispatchEvent(altUp)
+            document.dispatchEvent(bUp)
+            document.dispatchEvent(vUp)
+        }
+    })
 
     onMount(() => {
         document.addEventListener('keydown', onSpaceDown)

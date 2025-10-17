@@ -91,8 +91,8 @@ export default function usePan(node: HTMLElement, opts: UsePanOptions = {}) {
     if (e.code !== options.key) return;
     // 避免 Ctrl+V 等组合键触发独立 V 功能
     if (e.ctrlKey || e.metaKey) return;
-    // 移除editingAccessor检查 - 画布移动不应受编辑模式限制
-    // if (options.editingAccessor && !options.editingAccessor()) return;
+    // 仅在编辑模式下响应空格/V 等快捷键以改变光标/进入拖动准备
+    if (options.editingAccessor && !options.editingAccessor()) return;
     if (!state.keyPressed) {
       state.keyPressed = true;
       if (!state.panActive) {
