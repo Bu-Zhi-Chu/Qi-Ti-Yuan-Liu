@@ -313,6 +313,11 @@
                 "type": "switch",
                 "default": false
             },
+            "showIcon": {
+                "label": "显示图标",
+                "type": "switch",
+                "default": true
+            },
             "mode": {
                 "label": "选择模式",
                 "type": "select",

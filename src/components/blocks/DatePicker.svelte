@@ -47,6 +47,8 @@
         style?: string
         dateRecording?: boolean
         recordedDate?: string | Date
+        /** 是否显示按钮上的日历图标（默认显示） */
+        showIcon?: boolean
         /**
          * 选择模式
          * - "date": 年月日（默认）
@@ -68,6 +70,7 @@
         style = '',
         dateRecording = false,
         recordedDate,
+        showIcon = true,
         mode = 'date',
         onChange,
         panelBgColor = '#1a202c',
@@ -203,16 +206,21 @@
     function formatDisplay(date: Date): string {
         switch (mode) {
             case 'year':
-                return `${date.getFullYear()}年`
+                // 年模式不显示“年”字，仅显示数字年份
+                return `${date.getFullYear()}`
             case 'month':
-                return `${String(date.getMonth() + 1).padStart(2, '0')}月`
+                // 月模式不显示“月”字，仅显示两位数字月份
+                return `${String(date.getMonth() + 1).padStart(2, '0')}`
             case 'datetime':
-                return `${formatDateChinese(date)} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`
+                // 改为 ISO 风格日期 + 时间，例如 2025-01-09 12:34:56
+                return `${toInputValue(date)} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`
             default:
-                return formatDateChinese(date)
+                // 改为 yyyy-mm-dd（不再使用中文格式）
+                return toInputValue(date)
         }
     }
 
+    // 保留中文格式函数（仍用于面板头部显示），按钮显示已切换为 ISO 风格
     function formatDateChinese(date: Date): string {
         const y = date.getFullYear()
         const m = String(date.getMonth() + 1).padStart(2, '0')
@@ -347,14 +355,16 @@
 >
     <button bind:this={buttonRef} class="date-picker-button" class:disabled onclick={togglePanel} type="button">
         <span class="date-text">{displayText}</span>
-        <span class="date-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                <line x1="16" y1="2" x2="16" y2="6"></line>
-                <line x1="8" y1="2" x2="8" y2="6"></line>
-                <line x1="3" y1="10" x2="21" y2="10"></line>
-            </svg>
-        </span>
+        {#if showIcon}
+            <span class="date-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+            </span>
+        {/if}
     </button>
 
     {#if isOpen}
@@ -410,11 +420,6 @@
                 </div>
             {:else if mode === 'month'}
                 <!-- 月份选择模式 -->
-                <div class="year-display">
-                    <button class="nav-button year-nav" onclick={prevYear} type="button">‹</button>
-                    <span class="current-year">{year}年</span>
-                    <button class="nav-button year-nav" onclick={nextYear} type="button">›</button>
-                </div>
                 <div class="month-list" bind:this={monthListRef}>
                     {#each Array(12) as _, idx}
                         <button
