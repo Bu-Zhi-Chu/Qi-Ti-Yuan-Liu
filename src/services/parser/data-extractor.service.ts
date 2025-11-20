@@ -18,7 +18,12 @@ export function extractResultArray(raw: string | any): any[] {
     try {
       data = JSON.parse(raw)
     } catch {
-      data = eval(raw)
+      try {
+        const fn = Function('return (' + raw + ')')
+        data = fn()
+      } catch {
+        throw new Error('无法解析字符串为数据')
+      }
     }
   } else {
     data = raw

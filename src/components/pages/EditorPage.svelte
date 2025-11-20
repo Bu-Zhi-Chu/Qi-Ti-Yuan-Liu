@@ -22,8 +22,8 @@
 
     /* 新增：Dom 区域与 Dom 树列表组件 */
     import DomCanvas from '../widgets/DomCanvas.svelte'
-    import TabbedPanel from '../widgets/TabbedPanel.svelte'
-    import PropertyPanel from '../property-panel/PropertyPanel.svelte'
+    let AsyncTabbedPanel: any = $state(null)
+    let AsyncPropertyPanel: any = $state(null)
     import Icon from '../widgets/Icon.svelte'
     import blocksConfig from '../blocks/blocks.config.json'
     import { applyLogConfig } from '../../services/utils/log-switch'
@@ -32,7 +32,7 @@
     import { domTree, selectedId, removeNodeById, projectId, findNodeById, setDesignSize } from '../../stores/dom-tree.store.svelte'
     import DexieService from '../../services/database/dexie-service'
     import { DEFAULT_DB_NAME } from '../../config/config'
-    import StatusBar from '../widgets/StatusBar.svelte'
+    let AsyncStatusBar: any = $state(null)
     import { screenDetector } from '../../services/screen/screen-detector.service'
     // 是否显示工作区，默认不显示，避免普通模式刷新时闪现
     let showWorkspace = $state(false)
@@ -589,6 +589,20 @@
         } catch {}
     })
 
+    $effect(() => {
+        if (modeInitialized && showWorkspace) {
+            if (!AsyncTabbedPanel) {
+                import('../widgets/TabbedPanel.svelte').then((m) => (AsyncTabbedPanel = m.default)).catch(() => {})
+            }
+            if (!AsyncPropertyPanel) {
+                import('../property-panel/PropertyPanel.svelte').then((m) => (AsyncPropertyPanel = m.default)).catch(() => {})
+            }
+            if (!AsyncStatusBar) {
+                import('../widgets/StatusBar.svelte').then((m) => (AsyncStatusBar = m.default)).catch(() => {})
+            }
+        }
+    })
+
     // track if space key pressed to set move tool highlight
     let spacePressing = false
     let altPressing = false
@@ -1067,7 +1081,11 @@
                 </div>
                 <!-- dom树列表 -->
                 <div style="width: 88%;height: 100%;background: rgba(30, 41, 59, 0.8);pointer-events: auto">
-                    <TabbedPanel />
+                    {#if AsyncTabbedPanel}
+                        <AsyncTabbedPanel />
+                    {:else}
+                        <div style="width: 100%;height: 100%;"></div>
+                    {/if}
                 </div>
             </div>
 
@@ -1076,7 +1094,11 @@
                 <!-- 属性面板 -->
                 <div style="width: 88%;height: 100%;pointer-events: auto;">
                     <!-- @ts-ignore: Work In Progress -->
-                    <PropertyPanel showToolbar={false} {activeTab} onTabChange={setTab} />
+                    {#if AsyncPropertyPanel}
+                        <AsyncPropertyPanel showToolbar={false} {activeTab} onTabChange={setTab} />
+                    {:else}
+                        <div style="width: 100%;height: 100%;"></div>
+                    {/if}
                 </div>
                 <!-- 标签切换按钮栏 -->
                 <div class="prop-tabbar" style="width: 12%;height: 100%;display: flex;flex-direction: column;align-items: center;justify-content: flex-start;padding-top: calc(12px * var(--scale-ratio, 1));gap: calc(8px * var(--scale-ratio, 1));pointer-events: auto;background: rgb(15, 20, 29);">
@@ -1090,7 +1112,13 @@
         </div>
 
         <!-- 底部状态栏 -->
-        <div style="background: rgb(15, 20, 29);width: 100%; height: 2%;pointer-events: none;"><StatusBar /></div>
+        <div style="background: rgb(15, 20, 29);width: 100%; height: 2%;pointer-events: none;">
+            {#if AsyncStatusBar}
+                <AsyncStatusBar />
+            {:else}
+                <div></div>
+            {/if}
+        </div>
     </div>
 {/if}
 

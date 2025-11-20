@@ -31,8 +31,6 @@
     import blocksConfig from '../blocks/blocks.config.json'
     import drawModeAction from '../../services/actions/draw-mode.action'
     import useAdjustMode from '../../services/actions/adjust-mode.action'
-    import DrawModeOverlay from './DrawModeOverlay.svelte'
-    import AlignmentOverlay from './AlignmentOverlay.svelte'
     import { isDrawMode } from '../../stores/draw-mode.store.svelte'
     import DexieService from '../../services/database/dexie-service'
 import { DEFAULT_DB_NAME } from '../../config/config'
@@ -72,6 +70,20 @@ import { DEFAULT_DB_NAME } from '../../config/config'
     // 项目ID - 从store获取
     let localProjectId = $state('')
     let isLoading = $state(true)
+
+    let AsyncDrawModeOverlay: any = $state(null)
+    let AsyncAlignmentOverlay: any = $state(null)
+
+    $effect(() => {
+        if (editing) {
+            if (!AsyncDrawModeOverlay) {
+                import('./DrawModeOverlay.svelte').then((m) => (AsyncDrawModeOverlay = m.default)).catch(() => {})
+            }
+            if (!AsyncAlignmentOverlay) {
+                import('./AlignmentOverlay.svelte').then((m) => (AsyncAlignmentOverlay = m.default)).catch(() => {})
+            }
+        }
+    })
 
     onMount(() => {
         // 立即执行加载逻辑
@@ -544,11 +556,18 @@ import { DEFAULT_DB_NAME } from '../../config/config'
         <NodeRenderer node={domTree} selectedId={selectedId()} {editing} select={handleSelect} />
     {/if}
 
-    <!-- 使用独立的DrawModeOverlay组件渲染预览矩形 -->
-    <DrawModeOverlay {editing} />
+    {#if AsyncDrawModeOverlay}
+        <AsyncDrawModeOverlay {editing} />
+    {:else}
+        <div></div>
+    {/if}
 
     <!-- 对齐辅助线 -->
-    <AlignmentOverlay {editing} />
+    {#if AsyncAlignmentOverlay}
+        <AsyncAlignmentOverlay {editing} />
+    {:else}
+        <div></div>
+    {/if}
 
     <!-- 加载状态 -->
     {#if isLoading}

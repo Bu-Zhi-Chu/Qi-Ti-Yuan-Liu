@@ -7,7 +7,7 @@ import AboutPage from '../components/pages/AboutPage.svelte'
 import SettingsPage from '../components/pages/SettingsPage.svelte'
 import DemoPage from '../components/pages/DemoPage.svelte'
 import PlaygroundPage from '../components/pages/PlaygroundPage.svelte'
-import EditorPage from '../components/pages/EditorPage.svelte'
+ 
 
 /**
  * 路由配置数组
@@ -57,15 +57,13 @@ export const routes: Readonly<Route<any>[]> = [
         name: 'playground-base'
     },
     {
-        // 编辑器页面-带项目ID
         path: '/editor/:id',
-        component: EditorPage,
+        component: () => import('../components/pages/EditorPage.svelte'),
         name: 'editor-project'
     },
     {
-        // 编辑器页面
         path: '/editor',
-        component: EditorPage,
+        component: () => import('../components/pages/EditorPage.svelte'),
         name: 'editor'
     },
     {

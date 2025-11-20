@@ -3,9 +3,7 @@
     import { routerOptions } from './router/routes'
     import { isLiteMode } from './services/env/environment.service'
     import RouterGuard from './components/core/RouterGuard.svelte'
-
-    // 静态导入 EditorPage 组件，避免动态/静态混用
-    import EditorPage from './components/pages/EditorPage.svelte'
+    let EditorPageComp: any = $state(null)
 
     /**
      * 应用主组件
@@ -16,7 +14,13 @@
      * 在生产精简模式下，直接加载编辑页面，跳过路由系统
      */
 
-    // 路由配置已导入，Router组件会自动处理路由匹配
+    $effect(() => {
+        if (isLiteMode() && !EditorPageComp) {
+            import('./components/pages/EditorPage.svelte').then((m) => {
+                EditorPageComp = m.default
+            })
+        }
+    })
 </script>
 
 <!--
@@ -28,7 +32,9 @@
 -->
 
 {#if isLiteMode()}
-    <EditorPage />
+    {#if EditorPageComp}
+        <EditorPageComp />
+    {/if}
 {:else}
     <RouterView options={routerOptions}>
         <!-- 在RouterView内部使用路由守卫组件 -->
