@@ -25,6 +25,7 @@
         hoverEffect?: string
         buttonType?: string
         navigationTarget?: string
+        jumpPath?: string
         // 新增：默认首页开关
         defaultHome?: boolean
         style?: string
@@ -44,6 +45,7 @@
         hoverEffect = '',
         buttonType = '',
         navigationTarget = '',
+        jumpPath = '',
         /* 新增 */ defaultHome = false,
         style = '',
         children,
@@ -59,6 +61,15 @@
 
     // 移除对 highlightImage 的直接样式注入，交由 NodeRenderer 通过 --bg-img 处理
     const mergedStyle = $derived(() => style)
+
+    function resolveJumpUrl(raw: string): string | null {
+        const s = (raw || '').trim()
+        if (!s) return null
+        if (/^https?:\/\//i.test(s)) return s
+        const origin = window.location.origin
+        if (s.startsWith('/')) return `${origin}${s}`
+        return `${origin}/${s}`
+    }
 
     /** 点击事件，根据按钮类型执行不同逻辑 */
     function handleClick() {
@@ -90,6 +101,12 @@
                 // 切换页面
                 if (navigationTarget) {
                     setCurrentPage(navigationTarget)
+                }
+                break
+            case 'jump':
+                const url = resolveJumpUrl(jumpPath)
+                if (url) {
+                    window.open(url, '_blank', 'noopener,noreferrer')
                 }
                 break
             case 'trigger':

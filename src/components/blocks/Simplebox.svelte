@@ -18,10 +18,13 @@
 <script lang="ts">
     interface Props {
         style?: string
-        animation?: '' | 'breath'
+        animation?: '' | 'breath' | 'float'
         breathDuration?: number
         breathMinOpacity?: number
         breathFactor?: number
+        floatHeight?: number
+        floatDuration?: number
+        floatFactor?: number
         class?: string
         children?: import('svelte').Snippet
         'data-id'?: string // 外部指定的数据标识符，用于低代码平台定位
@@ -54,7 +57,7 @@
 
     let instanceSeed = $state(Math.random() * 10000)
 
-    let { style, animation = '', breathDuration = 2, breathMinOpacity = 0.6, breathFactor, class: className, children, ...rest }: Props = $props()
+    let { style, animation = '', breathDuration = 2, breathMinOpacity = 0.6, breathFactor, floatHeight = 8, floatDuration = 2, floatFactor, class: className, children, ...rest }: Props = $props()
 
     const breathDurationStyle = $derived(() => {
         if (animation !== 'breath') return ''
@@ -66,8 +69,18 @@
         return `--simplebox-breath-duration: ${d}s; --simplebox-breath-min-opacity: ${o}; --simplebox-breath-delay: ${delay}s;`
     })
 
-    const finalStyle = $derived(() => mergeStyle(style, breathDurationStyle()))
-    const finalClass = $derived(() => mergeClass(className, animation === 'breath' ? 'simplebox-breath' : ''))
+    const floatStyle = $derived(() => {
+        if (animation !== 'float') return ''
+        const d = Number.isFinite(floatDuration) && floatDuration > 0 ? floatDuration : 2
+        const h = Number.isFinite(floatHeight) ? Math.max(0, floatHeight) : 8
+        const seed = Number.isFinite(floatFactor) ? (floatFactor as number) : instanceSeed
+        const phase01 = pseudoRandom01(seed)
+        const delay = -(phase01 * d)
+        return `--simplebox-float-duration: ${d}s; --simplebox-float-height: calc(${h}px * var(--scale-ratio, 1)); --simplebox-float-delay: ${delay}s;`
+    })
+
+    const finalStyle = $derived(() => mergeStyle(style, mergeStyle(breathDurationStyle(), floatStyle()) ?? ''))
+    const finalClass = $derived(() => mergeClass(className, animation === 'breath' ? 'simplebox-breath' : animation === 'float' ? 'simplebox-float' : ''))
 </script>
 
 <div style={finalStyle()} class={finalClass()} {...rest}>
@@ -88,6 +101,22 @@
         }
         50% {
             opacity: var(--simplebox-breath-min-opacity, 0.6);
+        }
+    }
+
+    .simplebox-float {
+        animation: simplebox-float var(--simplebox-float-duration, 2s) ease-in-out infinite;
+        animation-delay: var(--simplebox-float-delay, 0s);
+        will-change: translate;
+    }
+
+    @keyframes simplebox-float {
+        0%,
+        100% {
+            translate: 0 0;
+        }
+        50% {
+            translate: 0 calc(-1 * var(--simplebox-float-height, calc(8px * var(--scale-ratio, 1))));
         }
     }
 </style>

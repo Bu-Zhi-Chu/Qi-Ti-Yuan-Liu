@@ -101,6 +101,10 @@
                     {
                         "value": "breath",
                         "label": "呼吸"
+                    },
+                    {
+                        "value": "float",
+                        "label": "浮动"
                     }
                 ],
                 "default": ""
@@ -135,6 +139,38 @@
                 "showIf": {
                     "key": "animation",
                     "value": "breath"
+                }
+            },
+            "floatHeight": {
+                "label": "浮动高度",
+                "type": "number",
+                "min": 0,
+                "max": 200,
+                "default": 8,
+                "showIf": {
+                    "key": "animation",
+                    "value": "float"
+                }
+            },
+            "floatDuration": {
+                "label": "浮动节奏",
+                "type": "number",
+                "min": 0.2,
+                "max": 20,
+                "default": 2,
+                "showIf": {
+                    "key": "animation",
+                    "value": "float"
+                }
+            },
+            "floatFactor": {
+                "label": "浮动因子",
+                "type": "number",
+                "min": 0,
+                "max": 9999,
+                "showIf": {
+                    "key": "animation",
+                    "value": "float"
                 }
             }
         }
@@ -259,6 +295,10 @@
                     {
                         "value": "navigation",
                         "label": "导航"
+                    },
+                    {
+                        "value": "jump",
+                        "label": "跳转"
                     }
                 ]
             },
@@ -279,6 +319,15 @@
                 "showIf": {
                     "key": "buttonType",
                     "value": "navigation"
+                }
+            },
+            "jumpPath": {
+                "label": "跳转路径",
+                "type": "text",
+                "default": "",
+                "showIf": {
+                    "key": "buttonType",
+                    "value": "jump"
                 }
             }
         }
