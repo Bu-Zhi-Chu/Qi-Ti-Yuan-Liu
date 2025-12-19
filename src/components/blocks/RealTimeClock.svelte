@@ -32,7 +32,7 @@
     import { SvelteDate } from 'svelte/reactivity'
 
     interface Props {
-        displayType?: 'datetime' | 'date' | 'time' | 'year' | 'month' | 'weekday' | 'day'
+        displayType?: 'datetime' | 'date' | 'date-hyphen' | 'date-text' | 'time' | 'year' | 'month' | 'weekday' | 'day'
         style?: string
         'data-id'?: string
         [key: string]: any // 支持任意属性和事件处理器的传递
@@ -54,6 +54,13 @@
         return `${year}-${month}-${day}`
     }
 
+    const formatDateTextPart = (date: Date): string => {
+        const year = date.getFullYear()
+        const month = String(date.getMonth() + 1).padStart(2, '0')
+        const day = String(date.getDate()).padStart(2, '0')
+        return `${year}年${month}月${day}日`
+    }
+
     // 格式化时间部分
     const formatTimePart = (date: Date): string => {
         const hours = String(date.getHours()).padStart(2, '0')
@@ -66,7 +73,10 @@
     let displayValue = $derived(() => {
         switch (displayType) {
             case 'date':
+            case 'date-hyphen':
                 return formatDatePart(currentTime)
+            case 'date-text':
+                return formatDateTextPart(currentTime)
             case 'time':
                 return formatTimePart(currentTime)
             case 'weekday':

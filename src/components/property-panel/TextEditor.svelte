@@ -57,7 +57,7 @@
 
     // 文字样式状态
     let textContent = $state('')
-    let fontFamily = $state('')  // 保持空字符串，对应"默认"选项
+    let fontFamily = $state('') // 保持空字符串，对应"默认"选项
     let fontSize = $state('16')
     let fontWeight = $state('400')
     let fontColor = $state('#000000')
@@ -86,7 +86,28 @@
         face.load().catch((err: unknown) => console.error('Font load error', err))
     }
 
-    const fontFamilyOptions = [{ value: '', label: '默认' }, ...fonts.map((f) => ({ value: `'${f.family}', ${f.fallback}`, label: f.name }))]
+    const commonFontOptions = [
+        { value: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif", label: '系统默认' },
+        { value: "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif", label: '无衬线' },
+        { value: "ui-serif, 'Times New Roman', Times, serif", label: '衬线' },
+        { value: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace", label: '等宽' },
+        { value: 'Arial, Helvetica, sans-serif', label: 'Arial' },
+        { value: "'Helvetica Neue', Helvetica, Arial, sans-serif", label: 'Helvetica' },
+        { value: "'Segoe UI', Tahoma, Arial, sans-serif", label: 'Segoe UI' },
+        { value: "Roboto, 'Helvetica Neue', Arial, sans-serif", label: 'Roboto' },
+        { value: "'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans SC', Arial, sans-serif", label: '中文无衬线' },
+        { value: "'Microsoft YaHei', 'PingFang SC', Arial, sans-serif", label: '微软雅黑' },
+        { value: "'PingFang SC', 'Hiragino Sans GB', Arial, sans-serif", label: '苹方' },
+        { value: "SimSun, 'Songti SC', serif", label: '宋体' },
+        { value: "SimHei, 'Heiti SC', sans-serif", label: '黑体' },
+        { value: "'Times New Roman', Times, serif", label: 'Times New Roman' },
+        { value: "Georgia, 'Times New Roman', serif", label: 'Georgia' },
+        { value: "'Courier New', Courier, monospace", label: 'Courier New' },
+        { value: 'Verdana, Geneva, sans-serif', label: 'Verdana' },
+        { value: 'Tahoma, Arial, sans-serif', label: 'Tahoma' }
+    ]
+
+    const fontFamilyOptions = [{ value: '', label: '默认' }, ...fonts.map((f) => ({ value: `'${f.family}', ${f.fallback}`, label: f.name })), { value: '__sep_common_fonts', label: '—— 常用系统字体 ——', disabled: true }, ...commonFontOptions]
 
     $effect(() => {
         if (!fontFamily) return
@@ -193,7 +214,7 @@
         }
 
         // 使用局部变量避免触发响应式更新
-        let newFontFamily = getStringValue(styles.fontFamily) || ''  // 默认为空字符串，对应"默认"选项
+        let newFontFamily = getStringValue(styles.fontFamily) || '' // 默认为空字符串，对应"默认"选项
         let newFontSize = '16'
         let newFontWeight = getStringValue(styles.fontWeight) || '400'
         let newFontColor = '#000000'
@@ -294,7 +315,7 @@
         } else {
             // 重置所有属性
             textContent = ''
-            fontFamily = ''  // 重置为空字符串，对应"默认"选项
+            fontFamily = '' // 重置为空字符串，对应"默认"选项
             fontSize = '16'
             fontWeight = '400'
             fontColor = '#000000'

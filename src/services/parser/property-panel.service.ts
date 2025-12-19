@@ -113,8 +113,7 @@ export function updateNodeProps(id: string, patch: PropPatch): boolean {
     updateNodeStyles(id, validStyles);
   }
 
-  + // 让 domTreeVersionStore 自增，通知所有监听者刷新
-    + domTreeVersionStore.update(v => v + 1);
+  domTreeVersionStore.update((v) => v + 1);
 
   return true;
 }

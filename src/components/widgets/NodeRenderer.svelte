@@ -127,7 +127,7 @@
     function handleKeyDown(event: KeyboardEvent) {
         if (!editing) return
         const k = event.key
-        if (k === 'Enter' || k === ' ') {
+        if (k === 'Enter') {
             event.preventDefault()
             event.stopImmediatePropagation?.()
             select?.(nodeKey)
@@ -340,7 +340,7 @@
 {#if nodeKey === 'root'}
     <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
     <div id={nodeKey} data-name={dataNameAttr} style={finalStyle} class:use-pseudo-bg={hasPseudoBg} {...restAttrs} onclick={handleClick} onkeydown={handleKeyDown} tabindex={editing ? -1 : undefined}>
-        {node.textContent || ''}
+        {@html node.textContent || ''}
         {#each node.children ?? [] as child (child.id)}
             <NodeRenderer node={child} {selectedId} {editing} {select} />
         {/each}
@@ -348,7 +348,7 @@
 {:else}
     <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
     <DynamicComponent type={componentType} id={nodeKey} data-name={dataNameAttr} style={finalStyle} {...componentProps} class={hasPseudoBg ? 'use-pseudo-bg' : undefined} onclick={handleClick} onkeydown={handleKeyDown} tabindex={editing ? -1 : undefined}>
-        {node.textContent || ''}
+        {@html node.textContent || ''}
         {#each node.children ?? [] as child (child.id)}
             <NodeRenderer node={child} {selectedId} {editing} {select} />
         {/each}

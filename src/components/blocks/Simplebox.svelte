@@ -18,15 +18,76 @@
 <script lang="ts">
     interface Props {
         style?: string
+        animation?: '' | 'breath'
+        breathDuration?: number
+        breathMinOpacity?: number
+        breathFactor?: number
+        class?: string
         children?: import('svelte').Snippet
         'data-id'?: string // 外部指定的数据标识符，用于低代码平台定位
         [key: string]: any // 支持其他任意属性
     }
 
-    let { style, children, ...rest }: Props = $props()
+    function mergeStyle(base: string | undefined, extra: string): string | undefined {
+        const baseStr = (base ?? '').trim()
+        const extraStr = extra.trim()
+        if (!extraStr) return base
+        if (!baseStr) return extraStr
+        return baseStr.endsWith(';') ? `${baseStr}${extraStr}` : `${baseStr};${extraStr}`
+    }
+
+    function mergeClass(base: string | undefined, extra: string): string | undefined {
+        const baseStr = (base ?? '').trim()
+        const extraStr = extra.trim()
+        if (!extraStr) return base
+        if (!baseStr) return extraStr
+        return `${baseStr} ${extraStr}`
+    }
+
+    function fract(n: number): number {
+        return n - Math.floor(n)
+    }
+
+    function pseudoRandom01(seed: number): number {
+        return fract(Math.sin(seed * 12.9898) * 43758.5453)
+    }
+
+    let instanceSeed = $state(Math.random() * 10000)
+
+    let { style, animation = '', breathDuration = 2, breathMinOpacity = 0.6, breathFactor, class: className, children, ...rest }: Props = $props()
+
+    const breathDurationStyle = $derived(() => {
+        if (animation !== 'breath') return ''
+        const d = Number.isFinite(breathDuration) && breathDuration > 0 ? breathDuration : 2
+        const o = Number.isFinite(breathMinOpacity) ? Math.min(1, Math.max(0, breathMinOpacity)) : 0.6
+        const seed = Number.isFinite(breathFactor) ? (breathFactor as number) : instanceSeed
+        const phase01 = pseudoRandom01(seed)
+        const delay = -(phase01 * d)
+        return `--simplebox-breath-duration: ${d}s; --simplebox-breath-min-opacity: ${o}; --simplebox-breath-delay: ${delay}s;`
+    })
+
+    const finalStyle = $derived(() => mergeStyle(style, breathDurationStyle()))
+    const finalClass = $derived(() => mergeClass(className, animation === 'breath' ? 'simplebox-breath' : ''))
 </script>
 
-<!-- 最简单的div传值模式，直接透传所有属性，不做任何样式处理 -->
-<div {style} {...rest}>
+<div style={finalStyle()} class={finalClass()} {...rest}>
     {@render children?.()}
 </div>
+
+<style>
+    .simplebox-breath {
+        animation: simplebox-breath var(--simplebox-breath-duration, 2s) ease-in-out infinite;
+        animation-delay: var(--simplebox-breath-delay, 0s);
+        will-change: opacity;
+    }
+
+    @keyframes simplebox-breath {
+        0%,
+        100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: var(--simplebox-breath-min-opacity, 0.6);
+        }
+    }
+</style>

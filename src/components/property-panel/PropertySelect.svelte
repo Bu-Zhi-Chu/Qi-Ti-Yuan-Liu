@@ -15,6 +15,7 @@
     interface Option {
         value: string
         label: string
+        disabled?: boolean
     }
 
     /**
@@ -52,7 +53,7 @@
             <option class="placeholder-option" value="" disabled selected={!value}>{placeholder}</option>
         {/if}
         {#each options as opt}
-            <option value={opt.value}>{opt.label}</option>
+            <option value={opt.value} disabled={opt.disabled}>{opt.label}</option>
         {/each}
     </select>
 </div>
