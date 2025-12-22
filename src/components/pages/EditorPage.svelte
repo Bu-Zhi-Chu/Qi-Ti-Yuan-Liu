@@ -547,7 +547,16 @@
         try {
             const project = await DexieService.getRecord<any>(DEFAULT_DB_NAME, 'projects', currentProjectId)
             if (project && project.mode) {
-                showWorkspace = project.mode === 'editing'
+                if (isLiteMode()) {
+                    showWorkspace = false
+                    if (project.mode !== 'normal') {
+                        try {
+                            await DexieService.updateRecord(DEFAULT_DB_NAME, 'projects', currentProjectId, { mode: 'normal' })
+                        } catch {}
+                    }
+                } else {
+                    showWorkspace = project.mode === 'editing'
+                }
 
                 if (project.name) {
                     document.title = project.name as string
@@ -568,6 +577,7 @@
 
     async function updateProjectMode() {
         if (!currentProjectId) return
+        if (isLiteMode() && showWorkspace) return
         const newMode = showWorkspace ? 'editing' : 'normal'
         try {
             await DexieService.updateRecord(DEFAULT_DB_NAME, 'projects', currentProjectId, { mode: newMode })
