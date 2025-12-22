@@ -11,6 +11,15 @@ import { authService } from './services/auth/auth.service'
 import { getStableDeviceKey, getStableDeviceKeyHash } from './services/fingerprint/browser-fingerprint.service'
 import { ENABLE_AUTH_VERIFICATION } from './config/config'
 import { DEFAULT_DB_NAME } from './config/config'
+import { v4 as uuidv4 } from 'uuid'
+
+try {
+    const c = globalThis.crypto as Crypto | undefined
+    if (c && typeof (c as any).randomUUID !== 'function') {
+        Object.defineProperty(c, 'randomUUID', { value: () => uuidv4(), configurable: true })
+    }
+} catch {
+}
 
 // 根据环境初始化日志：开发环境默认开启，其余环境默认关闭
 // 保存原始console.log用于版权信息显示
