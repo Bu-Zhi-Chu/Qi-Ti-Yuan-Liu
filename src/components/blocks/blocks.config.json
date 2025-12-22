@@ -75,6 +75,54 @@
         }
     },
     {
+        "type": "WeatherForecast",
+        "nameZh": "天气预报",
+        "path": "../blocks/WeatherForecast.svelte",
+        "preview": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><rect x='2' y='6' width='28' height='20' rx='2' fill='none' stroke='%234ade80' stroke-width='2'/><path d='M10 20c0-2 1.6-3.6 3.6-3.6.7-2.3 2.8-3.9 5.4-3.9 3.1 0 5.6 2.5 5.6 5.6 1.7.3 3 1.8 3 3.6 0 2-1.6 3.6-3.6 3.6H13.6C11.6 25.9 10 24.2 10 22.2v-2.2z' fill='%234ade80' opacity='0.25'/><text x='16' y='23' text-anchor='middle' fill='%234ade80' font-size='9' font-weight='bold'>WX</text></svg>",
+        "showFeatureTab": true,
+        "hideTextContent": true,
+        "positionAtOrigin": true,
+        "presetStyles": {
+            "width": "35%",
+            "height": "25%",
+            "display": "flex",
+            "justifyContent": "center",
+            "alignItems": "center"
+        },
+        "featureProps": {
+            "stationId": {
+                "label": "区域编号",
+                "type": "text",
+                "default": "TynGR"
+            },
+            "layout": {
+                "label": "插件样式",
+                "type": "select",
+                "options": [
+                    { "value": "compact", "label": "精简" },
+                    { "value": "day", "label": "一天" },
+                    { "value": "three", "label": "三天" },
+                    { "value": "seven", "label": "七天" }
+                ],
+                "default": "compact"
+            },
+            "panelColor": {
+                "label": "面板颜色",
+                "type": "color",
+                "default": "rgba(15, 23, 42, 0.35)"
+            },
+            "subPanelColor": {
+                "label": "下级颜色",
+                "type": "color",
+                "default": "rgba(2, 6, 23, 0.22)",
+                "showIf": {
+                    "key": "layout",
+                    "value": ["three", "seven"]
+                }
+            }
+        }
+    },
+    {
         "type": "SimpleBox",
         "nameZh": "简单容器",
         "path": "../blocks/SimpleBox.svelte",

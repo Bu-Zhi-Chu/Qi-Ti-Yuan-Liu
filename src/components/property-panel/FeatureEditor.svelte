@@ -90,7 +90,8 @@
         if (!showIfConfig || !node) return false
         const attr = node.attributes || {}
         const currentValue = attr[showIfConfig.key] || (node as any)[showIfConfig.key]
-        return currentValue === showIfConfig.value
+        const expected = showIfConfig.value
+        return Array.isArray(expected) ? expected.includes(currentValue) : currentValue === expected
     }
 
     // 工具函数：获取组件类型的 showIf 配置
@@ -133,7 +134,8 @@
         const filtered = base.filter((e) => {
             if (!e.showIf) return true
             const { key: depKey, value: depVal } = e.showIf
-            return currentValues[depKey] === depVal
+            const v = currentValues[depKey]
+            return Array.isArray(depVal) ? depVal.includes(v) : v === depVal
         })
 
         return filtered
@@ -616,7 +618,7 @@
     <div class="feature-editor">
         <h3>特性设置</h3>
         {#each propEntries() as p (p.key)}
-            {#if !p.showIf || currentValues[p.showIf.key] === p.showIf.value}
+            {#if !p.showIf || (Array.isArray(p.showIf.value) ? p.showIf.value.includes(currentValues[p.showIf.key]) : currentValues[p.showIf.key] === p.showIf.value)}
                 {#if p.type === 'columnLabels'}
                     <!-- 动态表格列标签管理 -->
                     <div class="column-labels-editor">
