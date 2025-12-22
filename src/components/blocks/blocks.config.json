@@ -172,6 +172,16 @@
                     "key": "animation",
                     "value": "float"
                 }
+            },
+            "embedHtml": {
+                "label": "嵌套网页",
+                "type": "code",
+                "default": ""
+            },
+            "embedCss": {
+                "label": "样式追加",
+                "type": "code",
+                "default": ""
             }
         }
     },
