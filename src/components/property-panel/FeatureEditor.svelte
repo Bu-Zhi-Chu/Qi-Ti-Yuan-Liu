@@ -56,7 +56,7 @@
     })
 
     // 派生属性描述数组
-    type PropEntry = { key: string; label: string; type: string; url?: string; links?: { label: string; url: string }[]; options?: any[]; min?: number; max?: number; default?: any; showIf?: { key: string; value: any } }
+    type PropEntry = { key: string; label: string; type: string; url?: string; links?: { label: string; url: string }[]; options?: any[]; min?: number; max?: number; default?: any; showIf?: { key: string; value: any }; text?: string }
 
     // 动态表格列管理
     let columnLabels = $state<string[]>([])
@@ -722,6 +722,8 @@
                             />
                         {:else if p.type === 'color'}
                             <ColorPicker value={currentValues[p.key] || p.default} projectId={$projectId} componentId={`${selectedId || 'default'}-${p.key}`} onchange={(color: string) => handleAttrChange(p.key, color)} />
+                        {:else if p.type === 'button'}
+                            <button class="input-style" onclick={() => handleAttrChange(p.key, !currentValues[p.key])}>{p.text ?? p.label}</button>
                         {/if}
                         <!-- 其他类型控件可在此扩展 -->
                     </PropertyRow>

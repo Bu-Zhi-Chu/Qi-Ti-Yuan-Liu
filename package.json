@@ -45,6 +45,7 @@
         "es-toolkit": "^1.39.10",
         "formidable": "^2.1.2",
         "lru_map": "^0.3.3",
+        "maptalks-gl": "^0.118.1",
         "svelte-dnd-action": "^0.9.64",
         "svelte-echarts": "^1.0.0",
         "svelte-splitpanes": "^8.0.9",

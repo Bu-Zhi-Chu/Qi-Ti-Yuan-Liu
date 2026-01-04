@@ -110,3 +110,6 @@ input[type='search']::-moz-search-clear-button {
     position: relative;
     z-index: 1;
 }
+.maptalks-attribution {
+    display: none;
+}

@@ -444,6 +444,73 @@
         }
     },
     {
+        "type": "MapGL",
+        "nameZh": "地图(MaptalksGL)",
+        "path": "../blocks/MapGL.svelte",
+        "preview": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><rect x='3' y='5' width='26' height='22' rx='3' fill='none' stroke='%2338bdf8' stroke-width='2'/><polyline points='5,23 11,15 18,19 24,11' fill='none' stroke='%2338bdf8' stroke-width='2'/><circle cx='11' cy='15' r='1.5' fill='%2338bdf8'/><circle cx='18' cy='19' r='1.5' fill='%2338bdf8'/><circle cx='24' cy='11' r='1.5' fill='%2338bdf8'/></svg>",
+        "showFeatureTab": true,
+        "hideTextContent": true,
+        "positionAtOrigin": true,
+        "presetStyles": {
+            "position": "absolute",
+            "width": "100%",
+            "height": "100%"
+        },
+        "featureProps": {
+            "currentView": {
+                "label": "初始位置",
+                "text": "当前视角",
+                "type": "button"
+            },
+            "baseMapType": {
+                "label": "底图类型",
+                "type": "select",
+                "options": [
+                    {
+                        "value": "imagery",
+                        "label": "影像"
+                    },
+                    {
+                        "value": "vector",
+                        "label": "平面"
+                    }
+                ],
+                "default": "imagery"
+            },
+            "tiandituToken": {
+                "label": "地图密钥",
+                "type": "text",
+                "default": "094fca72d164a2810961bb5fbd67862d"
+            },
+            "center": {
+                "label": "地图中心",
+                "type": "text",
+                "default": "0, 0"
+            },
+            "bearing": {
+                "label": "地图朝向",
+                "type": "number",
+                "min": 0,
+                "max": 360,
+                "default": 0
+            },
+            "pitch": {
+                "label": "倾斜角度",
+                "type": "number",
+                "min": 0,
+                "max": 90,
+                "default": 0
+            },
+            "zoom": {
+                "label": "缩放级别",
+                "type": "number",
+                "min": 1,
+                "max": 20,
+                "default": 2
+            }
+        }
+    },
+    {
         "type": "DatePicker",
         "nameZh": "时间选择器",
         "path": "../blocks/DatePicker.svelte",
