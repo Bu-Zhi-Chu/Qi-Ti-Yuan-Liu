@@ -2,8 +2,8 @@
     import { onMount } from 'svelte'
     import ResponsiveBox from '../core/ResponsiveBox.svelte'
     import { updateNodeProps } from '../../services/parser/property-panel.service'
-    import type { Map as MaptalksMap, GroupGLLayer, VectorTileLayer, GLTFLayer, PolygonLayer } from 'maptalks-gl'
-    import { Map, GroupGLLayer as GroupGLLayerImpl, VectorTileLayer as VectorTileLayerImpl, GLTFLayer as GLTFLayerImpl, PolygonLayer as PolygonLayerImpl } from 'maptalks-gl'
+    import type { Map as MaptalksMap, GroupGLLayer, GLTFLayer, PolygonLayer } from 'maptalks-gl'
+    import { Map, GroupGLLayer as GroupGLLayerImpl, GLTFLayer as GLTFLayerImpl, PolygonLayer as PolygonLayerImpl } from 'maptalks-gl'
     import * as maptalks from 'maptalks'
 
     interface Props {
@@ -14,7 +14,7 @@
         pitch?: number
         zoom?: number
         currentView?: boolean
-        baseMapType?: 'imagery' | 'vector'
+        baseMapType?: 'imagery' | 'vector' | 'terrain'
         tiandituToken?: string
         [key: string]: any
     }
@@ -29,6 +29,8 @@
     let tianYXBZ: maptalks.TileLayer | null = null
     let tianPM: maptalks.TileLayer | null = null
     let tianPMBZ: maptalks.TileLayer | null = null
+    let tianDX: maptalks.TileLayer | null = null
+    let tianDXBZ: maptalks.TileLayer | null = null
 
     function parseCenter(value: string): [number, number] {
         const s = (value || '').trim()
@@ -90,11 +92,25 @@
             spatialReference,
             maxAvailableZoom: 18.45
         })
+
+        tianDX = new maptalks.TileLayer('tianDX', {
+            tileSystem,
+            urlTemplate: `http://t0.tianditu.com/DataServer?T=ter_c&x={x}&y={y}&l={z}&tk=${token}`,
+            spatialReference,
+            maxAvailableZoom: 18.45
+        })
+
+        tianDXBZ = new maptalks.TileLayer('tianDXBZ', {
+            tileSystem,
+            urlTemplate: `http://t0.tianditu.com/DataServer?T=cta_c&x={x}&y={y}&l={z}&tk=${token}`,
+            spatialReference,
+            maxAvailableZoom: 18.45
+        })
     }
 
-    function applyBaseMap(type: 'imagery' | 'vector') {
+    function applyBaseMap(type: 'imagery' | 'vector' | 'terrain') {
         if (!map) return
-        const baseLayers: (maptalks.TileLayer | null)[] = [tianYX, tianYXBZ, tianPM, tianPMBZ]
+        const baseLayers: (maptalks.TileLayer | null)[] = [tianYX, tianYXBZ, tianPM, tianPMBZ, tianDX, tianDXBZ]
         for (const l of baseLayers) {
             if (l && l.getMap()) {
                 map.removeLayer(l)
@@ -103,9 +119,12 @@
         if (type === 'imagery') {
             if (tianYX) map.addLayer(tianYX)
             if (tianYXBZ) map.addLayer(tianYXBZ)
-        } else {
+        } else if (type === 'vector') {
             if (tianPM) map.addLayer(tianPM)
             if (tianPMBZ) map.addLayer(tianPMBZ)
+        } else {
+            if (tianDX) map.addLayer(tianDX)
+            if (tianDXBZ) map.addLayer(tianDXBZ)
         }
     }
 
@@ -120,11 +139,7 @@
         createTiandituLayers(tiandituToken)
         applyBaseMap(baseMapType || 'imagery')
 
-        const vtLayer = new VectorTileLayerImpl('vt', {
-            urlTemplate: 'http://tile.maptalks.com/test/planet-single/{z}/{x}/{y}.mvt'
-        }) as VectorTileLayer
-
-        groupLayer = new GroupGLLayerImpl('group', [vtLayer], {}) as GroupGLLayer
+        groupLayer = new GroupGLLayerImpl('group', [], {}) as GroupGLLayer
         map.addLayer(groupLayer)
 
         const gltfLayer = new GLTFLayerImpl('gltflayer') as GLTFLayer
@@ -140,7 +155,7 @@
         ;(map as any).on('click', handleClick)
 
         return () => {
-            const baseLayers: (maptalks.TileLayer | null)[] = [tianYX, tianYXBZ, tianPM, tianPMBZ]
+            const baseLayers: (maptalks.TileLayer | null)[] = [tianYX, tianYXBZ, tianPM, tianPMBZ, tianDX, tianDXBZ]
             if (map) {
                 for (const l of baseLayers) {
                     if (l && l.getMap()) {

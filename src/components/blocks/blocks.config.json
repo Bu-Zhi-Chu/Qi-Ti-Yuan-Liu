@@ -473,6 +473,10 @@
                     {
                         "value": "vector",
                         "label": "平面"
+                    },
+                    {
+                        "value": "terrain",
+                        "label": "地形"
                     }
                 ],
                 "default": "imagery"
