@@ -600,25 +600,40 @@
             "backgroundColor": "transparent"
         },
         "featureProps": {
+            "pathType": {
+                "label": "路径类型",
+                "type": "select",
+                "options": [
+                    {
+                        "value": "line",
+                        "label": "直线"
+                    },
+                    {
+                        "value": "bezier",
+                        "label": "曲线"
+                    }
+                ],
+                "default": "line"
+            },
             "interactive": {
                 "label": "操作模式",
                 "type": "switch",
                 "default": false
             },
             "color": {
-                "label": "曲线颜色",
+                "label": "路径颜色",
                 "type": "color",
                 "default": "#4ade80"
             },
             "lineWidth": {
-                "label": "线宽",
+                "label": "路径宽度",
                 "type": "number",
                 "min": 1,
                 "max": 10,
                 "default": 2
             },
             "segments": {
-                "label": "端点分段数",
+                "label": "端点分段",
                 "type": "number",
                 "min": 1,
                 "max": 8,
@@ -642,7 +657,7 @@
                 "default": false
             },
             "taperStartRatio": {
-                "label": "起点渐细比例",
+                "label": "起点比例",
                 "type": "number",
                 "min": 0.02,
                 "max": 0.5,
@@ -650,7 +665,7 @@
                 "default": 0.12
             },
             "taperEndRatio": {
-                "label": "终点渐细比例",
+                "label": "终点比例",
                 "type": "number",
                 "min": 0.02,
                 "max": 0.5,
@@ -697,12 +712,12 @@
                 "default": false
             },
             "clusterEnabled": {
-                "label": "簇复制",
+                "label": "路径转簇",
                 "type": "switch",
                 "default": false
             },
             "clusterCount": {
-                "label": "簇数量",
+                "label": "簇丛数量",
                 "type": "number",
                 "min": 1,
                 "max": 12,
@@ -710,7 +725,7 @@
                 "default": 2
             },
             "clusterOffset": {
-                "label": "簇偏移像素",
+                "label": "簇偏移量",
                 "type": "number",
                 "min": 0,
                 "max": 50,
@@ -718,7 +733,7 @@
                 "default": 6
             },
             "clusterRandom": {
-                "label": "簇随机",
+                "label": "簇丛随机",
                 "type": "switch",
                 "default": false
             }

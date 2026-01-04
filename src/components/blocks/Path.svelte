@@ -15,6 +15,7 @@
         id?: string
         style?: string
         pathNodes?: string
+        pathType?: 'line' | 'bezier'
         color?: string
         lineWidth?: number
         segments?: number
@@ -44,6 +45,7 @@
         id = crypto.randomUUID(),
         style = '',
         pathNodes = '',
+        pathType,
         color = '#4ade80',
         lineWidth = 2,
         segments = 1,
@@ -275,12 +277,29 @@
         nodes = nextNodes
         saveNodesToDoms()
     }
+
+    type EffectivePathType = 'line' | 'bezier'
+    function normalizePathType(v: unknown): EffectivePathType {
+        return v === 'bezier' ? 'bezier' : 'line'
+    }
+    function buildCurve(points: THREE.Vector3[], type: EffectivePathType): THREE.Curve<THREE.Vector3> {
+        if (type === 'line') {
+            const path = new THREE.CurvePath<THREE.Vector3>()
+            for (let i = 0; i < points.length - 1; i++) {
+                path.add(new THREE.LineCurve3(points[i], points[i + 1]))
+            }
+            return path
+        }
+        return new THREE.CatmullRomCurve3(points, false, 'centripetal', 0.5)
+    }
+
     function rebuildLine() {
         if (!scene) return
+        const effectivePathType = normalizePathType(pathType)
         const anchors = nodes.map((n) => n.anchor.clone())
         let pts: THREE.Vector3[] = []
         if (anchors.length >= 2) {
-            const curve = new THREE.CatmullRomCurve3(anchors, false, 'centripetal', 0.5)
+            const curve = buildCurve(anchors, effectivePathType)
             const totalSamples = Math.max(4, samples * Math.max(1, anchors.length - 1))
             pts = curve.getPoints(totalSamples)
             if (flowReverse) {
@@ -514,7 +533,7 @@
                     const rFlowA = effectiveClusterRandom ? pseudoRandom(c, 11.12) : 0.5
                     const flowCol = baseFlowColor.clone().offsetHSL(0, 0, (rFlowCol - 0.5) * 0.08)
                     const flowOpacityC = clampNumber(baseFlowOpacity * (1 + (rFlowA - 0.5) * 0.2), 0, 1)
-                    const curveC = new THREE.CatmullRomCurve3(clusterPts, false, 'centripetal', 0.5)
+                    const curveC = buildCurve(clusterPts, effectivePathType)
                     const tubularSegmentsC = Math.max(32, Math.floor(samples))
                     const tubeGeomC = new THREE.TubeGeometry(curveC, tubularSegmentsC, Math.max(0.0001, flowWidth * 0.5 * worldPerPixelC), 8, false)
                     const uniformsC = {
@@ -566,7 +585,7 @@
             flowProgress = 0
             lastTime = performance.now()
             // Build tube with shader tail
-            const curve = new THREE.CatmullRomCurve3(lastPts, false, 'centripetal', 0.5)
+            const curve = buildCurve(lastPts, effectivePathType)
             const rect2 = containerRef?.getBoundingClientRect()
             const viewportH2 = Math.max(1, rect2?.height || 1)
             const fovRad2 = ((camera?.fov || 45) * Math.PI) / 180
@@ -878,6 +897,7 @@
         flowWidth
         flowColor
         flowReverse
+        pathType
         clusterEnabled
         clusterCount
         clusterOffset
