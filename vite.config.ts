@@ -2,7 +2,11 @@ import { defineConfig } from 'vite'
 import { svelte } from '@sveltejs/vite-plugin-svelte'
 import { VitePWA } from 'vite-plugin-pwa'
 import { viteBuildPlugin } from './vite-build-plugin'
+import { viteStaticCopy } from 'vite-plugin-static-copy'
 import path from 'path'
+
+const cesiumSource = 'node_modules/cesium/Build/Cesium'
+const cesiumBaseUrl = 'cesiumStatic'
 // import { visualizer } from 'rollup-plugin-visualizer'
 
 
@@ -12,6 +16,14 @@ export default defineConfig({
     plugins: [
         svelte(),
         viteBuildPlugin(),
+        viteStaticCopy({
+            targets: [
+                { src: `${cesiumSource}/ThirdParty`, dest: cesiumBaseUrl },
+                { src: `${cesiumSource}/Workers`, dest: cesiumBaseUrl },
+                { src: `${cesiumSource}/Assets`, dest: cesiumBaseUrl },
+                { src: `${cesiumSource}/Widgets`, dest: cesiumBaseUrl }
+            ]
+        }),
         {
             name: 'ignore-avif-mt',
             resolveId(source) {
@@ -96,7 +108,15 @@ export default defineConfig({
     ],
     server: {
         fs: {
-            allow: ['src', 'public', 'index.html', 'manifest.json', 'dev-dist', path.resolve(__dirname, 'node_modules/@jsquash')],
+            allow: [
+                'src',
+                'public',
+                'index.html',
+                'manifest.json',
+                'dev-dist',
+                path.resolve(__dirname, 'node_modules/@jsquash'),
+                path.resolve(__dirname, 'node_modules/cesium')
+            ],
             deny: ['study'] // 明确禁止访问study目录
         },
         watch: {
@@ -167,7 +187,8 @@ export default defineConfig({
         }
     },
     define: {
-        'import.meta.env.LITE': JSON.stringify(process.env.LITE === 'true' ? 'true' : 'false')
+        'import.meta.env.LITE': JSON.stringify(process.env.LITE === 'true' ? 'true' : 'false'),
+        CESIUM_BASE_URL: JSON.stringify(cesiumBaseUrl)
     }
 })
 

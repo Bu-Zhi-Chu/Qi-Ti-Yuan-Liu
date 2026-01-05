@@ -1,5 +1,6 @@
 import { mount } from 'svelte'
 import './style/app.css'
+import 'cesium/Build/Cesium/Widgets/widgets.css'
 import App from './/App.svelte'
 import { PWAChecker } from './services/pwa/pwa-detector.service.js'
 import { screenDetector } from './services/screen/screen-detector.service'

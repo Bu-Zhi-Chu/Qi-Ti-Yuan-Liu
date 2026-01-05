@@ -16,10 +16,23 @@
         currentView?: boolean
         baseMapType?: 'imagery' | 'vector' | 'terrain'
         tiandituToken?: string
+        enableCache?: boolean
         [key: string]: any
     }
 
-    let { id = crypto.randomUUID(), style = '', center = '0, 0', bearing = 0, pitch = 0, zoom = 2, currentView = false, baseMapType = 'imagery', tiandituToken = '094fca72d164a2810961bb5fbd67862d', ...rest }: Props = $props()
+    let {
+        id = crypto.randomUUID(),
+        style = '',
+        center = '103.23455542513432, 37.44294599727905',
+        bearing = 3.4508053211576963,
+        pitch = -89.84554611545481,
+        zoom = 1,
+        currentView = false,
+        baseMapType = 'imagery',
+        tiandituToken = '094fca72d164a2810961bb5fbd67862d',
+        enableCache = false,
+        ...rest
+    }: Props = $props()
 
     let containerRef: HTMLDivElement | null = null
     let map: MaptalksMap | null = null
@@ -31,6 +44,80 @@
     let tianPMBZ: maptalks.TileLayer | null = null
     let tianDX: maptalks.TileLayer | null = null
     let tianDXBZ: maptalks.TileLayer | null = null
+
+    const MAP_CACHE_DB = 'mapCache'
+    const MAP_CACHE_STORE = 'tiles'
+    let mapCacheDbPromise: Promise<IDBDatabase> | null = null
+
+    function openMapCacheDb(): Promise<IDBDatabase> {
+        if (typeof indexedDB === 'undefined') {
+            return Promise.reject(new Error('indexedDB not available'))
+        }
+        if (!mapCacheDbPromise) {
+            mapCacheDbPromise = new Promise((resolve, reject) => {
+                const req = indexedDB.open(MAP_CACHE_DB, 1)
+                req.onupgradeneeded = () => {
+                    const db = req.result
+                    if (!db.objectStoreNames.contains(MAP_CACHE_STORE)) {
+                        db.createObjectStore(MAP_CACHE_STORE, { keyPath: 'id' })
+                    }
+                }
+                req.onsuccess = () => resolve(req.result)
+                req.onerror = () => reject(req.error || new Error('openMapCacheDb failed'))
+            })
+        }
+        return mapCacheDbPromise
+    }
+
+    function fetchAndStoreTile(id: string, url: string): Promise<Blob> {
+        return fetch(url)
+            .then((resp) => {
+                if (!resp.ok) {
+                    throw new Error(`tile request failed: ${resp.status}`)
+                }
+                return resp.blob()
+            })
+            .then(async (blob) => {
+                try {
+                    const db = await openMapCacheDb()
+                    const tx = db.transaction(MAP_CACHE_STORE, 'readwrite')
+                    const store = tx.objectStore(MAP_CACHE_STORE)
+                    store.put({ id, blob })
+                } catch {}
+                return blob
+            })
+    }
+
+    function getTileBlob(id: string, url: string): Promise<Blob> {
+        return openMapCacheDb()
+            .then(
+                (db) =>
+                    new Promise<Blob>((resolve, reject) => {
+                        const tx = db.transaction(MAP_CACHE_STORE, 'readonly')
+                        const store = tx.objectStore(MAP_CACHE_STORE)
+                        const req = store.get(id)
+                        req.onsuccess = () => {
+                            const record = req.result as any
+                            if (record && record.blob instanceof Blob) {
+                                resolve(record.blob)
+                            } else {
+                                fetchAndStoreTile(id, url).then(resolve).catch(reject)
+                            }
+                        }
+                        req.onerror = () => {
+                            fetchAndStoreTile(id, url).then(resolve).catch(reject)
+                        }
+                    })
+            )
+            .catch(() => fetchAndStoreTile(id, url))
+    }
+
+    function deleteMapCacheDb() {
+        if (typeof indexedDB === 'undefined') return
+        indexedDB.deleteDatabase(MAP_CACHE_DB)
+        mapCacheDbPromise = null
+    }
+    let lastEnableCache = enableCache
 
     function parseCenter(value: string): [number, number] {
         const s = (value || '').trim()
@@ -106,6 +193,43 @@
             spatialReference,
             maxAvailableZoom: 18.45
         })
+
+        const layers: maptalks.TileLayer[] = []
+        if (tianYX) layers.push(tianYX)
+        if (tianYXBZ) layers.push(tianYXBZ)
+        if (tianPM) layers.push(tianPM)
+        if (tianPMBZ) layers.push(tianPMBZ)
+        if (tianDX) layers.push(tianDX)
+        if (tianDXBZ) layers.push(tianDXBZ)
+
+        layers.forEach((layer) => {
+            layer.on('renderercreate', (e: any) => {
+                const renderer = e.renderer
+                if (!renderer) return
+                const original = renderer.loadTileImage?.bind(renderer)
+                renderer.loadTileImage = (img: HTMLImageElement, url: string) => {
+                    if (!enableCache) {
+                        if (original) {
+                            original(img, url)
+                        } else {
+                            img.src = url
+                        }
+                        return
+                    }
+                    getTileBlob(url, url)
+                        .then((blob) => {
+                            img.src = URL.createObjectURL(blob)
+                        })
+                        .catch(() => {
+                            if (original) {
+                                original(img, url)
+                            } else {
+                                img.src = url
+                            }
+                        })
+                }
+            })
+        })
     }
 
     function applyBaseMap(type: 'imagery' | 'vector' | 'terrain') {
@@ -133,8 +257,23 @@
 
         map = new Map(containerRef, {
             center: [0, 0],
-            zoom: 2
-        }) as MaptalksMap
+            zoom: 2,
+            devicePixelRatio: 1,
+            lights: {
+                //方相光
+                directional: {
+                    direction: [1, 0, -1],
+                    color: [1, 1, 1]
+                },
+                //环境光
+                ambient: {
+                    resource: null,
+                    exposure: 0.8,
+                    hsv: [0, 0.34, 0],
+                    orientation: 1
+                }
+            }
+        } as any) as MaptalksMap
 
         createTiandituLayers(tiandituToken)
         applyBaseMap(baseMapType || 'imagery')
@@ -175,6 +314,9 @@
                 map.remove()
                 map = null
             }
+            if (enableCache) {
+                deleteMapCacheDb()
+            }
         }
     })
 
@@ -205,6 +347,14 @@
             })
         }
         currentView
+    })
+
+    $effect(() => {
+        if (lastEnableCache && !enableCache) {
+            deleteMapCacheDb()
+        }
+        lastEnableCache = enableCache
+        enableCache
     })
 
     $effect(() => {
