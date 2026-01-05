@@ -279,8 +279,7 @@
                 "options": [
                     { "value": "bing", "label": "Bing" },
                     { "value": "tianditu", "label": "天地图" },
-                    { "value": "arcgis", "label": "ArcGIS" },
-                    { "value": "supermap", "label": "SuperMap" }
+                    { "value": "arcgis", "label": "ArcGIS" }
                 ],
                 "default": "bing"
             },
@@ -291,15 +290,6 @@
                 "showIf": {
                     "key": "basemapStandard",
                     "value": ["tianditu"]
-                }
-            },
-            "supermapUrl": {
-                "label": "SuperMap 服务",
-                "type": "text",
-                "default": "http://211.137.224.74:8090/iserver/services/map-ZYXYZT/rest/maps/水利工程",
-                "showIf": {
-                    "key": "basemapStandard",
-                    "value": ["supermap"]
                 }
             },
             "basemapType": {

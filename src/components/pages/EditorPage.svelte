@@ -442,6 +442,48 @@
         unregisterSaveAsCapture && unregisterSaveAsCapture()
     })
 
+    async function handleSaveClick(event: MouseEvent) {
+        const button = event.target as HTMLButtonElement
+        try {
+            if (!currentProjectId) throw new Error('无法获取项目ID')
+            button.disabled = true
+            button.textContent = '保存中...'
+            const { liteExportService } = await import('../../services/export/lite-export.service')
+            const blob = await liteExportService.exportLiteData(currentProjectId)
+
+            if (typeof window !== 'undefined' && (window as any).showSaveFilePicker) {
+                const handle = await (window as any).showSaveFilePicker({
+                    suggestedName: 'project-data.qqb',
+                    types: [
+                        {
+                            description: '七巧板项目文件',
+                            accept: { 'application/x-extension-qqb': ['.qqb'] }
+                        }
+                    ]
+                })
+                const writable = await handle.createWritable()
+                await writable.write(blob)
+                await writable.close()
+            } else {
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = url
+                a.download = 'project-data.qqb'
+                document.body.appendChild(a)
+                a.click()
+                document.body.removeChild(a)
+                URL.revokeObjectURL(url)
+            }
+
+            button.textContent = '保存'
+        } catch (e) {
+            console.error('另存失败', e)
+            button.textContent = '保存'
+        } finally {
+            button.disabled = false
+        }
+    }
+
     // Konami Code验证器相关函数
     function startKonamiVerification() {
         if (isVerifying) return
@@ -888,44 +930,7 @@
                 <button onclick={() => (window.location.href = '/')} style="padding: calc(4px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));background: none;border: none;color: white;cursor: pointer;font-size: calc(12px * var(--scale-ratio, 1));">首页</button>
             {/if}
             {#if $projectId}
-                {#if typeof window !== 'undefined' && 'showSaveFilePicker' in window}
-                    <button
-                        bind:this={saveAsButton}
-                        onclick={async (event) => {
-                            const button = event.target as HTMLButtonElement
-                            try {
-                                if (!currentProjectId) throw new Error('无法获取项目ID')
-                                button.disabled = true
-                                button.textContent = '保存中...'
-                                const { liteExportService } = await import('../../services/export/lite-export.service')
-                                const blob = await liteExportService.exportLiteData(currentProjectId)
-                                // @ts-ignore File System Access API
-                                const handle = await window.showSaveFilePicker({
-                                    suggestedName: 'project-data.qqb',
-                                    types: [
-                                        {
-                                            description: '七巧板项目文件',
-                                            accept: { 'application/x-extension-qqb': ['.qqb'] }
-                                        }
-                                    ]
-                                })
-                                // @ts-ignore
-                                const writable = await handle.createWritable()
-                                await writable.write(blob)
-                                await writable.close()
-                                button.textContent = '保存'
-                            } catch (e) {
-                                console.error('另存失败', e)
-                                button.textContent = '保存'
-                            } finally {
-                                button.disabled = false
-                            }
-                        }}
-                        style="padding: calc(4px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));background: none;border: none;color: white;cursor: pointer;font-size: calc(12px * var(--scale-ratio, 1));"
-                    >
-                        保存
-                    </button>
-                {/if}
+                <button bind:this={saveAsButton} onclick={handleSaveClick} style="padding: calc(4px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));background: none;border: none;color: white;cursor: pointer;font-size: calc(12px * var(--scale-ratio, 1));">保存</button>
             {/if}
             <button
                 onclick={async (event) => {
