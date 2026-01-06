@@ -332,6 +332,11 @@
                 "min": 1,
                 "max": 20,
                 "default": 1
+            },
+            "overlayServices": {
+                "label": "叠加服务",
+                "type": "overlayServices",
+                "default": [{ "id": "", "name": "", "url": "", "opacity": 1, "zIndex": 0 }]
             }
         }
     },

@@ -82,6 +82,11 @@
         flex: 1;
         overflow: auto;
         padding: 0;
+        scrollbar-width: none;
+    }
+
+    .body::-webkit-scrollbar {
+        display: none;
     }
 
     .panel.locked .body {

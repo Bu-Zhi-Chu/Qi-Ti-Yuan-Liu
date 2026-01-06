@@ -472,6 +472,25 @@
         }
     }
 
+    function addOverlay(key: string) {
+        const list = Array.isArray(currentValues[key]) ? [...currentValues[key]] : []
+        list.push({
+            id: '',
+            name: '',
+            url: '',
+            opacity: 1,
+            zIndex: 0
+        })
+        handleAttrChange(key, list)
+    }
+
+    function removeOverlay(key: string, index: number) {
+        const list = Array.isArray(currentValues[key]) ? [...currentValues[key]] : []
+        if (index < 0 || index >= list.length) return
+        list.splice(index, 1)
+        handleAttrChange(key, list)
+    }
+
     // 记录各属性对应的隐藏文件输入
     const fileInputs: Record<string, HTMLInputElement> = {}
 
@@ -545,8 +564,7 @@
                     val = p.default !== undefined ? p.default : false
                 } else if (p.type === 'color' && p.default !== undefined) {
                     val = p.default
-                } // add
-                else if ((p.type === 'text' || p.type === 'json') && p.default !== undefined) {
+                } else if ((p.type === 'text' || p.type === 'json' || p.type === 'overlayServices') && p.default !== undefined) {
                     val = p.default
                 }
                 if (val !== undefined) {
@@ -653,6 +671,122 @@
                             </PropertyRow>
                         {/if}
                     </div>
+                {:else if p.type === 'overlayServices'}
+                    <PropertyRow label={`${p.label}`} alignTop={true}>
+                        <div class="overlay-list">
+                            {#if Array.isArray(currentValues[p.key]) && currentValues[p.key].length > 0}
+                                {#each currentValues[p.key] as svc, index}
+                                    <div class="overlay-row">
+                                        <div class="overlay-item">
+                                            <div class="overlay-fields">
+                                                <div class="overlay-field-row">
+                                                    <span class="overlay-field-label">标记</span>
+                                                    <input
+                                                        type="text"
+                                                        class="overlay-input"
+                                                        value={svc?.id ?? ''}
+                                                        oninput={(e) => {
+                                                            const list = Array.isArray(currentValues[p.key]) ? [...currentValues[p.key]] : []
+                                                            if (!list[index]) list[index] = {}
+                                                            list[index] = {
+                                                                ...list[index],
+                                                                id: (e.currentTarget as HTMLInputElement).value
+                                                            }
+                                                            handleAttrChange(p.key, list)
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div class="overlay-field-row">
+                                                    <span class="overlay-field-label">名称</span>
+                                                    <input
+                                                        type="text"
+                                                        class="overlay-input"
+                                                        value={svc?.name ?? ''}
+                                                        oninput={(e) => {
+                                                            const list = Array.isArray(currentValues[p.key]) ? [...currentValues[p.key]] : []
+                                                            if (!list[index]) list[index] = {}
+                                                            list[index] = {
+                                                                ...list[index],
+                                                                name: (e.currentTarget as HTMLInputElement).value
+                                                            }
+                                                            handleAttrChange(p.key, list)
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div class="overlay-field-row">
+                                                    <span class="overlay-field-label">路径</span>
+                                                    <input
+                                                        type="text"
+                                                        class="overlay-input"
+                                                        value={svc?.url ?? ''}
+                                                        oninput={(e) => {
+                                                            const list = Array.isArray(currentValues[p.key]) ? [...currentValues[p.key]] : []
+                                                            if (!list[index]) list[index] = {}
+                                                            list[index] = {
+                                                                ...list[index],
+                                                                url: (e.currentTarget as HTMLInputElement).value
+                                                            }
+                                                            handleAttrChange(p.key, list)
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div class="overlay-field-row">
+                                                    <span class="overlay-field-label">透明</span>
+                                                    <input
+                                                        type="number"
+                                                        class="overlay-input overlay-opacity"
+                                                        min="0"
+                                                        max="1"
+                                                        step="0.05"
+                                                        value={svc?.opacity ?? 1}
+                                                        oninput={(e) => {
+                                                            const v = parseFloat((e.currentTarget as HTMLInputElement).value)
+                                                            const num = isNaN(v) ? 1 : Math.max(0, Math.min(1, v))
+                                                            const list = Array.isArray(currentValues[p.key]) ? [...currentValues[p.key]] : []
+                                                            if (!list[index]) list[index] = {}
+                                                            list[index] = {
+                                                                ...list[index],
+                                                                opacity: num
+                                                            }
+                                                            handleAttrChange(p.key, list)
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div class="overlay-field-row">
+                                                    <span class="overlay-field-label">层级</span>
+                                                    <input
+                                                        type="number"
+                                                        class="overlay-input overlay-zindex"
+                                                        value={svc?.zIndex ?? 0}
+                                                        oninput={(e) => {
+                                                            const v = parseInt((e.currentTarget as HTMLInputElement).value, 10)
+                                                            const num = isNaN(v) ? 0 : v
+                                                            const list = Array.isArray(currentValues[p.key]) ? [...currentValues[p.key]] : []
+                                                            if (!list[index]) list[index] = {}
+                                                            list[index] = {
+                                                                ...list[index],
+                                                                zIndex: num
+                                                            }
+                                                            handleAttrChange(p.key, list)
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="overlay-row-actions">
+                                            {#if index === 0}
+                                                <button class="unit-toggle add-btn" onclick={() => addOverlay(p.key)} title="添加叠加服务" style="background: rgba(34, 197, 94, 0.2); color: #4ade80;">+</button>
+                                            {:else}
+                                                <button class="unit-toggle remove-btn" onclick={() => removeOverlay(p.key, index)} title="移除叠加服务" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">−</button>
+                                            {/if}
+                                        </div>
+                                    </div>
+                                {/each}
+                            {:else}
+                                <div class="overlay-empty">暂无叠加服务</div>
+                            {/if}
+                        </div>
+                    </PropertyRow>
                 {:else}
                     <PropertyRow label={`${p.label}`}>
                         {#if p.type === 'select'}
@@ -814,10 +948,15 @@
     }
 
     h3 {
+        position: sticky;
+        top: 0;
+        z-index: 1;
         margin: 0 0 calc(16px * var(--scale-ratio, 1)) 0;
+        padding: calc(8px * var(--scale-ratio, 1)) 0 calc(8px * var(--scale-ratio, 1)) 0;
         font-size: calc(16px * var(--scale-ratio, 1));
         font-weight: 600;
         color: #cbd5e1;
+        background: radial-gradient(circle at top left, rgba(148, 163, 184, 0.12), transparent 55%), #0f172a;
     }
 
     /* 统一输入控件样式（与 AttrEditor 保持一致） */
@@ -884,6 +1023,81 @@
     }
 
     .column-label-input::placeholder {
+        color: #9ca3af;
+    }
+
+    .overlay-list {
+        display: flex;
+        flex-direction: column;
+        gap: calc(8px * var(--scale-ratio, 1));
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    .overlay-row {
+        display: flex;
+        align-items: flex-start;
+        gap: calc(8px * var(--scale-ratio, 1));
+        width: 100%;
+    }
+
+    .overlay-item {
+        display: flex;
+        flex: 1 1 0;
+        padding: calc(10px * var(--scale-ratio, 1));
+        border-radius: calc(8px * var(--scale-ratio, 1));
+        border: calc(1px * var(--scale-ratio, 1)) solid rgba(148, 163, 184, 0.45);
+        background: rgba(15, 23, 42, 0.7);
+    }
+
+    .overlay-fields {
+        display: flex;
+        flex-direction: column;
+        gap: calc(6px * var(--scale-ratio, 1));
+        flex: 1 1 0;
+    }
+
+    .overlay-field-row {
+        display: flex;
+        align-items: center;
+        width: 100%;
+    }
+
+    .overlay-field-label {
+        width: calc(40px * var(--scale-ratio, 1));
+        font-size: calc(12px * var(--scale-ratio, 1));
+        color: #9ca3af;
+        flex-shrink: 0;
+    }
+
+    .overlay-row-actions {
+        display: flex;
+        flex-direction: column;
+        gap: calc(6px * var(--scale-ratio, 1));
+        align-items: center;
+        justify-content: flex-start;
+    }
+
+    .overlay-input {
+        flex: 1 1 0;
+        padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
+        border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.2);
+        border-radius: calc(6px * var(--scale-ratio, 1));
+        font-size: calc(13px * var(--scale-ratio, 1));
+        background: rgba(255, 255, 255, 0.1);
+        color: #e2e8f0;
+        transition: all 0.3s ease;
+        min-width: 0;
+    }
+
+    .overlay-input:focus {
+        outline: none;
+        border-color: #6366f1;
+        background: rgba(255, 255, 255, 0.15);
+        box-shadow: 0 0 0 calc(2px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.2);
+    }
+
+    .overlay-input::placeholder {
         color: #9ca3af;
     }
 </style>

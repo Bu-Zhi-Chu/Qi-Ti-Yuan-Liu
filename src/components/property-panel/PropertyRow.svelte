@@ -13,9 +13,10 @@
      */
     export let label: string
     export let labelVisible: boolean = true
+    export let alignTop: boolean = false
 </script>
 
-<div class="attr-item property-row">
+<div class="attr-item property-row" class:align-top={alignTop}>
     <span class="row-label" style={labelVisible ? '' : 'visibility: hidden;'}>{label}</span>
 
     <!-- 默认插槽：表单控件 -->
@@ -32,6 +33,10 @@
         display: flex;
         align-items: center;
         gap: calc(10px * var(--scale-ratio, 1));
+    }
+
+    .property-row.align-top {
+        align-items: flex-start;
     }
 
     .row-label {

@@ -17,6 +17,7 @@
         basemapStandard?: string
         basemapType?: 'imagery' | 'vector' | 'terrain'
         mapKey?: string
+        overlayServices?: { id?: string; name?: string; url?: string; opacity?: number; zIndex?: number }[]
         [key: string]: any
     }
 
@@ -289,8 +290,20 @@
 
             if (fadeDuration > 0 && targetAlpha > 0 && typeof requestAnimationFrame === 'function') {
                 const start = performance.now()
+                const totalMs = fadeDuration * 1000
+                const delayMs = totalMs / 2
                 function step(now: number) {
-                    const t = Math.min(1, (now - start) / (fadeDuration * 1000))
+                    const elapsed = now - start
+                    if (elapsed < delayMs) {
+                        ;(layer as any).alpha = 0
+                        if (layer.show) {
+                            requestAnimationFrame(step)
+                        }
+                        return
+                    }
+                    const fadeElapsed = elapsed - delayMs
+                    const fadeDurationMs = totalMs - delayMs
+                    const t = Math.min(1, fadeElapsed / fadeDurationMs)
                     const current = targetAlpha * t
                     ;(layer as any).alpha = current
                     if (t < 1 && layer.show) {
@@ -322,11 +335,13 @@
         basemapStandard = 'bing',
         basemapType = 'imagery',
         mapKey = '094fca72d164a2810961bb5fbd67862d',
+        overlayServices = [],
         ...rest
     }: Props = $props()
 
     let containerRef: HTMLDivElement | null = null
     let viewer: Cesium.Viewer | null = null
+    let overlayLayers: Record<string, any> = {}
     let lastEnableTileCache = enableTileCache
     let lastBasemapStandard = basemapStandard
     let lastBasemapType = basemapType
@@ -362,6 +377,12 @@
             const controller = viewer.scene.screenSpaceCameraController
             controller.zoomEventTypes = [Cesium.CameraEventType.WHEEL, Cesium.CameraEventType.PINCH]
             controller.tiltEventTypes = [Cesium.CameraEventType.RIGHT_DRAG]
+
+            const controllerAny = controller as any
+            controllerAny._zoomFactor = 2.5
+            controllerAny._maximumRotateRate = 0.6
+            controller.inertiaZoom = 0.3
+            controller.inertiaSpin = 0.3
         }
 
         const CesiumAny = Cesium as any
@@ -447,13 +468,6 @@
 
         applyBaseLayer()
 
-        if (viewer) {
-            addSuperMapOverlayLayer(viewer, 'http://211.137.224.74:8090/iserver/services/map-ZYXYZT/rest/maps/水利工程', {
-                alpha: 1,
-                show: true
-            })
-        }
-
         const scene = viewer.scene
         scene.shadowMap.enabled = false
         scene.globe.enableLighting = false
@@ -491,6 +505,53 @@
         zoom
         pitch
         bearing
+    })
+
+    $effect(() => {
+        const v = viewer
+        if (!v) return
+        const list = Array.isArray(overlayServices) ? overlayServices : []
+        const keys = Object.keys(overlayLayers)
+        if (keys.length) {
+            keys.forEach((k) => {
+                const layer = overlayLayers[k]
+                if (!layer) return
+                try {
+                    v.imageryLayers.remove(layer)
+                } catch {}
+            })
+            overlayLayers = {}
+        }
+        if (!list.length) {
+            overlayServices
+            return
+        }
+        const ordered = [...list].filter(Boolean).sort((a, b) => {
+            const az = typeof a.zIndex === 'number' ? a.zIndex : 0
+            const bz = typeof b.zIndex === 'number' ? b.zIndex : 0
+            return az - bz
+        })
+        ordered.forEach((svc) => {
+            if (!svc || !svc.url) return
+            const rawId = (svc.id ?? '').toString().trim()
+            const layerId = rawId || crypto.randomUUID()
+            const rawName = (svc.name ?? '').toString().trim()
+            const layerName = rawName || layerId
+            const level = typeof svc.zIndex === 'number' ? svc.zIndex : 0
+            addSuperMapOverlayLayer(v as any, svc.url, {
+                alpha: typeof svc.opacity === 'number' ? svc.opacity : 1,
+                show: true,
+                fadeDuration: 1
+            }).then((layer) => {
+                if (layer && viewer === v) {
+                    ;(layer as any).id = layerId
+                    ;(layer as any).name = layerName
+                    ;(layer as any).zIndex = level
+                    overlayLayers[layerId] = layer
+                }
+            })
+        })
+        overlayServices
     })
 
     $effect(() => {
