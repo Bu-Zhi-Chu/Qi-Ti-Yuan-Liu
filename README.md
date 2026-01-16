@@ -1,8 +1,8 @@
-# 七巧板 · Qi Qiao Ban
+# 炁体源流 · Qi Ti Yuan Liu
 
 <div align="center">
 
-[![七巧板](https://img.shields.io/badge/七巧板-国产自研低代码平台-blue?style=for-the-badge&logo=svelte&logoColor=white)](https://github.com/your-org/qi-qiao-ban)
+[![炁体源流](https://img.shields.io/badge/炁体源流-国产自研低代码平台-blue?style=for-the-badge&logo=svelte&logoColor=white)](https://github.com/your-org/qi-qiao-ban)
 
 </div>
 
@@ -20,9 +20,7 @@
 
 ## 🎯 项目简介
 
-七巧板（Qi Qiao Ban）是一款面向**企业级应用**的**国产自研低代码开发平台**，采用前沿技术栈构建，致力于提供**高效、灵活、可扩展**的可视化开发解决方案。
-
-> 灵感源自中国传统智力游戏"七巧板"，寓意通过简单的几何图形组合，创造出无限可能的应用场景。
+炁体源流（Qi Ti Yuan Liu）是一款面向**企业级应用**的**国产自研低代码开发平台**，采用前沿技术栈构建，致力于提供**高效、灵活、可扩展**的可视化开发解决方案。
 
 ## 🚀 核心特性
 
@@ -143,12 +141,12 @@ npm run check
 
 ## 📄 许可证
 
-[MIT License](LICENSE) © 2024 七巧板团队
+[MIT License](LICENSE) © 2024 炁体源流团队
 
 ## 🙋‍♂️ 联系我们
 
--   📧 Email: `****@**.com`
--   💬 微信群: `七巧板开发者社区`
+-   📧 Email: `buzhichu@goole.com`
+-   💬 微信群: `炁体源流开发者社区`
 -   🐛 Issues: [GitHub Issues](https://github.com/your-org/qi-qiao-ban/issues)
 
 ---
@@ -156,7 +154,7 @@ npm run check
 <div align="center">
 
 **⭐ 如果这个项目对你有帮助，请给个 Star 支持国产开源！**<br>
-**🚀 七巧板 - 让前端开发更简单！**
+**🚀 术之尽头 - 炁体源流 **
 
 </div>
 ````
