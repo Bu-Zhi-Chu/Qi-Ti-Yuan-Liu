@@ -1,22 +1,15 @@
 # 炁体源流 · Qi Ti Yuan Liu
 
-<div align="center">
-
 [![炁体源流](https://img.shields.io/badge/炁体源流-国产自研低代码平台-blue?style=for-the-badge&logo=svelte&logoColor=white)](https://github.com/your-org/qi-ti-yuan-liu)
-
-</div>
-
-<div align="center">
 
 [![Svelte5](https://img.shields.io/badge/Svelte5-最新版-FF3E00?style=flat-square&logo=svelte)](https://svelte.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-严格模式-3178C6?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![Vite](https://img.shields.io/badge/Vite-极速构建-646CFF?style=flat-square&logo=vite)](https://vitejs.dev)
 [![PWA](https://img.shields.io/badge/PWA-离线优先-5A0FC8?style=flat-square&logo=pwa)](https://web.dev/progressive-web-apps/)
 
-**🇨🇳 国产自研 · 低代码可视化开发平台**<br>
-**⚡ 极速开发 · 拖拽式页面构建 · 组件化架构**
+**🇨🇳 国产自研 · 低代码可视化开发平台**
 
-</div>
+**⚡ 极速开发 · 拖拽式页面构建 · 组件化架构**
 
 ## 🎯 项目简介
 
@@ -135,9 +128,9 @@ npm run check
 
 ### 开发规范
 
--   使用 TypeScript 严格模式
--   组件化开发，单一职责原则
--   完整的代码注释和文档
+- 使用 TypeScript 严格模式
+- 组件化开发，单一职责原则
+- 完整的代码注释和文档
 
 ## 📄 许可证
 
@@ -145,16 +138,12 @@ npm run check
 
 ## 🙋‍♂️ 联系我们
 
--   📧 Email: `buzhichu@goole.com`
--   💬 微信群: `炁体源流开发者社区`
--   🐛 Issues: [GitHub Issues](https://github.com/your-org/qi-ti-yuan-liu/issues)
+- 📧 Email: `buzhichu@goole.com`
+- 💬 微信群: `炁体源流开发者社区`
+- 🐛 Issues: [GitHub Issues](https://github.com/your-org/qi-ti-yuan-liu/issues)
 
 ---
 
-<div align="center">
+**⭐ 如果这个项目对你有帮助，请给个 Star 支持国产开源！**
 
-**⭐ 如果这个项目对你有帮助，请给个 Star 支持国产开源！**<br>
 **🚀 术之尽头 - 炁体源流 **
-
-</div>
-````
