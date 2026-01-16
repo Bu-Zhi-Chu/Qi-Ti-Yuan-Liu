@@ -1,4 +1,3 @@
-// z/X/qi-qiao-ban/src/services/cache/cache-cleanup.ts
 
 import { cleanupCache } from '../database/cache-store.service';
 import { CACHE_CLEANUP_INTERVAL, CACHE_MAX_AGE } from '../../config/config';

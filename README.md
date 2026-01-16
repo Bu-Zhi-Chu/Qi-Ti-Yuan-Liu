@@ -2,7 +2,7 @@
 
 <div align="center">
 
-[![炁体源流](https://img.shields.io/badge/炁体源流-国产自研低代码平台-blue?style=for-the-badge&logo=svelte&logoColor=white)](https://github.com/your-org/qi-qiao-ban)
+[![炁体源流](https://img.shields.io/badge/炁体源流-国产自研低代码平台-blue?style=for-the-badge&logo=svelte&logoColor=white)](https://github.com/your-org/qi-ti-yuan-liu)
 
 </div>
 
@@ -147,7 +147,7 @@ npm run check
 
 -   📧 Email: `buzhichu@goole.com`
 -   💬 微信群: `炁体源流开发者社区`
--   🐛 Issues: [GitHub Issues](https://github.com/your-org/qi-qiao-ban/issues)
+-   🐛 Issues: [GitHub Issues](https://github.com/your-org/qi-ti-yuan-liu/issues)
 
 ---
 
