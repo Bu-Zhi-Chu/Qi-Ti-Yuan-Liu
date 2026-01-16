@@ -58,10 +58,10 @@ export function viteBuildPlugin(): Plugin {
               const buildRequest: BuildRequest = { mode, liteData: null, outputDir };
               const result = await performRealBuild(buildRequest);
 
-              // 构建完成后，再写入 data/project-data.qqb，避免被 Vite 覆盖
+              // 构建完成后，再写入 data/project-data.qtyl，避免被 Vite 覆盖
               const dataDir = resolve(process.cwd(), outputDir, 'data');
               if (!existsSync(dataDir)) mkdirSync(dataDir, { recursive: true });
-              const targetPath = resolve(dataDir, 'project-data.qqb');
+              const targetPath = resolve(dataDir, 'project-data.qtyl');
 
               // 直接保存上传的 Blob 数据，不进行任何处理
               const uploadedBuffer = await readFile(tempBlobPath);
@@ -111,7 +111,7 @@ export function viteBuildPlugin(): Plugin {
             }
 
             // 使用固定的英文文件名，忽略传入的fileName参数
-            const liteDataPath = resolve(dataDir, 'project-data.qqb');
+            const liteDataPath = resolve(dataDir, 'project-data.qtyl');
             let liteDataBuffer: Buffer;
             if (typeof liteData === 'string') {
               liteDataBuffer = Buffer.from(liteData);
@@ -378,8 +378,8 @@ async function performRealBuild(request: BuildRequest): Promise<BuildResponse> {
         mkdirSync(dataDir, { recursive: true });
       }
 
-      // 使用固定的英文文件名，不包含项目ID - 统一使用 .qqb 格式
-      const liteDataPath = resolve(dataDir, 'project-data.qqb');
+      // 使用固定的英文文件名，不包含项目ID - 统一使用 .qtyl 格式
+      const liteDataPath = resolve(dataDir, 'project-data.qtyl');
       // 前端传入的是 Blob（Buffer），直接写入即可
       writeFileSync(liteDataPath, liteData);
     }

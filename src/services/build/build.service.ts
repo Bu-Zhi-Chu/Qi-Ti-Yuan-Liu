@@ -187,7 +187,7 @@ export class BuildService {
         const fd = new FormData();
         fd.append('mode', options.mode || 'production');
         fd.append('outputDir', 'dist-lite');
-        fd.append('projectBlob', projectBlob, options.liteData?.filename || 'project-data.qqb');
+        fd.append('projectBlob', projectBlob, options.liteData?.filename || 'project-data.qtyl');
         requestBody = fd;
         headers = undefined; // 让浏览器自动设置 multipart 边界
         console.log('准备发送构建请求，使用multipart/form-data，Blob大小:', projectBlob.size);

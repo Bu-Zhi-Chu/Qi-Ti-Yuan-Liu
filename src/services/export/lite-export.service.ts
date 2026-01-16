@@ -243,7 +243,7 @@ export class LiteExportService {
         return data;
     }
 
-    downloadJson(jsonData: string, filename: string = 'lite-export.qqb'): void {
+    downloadJson(jsonData: string, filename: string = 'lite-export.qtyl'): void {
         try {
             const encoded = this.encodeData(jsonData);
             const blob = new Blob([encoded], { type: 'application/octet-stream' });

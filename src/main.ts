@@ -221,14 +221,14 @@ let app: ReturnType<typeof mount> | undefined // 提前声明，供导出使用
 // 数据库初始化函数
 async function initializeDatabase() {
     try {
-        // 精简模式下从project-data.qqb导入数据并还原数据库
+        // 精简模式下从project-data.qtyl导入数据并还原数据库
         if (isLiteMode()) {
             // 精简模式先清空网页标题，防止显示旧项目名称或默认标题
             document.title = ''
-            // console.log('【数据交互】精简模式：从project-data.qqb导入数据')
+            // console.log('【数据交互】精简模式：从project-data.qtyl导入数据')
             try {
                 // 导入项目数据
-                const response = await fetch('./data/project-data.qqb')
+                const response = await fetch('./data/project-data.qtyl')
                 let projectData: any
 
                 // 读取文件内容

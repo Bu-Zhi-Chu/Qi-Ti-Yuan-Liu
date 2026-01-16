@@ -128,9 +128,9 @@ npm run check
 
 ### 开发规范
 
-- 使用 TypeScript 严格模式
-- 组件化开发，单一职责原则
-- 完整的代码注释和文档
+-   使用 TypeScript 严格模式
+-   组件化开发，单一职责原则
+-   完整的代码注释和文档
 
 ## 📄 许可证
 
@@ -138,9 +138,9 @@ npm run check
 
 ## 🙋‍♂️ 联系我们
 
-- 📧 Email: `buzhichu@goole.com`
-- 💬 微信群: `炁体源流开发者社区`
-- 🐛 Issues: [GitHub Issues](https://github.com/your-org/qi-ti-yuan-liu/issues)
+-   📧 Email: `buzhichu@goole.com`
+-   💬 微信群: `炁体源流开发者社区`
+-   🐛 Issues: [GitHub Issues](https://github.com/your-org/qi-ti-yuan-liu/issues)
 
 ---
 

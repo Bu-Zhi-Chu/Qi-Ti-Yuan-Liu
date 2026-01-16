@@ -453,11 +453,11 @@
 
             if (typeof window !== 'undefined' && (window as any).showSaveFilePicker) {
                 const handle = await (window as any).showSaveFilePicker({
-                    suggestedName: 'project-data.qqb',
+                    suggestedName: 'project-data.qtyl',
                     types: [
                         {
                             description: '七巧板项目文件',
-                            accept: { 'application/x-extension-qqb': ['.qqb'] }
+                            accept: { 'application/x-extension-qtyl': ['.qtyl'] }
                         }
                     ]
                 })
@@ -468,7 +468,7 @@
                 const url = URL.createObjectURL(blob)
                 const a = document.createElement('a')
                 a.href = url
-                a.download = 'project-data.qqb'
+                a.download = 'project-data.qtyl'
                 document.body.appendChild(a)
                 a.click()
                 document.body.removeChild(a)
@@ -1038,7 +1038,7 @@
                             console.log('导出的项目Blob大小:', projectBlob.size)
                             buildOptions.liteData = {
                                 projectBlob,
-                                filename: 'project-data.qqb'
+                                filename: 'project-data.qtyl'
                             }
                             console.log('项目数据导出完成 (Blob)')
 

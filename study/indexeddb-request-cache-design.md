@@ -289,7 +289,7 @@ cachedFetch<T>(
 
 ### 7. 与 qi-qiao-ban 项目数据隔离声明
 - **缓存数据库**（IndexedDB 实例）完全独立于 qi-qiao-ban 项目数据，**导出/导入**功能不会携带缓存表
-- **精简构建**仅输出 `project-data.qqb`，**不会**包含任何缓存文件
+- **精简构建**仅输出 `project-data.qtyl`，**不会**包含任何缓存文件
 - 用户清缓存或换浏览器仅影响 `RequestCache`，**项目数据无损**
 
 ---

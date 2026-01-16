@@ -77,7 +77,7 @@
     function openProjectFile() {
         const input = document.createElement('input')
         input.type = 'file'
-        input.accept = '.qqb'
+        input.accept = '.qtyl'
         input.onchange = async (event) => {
             const file = (event.target as HTMLInputElement).files?.[0]
             if (file) {

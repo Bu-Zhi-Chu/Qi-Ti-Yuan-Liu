@@ -51,7 +51,7 @@ export default defineConfig({
                 clientsClaim: true,
                 runtimeCaching: [
                     {
-                        urlPattern: /\/data\/project-data\.qqb$/,
+                        urlPattern: /\/data\/project-data\.qtyl$/,
                         handler: 'NetworkFirst',
                         options: {
                             cacheName: 'project-data',
