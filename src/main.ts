@@ -31,7 +31,7 @@ applyLogConfig(import.meta.env.DEV === true)
 console.log = function (...args) {
     // 如果是版权信息，总是显示
     if (args[0] && typeof args[0] === 'string' &&
-        (args[0].includes('七巧板') || args[0].includes('版权声明') ||
+        (args[0].includes('炁体源流') || args[0].includes('版权声明') ||
             args[0].includes('欢迎使用') || args[0].includes('最终解释权') ||
             args[0].includes('不进行任何形式的破解') || args[0].includes('保留此版权信息'))) {
         originalLog.apply(console, args);

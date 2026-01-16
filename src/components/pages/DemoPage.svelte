@@ -150,8 +150,8 @@
 <ResponsiveBox style="display: flex; flex-direction: column; height: 100vh; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);">
     <!-- 顶部导航栏 - 100%宽度 -->
     <ResponsiveBox style="height: 64px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(99, 102, 241, 0.2); display: flex; align-items: center; padding: 0 24px; gap: 16px;">
-        <img src={logoImage} alt="七巧板" style="width:calc(32px * var(--scale-ratio, 1)); height: calc(32px * var(--scale-ratio, 1)); border-radius: 8px;" />
-        <ResponsiveBox tag="h1" style="color: #f8fafc; margin: 0; font-size: 20px; font-weight: 600;">七巧板</ResponsiveBox>
+        <img src={logoImage} alt="炁体源流" style="width:calc(32px * var(--scale-ratio, 1)); height: calc(32px * var(--scale-ratio, 1)); border-radius: 8px;" />
+        <ResponsiveBox tag="h1" style="color: #f8fafc; margin: 0; font-size: 20px; font-weight: 600;">炁体源流</ResponsiveBox>
 
         <!-- 居中的按钮组 -->
         <ResponsiveBox style="flex: 1; display: flex; justify-content: center;">
@@ -230,7 +230,16 @@
     </ResponsiveBox>
 
     <!-- 返回首页链接 -->
-    <a href="#/" class="back-to-home" onclick={(e) => { e.preventDefault(); window.location.hash = '/'; }}>← 返回</a>
+    <a
+        href="#/"
+        class="back-to-home"
+        onclick={(e) => {
+            e.preventDefault()
+            window.location.hash = '/'
+        }}
+    >
+        ← 返回
+    </a>
 </ResponsiveBox>
 
 <style>

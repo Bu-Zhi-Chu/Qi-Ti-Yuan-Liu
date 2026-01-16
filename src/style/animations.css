@@ -105,7 +105,7 @@
     }
 }
 
-/* 七巧板背景动画 - 不同形状缓缓落下 */
+/* 背景动画 - 不同形状缓缓落下 */
 @keyframes tangram-fall-1 {
     0% {
         transform: translateY(-5vh) rotate(0deg);
@@ -166,7 +166,7 @@
     }
 }
 
-/* 七巧板形状样式 */
+/* 形状样式 */
 
 
 .tangram-shape {
@@ -174,7 +174,7 @@
     opacity: 1;
 }
 
-/* 七巧板三角形 */
+/* 三角形 */
 .tangram-triangle {
     width: 0;
     height: 0;
@@ -204,7 +204,7 @@
     animation-delay: -8s;
 }
 
-/* 七巧板正方形 */
+/* 正方形 */
 .tangram-square {
     width: calc(80px * var(--scale-ratio, 1));
     height: calc(80px * var(--scale-ratio, 1));
@@ -214,7 +214,7 @@
     animation-delay: -12s;
 }
 
-/* 七巧板平行四边形 */
+/* 平行四边形 */
 .tangram-parallelogram {
     width: calc(100px * var(--scale-ratio, 1));
     height: calc(60px * var(--scale-ratio, 1));
@@ -224,7 +224,7 @@
     animation-delay: -15s;
 }
 
-/* 七巧板中等三角形 */
+/* 中等三角形 */
 .tangram-medium-triangle {
     border-left: calc(40px * var(--scale-ratio, 1)) solid transparent;
     border-right: calc(40px * var(--scale-ratio, 1)) solid transparent;
@@ -233,7 +233,7 @@
     animation-delay: -8s;
 }
 
-/* 七巧板小三角形 */
+/* 小三角形 */
 .tangram-small-triangle {
     border-left: calc(30px * var(--scale-ratio, 1)) solid transparent;
     border-right: calc(30px * var(--scale-ratio, 1)) solid transparent;
@@ -242,7 +242,7 @@
     animation-delay: -5s;
 }
 
-/* 七巧板平行四边形 */
+/* 平行四边形 */
 .tangram-parallelogram {
     width: calc(50px * var(--scale-ratio, 1));
     height: calc(30px * var(--scale-ratio, 1));
@@ -252,7 +252,7 @@
     animation-delay: -15s;
 }
 
-/* 七巧板中三角形 */
+/* 中三角形 */
 .tangram-medium-triangle {
     border-left: calc(40px * var(--scale-ratio, 1)) solid transparent;
     border-right: calc(40px * var(--scale-ratio, 1)) solid transparent;
@@ -261,7 +261,7 @@
     animation-delay: -3s;
 }
 
-/* 七巧板小三角形 */
+/* 小三角形 */
 .tangram-small-triangle {
     border-left: calc(30px * var(--scale-ratio, 1)) solid transparent;
     border-right: calc(30px * var(--scale-ratio, 1)) solid transparent;

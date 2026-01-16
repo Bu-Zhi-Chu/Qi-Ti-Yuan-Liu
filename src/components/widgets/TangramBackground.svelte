@@ -3,7 +3,7 @@
     import ResponsiveBox from '../core/ResponsiveBox.svelte'
 </script>
 
-<!-- 七巧板背景动画层 -->
+<!-- 背景动画层 -->
 <ResponsiveBox style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;overflow: hidden;pointer-events: none;">
     <SimpleBox
         class="tangram-shape tangram-triangle-1"

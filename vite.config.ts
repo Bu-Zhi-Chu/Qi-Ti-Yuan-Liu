@@ -74,9 +74,9 @@ export default defineConfig({
 
             },
             manifest: {
-                name: '七巧板 - Qi Qiao Ban',
-                short_name: '七巧板',
-                description: '一个基于Svelte的七巧板益智游戏应用',
+                name: '炁体源流',
+                short_name: '炁体源流',
+                description: '术之尽头 炁体源流',
                 theme_color: '#ff6b6b',
                 background_color: '#ffffff',
                 display: 'standalone',

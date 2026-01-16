@@ -1,7 +1,7 @@
 /**
  * 屏幕适配服务
  * 提供屏幕信息检测、设备识别和响应式缩放功能
- * 专为七巧板低代码工具优化设计
+ * 专为炁体源流低代码工具优化设计
  */
 
 import type { ScreenInfo, ScreenChangeCallback, DeviceType, PixelDensityLevel } from './screen.types.js'
