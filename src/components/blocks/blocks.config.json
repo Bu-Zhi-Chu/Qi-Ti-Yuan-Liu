@@ -899,5 +899,20 @@
                 "default": false
             }
         }
+    },
+    {
+        "type": "TunnelPipe",
+        "nameZh": "隧洞管道",
+        "path": "../blocks/TunnelPipe.svelte",
+        "preview": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><rect x='6' y='14' width='18' height='6' fill='none' stroke='%231fb6ff' stroke-width='2'/><path d='M8,22 a6,6 0 0 1 12,0' fill='none' stroke='%234fd1ff' stroke-width='2'/></svg>",
+        "showFeatureTab": true,
+        "hideTextContent": true,
+        "positionAtOrigin": true,
+        "presetStyles": {
+            "position": "absolute",
+            "width": "100%",
+            "height": "100%"
+        },
+        "featureProps": {}
     }
 ]

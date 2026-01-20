@@ -30,19 +30,26 @@
         [key: string]: any // 支持任意HTML属性透传
     }
 
-    // 解构props，data-id必须由父组件提供稳定的值
-    let { type, props = {}, children, style, class: className, id, ...restProps }: Props = $props()
-
-    // 直接使用传入的data-id，确保在组件生命周期内保持不变
-    const componentUUID = id
+    let incoming: Props = $props()
+    const componentUUID = incoming.id
+    const type = $derived.by(() => incoming.type)
+    const propsBag = $derived.by(() => incoming.props ?? {})
+    const children = $derived.by(() => incoming.children)
+    const style = $derived.by(() => incoming.style)
+    const className = $derived.by(() => incoming.class)
+    const restProps = $derived.by(() => {
+        const { type: _t, props: _p, children: _ch, style: _s, class: _c, id: _id, ...rest } = incoming
+        return rest
+    })
 
     // 动态加载的组件
     let TargetComponent: any = $state(null)
 
     // 监听类型变化，动态加载对应组件
     $effect(() => {
-        if (type && componentMap[type]) {
-            componentMap[type]().then((module) => {
+        const nextType = type
+        if (nextType && componentMap[nextType]) {
+            componentMap[nextType]().then((module) => {
                 TargetComponent = module.default
             })
         }
@@ -52,7 +59,7 @@
 <!-- 根据组件加载状态渲染 -->
 {#if TargetComponent}
     <!-- Svelte 5 runes 模式：组件默认动态，直接使用组件语法 -->
-    <TargetComponent {style} class={className} id={componentUUID} {...props} {...restProps}>
+    <TargetComponent {style} class={className} id={componentUUID} {...propsBag} {...restProps}>
         {@render children?.()}
     </TargetComponent>
 {:else}
