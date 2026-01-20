@@ -3,9 +3,6 @@
     import * as THREE from 'three'
     import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
     import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
-    import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
-    import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
-    import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js'
     import { onMount } from 'svelte'
     import { getNodePropsStore } from '../../services/parser/property-panel.service'
 
@@ -78,7 +75,6 @@
     let renderer: THREE.WebGLRenderer | null = null
     let scene: THREE.Scene | null = null
     let camera: THREE.PerspectiveCamera | null = null
-    let composer: EffectComposer | null = null
     let rootGroup: THREE.Group | null = null
     let controls: OrbitControls | null = null
     let raf = 0
@@ -107,8 +103,8 @@
 
         scene = new THREE.Scene()
         scene.background = null
-        camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000)
-        camera.position.set(0, 18, 28) // Elevated view to see the whole line
+        camera = new THREE.PerspectiveCamera(25, width / height, 0.1, 1000)
+        camera.position.set(0, 32, 50) // Increased distance to compensate for lower FOV
         camera.lookAt(0, 0, 0)
 
         const pmrem = new THREE.PMREMGenerator(renderer)
@@ -134,17 +130,6 @@
         const rimLight = new THREE.PointLight(0x36c4ed, 1.35, 40)
         rimLight.position.set(-2, 5.5, -8)
         scene.add(rimLight)
-
-        // Post-processing
-        const renderPass = new RenderPass(scene, camera)
-        const bloomPass = new UnrealBloomPass(new THREE.Vector2(width, height), 1.5, 0.4, 0.85)
-        bloomPass.threshold = 0.2
-        bloomPass.strength = 0.6
-        bloomPass.radius = 0.5
-
-        composer = new EffectComposer(renderer)
-        composer.addPass(renderPass)
-        composer.addPass(bloomPass)
 
         rootGroup = new THREE.Group()
         scene.add(rootGroup)
@@ -353,7 +338,7 @@
         const outerRadiusZ = 2.85
         const innerRadiusY = 2.15
         const innerRadiusZ = 1.95
-        const length = 4
+        const length = 6
 
         const outerShape = new THREE.Shape()
         outerShape.absellipse(0, 0, outerRadiusZ, outerRadiusY, 0, Math.PI * 2, false, 0)
@@ -377,6 +362,8 @@
 
         const tunnelMat = material.clone() as THREE.MeshPhysicalMaterial
         tunnelMat.clippingPlanes = [tunnelClipPlane]
+        tunnelMat.opacity = 0.7
+        tunnelMat.transmission = 0.25
 
         const tunnelMesh = new THREE.Mesh(tunnelGeo, tunnelMat)
         tunnelMesh.position.set(0, 0.55, 0)
@@ -386,19 +373,19 @@
         const groundGeo = new THREE.PlaneGeometry(groundSize, groundSize)
         const groundMat = new THREE.MeshPhysicalMaterial({
             color: new THREE.Color(0x143a67),
-            roughness: 0.14,
+            roughness: 0.8,
             metalness: 0,
-            transmission: 0.92,
+            transmission: 0,
             thickness: 0.08,
             ior: 1.45,
             attenuationColor: new THREE.Color(0x36c4ed),
             attenuationDistance: 22,
-            clearcoat: 0.85,
-            clearcoatRoughness: 0.06,
-            envMapIntensity: 1.15,
+            clearcoat: 0,
+            clearcoatRoughness: 1,
+            envMapIntensity: 0.2,
             side: THREE.FrontSide,
             transparent: true,
-            opacity: 1,
+            opacity: 0.15,
             depthWrite: false
         })
         const groundMesh = new THREE.Mesh(groundGeo, groundMat)
@@ -409,7 +396,7 @@
         const half = groundSize / 2
         const borderY = 0.012
         const borderPoints = [new THREE.Vector3(-half, borderY, -half), new THREE.Vector3(half, borderY, -half), new THREE.Vector3(half, borderY, half), new THREE.Vector3(-half, borderY, half)]
-        const borderGeo = buildBorderStripGeometry(borderPoints, 0.12)
+        const borderGeo = buildBorderStripGeometry(borderPoints, 0.22)
         const borderMat = makeFlowBorderMaterial(new THREE.Color(0x36c4ed))
         const borderMesh = new THREE.Mesh(borderGeo, borderMat)
         group.add(borderMesh)
@@ -439,6 +426,7 @@
 
         // Tunnel 1 (Left)
         const t1 = addTunnel(mat)
+        t1.scale.set(0.85, 0.85, 0.85)
         t1.position.set(-14, 0, 0)
         rootGroup.add(t1)
 
@@ -471,6 +459,14 @@
 
         // Tunnel 2 (Right)
         const t2 = addTunnel(mat)
+        t2.scale.set(1.25, 1.25, 1.25)
+        // Original ground Y is at 0. Scaling by 1.5 scales from (0,0,0) center?
+        // addTunnel creates group. groundMesh is at (0,0,0).
+        // If we scale the whole group, the ground plane at y=0 stays at y=0.
+        // But the tunnel mesh is at y=0.55. Scaled y will be 0.55 * 1.5 = 0.825.
+        // The visual ground level should remain 0 because the scaling origin is (0,0,0) of the group.
+        // Wait, scaling origin is the group's position.
+        // Let's verify addTunnel structure.
         t2.position.set(14, 0, 0)
         rootGroup.add(t2)
     }
@@ -484,7 +480,6 @@
                 const width = Math.max(1, rect.width)
                 const height = Math.max(1, rect.height)
                 renderer.setSize(width, height, false)
-                composer?.setSize(width, height)
                 camera.aspect = width / height
                 camera.updateProjectionMatrix()
             }
@@ -498,14 +493,11 @@
 
         const t = _time * 0.001
         for (const mat of tunnelBorderFlowMats) {
-            if (mat.uniforms.uTime) {
-                mat.uniforms.uTime.value = t
-            }
+            mat.uniforms.uTime.value = t
         }
 
         controls?.update()
-        // renderer.render(scene, camera)
-        composer?.render()
+        renderer.render(scene, camera)
     }
 
     function dispose() {
