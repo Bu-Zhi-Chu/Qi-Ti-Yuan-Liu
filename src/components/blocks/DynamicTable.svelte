@@ -229,7 +229,7 @@
 
     // 生成表头样式
     function getHeaderCellStyle(index: number): string {
-        let cellStyle = `display: flex; align-items: center; justify-content: center; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;`
+        let cellStyle = `display: flex; align-items: center; justify-content: center; text-align: center; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;`
 
         if (useFlexRatios) {
             cellStyle += ` flex-grow: ${columnFlexRatios![index]}; flex-shrink: 1; flex-basis: 0%;`
@@ -243,7 +243,7 @@
 
     // 生成单元格样式
     function getBodyCellStyle(index: number): string {
-        let cellStyle = `display: flex; align-items: center; justify-content: center; color: ${bodyTextColor}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;`
+        let cellStyle = `display: flex; align-items: center; justify-content: center; text-align: center; color: ${bodyTextColor}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;`
 
         if (useFlexRatios) {
             cellStyle += ` flex-grow: ${columnFlexRatios![index]}; flex-shrink: 1; flex-basis: 0%;`
@@ -277,7 +277,7 @@
     <div class="styled-table-row-header" style="color: {headerTextColor}; font-size: {fontSize}; margin-top: {marginTop}; width: {tableWidth}; height: {headerRowHeight}; {getHeaderBackgroundStyle()} display: flex;">
         {#each displayHeaders as header, index}
             <div class="styled-table-cell" style={getHeaderCellStyle(index)}>
-                {header}
+                {@html String(header ?? '')}
             </div>
         {/each}
     </div>

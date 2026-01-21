@@ -53,6 +53,8 @@
         "svelte-echarts": "^1.0.0",
         "svelte-splitpanes": "^8.0.9",
         "three": "^0.182.0",
+        "three-bvh-csg": "^0.0.17",
+        "three-mesh-bvh": "^0.9.7",
         "uuid": "^11.1.0"
     }
 }

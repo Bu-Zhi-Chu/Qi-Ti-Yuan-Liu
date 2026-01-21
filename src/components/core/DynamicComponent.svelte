@@ -45,6 +45,27 @@
     // 动态加载的组件
     let TargetComponent: any = $state(null)
 
+    function mergeStyle(base: string | undefined, extra: string): string | undefined {
+        const baseStr = (base ?? '').trim()
+        const extraStr = extra.trim()
+        if (!extraStr) return base
+        if (!baseStr) return extraStr
+        return baseStr.endsWith(';') ? `${baseStr}${extraStr}` : `${baseStr};${extraStr}`
+    }
+
+    const placeholderPreStyle = $derived.by(() => {
+        if (type !== 'SimpleBox') return ''
+        if ((incoming as any).animation !== 'delayedLoad') return ''
+        const dir = ((incoming as any).delayedLoadDirection as 'up' | 'down' | 'left' | 'right' | undefined) || 'up'
+        const distRaw = Number((incoming as any).delayedLoadDistance)
+        const dist = Number.isFinite(distRaw) ? Math.max(0, distRaw) : 20
+        const x = dir === 'left' ? dist : dir === 'right' ? -dist : 0
+        const y = dir === 'up' ? dist : dir === 'down' ? -dist : 0
+        return `opacity: 0; translate: calc(${x}px * var(--scale-ratio, 1)) calc(${y}px * var(--scale-ratio, 1));`
+    })
+
+    const placeholderStyle = $derived.by(() => mergeStyle(style, placeholderPreStyle))
+
     // 监听类型变化，动态加载对应组件
     $effect(() => {
         const nextType = type
@@ -64,7 +85,7 @@
     </TargetComponent>
 {:else}
     <!-- 组件未加载时的占位符 -->
-    <div id={componentUUID} {style} class={className} {...restProps}>
+    <div id={componentUUID} style={placeholderStyle} class={className} {...restProps}>
         {@render children?.()}
     </div>
 {/if}

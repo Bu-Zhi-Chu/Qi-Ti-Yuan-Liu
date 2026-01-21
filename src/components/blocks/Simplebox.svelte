@@ -18,13 +18,16 @@
 <script lang="ts">
     interface Props {
         style?: string
-        animation?: '' | 'breath' | 'float'
+        animation?: '' | 'breath' | 'float' | 'delayedLoad' | 'number'
         breathDuration?: number
         breathMinOpacity?: number
         breathFactor?: number
         floatHeight?: number
         floatDuration?: number
         floatFactor?: number
+        delayedLoadDirection?: 'up' | 'down' | 'left' | 'right'
+        delayedLoadDelay?: number
+        delayedLoadDistance?: number
         embedHtml?: string
         embedCss?: string
         class?: string
@@ -57,13 +60,153 @@
         return fract(Math.sin(seed * 12.9898) * 43758.5453)
     }
 
+    function extractOpacity(styleStr: string | undefined): string | null {
+        if (!styleStr) return null
+        const m = styleStr.match(/(?:^|;)\s*opacity\s*:\s*([^;]+)\s*(?:;|$)/i)
+        if (!m) return null
+        const v = (m[1] ?? '').trim()
+        return v ? v : null
+    }
+
     let instanceSeed = $state(Math.random() * 10000)
 
-    let { style, animation = '', breathDuration = 2, breathMinOpacity = 0.6, breathFactor, floatHeight = 8, floatDuration = 2, floatFactor, embedHtml = '', embedCss = '', class: className, children, ...rest }: Props = $props()
+    let {
+        style,
+        animation = '',
+        breathDuration = 2,
+        breathMinOpacity = 0.6,
+        breathFactor,
+        floatHeight = 8,
+        floatDuration = 2,
+        floatFactor,
+        delayedLoadDirection = 'up',
+        delayedLoadDelay = 0.3,
+        delayedLoadDistance = 20,
+        embedHtml = '',
+        embedCss = '',
+        class: className,
+        children,
+        ...rest
+    }: Props = $props()
 
+    let rootRef: HTMLDivElement | null = $state(null)
     let embedRootRef: HTMLDivElement | null = $state(null)
     let activeIframe: HTMLIFrameElement | null = $state(null)
     let activeStyleEl: HTMLStyleElement | null = $state(null)
+
+    function setupNumberAnimation(root: HTMLElement) {
+        const original = new Map<Text, string>()
+        let raf = 0
+        let observer: MutationObserver | null = null
+
+        const now = () => (typeof performance !== 'undefined' ? performance.now() : Date.now())
+        const durationMs = 900
+        const startAt = now()
+
+        const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
+
+        const isIgnoredElement = (el: Element) => {
+            const tag = el.tagName
+            return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SCRIPT' || tag === 'STYLE'
+        }
+
+        const scan = () => {
+            const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+                acceptNode: (node) => {
+                    const parent = (node as Text).parentElement
+                    if (!parent) return NodeFilter.FILTER_REJECT
+                    if (isIgnoredElement(parent)) return NodeFilter.FILTER_REJECT
+                    if (!parent.isConnected) return NodeFilter.FILTER_REJECT
+                    return NodeFilter.FILTER_ACCEPT
+                }
+            })
+
+            let n: Node | null
+            while ((n = walker.nextNode())) {
+                const textNode = n as Text
+                if (original.has(textNode)) continue
+                const value = textNode.nodeValue ?? ''
+                if (!/\d/.test(value)) continue
+                original.set(textNode, value)
+            }
+        }
+
+        const formatNumber = (value: number, decimals: number) => {
+            if (!Number.isFinite(value)) return '0'
+            if (decimals <= 0) return String(Math.round(value))
+            return value.toFixed(decimals)
+        }
+
+        const render = () => {
+            const t = Math.min(1, (now() - startAt) / durationMs)
+            const p = easeOutCubic(t)
+
+            original.forEach((raw, textNode) => {
+                if (!textNode.isConnected) return
+                const matches = [...raw.matchAll(/-?\d+(?:\.\d+)?/g)]
+                if (matches.length === 0) return
+
+                let out = ''
+                let lastIndex = 0
+                for (const m of matches) {
+                    const idx = m.index ?? 0
+                    const token = m[0]
+                    const target = Number(token)
+                    const dot = token.indexOf('.')
+                    const decimals = dot >= 0 ? token.length - dot - 1 : 0
+
+                    out += raw.slice(lastIndex, idx)
+                    out += formatNumber(target * p, decimals)
+                    lastIndex = idx + token.length
+                }
+                out += raw.slice(lastIndex)
+                textNode.nodeValue = out
+            })
+
+            if (t < 1) {
+                raf = requestAnimationFrame(render)
+            } else {
+                original.forEach((raw, textNode) => {
+                    if (textNode.isConnected) textNode.nodeValue = raw
+                })
+            }
+        }
+
+        scan()
+        raf = requestAnimationFrame(render)
+
+        observer = new MutationObserver(() => {
+            scan()
+        })
+        observer.observe(root, { characterData: true, subtree: true, childList: true })
+
+        return () => {
+            if (observer) observer.disconnect()
+            if (raf) cancelAnimationFrame(raf)
+            original.forEach((raw, textNode) => {
+                if (textNode.isConnected) textNode.nodeValue = raw
+            })
+            original.clear()
+        }
+    }
+
+    let cleanupNumberAnimation: (() => void) | null = null
+
+    $effect(() => {
+        if (animation !== 'number') {
+            cleanupNumberAnimation?.()
+            cleanupNumberAnimation = null
+            return
+        }
+        const root = rootRef
+        if (!root) return
+        cleanupNumberAnimation?.()
+        cleanupNumberAnimation = setupNumberAnimation(root)
+        return () => {
+            cleanupNumberAnimation?.()
+            cleanupNumberAnimation = null
+        }
+    })
 
     const breathDurationStyle = $derived(() => {
         if (animation !== 'breath') return ''
@@ -85,8 +228,19 @@
         return `--simplebox-float-duration: ${d}s; --simplebox-float-height: calc(${h}px * var(--scale-ratio, 1)); --simplebox-float-delay: ${delay}s;`
     })
 
-    const finalStyle = $derived(() => mergeStyle(style, mergeStyle(breathDurationStyle(), floatStyle()) ?? ''))
-    const finalClass = $derived(() => mergeClass(className, animation === 'breath' ? 'simplebox-breath' : animation === 'float' ? 'simplebox-float' : ''))
+    const delayedLoadStyle = $derived(() => {
+        if (animation !== 'delayedLoad') return ''
+        const d = Number.isFinite(delayedLoadDelay) ? Math.max(0, delayedLoadDelay) : 0.3
+        const dist = Number.isFinite(delayedLoadDistance) ? Math.max(0, delayedLoadDistance) : 20
+        const dir = delayedLoadDirection || 'up'
+        const x = dir === 'left' ? dist : dir === 'right' ? -dist : 0
+        const y = dir === 'up' ? dist : dir === 'down' ? -dist : 0
+        const targetOpacity = extractOpacity(style) ?? '1'
+        return `--simplebox-delayed-load-delay: ${d}s; --simplebox-delayed-load-offset-x: calc(${x}px * var(--scale-ratio, 1)); --simplebox-delayed-load-offset-y: calc(${y}px * var(--scale-ratio, 1)); --simplebox-delayed-load-final-opacity: ${targetOpacity}; opacity: 0; translate: var(--simplebox-delayed-load-offset-x, 0px) var(--simplebox-delayed-load-offset-y, 0px);`
+    })
+
+    const finalStyle = $derived(() => mergeStyle(style, mergeStyle(breathDurationStyle(), mergeStyle(floatStyle(), delayedLoadStyle()) ?? '') ?? ''))
+    const finalClass = $derived(() => mergeClass(className, animation === 'breath' ? 'simplebox-breath' : animation === 'float' ? 'simplebox-float' : animation === 'delayedLoad' ? 'simplebox-delayed-load' : ''))
 
     const embedHtmlValue = $derived(() => (embedHtml ?? '').trim())
     const embedCssValue = $derived(() => String(embedCss ?? ''))
@@ -167,7 +321,7 @@
     })
 </script>
 
-<div style={finalStyle()} class={finalClass()} {...rest}>
+<div bind:this={rootRef} style={finalStyle()} class={finalClass()} {...rest}>
     {#if embedHtmlValue()}
         <div bind:this={embedRootRef} class="embed-root">
             {@html embedHtmlValue()}
@@ -219,6 +373,25 @@
         }
         50% {
             translate: 0 calc(-1 * var(--simplebox-float-height, calc(8px * var(--scale-ratio, 1))));
+        }
+    }
+
+    .simplebox-delayed-load {
+        opacity: 0;
+        translate: var(--simplebox-delayed-load-offset-x, 0px) var(--simplebox-delayed-load-offset-y, 0px);
+        animation: simplebox-delayed-load 0.6s ease-out both;
+        animation-delay: var(--simplebox-delayed-load-delay, 0s);
+        will-change: translate, opacity;
+    }
+
+    @keyframes simplebox-delayed-load {
+        from {
+            opacity: 0;
+            translate: var(--simplebox-delayed-load-offset-x, 0px) var(--simplebox-delayed-load-offset-y, 0px);
+        }
+        to {
+            opacity: var(--simplebox-delayed-load-final-opacity, 1);
+            translate: 0 0;
         }
     }
 </style>
