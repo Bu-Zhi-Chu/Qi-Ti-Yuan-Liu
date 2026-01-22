@@ -19,6 +19,7 @@
         type: string
         nameZh: string
         path: string
+        hidden?: boolean
     }
     let componentOptions = $state<BlockItem[]>([])
     let typeOptions = $state<{ value: string; label: string }[]>([])
@@ -58,7 +59,8 @@
     ]
 
     onMount(() => {
-        componentOptions = blocksConfig as BlockItem[]
+        // 过滤掉 hidden 为 true 的组件，不在下拉选项中显示
+        componentOptions = (blocksConfig as BlockItem[]).filter((item) => !item.hidden)
     })
 
     // 当前选中节点 id（来自外部）
