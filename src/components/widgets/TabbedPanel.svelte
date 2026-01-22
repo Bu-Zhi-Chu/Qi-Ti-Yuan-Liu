@@ -59,13 +59,15 @@
     onMount(() => {
         activeTab = 'nodes'
         // 初始化节点仓库数据 - 从blocks.config.json加载可用组件
-        warehouseItems = blocksConfig.map((block: any) => ({
-            id: block.type,
-            name: block.nameZh,
-            type: block.type,
-            preview: block.preview,
-            presetStyles: block.presetStyles || {}
-        }))
+        warehouseItems = blocksConfig
+            .filter((block: any) => !block.hidden)
+            .map((block: any) => ({
+                id: block.type,
+                name: block.nameZh,
+                type: block.type,
+                preview: block.preview,
+                presetStyles: block.presetStyles || {}
+            }))
 
         const handleKey = (e: KeyboardEvent) => {
             if (!e.ctrlKey) return
@@ -248,12 +250,40 @@
                           }
                       ]
                   }
-                : {
-                      attributes: {
-                          'data-name': generateUniqueDataName(item.name ?? item.type)
-                      },
-                      children: []
-                  })
+                : item.type === 'FlexibleTable'
+                  ? {
+                        attributes: {
+                            'data-name': generateUniqueDataName(item.name ?? item.type)
+                        },
+                        children: [
+                            {
+                                id: globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-header`,
+                                componentType: 'FlexibleTableHeader',
+                                styles: (() => {
+                                    const meta = (blocksConfig as any[]).find((b) => b.type === 'FlexibleTableHeader') as any
+                                    return meta?.presetStyles ? { ...meta.presetStyles } : {}
+                                })(),
+                                attributes: { 'data-name': '表格表头' },
+                                children: []
+                            },
+                            {
+                                id: globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-body`,
+                                componentType: 'FlexibleTableBody',
+                                styles: (() => {
+                                    const meta = (blocksConfig as any[]).find((b) => b.type === 'FlexibleTableBody') as any
+                                    return meta?.presetStyles ? { ...meta.presetStyles } : {}
+                                })(),
+                                attributes: { 'data-name': '表格表体' },
+                                children: []
+                            }
+                        ]
+                    }
+                  : {
+                        attributes: {
+                            'data-name': generateUniqueDataName(item.name ?? item.type)
+                        },
+                        children: []
+                    })
         }
 
         /* 3. 生成真实 DOM 作为预览 */

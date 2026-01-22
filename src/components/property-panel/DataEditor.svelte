@@ -111,20 +111,20 @@
         currentValues = dataSnapshot ? { ...(dataSnapshot.attributes || {}), ...(dataSnapshot.styles || {}) } : {}
     })
 
-    // -------------------- DynamicTable JSON 模式新增状态 --------------------
+    // -------------------- 表格组件 JSON 模式新增状态 --------------------
     let jsonMappingKeys = $state<string[]>([]) // 从临时数据解析出的可用字段
 
-    // 获取 DynamicTable 的默认 columnLabels（从 blocks.config.json）
+    // 获取 FlexibleTable 的默认 columnLabels（从 blocks.config.json）
     let defaultColumnLabels = $derived(() => {
-        if (componentType === 'DynamicTable') {
-            const comp: any = (blocksConfig as any[]).find((b) => b.type === 'DynamicTable')
+        if (componentType === 'FlexibleTable') {
+            const comp: any = (blocksConfig as any[]).find((b) => b.type === 'FlexibleTable')
             const labels = comp?.featureProps?.columnLabels?.default
             return Array.isArray(labels) ? labels : []
         }
         return []
     })
 
-    // 表格的表头：优先使用 currentValues.columnLabels，其次根据 bodyData 推断，再退回 DynamicTable 默认
+    // 表格的表头：优先使用 currentValues.columnLabels，其次根据 bodyData 推断，再退回默认
     let tableHeaders = $derived(() => {
         if (currentValues.columnLabels && currentValues.columnLabels.length) {
             return currentValues.columnLabels
@@ -132,7 +132,14 @@
         if (currentValues.bodyData && Array.isArray(currentValues.bodyData[0]) && currentValues.bodyData[0].length > 0) {
             return Array.from({ length: currentValues.bodyData[0].length }, (_, i) => `列${i + 1}`)
         }
-        return defaultColumnLabels()
+        const defaults = defaultColumnLabels()
+        if (defaults && defaults.length > 0) return defaults
+
+        // 兜底：如果是 FlexibleTable，至少返回3列
+        if (componentType === 'FlexibleTable') {
+            return ['列1', '列2', '列3']
+        }
+        return []
     })
 
     // 派生状态：确保 jsonColumnMapping 数组的长度与列数一致
@@ -357,8 +364,8 @@
 
     // 统一数据抽取逻辑已下沉到 data-extractor.service.ts
 
-    /** 改造：更新 DynamicTable 的临时数据，现在只解析并提取 key，不直接写 bodyData */
-    function updateDynamicTableData(code: string) {
+    /** 更新表格组件的临时数据，只解析并提取 key，不直接写 bodyData */
+    function updateTableData(code: string) {
         if (!selectedId) return
 
         handleAttrChange('bodyDataCode', code) // 始终保存原始代码
@@ -394,7 +401,7 @@
             // 保持现有的表头设置，不根据JSON字段数改变列数
             // 表格列数由tableHeaders决定，JSON字段只是绑定数据源
         } catch (err) {
-            console.error('[DataEditor] 更新 DynamicTable 数据失败', err)
+            console.error('[DataEditor] 更新表格数据失败', err)
             // 解析失败，清空相关状态
             jsonMappingKeys = []
             handleAttrChange('jsonData', [])
@@ -490,9 +497,9 @@
 
     <!-- 虚拟数据(json)模式 -->
     {#if dataSource === 'json'}
-        {#if componentType === 'DynamicTable'}
+        {#if componentType === 'FlexibleTable'}
             <PropertyRow label="临时数据">
-                <CodeEditor code={currentValues.bodyDataCode ?? ''} language="javascript" theme="one-dark" height="calc(120px * var(--scale-ratio, 1))" run={(code: string) => updateDynamicTableData(code)} toolbar={false} autoRun={true} wrap={true} showLineNumbers={false} style="flex:1; width:0;" />
+                <CodeEditor code={currentValues.bodyDataCode ?? ''} language="javascript" theme="one-dark" height="calc(120px * var(--scale-ratio, 1))" run={(code: string) => updateTableData(code)} toolbar={false} autoRun={true} wrap={true} showLineNumbers={false} style="flex:1; width:0;" />
             </PropertyRow>
             <!-- 新增：列映射 -->
             <!-- 调试信息: jsonMappingKeys={jsonMappingKeys}, tableHeaders={tableHeaders} -->
