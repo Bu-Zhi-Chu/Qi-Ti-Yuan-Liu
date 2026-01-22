@@ -412,7 +412,11 @@
     // 吸色功能
     async function startColorPicker() {
         if (!('EyeDropper' in window)) {
-            alert('您的浏览器不支持吸色功能')
+            if (!window.isSecureContext) {
+                alert('吸色功能受浏览器安全策略限制，无法在非 HTTPS 或非 localhost 环境下使用。\n\n请尝试：\n1. 使用 localhost 访问\n2. 配置 HTTPS\n3. 修改浏览器安全标志 (chrome://flags/#unsafely-treat-insecure-origin-as-secure)')
+            } else {
+                alert('您的浏览器暂不支持吸色功能 (EyeDropper API)')
+            }
             return
         }
 
@@ -638,11 +642,9 @@
             <div class="panel-header">
                 <h4>选择颜色</h4>
                 <div class="header-actions">
-                    {#if 'EyeDropper' in window}
-                        <button class="picker-btn" onclick={startColorPicker} type="button" title="吸色">
-                            <Icon name="Pipette" size={16} />
-                        </button>
-                    {/if}
+                    <button class="picker-btn" onclick={startColorPicker} type="button" title="吸色">
+                        <Icon name="Pipette" size={16} />
+                    </button>
                     <button class="close-btn" onclick={() => (isOpen = false)} type="button" aria-label="关闭颜色选择器">
                         <Icon name="X" size={16} />
                     </button>
@@ -696,12 +698,12 @@
 
             <!-- 添加清空按钮 -->
             <div class="color-controls">
-                <button 
-                    class="clear-color-btn" 
+                <button
+                    class="clear-color-btn"
                     onclick={() => {
-                        onchange?.('');
-                        isOpen = false;
-                    }} 
+                        onchange?.('')
+                        isOpen = false
+                    }}
                     type="button"
                 >
                     清空属性

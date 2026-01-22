@@ -18,7 +18,7 @@
 <script lang="ts">
     interface Props {
         style?: string
-        animation?: '' | 'breath' | 'float' | 'delayedLoad' | 'number'
+        animation?: '' | 'breath' | 'float' | 'delayedLoad' | 'number' | 'borderFlow'
         breathDuration?: number
         breathMinOpacity?: number
         breathFactor?: number
@@ -28,6 +28,11 @@
         delayedLoadDirection?: 'up' | 'down' | 'left' | 'right'
         delayedLoadDelay?: number
         delayedLoadDistance?: number
+        borderFlowColor?: string
+        borderFlowDuration?: number
+        borderFlowLength?: number
+        borderFlowDirection?: 'clockwise' | 'counterclockwise'
+        borderFlowFactor?: number
         embedHtml?: string
         embedCss?: string
         class?: string
@@ -82,6 +87,11 @@
         delayedLoadDirection = 'up',
         delayedLoadDelay = 0.3,
         delayedLoadDistance = 20,
+        borderFlowColor = '#00ffff',
+        borderFlowDuration = 3,
+        borderFlowLength = 50,
+        borderFlowDirection = 'clockwise',
+        borderFlowFactor,
         embedHtml = '',
         embedCss = '',
         class: className,
@@ -239,8 +249,24 @@
         return `--simplebox-delayed-load-delay: ${d}s; --simplebox-delayed-load-offset-x: calc(${x}px * var(--scale-ratio, 1)); --simplebox-delayed-load-offset-y: calc(${y}px * var(--scale-ratio, 1)); --simplebox-delayed-load-final-opacity: ${targetOpacity}; opacity: 0; translate: var(--simplebox-delayed-load-offset-x, 0px) var(--simplebox-delayed-load-offset-y, 0px);`
     })
 
-    const finalStyle = $derived(() => mergeStyle(style, mergeStyle(breathDurationStyle(), mergeStyle(floatStyle(), delayedLoadStyle()) ?? '') ?? ''))
-    const finalClass = $derived(() => mergeClass(className, animation === 'breath' ? 'simplebox-breath' : animation === 'float' ? 'simplebox-float' : animation === 'delayedLoad' ? 'simplebox-delayed-load' : ''))
+    const borderFlowStyle = $derived(() => {
+        if (animation !== 'borderFlow') return ''
+        const color = borderFlowColor || '#00ffff'
+        const duration = Number.isFinite(borderFlowDuration) && borderFlowDuration > 0 ? borderFlowDuration : 3
+        const len = Number.isFinite(borderFlowLength) ? Math.min(100, Math.max(1, borderFlowLength)) : 50
+        const angle = (len / 100) * 360
+        // Use animation-direction property for reversing direction
+        const animDir = borderFlowDirection === 'counterclockwise' ? 'reverse' : 'normal'
+
+        const seed = Number.isFinite(borderFlowFactor) ? (borderFlowFactor as number) : instanceSeed
+        const phase01 = pseudoRandom01(seed)
+        const delay = -(phase01 * duration)
+
+        return `--simplebox-border-flow-color: ${color}; --simplebox-border-flow-duration: ${duration}s; --simplebox-border-flow-length: ${angle}deg; --simplebox-border-flow-direction: ${animDir}; --simplebox-border-flow-delay: ${delay}s;`
+    })
+
+    const finalStyle = $derived(() => mergeStyle(style, mergeStyle(breathDurationStyle(), mergeStyle(floatStyle(), mergeStyle(delayedLoadStyle(), borderFlowStyle()) ?? '') ?? '') ?? ''))
+    const finalClass = $derived(() => mergeClass(className, animation === 'breath' ? 'simplebox-breath' : animation === 'float' ? 'simplebox-float' : animation === 'delayedLoad' ? 'simplebox-delayed-load' : animation === 'borderFlow' ? 'simplebox-border-flow' : ''))
 
     const embedHtmlValue = $derived(() => (embedHtml ?? '').trim())
     const embedCssValue = $derived(() => String(embedCss ?? ''))
@@ -392,6 +418,43 @@
         to {
             opacity: var(--simplebox-delayed-load-final-opacity, 1);
             translate: 0 0;
+        }
+    }
+
+    @property --simplebox-border-flow-angle {
+        syntax: '<angle>';
+        initial-value: 0deg;
+        inherits: false;
+    }
+
+    .simplebox-border-flow {
+        position: relative;
+    }
+
+    .simplebox-border-flow::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        padding: calc(2px * var(--scale-ratio, 1));
+        background: conic-gradient(from var(--simplebox-border-flow-angle), transparent, var(--simplebox-border-flow-color) var(--simplebox-border-flow-length), transparent calc(var(--simplebox-border-flow-length) + 15deg));
+        -webkit-mask:
+            linear-gradient(#fff 0 0) content-box,
+            linear-gradient(#fff 0 0);
+        mask:
+            linear-gradient(#fff 0 0) content-box,
+            linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        pointer-events: none;
+        z-index: 1;
+        animation: simplebox-border-flow-spin var(--simplebox-border-flow-duration) linear infinite var(--simplebox-border-flow-direction, normal);
+        animation-delay: var(--simplebox-border-flow-delay, 0s);
+    }
+
+    @keyframes simplebox-border-flow-spin {
+        to {
+            --simplebox-border-flow-angle: 360deg;
         }
     }
 </style>

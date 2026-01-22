@@ -46,11 +46,11 @@
         width: 100%;
     }
     .flexible-table-header.has-scrollbar {
-        padding-right: var(--ft-scrollbar-width, 6px);
+        padding-right: var(--ft-scrollbar-width, calc(6px * var(--scale-ratio, 1)));
     }
     .header-cell {
         height: 100%;
         box-sizing: border-box;
-        padding: 0 4px;
+        padding: 0 calc(4px * var(--scale-ratio, 1));
     }
 </style>

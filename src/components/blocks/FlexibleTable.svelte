@@ -164,7 +164,7 @@
         display: flex;
         flex-direction: column;
         overflow: hidden;
-        --ft-scrollbar-width: 6px; /* 定义滚动条宽度 */
+        --ft-scrollbar-width: calc(6px * var(--scale-ratio, 1)); /* 定义滚动条宽度 */
     }
 
     /* 隐藏滚动条但保留滚动功能 */

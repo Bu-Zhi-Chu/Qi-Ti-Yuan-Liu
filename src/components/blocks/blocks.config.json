@@ -166,6 +166,10 @@
                     {
                         "value": "number",
                         "label": "数字动画"
+                    },
+                    {
+                        "value": "borderFlow",
+                        "label": "边框流光"
                     }
                 ],
                 "default": ""
@@ -269,6 +273,60 @@
                 "showIf": {
                     "key": "animation",
                     "value": "float"
+                }
+            },
+            "borderFlowColor": {
+                "label": "流光颜色",
+                "type": "color",
+                "default": "#00ffff",
+                "showIf": {
+                    "key": "animation",
+                    "value": "borderFlow"
+                }
+            },
+            "borderFlowDuration": {
+                "label": "流光速度",
+                "type": "number",
+                "min": 0.1,
+                "max": 20,
+                "default": 3,
+                "showIf": {
+                    "key": "animation",
+                    "value": "borderFlow"
+                }
+            },
+            "borderFlowLength": {
+                "label": "流光长度",
+                "type": "number",
+                "min": 1,
+                "max": 100,
+                "default": 50,
+                "showIf": {
+                    "key": "animation",
+                    "value": "borderFlow"
+                }
+            },
+            "borderFlowDirection": {
+                "label": "流光方向",
+                "type": "select",
+                "options": [
+                    { "value": "clockwise", "label": "顺时针" },
+                    { "value": "counterclockwise", "label": "逆时针" }
+                ],
+                "default": "clockwise",
+                "showIf": {
+                    "key": "animation",
+                    "value": "borderFlow"
+                }
+            },
+            "borderFlowFactor": {
+                "label": "随机因子",
+                "type": "number",
+                "min": 0,
+                "max": 9999,
+                "showIf": {
+                    "key": "animation",
+                    "value": "borderFlow"
                 }
             },
             "embedHtml": {
@@ -799,7 +857,7 @@
         "hideTextContent": true,
         "presetStyles": {
             "width": "100%",
-            "height": "40px",
+            "height": "calc(40px * var(--scale-ratio, 1))",
             "display": "flex",
             "backgroundColor": "rgba(0, 212, 255, 0.2)"
         }
@@ -829,8 +887,6 @@
         "hideTextContent": true,
         "presetStyles": {
             "width": "100%",
-            "minHeight": "36px",
-            "borderBottom": "1px solid rgba(255, 255, 255, 0.05)",
             "display": "flex",
             "boxSizing": "border-box"
         }
@@ -844,7 +900,7 @@
         "showFeatureTab": false,
         "hideTextContent": true,
         "presetStyles": {
-            "padding": "4px",
+            "padding": "calc(4px * var(--scale-ratio, 1))",
             "display": "flex",
             "alignItems": "center",
             "justifyContent": "center",
@@ -1024,6 +1080,11 @@
                 "label": "初始位置",
                 "text": "当前视角",
                 "type": "button"
+            },
+            "enableInitAnimation": {
+                "label": "初始动画",
+                "type": "switch",
+                "default": true
             },
             "disablePan": {
                 "label": "屏蔽平移",

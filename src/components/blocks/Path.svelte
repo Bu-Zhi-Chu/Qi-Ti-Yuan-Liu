@@ -188,7 +188,7 @@
         const h = Math.max(1, r.height)
         renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
         renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1))
-        renderer.setSize(w, h)
+        renderer.setSize(w, h, false)
         renderer.domElement.className = 'pathcanvas'
         renderer.domElement.style.pointerEvents = interactive ? 'auto' : 'none'
         containerRef.appendChild(renderer.domElement)
@@ -736,7 +736,7 @@
         const r = containerRef.getBoundingClientRect()
         const w = Math.max(1, r.width)
         const h = Math.max(1, r.height)
-        renderer.setSize(w, h)
+        renderer.setSize(w, h, false)
         camera.aspect = w / h
         camera.updateProjectionMatrix()
         if (lineMaterial && (lineMaterial as any).resolution) {
@@ -846,7 +846,7 @@
             const r = entries[0].contentRect
             const w = Math.max(1, Math.floor(r.width))
             const h = Math.max(1, Math.floor(r.height))
-            renderer!.setSize(w, h)
+            renderer!.setSize(w, h, false)
             camera!.aspect = w / h
             camera!.updateProjectionMatrix()
             if (lineMaterial && (lineMaterial as any).resolution) {
@@ -918,8 +918,8 @@
         pointer-events: all;
     }
     :global(canvas.pathcanvas) {
-        width: 100%;
-        height: 100%;
+        width: 100% !important;
+        height: 100% !important;
         display: block;
         pointer-events: none;
     }

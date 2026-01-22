@@ -125,18 +125,22 @@
     .body-row {
         display: flex;
         width: 100%;
-        min-height: 36px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        min-height: calc(36px * var(--scale-ratio, 1));
+        border-bottom: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.05);
         box-sizing: border-box;
+        --bg-img: none;
+        --bg-size: auto;
+        --bg-repeat: no-repeat;
+        --bg-pos: 0% 0%;
         background-image: var(--bg-img);
         background-size: var(--bg-size);
         background-repeat: var(--bg-repeat);
         background-position: var(--bg-pos);
     }
     .body-cell {
-        min-height: 36px;
+        min-height: calc(36px * var(--scale-ratio, 1));
         box-sizing: border-box;
-        padding: 4px;
+        padding: calc(4px * var(--scale-ratio, 1));
         display: flex;
         align-items: center;
         justify-content: center;

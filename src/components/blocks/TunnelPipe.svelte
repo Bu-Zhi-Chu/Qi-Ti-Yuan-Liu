@@ -7,6 +7,19 @@
     import { getNodePropsStore, updateNodeProps } from '../../services/parser/property-panel.service'
     import { Evaluator, Brush, ADDITION } from 'three-bvh-csg'
 
+    // Suppress three-mesh-bvh deprecation warning caused by three-bvh-csg library
+    // This library uses an older option 'maxLeafTris' which triggers a warning in newer three-mesh-bvh versions
+    if (typeof window !== 'undefined' && !(window as any).__meshBVHWarningSuppressed) {
+        const originalWarn = console.warn
+        console.warn = (...args: any[]) => {
+            if (typeof args[0] === 'string' && args[0].includes('MeshBVH: "maxLeafTris" option has been deprecated')) {
+                return
+            }
+            originalWarn(...args)
+        }
+        ;(window as any).__meshBVHWarningSuppressed = true
+    }
+
     type PbrMaterial = THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial
 
     function makePipeMaterial(options?: { color?: THREE.ColorRepresentation; emissive?: THREE.ColorRepresentation; attenuationColor?: THREE.ColorRepresentation; specularColor?: THREE.ColorRepresentation; fresnelColor?: THREE.ColorRepresentation; fresnelAlpha?: boolean; side?: THREE.Side }) {
@@ -90,10 +103,11 @@
         disablePan?: boolean
         disableZoom?: boolean
         disableRotate?: boolean
+        enableInitAnimation?: boolean
         [key: string]: any
     }
 
-    let { id = crypto.randomUUID(), style = '', currentView = false, initCameraPosition, initTargetPosition, disablePan = false, disableZoom = false, disableRotate = false, ...rest }: Props = $props()
+    let { id = crypto.randomUUID(), style = '', currentView = false, initCameraPosition, initTargetPosition, disablePan = false, disableZoom = false, disableRotate = false, enableInitAnimation = true, ...rest }: Props = $props()
 
     let containerRef: HTMLDivElement | null = null
     let renderer: THREE.WebGLRenderer | null = null
@@ -109,9 +123,23 @@
     let arrowFlowMats: THREE.ShaderMaterial[] = []
     let textLabels: THREE.Mesh[] = []
     let billboardGroups: THREE.Group[] = []
+    let billboardSprites: THREE.Sprite[] = []
     let tunnelAnimators: ((time: number) => void)[] = []
     let canvasRef: HTMLCanvasElement
     let environmentTexture: THREE.Texture | null = null
+
+    // Animation State
+    let animatedParts: {
+        obj: THREE.Object3D
+        startPos: THREE.Vector3
+        startScale: THREE.Vector3
+        targetScale: THREE.Vector3
+        targetPos: THREE.Vector3
+        delay: number
+        done: boolean
+    }[] = []
+    let isAssemblyComplete = false
+    let animationStartTime = -1
 
     function initScene() {
         if (!containerRef) return
@@ -227,6 +255,7 @@
         tunnelAnimators = []
         arrowFlowMats = []
         billboardGroups = []
+        billboardSprites = []
     }
 
     function makeArrowFlowMaterial(color: THREE.ColorRepresentation, speed: number = 2.0) {
@@ -855,6 +884,10 @@
         tunnelBorderFlowMats = []
         clearRootGroup()
 
+        animatedParts = []
+        isAssemblyComplete = !enableInitAnimation
+        animationStartTime = -1
+
         const mat = makePipeMaterial()
         const tPipeMat = makePipeMaterial({
             color: 0x330000,
@@ -866,83 +899,130 @@
             side: THREE.FrontSide
         })
 
-        // Layout: Tunnel 1 -> Straight -> T1 -> Straight -> T2 -> Straight -> Tunnel 2
-        // X positions: -14, -9, -4.5, 0, 4.5, 9, 14
         const pipeLiftY = 0.9
+
+        const addPart = (obj: THREE.Object3D, targetPos: THREE.Vector3, targetScale: THREE.Vector3, delayIndex: number) => {
+            if (enableInitAnimation) {
+                const startPos = targetPos.clone()
+                const angle = Math.random() * Math.PI * 2
+                const radius = 10 + Math.random() * 12
+                const heightOffset = (Math.random() - 0.5) * 8
+
+                startPos.x += Math.cos(angle) * radius
+                startPos.z += Math.sin(angle) * radius
+                startPos.y += heightOffset
+
+                const startScale = targetScale.clone().multiplyScalar(0.4 + Math.random() * 0.3)
+
+                obj.position.copy(startPos)
+                obj.scale.copy(startScale)
+
+                rootGroup!.add(obj)
+
+                animatedParts.push({
+                    obj,
+                    startPos,
+                    startScale,
+                    targetPos: targetPos.clone(),
+                    targetScale: targetScale.clone(),
+                    delay: delayIndex * 0.15,
+                    done: false
+                })
+            } else {
+                obj.position.copy(targetPos)
+                obj.scale.copy(targetScale)
+                rootGroup!.add(obj)
+            }
+        }
+
+        // Layout: Tunnel 1 -> Straight -> T1 -> Straight -> T2 -> Straight -> Tunnel 2
+        // X positions: -20, -17, -11, -5.5, 0, 5.5, 11, 17, 20
 
         // Tunnel 1 (Left)
         const t1 = addTunnel(mat)
-        t1.scale.set(0.85, 0.85, 0.85)
-        t1.position.set(-20, 0, 0)
-        rootGroup.add(t1)
+        addPart(t1, new THREE.Vector3(-20, 0, 0), new THREE.Vector3(0.85, 0.85, 0.85), 0)
 
         // Straight 1 Extension
         const s1_ext = addStraightPipe(mat)
-        s1_ext.position.set(-17, pipeLiftY, 0)
-        rootGroup.add(s1_ext)
+        addPart(s1_ext, new THREE.Vector3(-17, pipeLiftY, 0), new THREE.Vector3(1, 1, 1), 1)
 
         // Straight 1
         const s1 = addStraightPipe(mat)
-        s1.position.set(-11, pipeLiftY, 0)
-        rootGroup.add(s1)
+        addPart(s1, new THREE.Vector3(-11, pipeLiftY, 0), new THREE.Vector3(1, 1, 1), 2)
 
         // T1
         const tp1 = addTPipe(tPipeMat)
-        tp1.position.set(-5.5, pipeLiftY, 0)
         tp1.rotation.x = -Math.PI / 4
-        rootGroup.add(tp1)
+        addPart(tp1, new THREE.Vector3(-5.5, pipeLiftY, 0), new THREE.Vector3(1, 1, 1), 3)
 
         // Straight 2
         const s2 = addStraightPipe(mat)
-        s2.position.set(0, pipeLiftY, 0)
-        rootGroup.add(s2)
+        addPart(s2, new THREE.Vector3(0, pipeLiftY, 0), new THREE.Vector3(1, 1, 1), 4)
 
         // T2
         const tp2 = addTPipe(tPipeMat)
-        tp2.position.set(5.5, pipeLiftY, 0)
         tp2.rotation.x = -Math.PI / 4
-        rootGroup.add(tp2)
+        addPart(tp2, new THREE.Vector3(5.5, pipeLiftY, 0), new THREE.Vector3(1, 1, 1), 5)
 
         // Straight 3
         const s3 = addStraightPipe(mat)
-        s3.position.set(11, pipeLiftY, 0)
-        rootGroup.add(s3)
+        addPart(s3, new THREE.Vector3(11, pipeLiftY, 0), new THREE.Vector3(1, 1, 1), 6)
 
         // Straight 3 Extension
         const s3_ext = addStraightPipe(mat)
-        s3_ext.position.set(17, pipeLiftY, 0)
-        rootGroup.add(s3_ext)
+        addPart(s3_ext, new THREE.Vector3(17, pipeLiftY, 0), new THREE.Vector3(1, 1, 1), 7)
 
         // Tunnel 2 (Right)
         const t2 = addTunnel(mat)
-        t2.scale.set(1.25, 1.25, 1.25)
-        t2.position.set(20, 0, 0)
-        rootGroup.add(t2)
+        addPart(t2, new THREE.Vector3(20, 0, 0), new THREE.Vector3(1.25, 1.25, 1.25), 8)
 
         addFlowingArrows()
+
         addBillboards()
+
+        if (enableInitAnimation) {
+            arrowSystems.forEach((sys) => (sys.mesh.visible = false))
+            billboardGroups.forEach((g) => (g.visible = false))
+            billboardSprites.forEach((s) => (s.visible = false))
+            textLabels.forEach((l) => (l.visible = false))
+        } else {
+            arrowSystems.forEach((sys) => (sys.mesh.visible = true))
+            billboardGroups.forEach((g) => (g.visible = true))
+            billboardSprites.forEach((s) => (s.visible = true))
+            textLabels.forEach((l) => (l.visible = true))
+        }
     }
 
     function addBillboards() {
         if (!rootGroup) return
+
+        billboardSprites = []
 
         const loader = new THREE.TextureLoader()
         const maxAnisotropy = renderer?.capabilities.getMaxAnisotropy() || 1
 
         const texSplit = loader.load('/img/binChuan/分水口.png')
         texSplit.colorSpace = THREE.SRGBColorSpace
+        texSplit.minFilter = THREE.LinearFilter
+        texSplit.magFilter = THREE.LinearFilter
         texSplit.anisotropy = maxAnisotropy
 
         const texExit = loader.load('/img/binChuan/大银甸陇洞出口岔管.png')
         texExit.colorSpace = THREE.SRGBColorSpace
+        texExit.minFilter = THREE.LinearFilter
+        texExit.magFilter = THREE.LinearFilter
         texExit.anisotropy = maxAnisotropy
 
         const texYang = loader.load('/img/binChuan/杨公箐隧洞.png')
         texYang.colorSpace = THREE.SRGBColorSpace
+        texYang.minFilter = THREE.LinearFilter
+        texYang.magFilter = THREE.LinearFilter
         texYang.anisotropy = maxAnisotropy
 
         const texFrame = loader.load('/img/binChuan/框.png')
         texFrame.colorSpace = THREE.SRGBColorSpace
+        texFrame.minFilter = THREE.LinearFilter
+        texFrame.magFilter = THREE.LinearFilter
         texFrame.anisotropy = maxAnisotropy
 
         const createBoard = (texture: THREE.Texture, pos: THREE.Vector3, widthOrScale: number = 1, height?: number) => {
@@ -959,12 +1039,13 @@
             if (height !== undefined) {
                 sprite.scale.set(widthOrScale, height, 1)
             } else {
-                sprite.scale.set(3.3 * widthOrScale, 1.14 * widthOrScale, 1)
+                sprite.scale.set(3.96 * widthOrScale, 1.37 * widthOrScale, 1)
             }
 
             sprite.renderOrder = 9999
 
             rootGroup?.add(sprite)
+            billboardSprites.push(sprite)
         }
 
         createBoard(texSplit, new THREE.Vector3(-6.0, 1, -3.8))
@@ -977,9 +1058,8 @@
             const group = new THREE.Group()
             group.position.copy(pos)
 
-            // Frame (Mesh instead of Sprite to allow children positioning)
-            const frameWidth = 4.8
-            const frameHeight = 2.7
+            const frameWidth = 7.0
+            const frameHeight = 4.0
             const frameGeo = new THREE.PlaneGeometry(frameWidth, frameHeight)
             const frameMat = new THREE.MeshBasicMaterial({
                 map: texFrame,
@@ -1002,9 +1082,10 @@
                 const textWidth = metrics.width
                 const textHeight = fontSize * 1.4
 
-                canvas.width = textWidth * 4
-                canvas.height = textHeight * 4
-                ctx.scale(4, 4)
+                const scaleFactor = 12
+                canvas.width = textWidth * scaleFactor
+                canvas.height = textHeight * scaleFactor
+                ctx.scale(scaleFactor, scaleFactor)
                 ctx.font = `bold ${fontSize}px "Microsoft YaHei", sans-serif`
                 ctx.fillStyle = color
                 ctx.textAlign = 'center'
@@ -1027,7 +1108,7 @@
                 const aspect = textWidth / textHeight
                 // Scale factor for mesh size relative to font size
                 // Adjust this factor to match desired visual size
-                const meshHeight = (fontSize / 80) * 0.6
+                const meshHeight = (fontSize / 80) * 0.8
                 const meshWidth = meshHeight * aspect
                 const geo = new THREE.PlaneGeometry(meshWidth, meshHeight)
                 const mesh = new THREE.Mesh(geo, mat)
@@ -1036,7 +1117,7 @@
             }
 
             // 1. Title (Top-Left)
-            const titleObj = createTextMesh(title, 80, '#ffffff')
+            const titleObj = createTextMesh(title, 120, '#ffffff')
             if (titleObj) {
                 // Padding
                 const paddingX = 0.4
@@ -1070,29 +1151,26 @@
         textLabels = []
         const maxAnisotropy = renderer?.capabilities.getMaxAnisotropy() || 1
 
-        // 创建文字 Canvas
         const createTextLabel = (text: string, fontSize: number = 48, color: string = '#ffffff') => {
             const canvas = document.createElement('canvas')
             const ctx = canvas.getContext('2d')
             if (!ctx) return null
 
-            // 设置字体以测量宽度
             ctx.font = `bold ${fontSize}px "Microsoft YaHei", sans-serif`
             const metrics = ctx.measureText(text)
             const textWidth = metrics.width
             const textHeight = fontSize * 1.4 // 稍微留点余量
 
-            // 设置 Canvas 尺寸 (2倍分辨率以保证清晰度)
-            canvas.width = textWidth * 4
-            canvas.height = textHeight * 4
+            const scaleFactor = 6
+            canvas.width = textWidth * scaleFactor
+            canvas.height = textHeight * scaleFactor
 
-            ctx.scale(4, 4)
+            ctx.scale(scaleFactor, scaleFactor)
             ctx.font = `bold ${fontSize}px "Microsoft YaHei", sans-serif`
             ctx.fillStyle = color
             ctx.textAlign = 'center'
             ctx.textBaseline = 'middle'
 
-            // 绘制文字
             ctx.fillText(text, textWidth / 2, textHeight / 2)
 
             const texture = new THREE.CanvasTexture(canvas)
@@ -1108,9 +1186,8 @@
                 side: THREE.DoubleSide
             })
 
-            // 根据宽高比设置尺寸，基准高度设为 0.5 (世界单位)
             const aspect = textWidth / textHeight
-            const baseHeight = 0.5
+            const baseHeight = 0.6
             const geometry = new THREE.PlaneGeometry(baseHeight * aspect, baseHeight)
 
             const mesh = new THREE.Mesh(geometry, mat)
@@ -1220,6 +1297,48 @@
         if (!renderer || !scene || !camera) return
         raf = requestAnimationFrame(animate)
 
+        if (enableInitAnimation && !isAssemblyComplete) {
+            if (animationStartTime < 0) animationStartTime = _time
+
+            const tAnim = (_time - animationStartTime) / 1000
+            let allDone = true
+
+            animatedParts.forEach((part) => {
+                if (part.done) {
+                    return
+                }
+
+                if (tAnim >= part.delay) {
+                    const duration = 1.0
+                    const p = Math.min(1, (tAnim - part.delay) / duration)
+
+                    const ease = 1 - Math.pow(1 - p, 3)
+
+                    part.obj.scale.lerpVectors(part.startScale, part.targetScale, ease)
+                    part.obj.position.lerpVectors(part.startPos, part.targetPos, ease)
+
+                    if (p >= 1) {
+                        part.done = true
+                        part.obj.scale.copy(part.targetScale)
+                        part.obj.position.copy(part.targetPos)
+                    } else {
+                        allDone = false
+                    }
+                } else {
+                    allDone = false
+                }
+            })
+
+            if (allDone && animatedParts.length > 0) {
+                isAssemblyComplete = true
+
+                arrowSystems.forEach((sys) => (sys.mesh.visible = true))
+                billboardGroups.forEach((g) => (g.visible = true))
+                billboardSprites.forEach((s) => (s.visible = true))
+                textLabels.forEach((l) => (l.visible = true))
+            }
+        }
+
         const t = _time * 0.001
         tunnelBorderFlowMats.forEach((m, i) => {
             m.uniforms.uTime.value = t
@@ -1232,7 +1351,10 @@
 
         updateArrowSystems(0.016, camera)
         updateTextLabels(camera)
-        billboardGroups.forEach((g) => g.lookAt(camera!.position))
+        billboardGroups.forEach((g) => {
+            // Match Sprite behavior: align with camera orientation (screen-aligned)
+            g.quaternion.copy(camera!.quaternion)
+        })
 
         tunnelAnimators.forEach((anim) => anim(t))
 
@@ -1300,5 +1422,10 @@
         height: 100%;
         overflow: hidden;
         background: transparent;
+    }
+    .tunnel-pipe-root :global(canvas) {
+        width: 100% !important;
+        height: 100% !important;
+        display: block;
     }
 </style>
