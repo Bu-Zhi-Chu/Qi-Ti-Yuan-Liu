@@ -772,6 +772,11 @@
             "backgroundColor": "transparent"
         },
         "featureProps": {
+            "hideScrollbar": {
+                "label": "无滚动条",
+                "type": "switch",
+                "default": true
+            },
             "columnLabels": {
                 "label": "表头列名",
                 "type": "columnLabels",

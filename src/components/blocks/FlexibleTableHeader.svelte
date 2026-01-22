@@ -13,6 +13,7 @@
 
     let headers = $derived(context?.headers ?? [])
     let numColumns = $derived(context?.numColumns ?? 0)
+    let hideScrollbar = $derived(context?.hideScrollbar ?? true)
 
     function getCellStyle(index: number) {
         const widthPercent = numColumns > 0 ? 100 / numColumns : 100
@@ -30,7 +31,7 @@
     }
 </script>
 
-<div class="flexible-table-header {className}" style={style} {...rest}>
+<div class="flexible-table-header {className}" class:has-scrollbar={!hideScrollbar} {style} {...rest}>
     {#each headers as header, index}
         <div class="header-cell" style={getCellStyle(index)}>
             {@html String(header ?? '')}
@@ -42,6 +43,10 @@
     .flexible-table-header {
         display: flex;
         box-sizing: border-box;
+        width: 100%;
+    }
+    .flexible-table-header.has-scrollbar {
+        padding-right: var(--ft-scrollbar-width, 6px);
     }
     .header-cell {
         height: 100%;

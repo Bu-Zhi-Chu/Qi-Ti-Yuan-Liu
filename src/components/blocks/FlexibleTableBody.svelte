@@ -29,7 +29,7 @@
     }
 </script>
 
-<div class="flexible-table-body {className}" style={style} {...rest}>
+<div class="flexible-table-body {className}" {style} {...rest}>
     {#if bodyData.length > 0}
         {#each bodyData as row}
             <div class="body-row">
@@ -55,7 +55,7 @@
         display: flex;
         width: 100%;
         min-height: 36px;
-        border-bottom: 1px solid rgba(255,255,255,0.05);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         box-sizing: border-box;
     }
     .body-cell {

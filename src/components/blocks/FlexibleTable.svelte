@@ -7,6 +7,7 @@
 
     interface Props {
         id?: string
+        hideScrollbar?: boolean
         columnLabels?: string[]
         headers?: string[]
         bodyData?: (string | number)[][]
@@ -22,7 +23,7 @@
         [key: string]: any
     }
 
-    let { id = '', columnLabels = [], headers = [], bodyData = [], dataSource = 'json', requestPath = '', mockPath = '', requestSeriesMapping = [], mockSeriesMapping = [], style = '', class: className = '', children, onclick, ...rest }: Props = $props()
+    let { id = '', hideScrollbar = true, columnLabels = [], headers = [], bodyData = [], dataSource = 'json', requestPath = '', mockPath = '', requestSeriesMapping = [], mockSeriesMapping = [], style = '', class: className = '', children, onclick, ...rest }: Props = $props()
 
     // 默认数据逻辑 (与 DynamicTable 保持一致)
     let displayHeaders = $derived.by(() => {
@@ -141,11 +142,14 @@
         },
         get numColumns() {
             return numColumns
+        },
+        get hideScrollbar() {
+            return hideScrollbar
         }
     })
 </script>
 
-<div class="flexible-table-container {className}" {style} {id} {onclick} {...rest}>
+<div class="flexible-table-container {className}" class:hide-scrollbar={hideScrollbar} {style} {id} {onclick} {...rest}>
     {@render children?.()}
 </div>
 
@@ -156,5 +160,31 @@
         display: flex;
         flex-direction: column;
         overflow: hidden;
+        --ft-scrollbar-width: 6px; /* 定义滚动条宽度 */
+    }
+
+    /* 隐藏滚动条但保留滚动功能 */
+    :global(.flexible-table-container.hide-scrollbar *::-webkit-scrollbar) {
+        display: none;
+    }
+    :global(.flexible-table-container.hide-scrollbar *) {
+        -ms-overflow-style: none; /* IE and Edge */
+        scrollbar-width: none; /* Firefox */
+    }
+
+    /* 显示滚动条时的自定义样式，确保宽度固定以便对齐 */
+    :global(.flexible-table-container:not(.hide-scrollbar) *::-webkit-scrollbar) {
+        width: var(--ft-scrollbar-width);
+        height: var(--ft-scrollbar-width);
+    }
+    :global(.flexible-table-container:not(.hide-scrollbar) *::-webkit-scrollbar-track) {
+        background: transparent;
+    }
+    :global(.flexible-table-container:not(.hide-scrollbar) *::-webkit-scrollbar-thumb) {
+        background-color: rgba(255, 255, 255, 0.2);
+        border-radius: var(--ft-scrollbar-width);
+    }
+    :global(.flexible-table-container:not(.hide-scrollbar) *::-webkit-scrollbar-thumb:hover) {
+        background-color: rgba(255, 255, 255, 0.3);
     }
 </style>
