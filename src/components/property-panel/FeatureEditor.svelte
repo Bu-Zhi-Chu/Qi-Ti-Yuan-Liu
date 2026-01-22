@@ -247,6 +247,7 @@
         }
     }
     async function handleAttrChange(key: string, value: any) {
+        const prevValue = currentValues[key]
         // 如果是 DOM 树同步过来的 buttonCount 变更，则仅更新 view，不再触发增删按钮
         if (key === 'buttonCount' && syncingFromDomTree) {
             syncingFromDomTree = false
@@ -363,6 +364,92 @@
                     queueMicrotask(() => {
                         editingButtonCount = false
                     })
+                }
+            }
+
+            if (key === 'alternateRow' && value === true && !prevValue) {
+                const node = getFullNode(selectedId)
+                if (node && node.componentType === 'FlexibleTable') {
+                    const bodyNode = (node.children || []).find((c: any) => c.componentType === 'FlexibleTableBody')
+                    if (bodyNode) {
+                        const rowNodes = (bodyNode.children || []).filter((c: any) => c.componentType === 'FlexibleTableRow')
+                        if (rowNodes.length < 2) {
+                            const rowMeta = (blocksConfig as any[]).find((b) => b.type === 'FlexibleTableRow') as any
+                            const baseStyles = rowMeta?.presetStyles ? { ...rowMeta.presetStyles } : {}
+                            const newId = globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-row-alt`
+                            const name = rowNodes.length === 0 ? '表格表行 1' : '表格表行 2'
+                            const tableMeta = (blocksConfig as any[]).find((b) => b.type === 'FlexibleTable') as any
+                            const defaultLabels = tableMeta?.featureProps?.columnLabels?.default
+                            const count = Array.isArray(defaultLabels) && defaultLabels.length > 0 ? defaultLabels.length : 3
+                            const cellMeta = (blocksConfig as any[]).find((b) => b.type === 'FlexibleTableCell') as any
+                            const cellStyles = cellMeta?.presetStyles ? { ...cellMeta.presetStyles } : {}
+                            const rowIndex = rowNodes.length
+                            const rowChildren = Array.from({ length: count }, (_, colIndex) => ({
+                                id: globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-cell-alt-${colIndex}`,
+                                componentType: 'FlexibleTableCell',
+                                styles: cellStyles,
+                                attributes: { 'data-name': `单元格 ${colIndex + 1}`, rowIndex, colIndex },
+                                children: []
+                            }))
+                            addNodeToParent(bodyNode.id, {
+                                id: newId,
+                                componentType: 'FlexibleTableRow',
+                                styles: baseStyles,
+                                attributes: { 'data-name': name, rowIndex },
+                                children: rowChildren
+                            } as any)
+                        }
+                    }
+                }
+            }
+
+            if (key === 'alternateRow' && value === false && prevValue) {
+                const node = getFullNode(selectedId)
+                if (node && node.componentType === 'FlexibleTable') {
+                    const bodyNode = (node.children || []).find((c: any) => c.componentType === 'FlexibleTableBody')
+                    if (bodyNode) {
+                        const rowNodes = (bodyNode.children || []).filter((c: any) => c.componentType === 'FlexibleTableRow')
+                        if (rowNodes.length > 1) {
+                            for (let i = 1; i < rowNodes.length; i++) {
+                                removeNodeById(rowNodes[i].id)
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (key === 'columnLabels') {
+                const node = getFullNode(selectedId)
+                if (node && node.componentType === 'FlexibleTable') {
+                    const bodyNode = (node.children || []).find((c: any) => c.componentType === 'FlexibleTableBody')
+                    if (bodyNode) {
+                        const desired = Array.isArray(value) ? value.length : 0
+                        const rowNodes = (bodyNode.children || []).filter((c: any) => c.componentType === 'FlexibleTableRow')
+                        const cellMeta = (blocksConfig as any[]).find((b) => b.type === 'FlexibleTableCell') as any
+                        const baseStyles = cellMeta?.presetStyles ? { ...cellMeta.presetStyles } : {}
+                        rowNodes.forEach((rowNode: any) => {
+                            const rowIndex = typeof rowNode.attributes?.rowIndex === 'number' ? rowNode.attributes.rowIndex : 0
+                            const cells = (rowNode.children || []).filter((c: any) => c.componentType === 'FlexibleTableCell')
+                            const current = cells.length
+                            if (desired > current) {
+                                for (let i = current; i < desired; i++) {
+                                    const id = globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-cell-${i}`
+                                    addNodeToParent(rowNode.id, {
+                                        id,
+                                        componentType: 'FlexibleTableCell',
+                                        styles: baseStyles,
+                                        attributes: { 'data-name': `单元格 ${i + 1}`, rowIndex, colIndex: i },
+                                        children: []
+                                    } as any)
+                                }
+                            } else if (desired < current && cells.length) {
+                                const extras = cells.slice(desired)
+                                for (const c of extras) {
+                                    removeNodeById(c.id)
+                                }
+                            }
+                        })
+                    }
                 }
             }
         }

@@ -8,6 +8,7 @@
     interface Props {
         id?: string
         hideScrollbar?: boolean
+        alternateRow?: boolean
         columnLabels?: string[]
         headers?: string[]
         bodyData?: (string | number)[][]
@@ -23,7 +24,7 @@
         [key: string]: any
     }
 
-    let { id = '', hideScrollbar = true, columnLabels = [], headers = [], bodyData = [], dataSource = 'json', requestPath = '', mockPath = '', requestSeriesMapping = [], mockSeriesMapping = [], style = '', class: className = '', children, onclick, ...rest }: Props = $props()
+    let { id = '', hideScrollbar = true, alternateRow = false, columnLabels = [], headers = [], bodyData = [], dataSource = 'json', requestPath = '', mockPath = '', requestSeriesMapping = [], mockSeriesMapping = [], style = '', class: className = '', children, onclick, ...rest }: Props = $props()
 
     // 默认数据逻辑 (与 DynamicTable 保持一致)
     let displayHeaders = $derived.by(() => {
@@ -145,6 +146,9 @@
         },
         get hideScrollbar() {
             return hideScrollbar
+        },
+        get alternateRow() {
+            return alternateRow
         }
     })
 </script>

@@ -777,6 +777,11 @@
                 "type": "switch",
                 "default": true
             },
+            "alternateRow": {
+                "label": "隔行换色",
+                "type": "switch",
+                "default": false
+            },
             "columnLabels": {
                 "label": "表头列名",
                 "type": "columnLabels",
@@ -812,6 +817,39 @@
             "flex": "1",
             "overflowY": "auto",
             "backgroundColor": "rgba(255, 255, 255, 0.1)"
+        }
+    },
+    {
+        "type": "FlexibleTableRow",
+        "nameZh": "表格表行",
+        "hidden": true,
+        "path": "../blocks/FlexibleTableRow.svelte",
+        "preview": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><rect x='2' y='12' width='28' height='8' fill='%2300d4ff' opacity='0.5'/></svg>",
+        "showFeatureTab": false,
+        "hideTextContent": true,
+        "presetStyles": {
+            "width": "100%",
+            "minHeight": "36px",
+            "borderBottom": "1px solid rgba(255, 255, 255, 0.05)",
+            "display": "flex",
+            "boxSizing": "border-box"
+        }
+    },
+    {
+        "type": "FlexibleTableCell",
+        "nameZh": "表格单元格",
+        "hidden": true,
+        "path": "../blocks/FlexibleTableCell.svelte",
+        "preview": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><rect x='4' y='10' width='24' height='12' fill='%2300d4ff' opacity='0.5'/></svg>",
+        "showFeatureTab": false,
+        "hideTextContent": true,
+        "presetStyles": {
+            "padding": "4px",
+            "display": "flex",
+            "alignItems": "center",
+            "justifyContent": "center",
+            "textAlign": "center",
+            "boxSizing": "border-box"
         }
     },
     {
