@@ -1021,7 +1021,7 @@
 
         const texFrame = loader.load('/img/binChuan/框.png')
         texFrame.colorSpace = THREE.SRGBColorSpace
-        texFrame.minFilter = THREE.LinearFilter
+        texFrame.minFilter = THREE.LinearMipmapLinearFilter
         texFrame.magFilter = THREE.LinearFilter
         texFrame.anisotropy = maxAnisotropy
 
@@ -1094,7 +1094,7 @@
 
                 const texture = new THREE.CanvasTexture(canvas)
                 texture.colorSpace = THREE.SRGBColorSpace
-                texture.minFilter = THREE.LinearFilter
+                texture.minFilter = THREE.LinearMipmapLinearFilter
                 texture.anisotropy = maxAnisotropy
 
                 const mat = new THREE.MeshBasicMaterial({
@@ -1175,7 +1175,7 @@
 
             const texture = new THREE.CanvasTexture(canvas)
             texture.colorSpace = THREE.SRGBColorSpace
-            texture.minFilter = THREE.LinearFilter
+            texture.minFilter = THREE.LinearMipmapLinearFilter
             texture.anisotropy = maxAnisotropy
 
             const mat = new THREE.MeshBasicMaterial({
@@ -1266,6 +1266,8 @@
         if (!containerRef) return
         resizeObserver = new ResizeObserver((entries) => {
             if (!renderer || !camera) return
+            // Update pixel ratio on resize (handles browser zoom)
+            renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1))
             for (const entry of entries) {
                 const rect = entry.contentRect
                 const width = Math.max(1, rect.width)

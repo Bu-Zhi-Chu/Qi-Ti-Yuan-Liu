@@ -170,6 +170,10 @@
                     {
                         "value": "borderFlow",
                         "label": "边框流光"
+                    },
+                    {
+                        "value": "textReload",
+                        "label": "淡入淡出"
                     }
                 ],
                 "default": ""
@@ -320,13 +324,43 @@
                 }
             },
             "borderFlowFactor": {
-                "label": "随机因子",
+                "label": "流光因子",
                 "type": "number",
                 "min": 0,
                 "max": 9999,
                 "showIf": {
                     "key": "animation",
                     "value": "borderFlow"
+                }
+            },
+            "textReloadDuration": {
+                "label": "动画时间",
+                "type": "number",
+                "min": 0.5,
+                "max": 10,
+                "default": 2,
+                "showIf": {
+                    "key": "animation",
+                    "value": "textReload"
+                }
+            },
+            "textReloadFactor": {
+                "label": "动画因子",
+                "type": "number",
+                "min": 0,
+                "max": 9999,
+                "showIf": {
+                    "key": "animation",
+                    "value": "textReload"
+                }
+            },
+            "textReloadLoop": {
+                "label": "循环动画",
+                "type": "switch",
+                "default": false,
+                "showIf": {
+                    "key": "animation",
+                    "value": "textReload"
                 }
             },
             "embedHtml": {

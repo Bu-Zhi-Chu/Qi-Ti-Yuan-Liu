@@ -18,7 +18,7 @@
 <script lang="ts">
     interface Props {
         style?: string
-        animation?: '' | 'breath' | 'float' | 'delayedLoad' | 'number' | 'borderFlow'
+        animation?: '' | 'breath' | 'float' | 'delayedLoad' | 'number' | 'borderFlow' | 'textReload'
         breathDuration?: number
         breathMinOpacity?: number
         breathFactor?: number
@@ -38,6 +38,9 @@
         class?: string
         children?: import('svelte').Snippet
         'data-id'?: string // 外部指定的数据标识符，用于低代码平台定位
+        textReloadDuration?: number
+        textReloadFactor?: number
+        textReloadLoop?: boolean
         [key: string]: any // 支持其他任意属性
     }
 
@@ -92,6 +95,9 @@
         borderFlowLength = 50,
         borderFlowDirection = 'clockwise',
         borderFlowFactor,
+        textReloadDuration = 2,
+        textReloadFactor,
+        textReloadLoop = false,
         embedHtml = '',
         embedCss = '',
         class: className,
@@ -215,6 +221,255 @@
         return () => {
             cleanupNumberAnimation?.()
             cleanupNumberAnimation = null
+        }
+    })
+
+    function setupTextReloadAnimation(root: HTMLElement) {
+        // Map TextNode -> { wrapper, originalText }
+        const processed = new WeakMap<Text, { wrapper: HTMLElement; originalText: string }>()
+        const entries: {
+            wrapper: HTMLElement
+            spans: HTMLElement[]
+            textNode: Text
+        }[] = []
+
+        let raf = 0
+        let observer: MutationObserver | null = null
+
+        const updateEntry = (textNode: Text, text: string) => {
+            const data = processed.get(textNode)
+            if (!data) return
+
+            data.originalText = text
+            const { wrapper } = data
+
+            // Update spans
+            wrapper.innerHTML = ''
+            const spans: HTMLElement[] = []
+
+            const chars = text.split('')
+            chars.forEach((char) => {
+                const s = document.createElement('span')
+                s.textContent = char
+                s.style.opacity = '1'
+                s.style.willChange = 'opacity'
+                wrapper.appendChild(s)
+                spans.push(s)
+            })
+
+            const arrEntry = entries.find((e) => e.textNode === textNode)
+            if (arrEntry) {
+                arrEntry.spans = spans
+            } else {
+                entries.push({ wrapper, spans, textNode })
+            }
+        }
+
+        const isIgnoredElement = (el: Element) => {
+            const tag = el.tagName
+            return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SCRIPT' || tag === 'STYLE' || el.classList.contains('text-reload-wrapper')
+        }
+
+        const scan = () => {
+            const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+                acceptNode: (node) => {
+                    const parent = (node as Text).parentElement
+                    if (!parent) return NodeFilter.FILTER_REJECT
+                    if (isIgnoredElement(parent)) return NodeFilter.FILTER_REJECT
+                    if (!parent.isConnected) return NodeFilter.FILTER_REJECT
+                    // Ignore empty nodes unless we are already processing them (which implies we emptied them)
+                    // But we skip processed nodes anyway.
+                    if (!node.nodeValue?.trim()) return NodeFilter.FILTER_REJECT
+                    return NodeFilter.FILTER_ACCEPT
+                }
+            })
+
+            const nodes: Text[] = []
+            let n: Node | null
+            while ((n = walker.nextNode())) {
+                nodes.push(n as Text)
+            }
+
+            nodes.forEach((textNode) => {
+                if (processed.has(textNode)) return
+
+                const val = textNode.nodeValue || ''
+                if (!val) return
+
+                const wrapper = document.createElement('span')
+                wrapper.className = 'text-reload-wrapper'
+
+                const parent = textNode.parentNode
+                if (!parent) return
+
+                parent.insertBefore(wrapper, textNode)
+
+                processed.set(textNode, { wrapper, originalText: val })
+                updateEntry(textNode, val)
+                textNode.nodeValue = ''
+            })
+        }
+
+        const mountTime = Date.now()
+
+        const render = () => {
+            // Cleanup disconnected nodes
+            for (let i = entries.length - 1; i >= 0; i--) {
+                if (!entries[i].textNode.isConnected) {
+                    entries[i].wrapper.remove()
+                    entries.splice(i, 1)
+                }
+            }
+
+            const currentTime = Date.now()
+            const duration = Number.isFinite(textReloadDuration) && textReloadDuration > 0 ? textReloadDuration : 2
+            const factor = Number.isFinite(textReloadFactor) ? (textReloadFactor as number) : 0
+
+            // Cycle: Active (FadeOut -> Pause -> FadeIn) -> Idle
+            // Let's say Active part is 2s (duration).
+            // Idle part is 2s.
+            // Total 4s.
+            // Factor shifts phase.
+
+            const activeDurationMs = duration * 1000
+            const idleDurationMs = duration * 1000
+            const cycleDuration = activeDurationMs + idleDurationMs
+
+            let t = 0
+            let shouldAnimate = true
+
+            if (textReloadLoop) {
+                t = (currentTime + factor * 2000) % cycleDuration
+            } else {
+                const delay = factor * 1000
+                const elapsed = currentTime - mountTime
+                if (elapsed < delay) {
+                    shouldAnimate = false
+                    // Wait phase: show original text (opacity 1)
+                } else {
+                    const localT = elapsed - delay
+                    if (localT < activeDurationMs) {
+                        t = localT
+                    } else {
+                        // Animation finished
+                        shouldAnimate = false
+                    }
+                }
+            }
+
+            if (shouldAnimate && t < activeDurationMs) {
+                // Progress 0..1 within active phase
+                const progress = t / activeDurationMs
+
+                // Phases within active:
+                // 0.0 - 0.45: Fade Out (Wave L->R)
+                // 0.45 - 0.55: Invisible (Pause)
+                // 0.55 - 1.0: Fade In (Wave L->R)
+
+                entries.forEach((entry) => {
+                    const totalChars = entry.spans.length
+                    if (totalChars === 0) return
+
+                    entry.spans.forEach((span, i) => {
+                        const idx = i / totalChars
+
+                        // Fade Out
+                        if (progress < 0.45) {
+                            const p = progress / 0.45
+                            const w = 0.3 // Wave width
+                            const wavePos = p * (1 + w)
+                            let alpha = 1
+                            if (idx < wavePos) {
+                                const d = wavePos - idx
+                                if (d >= w) alpha = 0
+                                else alpha = 1 - d / w
+                            }
+                            span.style.opacity = alpha.toString()
+                        }
+                        // Invisible
+                        else if (progress < 0.55) {
+                            span.style.opacity = '0'
+                        }
+                        // Fade In
+                        else {
+                            const p = (progress - 0.55) / 0.45
+                            const w = 0.3
+                            const wavePos = p * (1 + w)
+                            let alpha = 0
+                            if (idx < wavePos) {
+                                const d = wavePos - idx
+                                if (d >= w) alpha = 1
+                                else alpha = d / w
+                            }
+                            span.style.opacity = alpha.toString()
+                        }
+                    })
+                })
+            } else {
+                // Idle
+                entries.forEach((entry) => {
+                    entry.spans.forEach((span) => {
+                        if (span.style.opacity !== '1') span.style.opacity = '1'
+                    })
+                })
+            }
+
+            raf = requestAnimationFrame(render)
+        }
+
+        scan()
+        raf = requestAnimationFrame(render)
+
+        observer = new MutationObserver((mutations) => {
+            let needsScan = false
+            mutations.forEach((m) => {
+                if (m.type === 'childList') {
+                    needsScan = true
+                } else if (m.type === 'characterData') {
+                    const t = m.target as Text
+                    if (processed.has(t)) {
+                        const val = t.nodeValue || ''
+                        if (val !== '') {
+                            updateEntry(t, val)
+                            t.nodeValue = ''
+                        }
+                    }
+                }
+            })
+            if (needsScan) scan()
+        })
+        observer.observe(root, { characterData: true, subtree: true, childList: true })
+
+        return () => {
+            if (observer) observer.disconnect()
+            if (raf) cancelAnimationFrame(raf)
+            // Restore original text
+            entries.forEach((e) => {
+                const data = processed.get(e.textNode)
+                if (data && e.textNode.isConnected) {
+                    e.textNode.nodeValue = data.originalText
+                    e.wrapper.remove()
+                }
+            })
+            entries.length = 0 // Clear
+        }
+    }
+
+    let cleanupTextReloadAnimation: (() => void) | null = null
+
+    $effect(() => {
+        if (animation !== 'textReload') {
+            cleanupTextReloadAnimation?.()
+            cleanupTextReloadAnimation = null
+            return
+        }
+        const root = rootRef
+        if (!root) return
+        cleanupTextReloadAnimation?.()
+        cleanupTextReloadAnimation = setupTextReloadAnimation(root)
+        return () => {
+            cleanupTextReloadAnimation?.()
+            cleanupTextReloadAnimation = null
         }
     })
 
