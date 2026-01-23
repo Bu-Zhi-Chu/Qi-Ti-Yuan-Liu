@@ -21,6 +21,7 @@
     import { getDesignSize } from '../../stores/dom-tree.store.svelte'
     import CodeEditor from '../widgets/CodeEditor.svelte'
     import ColorPicker from '../widgets/ColorPicker.svelte'
+    import Icon from '../widgets/Icon.svelte'
 
     // 派生当前选中节点的 featureProps
     const featureProps = $derived(() => {
@@ -578,6 +579,22 @@
         handleAttrChange(key, list)
     }
 
+    function addReplacementRule(key: string) {
+        const list = Array.isArray(currentValues[key]) ? [...currentValues[key]] : []
+        list.push({
+            rule: '',
+            image: ''
+        })
+        handleAttrChange(key, list)
+    }
+
+    function removeReplacementRule(key: string, index: number) {
+        const list = Array.isArray(currentValues[key]) ? [...currentValues[key]] : []
+        if (index < 0 || index >= list.length) return
+        list.splice(index, 1)
+        handleAttrChange(key, list)
+    }
+
     // 记录各属性对应的隐藏文件输入
     const fileInputs: Record<string, HTMLInputElement> = {}
 
@@ -616,6 +633,154 @@
         const pid = get(projectId)
         if (pid && typeof oldHash === 'string' && /^[a-f0-9]{40,}$/.test(oldHash.trim())) {
             await decrementOrDelete(pid, oldHash.trim())
+        }
+    }
+
+    async function handleReplacementImageFileChange(key: string, index: number, e: Event) {
+        const file = (e.target as HTMLInputElement).files?.[0]
+        const inputElement = e.target as HTMLInputElement
+
+        if (!file || !selectedId) {
+            inputElement.value = ''
+            return
+        }
+
+        isUploading = true
+        uploadProgress = 0
+
+        try {
+            const currentProjectId = get(projectId)
+            if (!currentProjectId) throw new Error('无法获取项目ID')
+
+            const hash = await hashBlob(file, currentProjectId)
+            uploadProgress = 20
+
+            const existing = await getImage(currentProjectId, hash)
+            let finalBlob: Blob
+            let width = 0
+            let height = 0
+
+            if (existing) {
+                await addOrIncrement(
+                    {
+                        projectId: currentProjectId,
+                        hash,
+                        blob: existing.blob,
+                        name: existing.name,
+                        width: existing.width,
+                        height: existing.height
+                    },
+                    1
+                )
+                uploadProgress = 60
+                finalBlob = existing.blob
+            } else {
+                const supportAvif = await canDecode('image/avif')
+                const supportWebp = await canDecode('image/webp')
+                let candidate: Blob = file
+
+                if (supportAvif) {
+                    const avifBlob = await convertTo(file, 'avif', 0.85)
+                    if (avifBlob && avifBlob.size < candidate.size) candidate = avifBlob
+                } else if (supportWebp) {
+                    const webpBlob = await convertTo(file, 'webp', 0.85)
+                    if (webpBlob && webpBlob.size < candidate.size) candidate = webpBlob
+                }
+
+                finalBlob = candidate
+                uploadProgress = 40
+
+                try {
+                    const size = await getImageSize(finalBlob)
+                    width = size.width
+                    height = size.height
+                } catch {
+                    width = 0
+                    height = 0
+                }
+                uploadProgress = 50
+
+                await addOrIncrement(
+                    {
+                        projectId: currentProjectId,
+                        hash,
+                        blob: finalBlob,
+                        name: file.name,
+                        width,
+                        height
+                    },
+                    1
+                )
+                uploadProgress = 80
+            }
+
+            const list = Array.isArray(currentValues[key]) ? [...currentValues[key]] : []
+            if (!list[index]) list[index] = {}
+            list[index] = {
+                ...list[index],
+                image: hash
+            }
+            handleAttrChange(key, list)
+            uploadProgress = 100
+        } catch (err) {
+            console.error('替换规则图片上传失败', err)
+        } finally {
+            isUploading = false
+            uploadProgress = 0
+            inputElement.value = ''
+        }
+    }
+
+    async function handleRemoveReplacementImage(key: string, index: number) {
+        const list = Array.isArray(currentValues[key]) ? [...currentValues[key]] : []
+        if (!list[index]) return
+
+        const oldHash = list[index].image
+        list[index] = {
+            ...list[index],
+            image: ''
+        }
+        handleAttrChange(key, list)
+
+        const pid = get(projectId)
+        if (pid && typeof oldHash === 'string' && /^[a-f0-9]{40,}$/.test(oldHash.trim())) {
+            await decrementOrDelete(pid, oldHash.trim())
+        }
+    }
+
+    function triggerReplacementUpload(key: string, index: number) {
+        fileInputs[`${key}-${index}`]?.click()
+    }
+
+    async function handleReplacementDrop(key: string, index: number, e: DragEvent) {
+        e.preventDefault()
+        const file = e.dataTransfer?.files?.[0]
+        if (file) {
+            const mockEvent = { target: { files: [file] } } as any
+            await handleReplacementImageFileChange(key, index, mockEvent)
+        }
+    }
+
+    async function applyReplacementImageDimensions(key: string, index: number) {
+        const list = Array.isArray(currentValues[key]) ? [...currentValues[key]] : []
+        const rule = list[index]
+        if (!rule || !rule.image || !selectedId) return
+
+        const pid = get(projectId)
+        if (!pid) return
+
+        try {
+            const img = await getImage(pid, rule.image)
+            if (img) {
+                updateNodeProps(selectedId, {
+                    styles: {
+                        width: `${img.width}px`,
+                        height: `${img.height}px`
+                    }
+                })
+            }
+        } catch (err) {
+            console.error('获取图片尺寸失败', err)
         }
     }
 
@@ -874,6 +1039,75 @@
                             {/if}
                         </div>
                     </PropertyRow>
+                {:else if p.type === 'replacementRules'}
+                    <PropertyRow label={`${p.label}`} alignTop={true}>
+                        <div class="overlay-list">
+                            {#if Array.isArray(currentValues[p.key]) && currentValues[p.key].length > 0}
+                                {#each currentValues[p.key] as rule, index}
+                                    <div class="overlay-row">
+                                        <div class="overlay-item">
+                                            <div class="overlay-fields">
+                                                <div class="overlay-field-row">
+                                                    <span class="overlay-field-label">规则</span>
+                                                    <input
+                                                        type="text"
+                                                        class="overlay-input"
+                                                        value={rule?.rule ?? ''}
+                                                        oninput={(e) => {
+                                                            const list = Array.isArray(currentValues[p.key]) ? [...currentValues[p.key]] : []
+                                                            if (!list[index]) list[index] = {}
+                                                            list[index] = {
+                                                                ...list[index],
+                                                                rule: (e.currentTarget as HTMLInputElement).value
+                                                            }
+                                                            handleAttrChange(p.key, list)
+                                                        }}
+                                                        placeholder="匹配内容"
+                                                    />
+                                                </div>
+                                                <div class="overlay-field-row">
+                                                    <span class="overlay-field-label">图片</span>
+                                                    <div class="image-uploader" style="width: 100%;">
+                                                        {#if !rule?.image}
+                                                            <button class="input-style" onclick={() => triggerReplacementUpload(p.key, index)} ondragover={handleDragOver} ondrop={(e) => handleReplacementDrop(p.key, index, e)} title="点击上传或拖拽图片到此处">上传图片</button>
+                                                        {:else}
+                                                            <div class="remove-image-wrapper">
+                                                                <button class="input-style remove-button" onclick={() => handleRemoveReplacementImage(p.key, index)} title="移除图片" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">移除</button>
+                                                                <button class="unit-toggle ratio-overlay" onclick={() => applyReplacementImageDimensions(p.key, index)} title="一键匹配原尺寸">
+                                                                    <Icon name="Ratio" size={16} />
+                                                                </button>
+                                                            </div>
+                                                        {/if}
+                                                        <input type="file" accept="image/*" style="display:none" use:bindFileInput={`${p.key}-${index}`} onchange={(e) => handleReplacementImageFileChange(p.key, index, e)} />
+                                                        {#if isUploading}
+                                                            <div class="upload-progress" style="margin-top: calc(8px * var(--scale-ratio, 1));">
+                                                                <div style="flex: 1; position: relative; height: calc(4px * var(--scale-ratio, 1)); background: rgba(255, 255, 255, 0.1); border-radius: calc(2px * var(--scale-ratio, 1));">
+                                                                    <div style="height: 100%; background: linear-gradient(90deg, #6366f1, #7c3aed); border-radius: calc(2px * var(--scale-ratio, 1)); transition: width 0.3s ease; width: {uploadProgress}%"></div>
+                                                                </div>
+                                                                <span style="font-size: calc(12px * var(--scale-ratio, 1)); color: rgba(255, 255, 255, 0.7); margin-left: calc(8px * var(--scale-ratio, 1));">{uploadProgress}%</span>
+                                                            </div>
+                                                        {/if}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="overlay-row-actions">
+                                            {#if index === 0}
+                                                <button class="unit-toggle add-btn" onclick={() => addReplacementRule(p.key)} title="添加规则" style="background: rgba(34, 197, 94, 0.2); color: #4ade80;">+</button>
+                                            {:else}
+                                                <button class="unit-toggle remove-btn" onclick={() => removeReplacementRule(p.key, index)} title="移除规则" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">−</button>
+                                            {/if}
+                                        </div>
+                                    </div>
+                                {/each}
+                            {:else}
+                                <div class="overlay-empty">暂无替换规则</div>
+                                <div class="overlay-row-actions" style="justify-content: center; margin-top: 8px;">
+                                    <button class="unit-toggle add-btn" onclick={() => addReplacementRule(p.key)} title="添加规则" style="background: rgba(34, 197, 94, 0.2); color: #4ade80;">+</button>
+                                </div>
+                            {/if}
+                        </div>
+                    </PropertyRow>
                 {:else}
                     <PropertyRow label={`${p.label}`}>
                         {#if p.type === 'select'}
@@ -889,6 +1123,25 @@
                                 {:else}
                                     <div class="remove-image-wrapper">
                                         <button class="input-style remove-button" onclick={() => handleRemoveImage(p.key)} title="移除图片" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">移除</button>
+                                        <button
+                                            class="unit-toggle ratio-overlay"
+                                            onclick={async () => {
+                                                if (!selectedId || !currentValues[p.key]) return
+                                                const pid = get(projectId)
+                                                if (!pid) return
+                                                try {
+                                                    const img = await getImage(pid, currentValues[p.key])
+                                                    if (img) {
+                                                        updateNodeProps(selectedId, { styles: { width: `${img.width}px`, height: `${img.height}px` } })
+                                                    }
+                                                } catch (err) {
+                                                    console.error(err)
+                                                }
+                                            }}
+                                            title="一键匹配原尺寸"
+                                        >
+                                            <Icon name="Ratio" size={16} />
+                                        </button>
                                     </div>
                                 {/if}
                                 <input type="file" accept="image/*" style="display:none" use:bindFileInput={p.key} onchange={(e) => handleImageFileChange(p.key, e)} />
@@ -1023,6 +1276,36 @@
     .remove-image-wrapper {
         position: relative;
         flex: 1;
+        display: flex;
+        gap: calc(4px * var(--scale-ratio, 1));
+    }
+    .ratio-overlay {
+        position: absolute;
+        right: calc(4px * var(--scale-ratio, 1));
+        top: 50%;
+        transform: translateY(-50%);
+        width: calc(24px * var(--scale-ratio, 1));
+        height: calc(24px * var(--scale-ratio, 1));
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(15, 23, 42, 0.8);
+        border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.2);
+        border-radius: calc(4px * var(--scale-ratio, 1));
+        color: #e2e8f0;
+        cursor: pointer;
+        z-index: 2;
+        transition: all 0.2s;
+    }
+    .ratio-overlay:hover {
+        background: #3b82f6;
+        border-color: #60a5fa;
+    }
+    .ratio-overlay:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background: rgba(15, 23, 42, 0.5);
     }
     .upload-progress {
         display: flex;

@@ -874,6 +874,27 @@
                 "type": "switch",
                 "default": false
             },
+            "dateWrap": {
+                "label": "日期折行",
+                "type": "switch",
+                "default": true
+            },
+            "smartSizing": {
+                "label": "智能尺寸",
+                "type": "switch",
+                "default": false
+            },
+            "smartSizingFactor": {
+                "label": "智能因子",
+                "type": "number",
+                "min": 0.1,
+                "max": 5,
+                "default": 1,
+                "showIf": {
+                    "key": "smartSizing",
+                    "value": true
+                }
+            },
             "columnLabels": {
                 "label": "表头列名",
                 "type": "columnLabels",
@@ -931,7 +952,7 @@
         "hidden": true,
         "path": "../blocks/FlexibleTableCell.svelte",
         "preview": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><rect x='4' y='10' width='24' height='12' fill='%2300d4ff' opacity='0.5'/></svg>",
-        "showFeatureTab": false,
+        "showFeatureTab": true,
         "hideTextContent": true,
         "presetStyles": {
             "padding": "calc(4px * var(--scale-ratio, 1))",
@@ -940,6 +961,22 @@
             "justifyContent": "center",
             "textAlign": "center",
             "boxSizing": "border-box"
+        },
+        "featureProps": {
+            "enableImageReplacement": {
+                "label": "图片替换",
+                "type": "switch",
+                "default": false
+            },
+            "replacementRules": {
+                "label": "替换规则",
+                "type": "replacementRules",
+                "default": [{ "rule": "", "image": "" }],
+                "showIf": {
+                    "key": "enableImageReplacement",
+                    "value": true
+                }
+            }
         }
     },
     {

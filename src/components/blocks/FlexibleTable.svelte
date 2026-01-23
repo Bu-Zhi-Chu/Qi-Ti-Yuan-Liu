@@ -9,6 +9,9 @@
         id?: string
         hideScrollbar?: boolean
         alternateRow?: boolean
+        dateWrap?: boolean
+        smartSizing?: boolean
+        smartSizingFactor?: number
         columnLabels?: string[]
         headers?: string[]
         bodyData?: (string | number)[][]
@@ -24,7 +27,27 @@
         [key: string]: any
     }
 
-    let { id = '', hideScrollbar = true, alternateRow = false, columnLabels = [], headers = [], bodyData = [], dataSource = 'json', requestPath = '', mockPath = '', requestSeriesMapping = [], mockSeriesMapping = [], style = '', class: className = '', children, onclick, ...rest }: Props = $props()
+    let {
+        id = '',
+        hideScrollbar = true,
+        alternateRow = false,
+        dateWrap = true,
+        smartSizing = false,
+        smartSizingFactor = 1,
+        columnLabels = [],
+        headers = [],
+        bodyData = [],
+        dataSource = 'json',
+        requestPath = '',
+        mockPath = '',
+        requestSeriesMapping = [],
+        mockSeriesMapping = [],
+        style = '',
+        class: className = '',
+        children,
+        onclick,
+        ...rest
+    }: Props = $props()
 
     // 默认数据逻辑 (与 DynamicTable 保持一致)
     let displayHeaders = $derived.by(() => {
@@ -133,6 +156,48 @@
         return displayBodyData
     })
 
+    function getVisualLength(str: any) {
+        if (str === null || str === undefined) return 0
+        return String(str).replace(/[^\x00-\xff]/g, 'xx').length
+    }
+
+    let columnWidths = $derived.by(() => {
+        if (!smartSizing) return []
+        const cols = numColumns
+        if (cols === 0) return []
+
+        const lengths = new Array(cols).fill(0)
+
+        // Headers
+        displayHeaders.forEach((h, i) => {
+            if (i < cols) lengths[i] = Math.max(lengths[i], getVisualLength(h))
+        })
+
+        // Body (sample top 50 rows)
+        processedTableData.slice(0, 50).forEach((row: any[]) => {
+            row.forEach((cell: any, i: number) => {
+                if (i < cols) lengths[i] = Math.max(lengths[i], getVisualLength(cell))
+            })
+        })
+
+        const minLength = 4 // Minimum weight
+        const factor = Math.max(0.1, Math.min(10, smartSizingFactor))
+
+        // Apply factor to dampen or exaggerate the differences
+        // We want to scale the deviation from the mean?
+        // Or simply power? length^factor
+        // If factor > 1, differences are exaggerated.
+        // If factor < 1, differences are dampened (closer to equal width).
+        // Let's use power function.
+
+        const weightedLengths = lengths.map((l) => Math.pow(Math.max(l, minLength), factor))
+
+        const totalLength = weightedLengths.reduce((a, b) => a + b, 0)
+        if (totalLength === 0) return []
+
+        return weightedLengths.map((l) => (l / totalLength) * 100)
+    })
+
     // 提供上下文给子组件
     setContext('flexible-table', {
         get headers() {
@@ -140,6 +205,9 @@
         },
         get bodyData() {
             return processedTableData
+        },
+        get columnWidths() {
+            return columnWidths
         },
         get numColumns() {
             return numColumns
@@ -149,6 +217,9 @@
         },
         get alternateRow() {
             return alternateRow
+        },
+        get dateWrap() {
+            return dateWrap
         }
     })
 </script>

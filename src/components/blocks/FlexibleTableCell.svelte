@@ -6,10 +6,12 @@
         class?: string
         rowIndex?: number
         colIndex?: number
+        enableImageReplacement?: boolean
+        replacementRules?: { rule: string; image: string }[]
         [key: string]: any
     }
 
-    let { style = '', class: className = '', rowIndex = 0, colIndex = 0, ...rest }: Props = $props()
+    let { style = '', class: className = '', rowIndex = 0, colIndex = 0, enableImageReplacement = false, replacementRules = [], ...rest }: Props = $props()
 
     const context = getContext<any>('flexible-table-body')
     const rowContext = getContext<any>('flexible-table-row')
@@ -34,7 +36,7 @@
         if (context && context.registerCellStyle) {
             const r = getEffectiveRowIndex()
             const c = toIndex(colIndex, 0)
-            context.registerCellStyle(style, r, c)
+            context.registerCellStyle({ style, enableImageReplacement, replacementRules }, r, c)
         }
     })
 

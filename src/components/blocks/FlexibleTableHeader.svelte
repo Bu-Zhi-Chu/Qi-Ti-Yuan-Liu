@@ -14,11 +14,18 @@
     let headers = $derived(context?.headers ?? [])
     let numColumns = $derived(context?.numColumns ?? 0)
     let hideScrollbar = $derived(context?.hideScrollbar ?? true)
+    let columnWidths = $derived(context?.columnWidths ?? [])
 
     function getCellStyle(index: number) {
-        const widthPercent = numColumns > 0 ? 100 / numColumns : 100
+        let widthStr = ''
+        if (columnWidths && columnWidths.length > index) {
+            widthStr = `${columnWidths[index]}%`
+        } else {
+            const widthPercent = numColumns > 0 ? 100 / numColumns : 100
+            widthStr = `${widthPercent}%`
+        }
         return `
-            width: ${widthPercent}%;
+            width: ${widthStr};
             display: flex;
             align-items: center;
             justify-content: center;
