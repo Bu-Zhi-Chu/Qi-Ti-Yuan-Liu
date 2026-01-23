@@ -963,15 +963,15 @@
             "boxSizing": "border-box"
         },
         "featureProps": {
-            "enableImageReplacement": {
-                "label": "图片替换",
-                "type": "switch",
-                "default": false
-            },
             "contentBackgroundImage": {
                 "label": "内容背景",
                 "type": "image",
                 "default": ""
+            },
+            "enableImageReplacement": {
+                "label": "图片替换",
+                "type": "switch",
+                "default": false
             },
             "replacementRules": {
                 "label": "替换规则",
