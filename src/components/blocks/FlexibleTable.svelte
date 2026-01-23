@@ -158,7 +158,17 @@
 
     function getVisualLength(str: any) {
         if (str === null || str === undefined) return 0
-        return String(str).replace(/[^\x00-\xff]/g, 'xx').length
+        const s = String(str)
+        let len = 0
+        for (let i = 0; i < s.length; i++) {
+            const code = s.charCodeAt(i)
+            if (code > 255) {
+                len += 2
+            } else {
+                len += 1
+            }
+        }
+        return len
     }
 
     let columnWidths = $derived.by(() => {

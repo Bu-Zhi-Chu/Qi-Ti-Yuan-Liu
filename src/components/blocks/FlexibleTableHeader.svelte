@@ -1,5 +1,8 @@
 <script lang="ts">
-    import { getContext } from 'svelte'
+    import { getContext, onDestroy } from 'svelte'
+    import { getImage } from '../../services/database/image-store.service'
+    import { projectId } from '../../stores/dom-tree.store.svelte'
+    import { get } from 'svelte/store'
 
     interface Props {
         style?: string
@@ -15,6 +18,53 @@
     let numColumns = $derived(context?.numColumns ?? 0)
     let hideScrollbar = $derived(context?.hideScrollbar ?? true)
     let columnWidths = $derived(context?.columnWidths ?? [])
+
+    let imageUrls = $state<Record<string, string>>({})
+
+    $effect(() => {
+        const pid = get(projectId)
+        if (!pid || !style) return
+
+        const matches = style.match(/[a-f0-9]{40,}/g)
+        if (!matches) return
+
+        const toLoad = matches.filter((h) => !imageUrls[h])
+        if (toLoad.length === 0) return
+
+        Promise.all(
+            toLoad.map(async (hash) => {
+                try {
+                    const img = await getImage(pid, hash)
+                    return { hash, url: img ? URL.createObjectURL(img.blob) : null }
+                } catch {
+                    return { hash, url: null }
+                }
+            })
+        ).then((results) => {
+            const newUrls: Record<string, string> = {}
+            let hasNew = false
+            results.forEach(({ hash, url }) => {
+                if (url) {
+                    newUrls[hash] = url
+                    hasNew = true
+                }
+            })
+            if (hasNew) {
+                imageUrls = { ...imageUrls, ...newUrls }
+            }
+        })
+    })
+
+    onDestroy(() => {
+        Object.values(imageUrls).forEach((url) => URL.revokeObjectURL(url))
+    })
+
+    function replaceHashesInStyle(s: string) {
+        if (!s) return ''
+        return s.replace(/[a-f0-9]{40,}/g, (match) => {
+            return imageUrls[match] ?? match
+        })
+    }
 
     function getCellStyle(index: number) {
         let widthStr = ''

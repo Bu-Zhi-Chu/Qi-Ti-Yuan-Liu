@@ -42,6 +42,8 @@
         if (!pid) return
 
         const hashes = new Set<string>()
+
+        // Scan replacement rules
         cellConfigs.forEach((row) => {
             row.forEach((config) => {
                 config.replacementRules?.forEach((r) => {
@@ -49,16 +51,50 @@
                         hashes.add(r.image)
                     }
                 })
+                // Scan cell styles
+                if (config.style) {
+                    const matches = config.style.match(/[a-f0-9]{40,}/g)
+                    if (matches) {
+                        matches.forEach((m) => hashes.add(m))
+                    }
+                }
             })
         })
 
-        hashes.forEach((hash) => {
-            if (!imageUrls[hash]) {
-                getImage(pid, hash).then((img) => {
-                    if (img) {
-                        imageUrls[hash] = URL.createObjectURL(img.blob)
-                    }
-                })
+        // Scan row styles
+        rowStyles.forEach((style) => {
+            if (style) {
+                const matches = style.match(/[a-f0-9]{40,}/g)
+                if (matches) {
+                    matches.forEach((m) => hashes.add(m))
+                }
+            }
+        })
+
+        const toLoad = [...hashes].filter((h) => !imageUrls[h])
+        if (toLoad.length === 0) return
+
+        Promise.all(
+            toLoad.map(async (hash) => {
+                try {
+                    const img = await getImage(pid, hash)
+                    return { hash, url: img ? URL.createObjectURL(img.blob) : null }
+                } catch (e) {
+                    console.error('Failed to load image', hash, e)
+                    return { hash, url: null }
+                }
+            })
+        ).then((results) => {
+            const newUrls: Record<string, string> = {}
+            let hasNew = false
+            results.forEach(({ hash, url }) => {
+                if (url) {
+                    newUrls[hash] = url
+                    hasNew = true
+                }
+            })
+            if (hasNew) {
+                imageUrls = { ...imageUrls, ...newUrls }
             }
         })
     })
@@ -125,11 +161,23 @@
         }
     })
 
+    function replaceHashesInStyle(style: string) {
+        if (!style) return ''
+        return style.replace(/[a-f0-9]{40,}/g, (match) => {
+            return imageUrls[match] ?? match
+        })
+    }
+
     function getRowStyle(rowIndex: number) {
         const base = rowStyles[0] ?? ''
         const alt = rowStyles[1] ?? base
-        if (!alternateRow) return base
-        return rowIndex % 2 === 0 ? base : alt
+        let style = ''
+        if (!alternateRow) {
+            style = base
+        } else {
+            style = rowIndex % 2 === 0 ? base : alt
+        }
+        return replaceHashesInStyle(style)
     }
 
     function getCellConfig(rowIndex: number, colIndex: number): CellConfig {
