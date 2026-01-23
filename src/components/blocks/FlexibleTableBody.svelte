@@ -233,6 +233,14 @@
         return /^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}(?::\d{2})?$/.test(val)
     }
 
+    function toAdaptiveSize(val?: string): string {
+        if (!val) return ''
+        if (val.endsWith('px')) {
+            return `calc(${val} * var(--scale-ratio, 1))`
+        }
+        return val
+    }
+
     function getReplacementImage(val: any, rules?: ReplacementRule[]): { url: string; width?: string; height?: string } | null {
         if (!rules || rules.length === 0) return null
         const strVal = String(val)
@@ -248,7 +256,7 @@
         }
 
         if (!url) return null
-        return { url, width: matched.width, height: matched.height }
+        return { url, width: toAdaptiveSize(matched.width), height: toAdaptiveSize(matched.height) }
     }
 
     function getBackgroundUrl(img?: string): string | null {
@@ -275,8 +283,8 @@
                     {@const replacement = config.enableImageReplacement ? getReplacementImage(cellData, config.replacementRules) : null}
                     {@const contentBgUrl = getBackgroundUrl(config.contentBackgroundImage)}
                     {@const contentStyle = `
-                        ${config.contentWidth ? `width: ${config.contentWidth};` : ''}
-                        ${config.contentHeight ? `height: ${config.contentHeight};` : ''}
+                        ${config.contentWidth ? `width: ${toAdaptiveSize(config.contentWidth)};` : ''}
+                        ${config.contentHeight ? `height: ${toAdaptiveSize(config.contentHeight)};` : ''}
                         ${contentBgUrl ? `background-image: url('${contentBgUrl}'); background-size: 100% 100%; background-repeat: no-repeat; background-position: center;` : ''}
                     `}
                     <div class="body-cell" style={getCellStyle(rowIndex, colIndex)}>
