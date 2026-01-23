@@ -44,7 +44,7 @@ export default defineConfig({
 
                 globPatterns: ['**/*.{js,css,html,ico,png,svg,avif,webp}'],
                 globIgnores: ['study/**/*', '**/node_modules/@jsquash/**'],
-                maximumFileSizeToCacheInBytes: 6000000, // allow assets up to ~6 MB for precache
+                maximumFileSizeToCacheInBytes: 15000000, // allow assets up to ~15 MB for precache
                 importScripts: ['no-wb-logs.js'],
                 navigateFallback: null, // 禁用导航回退，避免子目录问题
                 skipWaiting: true,
@@ -145,6 +145,10 @@ export default defineConfig({
                         if (/d3-/.test(id)) return 'vendor-d3';
                         if (/dayjs/.test(id)) return 'vendor-dayjs';
                         if (/echarts/.test(id)) return 'vendor-echarts';
+                        if (/cesium/.test(id)) return 'vendor-cesium';
+                        if (/three/.test(id)) return 'vendor-three';
+                        if (/maptalks/.test(id)) return 'vendor-maptalks';
+                        if (/dexie/.test(id)) return 'vendor-dexie';
                         if (/@jsquash|image[-_]?decoder|image[-_]?easm/.test(id)) return 'vendor-imagedecoder';
                         if (/lucide/.test(id)) return 'vendor-lucide';
                         if (/svelte/.test(id)) return 'vendor-svelte';
@@ -162,6 +166,12 @@ export default defineConfig({
                     warning.message.includes('Module "http" has been externalized')) {
                     return; // 忽略这些警告
                 }
+
+                // 忽略 protobufjs 的 eval 警告
+                if (warning.code === 'EVAL' && warning.id?.includes('protobufjs')) {
+                    return;
+                }
+
                 warn(warning);
             },
             // plugins: [visualizer({ filename: 'bundle-stats.html', open: true })]

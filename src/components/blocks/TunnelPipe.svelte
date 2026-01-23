@@ -1001,25 +1001,26 @@
         const loader = new THREE.TextureLoader()
         const maxAnisotropy = renderer?.capabilities.getMaxAnisotropy() || 1
 
-        const texSplit = loader.load('/img/binChuan/分水口.png')
+        const baseUrl = import.meta.env.BASE_URL
+        const texSplit = loader.load(`${baseUrl}img/binChuan/分水口.png`)
         texSplit.colorSpace = THREE.SRGBColorSpace
         texSplit.minFilter = THREE.LinearFilter
         texSplit.magFilter = THREE.LinearFilter
         texSplit.anisotropy = maxAnisotropy
 
-        const texExit = loader.load('/img/binChuan/大银甸陇洞出口岔管.png')
+        const texExit = loader.load(`${baseUrl}img/binChuan/大银甸陇洞出口岔管.png`)
         texExit.colorSpace = THREE.SRGBColorSpace
         texExit.minFilter = THREE.LinearFilter
         texExit.magFilter = THREE.LinearFilter
         texExit.anisotropy = maxAnisotropy
 
-        const texYang = loader.load('/img/binChuan/杨公箐隧洞.png')
+        const texYang = loader.load(`${baseUrl}img/binChuan/杨公箐隧洞.png`)
         texYang.colorSpace = THREE.SRGBColorSpace
         texYang.minFilter = THREE.LinearFilter
         texYang.magFilter = THREE.LinearFilter
         texYang.anisotropy = maxAnisotropy
 
-        const texFrame = loader.load('/img/binChuan/框.png')
+        const texFrame = loader.load(`${baseUrl}img/binChuan/框.png`)
         texFrame.colorSpace = THREE.SRGBColorSpace
         texFrame.minFilter = THREE.LinearMipmapLinearFilter
         texFrame.magFilter = THREE.LinearFilter
