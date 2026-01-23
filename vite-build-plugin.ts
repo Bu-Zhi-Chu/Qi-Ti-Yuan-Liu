@@ -14,6 +14,7 @@ interface BuildRequest {
   mode?: 'development' | 'production';
   liteData?: any;
   outputDir?: string;
+  projectName?: string;
 }
 
 interface BuildResponse {
@@ -53,9 +54,14 @@ export function viteBuildPlugin(): Plugin {
               const uploadFile = files.projectBlob as any;
               if (!uploadFile || !uploadFile.filepath) throw new Error('缺少 projectBlob 文件');
 
-              const tempBlobPath = uploadFile.filepath; // 先记录临时路径，构建后再拷贝
+              const tempBlobPath = uploadFile.filepath;
 
-              const buildRequest: BuildRequest = { mode, liteData: null, outputDir };
+              const buildRequest: BuildRequest = {
+                mode,
+                liteData: null,
+                outputDir,
+                projectName: (fields.projectName as string) || undefined
+              };
               const result = await performRealBuild(buildRequest);
 
               // 构建完成后，再写入 data/project-data.qtyl，避免被 Vite 覆盖
@@ -324,7 +330,7 @@ async function performRealBuild(request: BuildRequest): Promise<BuildResponse> {
   const startTime = Date.now();
 
   try {
-    const { liteData, outputDir = 'dist-lite' } = request;
+    const { liteData, outputDir = 'dist-lite', projectName } = request;
 
     // 确保输出目录存在，先删除确保干净
     const outputPath = resolve(process.cwd(), outputDir);
@@ -382,6 +388,28 @@ async function performRealBuild(request: BuildRequest): Promise<BuildResponse> {
       const liteDataPath = resolve(dataDir, 'project-data.qtyl');
       // 前端传入的是 Blob（Buffer），直接写入即可
       writeFileSync(liteDataPath, liteData);
+    }
+
+    try {
+      const indexPath = resolve(outputPath, 'index.html');
+      if (existsSync(indexPath)) {
+        let html = await readFile(indexPath, 'utf-8');
+        if (projectName) {
+          const escapedTitle = projectName
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+          if (/<title>.*?<\/title>/i.test(html)) {
+            html = html.replace(/<title>.*?<\/title>/i, `<title>${escapedTitle}</title>`);
+          }
+        }
+        html = html.replace(/<link[^>]+rel=["']icon["'][^>]*>\s*/gi, '');
+        writeFileSync(indexPath, html);
+      }
+    } catch (e) {
+      console.warn('[vite-build-plugin] 更新 index.html 标题或图标失败', e);
     }
 
     const duration = Date.now() - startTime;

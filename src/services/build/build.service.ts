@@ -7,14 +7,13 @@
 
 
 export interface BuildOptions {
-  // 精简模式专用，保留基础构建配置
   mode?: 'production' | 'development';
   sourcemap?: boolean;
   minify?: boolean;
-  // 精简模式数据，兼容旧JSON字符串和新Blob格式
+  projectName?: string;
   liteData?: {
-    projectBlob?: Blob; // 新增：二进制Blob
-    projectData?: string; // 旧：JSON字符串
+    projectBlob?: Blob;
+    projectData?: string;
     filename?: string;
   };
 }
@@ -187,6 +186,9 @@ export class BuildService {
         const fd = new FormData();
         fd.append('mode', options.mode || 'production');
         fd.append('outputDir', 'dist-lite');
+        if (options.projectName) {
+          fd.append('projectName', options.projectName);
+        }
         fd.append('projectBlob', projectBlob, options.liteData?.filename || 'project-data.qtyl');
         requestBody = fd;
         headers = undefined; // 让浏览器自动设置 multipart 边界

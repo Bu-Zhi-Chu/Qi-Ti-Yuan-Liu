@@ -1028,10 +1028,19 @@
                                 console.warn('API健康检查失败，继续构建...', e)
                             }
 
+                            let projectNameForBuild: string | undefined
+                            try {
+                                const project = await DexieService.getRecord<any>(DEFAULT_DB_NAME, 'projects', currentProjectId)
+                                projectNameForBuild = project?.name as string | undefined
+                            } catch (e) {
+                                console.warn('获取项目名称失败', e)
+                            }
+
                             let buildOptions: any = {
                                 mode: 'production',
                                 sourcemap: false,
-                                minify: true
+                                minify: true,
+                                projectName: projectNameForBuild
                             }
 
                             const projectBlob = await liteExportService.exportLiteData(currentProjectId)
