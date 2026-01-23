@@ -7,11 +7,14 @@
         rowIndex?: number
         colIndex?: number
         enableImageReplacement?: boolean
+        contentBackgroundImage?: string
+        contentWidth?: string
+        contentHeight?: string
         replacementRules?: { rule: string; image: string }[]
         [key: string]: any
     }
 
-    let { style = '', class: className = '', rowIndex = 0, colIndex = 0, enableImageReplacement = false, replacementRules = [], ...rest }: Props = $props()
+    let { style = '', class: className = '', rowIndex = 0, colIndex = 0, enableImageReplacement = false, contentBackgroundImage = '', contentWidth = '', contentHeight = '', replacementRules = [], ...rest }: Props = $props()
 
     const context = getContext<any>('flexible-table-body')
     const rowContext = getContext<any>('flexible-table-row')
@@ -36,7 +39,7 @@
         if (context && context.registerCellStyle) {
             const r = getEffectiveRowIndex()
             const c = toIndex(colIndex, 0)
-            context.registerCellStyle({ style, enableImageReplacement, replacementRules }, r, c)
+            context.registerCellStyle({ style, enableImageReplacement, contentBackgroundImage, contentWidth, contentHeight, replacementRules }, r, c)
         }
     })
 

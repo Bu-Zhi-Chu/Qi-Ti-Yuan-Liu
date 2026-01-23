@@ -15,12 +15,17 @@
     interface ReplacementRule {
         rule: string
         image: string
+        width?: string
+        height?: string
     }
 
     interface CellConfig {
         style: string
         enableImageReplacement?: boolean
         replacementRules?: ReplacementRule[]
+        contentBackgroundImage?: string
+        contentWidth?: string
+        contentHeight?: string
     }
 
     let { style = '', class: className = '', children, ...rest }: Props = $props()
@@ -47,13 +52,16 @@
         cellConfigs.forEach((row) => {
             row.forEach((config) => {
                 config.replacementRules?.forEach((r) => {
-                    if (r.image && /^[a-f0-9]{40,}$/.test(r.image)) {
+                    if (r.image) {
                         hashes.add(r.image)
                     }
                 })
+                if (config.contentBackgroundImage) {
+                    hashes.add(config.contentBackgroundImage)
+                }
                 // Scan cell styles
                 if (config.style) {
-                    const matches = config.style.match(/[a-f0-9]{40,}/g)
+                    const matches = config.style.match(/[a-zA-Z0-9-_]{32,}/g)
                     if (matches) {
                         matches.forEach((m) => hashes.add(m))
                     }
@@ -64,7 +72,7 @@
         // Scan row styles
         rowStyles.forEach((style) => {
             if (style) {
-                const matches = style.match(/[a-f0-9]{40,}/g)
+                const matches = style.match(/[a-zA-Z0-9-_]{32,}/g)
                 if (matches) {
                     matches.forEach((m) => hashes.add(m))
                 }
@@ -136,7 +144,15 @@
             // Check for equality to avoid infinite loops if it's an object reference that changes but content is same
             // For simplicity, we just check if it's exactly the same object or string content for style
             const current = row[c]
-            if (current && current.style === newConfig.style && current.enableImageReplacement === newConfig.enableImageReplacement && JSON.stringify(current.replacementRules) === JSON.stringify(newConfig.replacementRules)) {
+            if (
+                current &&
+                current.style === newConfig.style &&
+                current.enableImageReplacement === newConfig.enableImageReplacement &&
+                JSON.stringify(current.replacementRules) === JSON.stringify(newConfig.replacementRules) &&
+                current.contentBackgroundImage === newConfig.contentBackgroundImage &&
+                current.contentWidth === newConfig.contentWidth &&
+                current.contentHeight === newConfig.contentHeight
+            ) {
                 return
             }
 
@@ -163,7 +179,7 @@
 
     function replaceHashesInStyle(style: string) {
         if (!style) return ''
-        return style.replace(/[a-f0-9]{40,}/g, (match) => {
+        return style.replace(/[a-zA-Z0-9-_]{32,}/g, (match) => {
             return imageUrls[match] ?? match
         })
     }
@@ -217,14 +233,27 @@
         return /^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}(?::\d{2})?$/.test(val)
     }
 
-    function getReplacementImage(val: any, rules?: ReplacementRule[]): string | null {
+    function getReplacementImage(val: any, rules?: ReplacementRule[]): { url: string; width?: string; height?: string } | null {
         if (!rules || rules.length === 0) return null
         const strVal = String(val)
         const matched = rules.find((r) => r.rule === strVal)
         if (!matched) return null
 
         const img = matched.image
-        if (/^[a-f0-9]{40,}$/.test(img)) {
+        let url: string | null = null
+        if (/^[a-f0-9]{40,}$/i.test(img)) {
+            url = imageUrls[img] ?? null
+        } else {
+            url = img
+        }
+
+        if (!url) return null
+        return { url, width: matched.width, height: matched.height }
+    }
+
+    function getBackgroundUrl(img?: string): string | null {
+        if (!img) return null
+        if (/^[a-f0-9]{40,}$/i.test(img)) {
             return imageUrls[img] ?? null
         }
         return img
@@ -243,17 +272,27 @@
                 {#each Array(numColumns) as _, colIndex}
                     {@const cellData = row[colIndex] !== undefined ? row[colIndex] : ''}
                     {@const config = getCellConfig(rowIndex, colIndex)}
-                    {@const replacementImage = config.enableImageReplacement ? getReplacementImage(cellData, config.replacementRules) : null}
+                    {@const replacement = config.enableImageReplacement ? getReplacementImage(cellData, config.replacementRules) : null}
+                    {@const contentBgUrl = getBackgroundUrl(config.contentBackgroundImage)}
+                    {@const contentStyle = `
+                        ${config.contentWidth ? `width: ${config.contentWidth};` : ''}
+                        ${config.contentHeight ? `height: ${config.contentHeight};` : ''}
+                        ${contentBgUrl ? `background-image: url('${contentBgUrl}'); background-size: 100% 100%; background-repeat: no-repeat; background-position: center;` : ''}
+                    `}
                     <div class="body-cell" style={getCellStyle(rowIndex, colIndex)}>
-                        {#if replacementImage}
-                            <img src={replacementImage} alt={String(cellData)} style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+                        {#if replacement}
+                            <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
+                                <img src={replacement.url} alt={String(cellData)} style="max-width: 100%; max-height: 100%; object-fit: contain; width: {replacement.width || 'auto'}; height: {replacement.height || 'auto'};" />
+                            </div>
                         {:else if dateWrap && isDateString(cellData)}
-                            <div style="display: flex; flex-direction: column; line-height: 1.2;">
+                            <div style="display: flex; flex-direction: column; line-height: 1.2; {contentStyle}">
                                 <span>{cellData.split(/\s+/)[0]}</span>
                                 <span>{cellData.split(/\s+/)[1]}</span>
                             </div>
                         {:else}
-                            {cellData}
+                            <div style="display: inline-block; {contentStyle}">
+                                {cellData}
+                            </div>
                         {/if}
                     </div>
                 {/each}

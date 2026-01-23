@@ -968,6 +968,11 @@
                 "type": "switch",
                 "default": false
             },
+            "contentBackgroundImage": {
+                "label": "内容背景",
+                "type": "image",
+                "default": ""
+            },
             "replacementRules": {
                 "label": "替换规则",
                 "type": "replacementRules",

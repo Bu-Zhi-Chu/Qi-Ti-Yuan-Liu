@@ -545,9 +545,15 @@
                 uploadProgress = 80
             }
 
-            // 6. 将哈希写入样式
+            // 6. 将哈希写入：
+            //    - contentBackgroundImage 写入 attributes
+            //    - 其他图片键写入 styles
             currentValues = { ...currentValues, [key]: hash }
-            updateNodeProps(selectedId, { styles: { [key]: hash } })
+            if (key === 'contentBackgroundImage') {
+                updateNodeProps(selectedId, { attributes: { [key]: hash } })
+            } else {
+                updateNodeProps(selectedId, { styles: { [key]: hash } })
+            }
             uploadProgress = 100
         } catch (err) {
             console.error('图片上传失败', err)
@@ -628,7 +634,11 @@
         const oldHash = currentValues[key]
         currentValues = { ...currentValues, [key]: '' }
         if (selectedId) {
-            updateNodeProps(selectedId, { styles: { [key]: '' } })
+            if (key === 'contentBackgroundImage') {
+                updateNodeProps(selectedId, { attributes: { [key]: '' } })
+            } else {
+                updateNodeProps(selectedId, { styles: { [key]: '' } })
+            }
         }
         const pid = get(projectId)
         if (pid && typeof oldHash === 'string' && /^[a-f0-9]{40,}$/.test(oldHash.trim())) {
@@ -764,7 +774,7 @@
     async function applyReplacementImageDimensions(key: string, index: number) {
         const list = Array.isArray(currentValues[key]) ? [...currentValues[key]] : []
         const rule = list[index]
-        if (!rule || !rule.image || !selectedId) return
+        if (!rule || !rule.image) return
 
         const pid = get(projectId)
         if (!pid) return
@@ -772,12 +782,12 @@
         try {
             const img = await getImage(pid, rule.image)
             if (img) {
-                updateNodeProps(selectedId, {
-                    styles: {
-                        width: `${img.width}px`,
-                        height: `${img.height}px`
-                    }
-                })
+                list[index] = {
+                    ...rule,
+                    width: `${img.width}px`,
+                    height: `${img.height}px`
+                }
+                handleAttrChange(key, list)
             }
         } catch (err) {
             console.error('获取图片尺寸失败', err)
@@ -1132,7 +1142,11 @@
                                                 try {
                                                     const img = await getImage(pid, currentValues[p.key])
                                                     if (img) {
-                                                        updateNodeProps(selectedId, { styles: { width: `${img.width}px`, height: `${img.height}px` } })
+                                                        if (p.key === 'contentBackgroundImage') {
+                                                            updateNodeProps(selectedId, { attributes: { contentWidth: `${img.width}px`, contentHeight: `${img.height}px` } })
+                                                        } else {
+                                                            updateNodeProps(selectedId, { styles: { width: `${img.width}px`, height: `${img.height}px` } })
+                                                        }
                                                     }
                                                 } catch (err) {
                                                     console.error(err)
@@ -1240,7 +1254,7 @@
         width: 100%;
     }
     .remove-button {
-        width: 82%;
+        flex: 1;
     }
 
     /* 按钮样式 - 与BackgroundEditor保持一致 */
@@ -1278,12 +1292,9 @@
         flex: 1;
         display: flex;
         gap: calc(4px * var(--scale-ratio, 1));
+        align-items: center;
     }
     .ratio-overlay {
-        position: absolute;
-        right: calc(4px * var(--scale-ratio, 1));
-        top: 50%;
-        transform: translateY(-50%);
         width: calc(24px * var(--scale-ratio, 1));
         height: calc(24px * var(--scale-ratio, 1));
         padding: 0;
