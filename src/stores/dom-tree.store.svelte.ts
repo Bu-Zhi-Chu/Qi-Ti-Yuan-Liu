@@ -811,13 +811,55 @@ function generateUniqueDataName(baseName: string): string {
   return `${candidate} ${index}`;
 }
 
-// 剪贴板临时存储
 let clipboardNode: DomNode | null = null;
-// 标记当前剪贴板内容是否来自剪切操作
 let clipboardIsCut = false;
 
-// 记录最近一次被标记为“待剪切”的节点 id
 let lastCutId: string | null = null;
+
+function buildClipboardPayload(node: DomNode) {
+  return {
+    type: 'qi-dom-node',
+    version: 1,
+    projectId: currentProjectId || null,
+    node
+  };
+}
+
+async function tryWriteClipboardNodeToSystem(node: DomNode) {
+  if (typeof navigator === 'undefined') return;
+  const api = navigator.clipboard;
+  if (!api || typeof api.writeText !== 'function') return;
+  try {
+    const payload = buildClipboardPayload(node);
+    const text = JSON.stringify(payload);
+    await api.writeText(text);
+  } catch (err) {
+    console.warn('写入系统剪贴板失败', err);
+  }
+}
+
+async function tryReadClipboardNodeFromSystem() {
+  if (typeof navigator === 'undefined') return;
+  const api = navigator.clipboard;
+  if (!api || typeof api.readText !== 'function') return;
+  try {
+    const text = await api.readText();
+    if (!text) return;
+    let parsed: any;
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      return;
+    }
+    if (!parsed || parsed.type !== 'qi-dom-node' || !parsed.node) return;
+    const node = parsed.node as DomNode;
+    if (!node || typeof node.id !== 'string') return;
+    clipboardNode = node;
+    clipboardIsCut = false;
+  } catch (err) {
+    console.warn('读取系统剪贴板失败', err);
+  }
+}
 
 /**
  * 复制当前选中节点及其子树到剪贴板
@@ -828,6 +870,7 @@ export function copySelectedNode(): boolean {
   if (!node) return false;
   clipboardNode = deepCopyNode(node);
   clipboardIsCut = false;
+  tryWriteClipboardNodeToSystem(clipboardNode);
   console.log('已复制节点:', clipboardNode!.id);
   return true;
 }
@@ -909,7 +952,10 @@ export async function pasteNodeToSelectedParent(toParent: boolean = false, selec
     return moved ? lastCutId : null;
   }
 
-  // 原有的剪贴板逻辑（复制/剪切）保持不变
+  if (!clipboardNode) {
+    await tryReadClipboardNodeFromSystem();
+  }
+
   if (!clipboardNode) {
     console.warn('剪贴板为空，无法粘贴');
     return null;
