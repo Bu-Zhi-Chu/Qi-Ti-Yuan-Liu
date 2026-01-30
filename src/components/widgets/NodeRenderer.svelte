@@ -294,7 +294,7 @@
     const componentType = $derived.by(() => node.componentType ?? 'SimpleBox')
 
     /** 获取组件属性，合并 componentProps 和其他属性（保持响应式） */
-        const componentProps = $derived.by(() => {
+    const componentProps = $derived.by(() => {
         // 引入缓存版本号以保持响应式依赖
         const _cv = urlCacheVersion
         const styleProps: Record<string, any> = {}

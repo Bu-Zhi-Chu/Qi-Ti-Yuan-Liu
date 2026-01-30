@@ -478,6 +478,14 @@
             "overlayServices": {
                 "label": "叠加服务",
                 "type": "overlayServices",
+                "group": true,
+                "fields": [
+                    { "key": "id", "label": "标记", "control": "text" },
+                    { "key": "name", "label": "名称", "control": "text" },
+                    { "key": "url", "label": "路径", "control": "text" },
+                    { "key": "opacity", "label": "透明", "control": "number", "min": 0, "max": 1, "step": 0.05 },
+                    { "key": "zIndex", "label": "层级", "control": "number" }
+                ],
                 "default": [{ "id": "", "name": "", "url": "", "opacity": 1, "zIndex": 0 }]
             }
         }
@@ -898,7 +906,11 @@
             "columnLabels": {
                 "label": "表头列名",
                 "type": "columnLabels",
-                "default": ["列1", "列2", "列3"]
+                "default": [
+                    { "label": "列1", "frozen": false, "previewLength": 0 },
+                    { "label": "列2", "frozen": false, "previewLength": 0 },
+                    { "label": "列3", "frozen": false, "previewLength": 0 }
+                ]
             }
         }
     },
@@ -932,30 +944,15 @@
                 "type": "switch",
                 "default": false
             },
-            "dateWrap": {
-                "label": "日期折行",
-                "type": "switch",
-                "default": true
-            },
-            "smartSizing": {
-                "label": "智能尺寸",
-                "type": "switch",
-                "default": false
-            },
-            "smartSizingFactor": {
-                "label": "智能因子",
-                "type": "number",
-                "min": 0.1,
-                "max": 5,
-                "default": 1,
-                "showIf": {
-                    "key": "smartSizing",
-                    "value": true
-                }
-            },
             "columnLabels": {
                 "label": "表头列名",
                 "type": "columnLabels",
+                "group": true,
+                "fields": [
+                    { "key": "label", "label": "列名", "control": "text" },
+                    { "key": "previewLength", "label": "字数", "control": "number", "min": 0 },
+                    { "key": "frozen", "label": "冻结", "control": "switch" }
+                ],
                 "default": ["列1", "列2", "列3"]
             }
         }
@@ -1034,6 +1031,11 @@
             "replacementRules": {
                 "label": "替换规则",
                 "type": "replacementRules",
+                "group": true,
+                "fields": [
+                    { "key": "rule", "label": "规则", "control": "text" },
+                    { "key": "image", "label": "图片", "control": "image" }
+                ],
                 "default": [{ "rule": "", "image": "" }],
                 "showIf": {
                     "key": "enableImageReplacement",
@@ -1116,6 +1118,11 @@
             "replacementRules": {
                 "label": "替换规则",
                 "type": "replacementRules",
+                "group": true,
+                "fields": [
+                    { "key": "rule", "label": "规则", "control": "text" },
+                    { "key": "image", "label": "图片", "control": "image" }
+                ],
                 "default": [{ "rule": "", "image": "" }],
                 "showIf": {
                     "key": "enableImageReplacement",

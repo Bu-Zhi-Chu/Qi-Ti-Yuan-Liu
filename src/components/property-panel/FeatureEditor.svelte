@@ -57,7 +57,22 @@
     })
 
     // 派生属性描述数组
-    type PropEntry = { key: string; label: string; type: string; url?: string; links?: { label: string; url: string }[]; options?: any[]; min?: number; max?: number; default?: any; showIf?: { key: string; value: any }; text?: string }
+    type PropEntry = {
+        key: string
+        label: string
+        type: string
+        editor?: string
+        group?: boolean
+        fields?: { key: string; label?: string; control?: string; min?: number; max?: number; step?: number }[]
+        url?: string
+        links?: { label: string; url: string }[]
+        options?: any[]
+        min?: number
+        max?: number
+        default?: any
+        showIf?: { key: string; value: any }
+        text?: string
+    }
 
     // 动态表格列管理
     let columnLabels = $state<string[]>([])
@@ -65,7 +80,7 @@
     // 添加新列
     function addColumn() {
         const currentLabels = currentValues['columnLabels'] || []
-        const newLabels = [...currentLabels, `列${currentLabels.length + 1}`]
+        const newLabels = [...currentLabels, { label: `列${currentLabels.length + 1}`, frozen: false, previewLength: 0 }]
         handleAttrChange('columnLabels', newLabels)
     }
 
@@ -401,6 +416,37 @@
                             } as any)
                         }
                     }
+                } else if (node && node.componentType === 'DynamicTable') {
+                    const bodyNode = (node.children || []).find((c: any) => c.componentType === 'DynamicTableBody')
+                    if (bodyNode) {
+                        const rowNodes = (bodyNode.children || []).filter((c: any) => c.componentType === 'DynamicTableRow')
+                        if (rowNodes.length < 2) {
+                            const rowMeta = (blocksConfig as any[]).find((b) => b.type === 'DynamicTableRow') as any
+                            const baseStyles = rowMeta?.presetStyles ? { ...rowMeta.presetStyles } : {}
+                            const newId = globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-dynamic-row-alt`
+                            const name = rowNodes.length === 0 ? '动态表行 1' : '动态表行 2'
+                            const tableMeta = (blocksConfig as any[]).find((b) => b.type === 'DynamicTable') as any
+                            const defaultLabels = tableMeta?.featureProps?.columnLabels?.default
+                            const count = Array.isArray(defaultLabels) && defaultLabels.length > 0 ? defaultLabels.length : 3
+                            const cellMeta = (blocksConfig as any[]).find((b) => b.type === 'DynamicTableCell') as any
+                            const cellStyles = cellMeta?.presetStyles ? { ...cellMeta.presetStyles } : {}
+                            const rowIndex = rowNodes.length
+                            const rowChildren = Array.from({ length: count }, (_, colIndex) => ({
+                                id: globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-dynamic-cell-alt-${colIndex}`,
+                                componentType: 'DynamicTableCell',
+                                styles: cellStyles,
+                                attributes: { 'data-name': `单元格 ${colIndex + 1}`, rowIndex, colIndex },
+                                children: []
+                            }))
+                            addNodeToParent(bodyNode.id, {
+                                id: newId,
+                                componentType: 'DynamicTableRow',
+                                styles: baseStyles,
+                                attributes: { 'data-name': name, rowIndex },
+                                children: rowChildren
+                            } as any)
+                        }
+                    }
                 }
             }
 
@@ -410,6 +456,16 @@
                     const bodyNode = (node.children || []).find((c: any) => c.componentType === 'FlexibleTableBody')
                     if (bodyNode) {
                         const rowNodes = (bodyNode.children || []).filter((c: any) => c.componentType === 'FlexibleTableRow')
+                        if (rowNodes.length > 1) {
+                            for (let i = 1; i < rowNodes.length; i++) {
+                                removeNodeById(rowNodes[i].id)
+                            }
+                        }
+                    }
+                } else if (node && node.componentType === 'DynamicTable') {
+                    const bodyNode = (node.children || []).find((c: any) => c.componentType === 'DynamicTableBody')
+                    if (bodyNode) {
+                        const rowNodes = (bodyNode.children || []).filter((c: any) => c.componentType === 'DynamicTableRow')
                         if (rowNodes.length > 1) {
                             for (let i = 1; i < rowNodes.length; i++) {
                                 removeNodeById(rowNodes[i].id)
@@ -900,40 +956,114 @@
         {#each propEntries() as p (p.key)}
             {#if !p.showIf || (Array.isArray(p.showIf.value) ? p.showIf.value.includes(currentValues[p.showIf.key]) : currentValues[p.showIf.key] === p.showIf.value)}
                 {#if p.type === 'columnLabels'}
-                    <!-- 动态表格列标签管理 -->
-                    <div class="column-labels-editor">
-                        {#if currentValues[p.key] && currentValues[p.key].length > 0}
-                            {#each currentValues[p.key] as label, index}
-                                <PropertyRow label={p.label} labelVisible={index === 0}>
-                                    <div class="column-label-item">
-                                        <input
-                                            type="text"
-                                            class="column-label-input"
-                                            value={label}
-                                            oninput={(e) => {
-                                                const newLabels = [...currentValues[p.key]]
-                                                newLabels[index] = (e.currentTarget as HTMLInputElement).value
-                                                handleAttrChange(p.key, newLabels)
-                                            }}
-                                            placeholder="列名"
-                                        />
-                                        {#if index === 0}
-                                            <button class="unit-toggle add-btn" onclick={addColumn} title="添加新行" style="background: rgba(34, 197, 94, 0.2); color: #4ade80;">+</button>
-                                        {:else}
-                                            <button class="unit-toggle remove-btn" onclick={() => removeColumn(index)} title="移除列" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">−</button>
-                                        {/if}
+                    {#if p.group}
+                        <PropertyRow label={`${p.label}`} alignTop={true}>
+                            <div class="overlay-list">
+                                {#if Array.isArray(currentValues[p.key]) && currentValues[p.key].length > 0}
+                                    {#each currentValues[p.key] as col, index}
+                                        {@const colObj = typeof col === 'string' ? { label: col, frozen: false, previewLength: 0 } : col}
+                                        <div class="overlay-row">
+                                            <div class="overlay-item">
+                                                <div class="overlay-fields">
+                                                    <div class="overlay-field-row">
+                                                        <span class="overlay-field-label">列名</span>
+                                                        <input
+                                                            type="text"
+                                                            class="overlay-input"
+                                                            value={colObj.label}
+                                                            oninput={(e) => {
+                                                                const list = [...currentValues[p.key]]
+                                                                const oldVal = typeof list[index] === 'string' ? { label: list[index], frozen: false, previewLength: 0 } : list[index]
+                                                                list[index] = { ...oldVal, label: (e.currentTarget as HTMLInputElement).value }
+                                                                handleAttrChange(p.key, list)
+                                                            }}
+                                                            placeholder="列名"
+                                                        />
+                                                    </div>
+                                                    <div class="overlay-field-row">
+                                                        <span class="overlay-field-label">字数</span>
+                                                        <input
+                                                            type="number"
+                                                            class="overlay-input"
+                                                            value={colObj.previewLength ?? 0}
+                                                            oninput={(e) => {
+                                                                const list = [...currentValues[p.key]]
+                                                                const oldVal = typeof list[index] === 'string' ? { label: list[index], frozen: false, previewLength: 0 } : list[index]
+                                                                list[index] = { ...oldVal, previewLength: parseInt((e.currentTarget as HTMLInputElement).value) || 0 }
+                                                                handleAttrChange(p.key, list)
+                                                            }}
+                                                            placeholder="预览字数"
+                                                            min="0"
+                                                        />
+                                                    </div>
+                                                    <div class="overlay-field-row">
+                                                        <span class="overlay-field-label">冻结</span>
+                                                        <div style="display: flex; align-items: center; justify-content: flex-start; flex: 1;">
+                                                            <ToggleSwitch
+                                                                checked={colObj.frozen}
+                                                                on:change={(e) => {
+                                                                    const list = [...currentValues[p.key]]
+                                                                    const oldVal = typeof list[index] === 'string' ? { label: list[index], frozen: false, previewLength: 0 } : list[index]
+                                                                    list[index] = { ...oldVal, frozen: e.detail }
+                                                                    handleAttrChange(p.key, list)
+                                                                }}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="overlay-row-actions">
+                                                {#if index === 0}
+                                                    <button class="unit-toggle add-btn" onclick={addColumn} title="添加新行" style="background: rgba(34, 197, 94, 0.2); color: #4ade80;">+</button>
+                                                {:else}
+                                                    <button class="unit-toggle remove-btn" onclick={() => removeColumn(index)} title="移除列" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">−</button>
+                                                {/if}
+                                            </div>
+                                        </div>
+                                    {/each}
+                                {:else}
+                                    <div class="overlay-empty">暂无列定义</div>
+                                    <div class="overlay-row-actions" style="justify-content: center; margin-top: 8px;">
+                                        <button class="unit-toggle add-btn" onclick={addColumn} title="添加新行" style="background: rgba(34, 197, 94, 0.2); color: #4ade80;">+</button>
+                                    </div>
+                                {/if}
+                            </div>
+                        </PropertyRow>
+                    {:else}
+                        <div class="column-labels-editor">
+                            {#if Array.isArray(currentValues[p.key]) && currentValues[p.key].length > 0}
+                                {#each currentValues[p.key] as label, index}
+                                    <PropertyRow label={`${p.label}`} labelVisible={index === 0}>
+                                        <div class="column-label-item">
+                                            <input
+                                                type="text"
+                                                class="overlay-input column-label-input"
+                                                value={typeof label === 'string' ? label : (label?.label ?? '')}
+                                                oninput={(e) => {
+                                                    const newLabels = [...currentValues[p.key]]
+                                                    newLabels[index] = (e.currentTarget as HTMLInputElement).value
+                                                    handleAttrChange(p.key, newLabels)
+                                                }}
+                                                placeholder="列名"
+                                            />
+                                            {#if index === 0}
+                                                <button class="unit-toggle add-btn" onclick={addColumn} title="添加新行" style="background: rgba(34, 197, 94, 0.2); color: #4ade80;">+</button>
+                                            {:else}
+                                                <button class="unit-toggle remove-btn" onclick={() => removeColumn(index)} title="移除列" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">−</button>
+                                            {/if}
+                                        </div>
+                                    </PropertyRow>
+                                {/each}
+                            {:else}
+                                <PropertyRow label={`${p.label}`}>
+                                    <div class="column-labels-header">
+                                        <button class="unit-toggle add-btn" onclick={addColumn} title="添加新行" style="background: rgba(34, 197, 94, 0.2); color: #4ade80;">+</button>
                                     </div>
                                 </PropertyRow>
-                            {/each}
-                        {:else}
-                            <PropertyRow label={p.label}>
-                                <div class="column-labels-header">
-                                    <button class="unit-toggle add-btn" onclick={addColumn} title="添加新行" style="background: rgba(34, 197, 94, 0.2); color: #4ade80;">+</button>
-                                </div>
-                            </PropertyRow>
-                        {/if}
-                    </div>
-                {:else if p.type === 'overlayServices'}
+                            {/if}
+                        </div>
+                    {/if}
+                {:else if p.group && p.type === 'overlayServices'}
                     <PropertyRow label={`${p.label}`} alignTop={true}>
                         <div class="overlay-list">
                             {#if Array.isArray(currentValues[p.key]) && currentValues[p.key].length > 0}
@@ -1049,7 +1179,7 @@
                             {/if}
                         </div>
                     </PropertyRow>
-                {:else if p.type === 'replacementRules'}
+                {:else if p.group && p.type === 'replacementRules'}
                     <PropertyRow label={`${p.label}`} alignTop={true}>
                         <div class="overlay-list">
                             {#if Array.isArray(currentValues[p.key]) && currentValues[p.key].length > 0}
@@ -1364,49 +1494,6 @@
     }
 
     /* 动态表格列标签编辑器样式 */
-    .column-labels-editor {
-        display: flex;
-        flex-direction: column;
-        gap: calc(8px * var(--scale-ratio, 1));
-        width: 100%;
-    }
-
-    .column-labels-header {
-        display: flex;
-        gap: calc(8px * var(--scale-ratio, 1));
-        align-items: center;
-    }
-
-    .column-label-item {
-        display: flex;
-        gap: calc(8px * var(--scale-ratio, 1));
-        align-items: center;
-        flex: 1;
-    }
-
-    .column-label-input {
-        flex: 1;
-        padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
-        border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.2);
-        border-radius: calc(6px * var(--scale-ratio, 1));
-        font-size: calc(13px * var(--scale-ratio, 1));
-        background: rgba(255, 255, 255, 0.1);
-        color: #e2e8f0;
-        transition: all 0.3s ease;
-        min-width: 0;
-    }
-
-    .column-label-input:focus {
-        outline: none;
-        border-color: #6366f1;
-        background: rgba(255, 255, 255, 0.15);
-        box-shadow: 0 0 0 calc(2px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.2);
-    }
-
-    .column-label-input::placeholder {
-        color: #9ca3af;
-    }
-
     .overlay-list {
         display: flex;
         flex-direction: column;
@@ -1480,5 +1567,30 @@
 
     .overlay-input::placeholder {
         color: #9ca3af;
+    }
+
+    .column-labels-editor {
+        display: flex;
+        flex-direction: column;
+        gap: calc(4px * var(--scale-ratio, 1));
+        width: 100%;
+    }
+
+    .column-label-item {
+        display: flex;
+        align-items: center;
+        gap: calc(8px * var(--scale-ratio, 1));
+        width: 100%;
+    }
+
+    .column-label-input {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .column-labels-header {
+        display: flex;
+        justify-content: flex-start;
+        width: 100%;
     }
 </style>

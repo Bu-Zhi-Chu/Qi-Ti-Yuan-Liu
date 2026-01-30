@@ -66,6 +66,28 @@
         })
     }
 
+    let stickyOffsets = $derived.by(() => {
+        const offsets: string[] = []
+        let currentOffset = 0
+        const widths = columnWidths.length > 0 ? columnWidths : []
+        const count = headers.length
+
+        for (let i = 0; i < count; i++) {
+            offsets.push(`${currentOffset}%`)
+            const header = headers[i]
+            if (header && typeof header === 'object' && header.frozen) {
+                let w = 0
+                if (widths.length > i) {
+                    w = widths[i]
+                } else {
+                    w = numColumns > 0 ? 100 / numColumns : 100
+                }
+                currentOffset += w
+            }
+        }
+        return offsets
+    })
+
     function getCellStyle(index: number) {
         let widthStr = ''
         if (columnWidths && columnWidths.length > index) {
@@ -74,6 +96,20 @@
             const widthPercent = numColumns > 0 ? 100 / numColumns : 100
             widthStr = `${widthPercent}%`
         }
+
+        const header = headers[index]
+        const isFrozen = header && typeof header === 'object' && header.frozen
+
+        let stickyStyle = ''
+        if (isFrozen) {
+            stickyStyle = `
+                position: sticky;
+                left: ${stickyOffsets[index]};
+                z-index: 10;
+                background: inherit;
+            `
+        }
+
         return `
             width: ${widthStr};
             display: flex;
@@ -84,14 +120,16 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            ${stickyStyle}
         `
     }
 </script>
 
 <div class="dynamic-table-header {className}" class:has-scrollbar={!hideScrollbar} {style} {...rest}>
     {#each headers as header, index}
+        {@const label = header && typeof header === 'object' ? header.label : header}
         <div class="header-cell" style={getCellStyle(index)}>
-            {@html String(header ?? '')}
+            {@html String(label ?? '')}
         </div>
     {/each}
 </div>

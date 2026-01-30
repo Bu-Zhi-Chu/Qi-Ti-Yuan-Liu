@@ -9,10 +9,7 @@
         id?: string
         hideScrollbar?: boolean
         alternateRow?: boolean
-        dateWrap?: boolean
-        smartSizing?: boolean
-        smartSizingFactor?: number
-        columnLabels?: string[]
+        columnLabels?: (string | { label: string; frozen: boolean; previewLength?: number })[]
         headers?: string[]
         bodyData?: (string | number)[][]
         dataSource?: string
@@ -31,9 +28,6 @@
         id = '',
         hideScrollbar = true,
         alternateRow = false,
-        dateWrap = true,
-        smartSizing = false,
-        smartSizingFactor = 1,
         columnLabels = [],
         headers = [],
         bodyData = [],
@@ -50,19 +44,47 @@
     }: Props = $props()
 
     let displayHeaders = $derived.by(() => {
-        if (columnLabels && columnLabels.length > 0) return columnLabels
-        if (headers && headers.length > 0) return headers
-        if (bodyData && bodyData.length > 0 && bodyData[0].length > 0) {
-            return Array.from({ length: bodyData[0].length }, (_, i) => `列${i + 1}`)
+        let raw: (string | { label: string; frozen: boolean; previewLength?: number })[] = []
+        if (columnLabels && columnLabels.length > 0) {
+            raw = columnLabels
+        } else if (headers && headers.length > 0) {
+            raw = headers
+        } else if (bodyData && bodyData.length > 0 && bodyData[0].length > 0) {
+            raw = Array.from({ length: bodyData[0].length }, (_, i) => `列${i + 1}`)
+        } else {
+            raw = ['列1', '列2', '列3']
         }
-        return ['列1', '列2', '列3']
+
+        return raw.map((h) => {
+            if (typeof h === 'string') {
+                return { label: h, frozen: false, previewLength: 0 }
+            }
+            return h
+        })
     })
 
     let displayBodyData = $derived.by(() => {
         if (bodyData && bodyData.length > 0) return bodyData
         const numCols = displayHeaders.length
         const numRows = 50
-        return Array.from({ length: numRows }, (_, rowIndex) => Array.from({ length: numCols }, (_, colIndex) => `示例 ${rowIndex + 1}-${colIndex + 1}`))
+        const baseText = '一二三四五六七八九十'
+
+        return Array.from({ length: numRows }, (_, rowIndex) =>
+            Array.from({ length: numCols }, (_, colIndex) => {
+                const col = displayHeaders[colIndex]
+                const len = col && typeof col === 'object' && col.previewLength ? col.previewLength : 0
+
+                if (len > 0) {
+                    let result = ''
+                    while (result.length < len) {
+                        result += baseText
+                    }
+                    return result.slice(0, len)
+                }
+
+                return `示例 ${rowIndex + 1}-${colIndex + 1}`
+            })
+        )
     })
 
     let numColumns = $derived(displayHeaders.length)
@@ -154,47 +176,8 @@
         return displayBodyData
     })
 
-    function getVisualLength(str: any) {
-        if (str === null || str === undefined) return 0
-        const s = String(str)
-        let len = 0
-        for (let i = 0; i < s.length; i++) {
-            const code = s.charCodeAt(i)
-            if (code > 255) {
-                len += 2
-            } else {
-                len += 1
-            }
-        }
-        return len
-    }
-
     let columnWidths = $derived.by(() => {
-        if (!smartSizing) return []
-        const cols = numColumns
-        if (cols === 0) return []
-
-        const lengths = new Array(cols).fill(0)
-
-        displayHeaders.forEach((h, i) => {
-            if (i < cols) lengths[i] = Math.max(lengths[i], getVisualLength(h))
-        })
-
-        processedTableData.slice(0, 50).forEach((row: any[]) => {
-            row.forEach((cell: any, i: number) => {
-                if (i < cols) lengths[i] = Math.max(lengths[i], getVisualLength(cell))
-            })
-        })
-
-        const minLength = 4
-        const factor = Math.max(0.1, Math.min(10, smartSizingFactor))
-
-        const weightedLengths = lengths.map((l) => Math.pow(Math.max(l, minLength), factor))
-
-        const totalLength = weightedLengths.reduce((a, b) => a + b, 0)
-        if (totalLength === 0) return []
-
-        return weightedLengths.map((l) => (l / totalLength) * 100)
+        return []
     })
 
     setContext('dynamic-table', {
@@ -215,9 +198,6 @@
         },
         get alternateRow() {
             return alternateRow
-        },
-        get dateWrap() {
-            return dateWrap
         }
     })
 </script>

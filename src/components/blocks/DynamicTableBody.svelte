@@ -33,14 +33,36 @@
     const context = getContext<any>('dynamic-table')
 
     let bodyData = $derived(context?.bodyData ?? [])
+    let headers = $derived(context?.headers ?? [])
     let numColumns = $derived(context?.numColumns ?? 0)
     let alternateRow = $derived(context?.alternateRow ?? false)
-    let dateWrap = $derived(context?.dateWrap ?? true)
     let columnWidths = $derived(context?.columnWidths ?? [])
 
     let rowStyles = $state<string[]>([])
     let cellConfigs = $state<CellConfig[][]>([])
     let imageUrls = $state<Record<string, string>>({})
+
+    let stickyOffsets = $derived.by(() => {
+        const offsets: string[] = []
+        let currentOffset = 0
+        const widths = columnWidths.length > 0 ? columnWidths : []
+        const count = headers.length
+
+        for (let i = 0; i < count; i++) {
+            offsets.push(`${currentOffset}%`)
+            const header = headers[i]
+            if (header && typeof header === 'object' && header.frozen) {
+                let w = 0
+                if (widths.length > i) {
+                    w = widths[i]
+                } else {
+                    w = numColumns > 0 ? 100 / numColumns : 100
+                }
+                currentOffset += w
+            }
+        }
+        return offsets
+    })
 
     $effect(() => {
         const pid = get(projectId)
@@ -208,6 +230,19 @@
         const config = getCellConfig(rowIndex, colIndex)
         const extra = config.style || ''
 
+        const header = headers[colIndex]
+        const isFrozen = header && typeof header === 'object' && header.frozen
+
+        let stickyStyle = ''
+        if (isFrozen) {
+            stickyStyle = `
+                position: sticky;
+                left: ${stickyOffsets[colIndex]};
+                z-index: 5;
+                background: inherit;
+            `
+        }
+
         return `
             width: ${widthStr};
             display: flex;
@@ -217,13 +252,9 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-        ${extra}
+            ${stickyStyle}
+            ${extra}
         `
-    }
-
-    function isDateString(val: any): boolean {
-        if (typeof val !== 'string') return false
-        return /^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}(?::\d{2})?$/.test(val)
     }
 
     function toAdaptiveSize(val?: string): string {
@@ -284,11 +315,6 @@
                             <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
                                 <img src={replacement.url} alt={String(cellData)} style="max-width: 100%; max-height: 100%; object-fit: contain; width: {replacement.width || 'auto'}; height: {replacement.height || 'auto'};" />
                             </div>
-                        {:else if dateWrap && isDateString(cellData)}
-                            <div style="display: flex; flex-direction: column; line-height: 1.2; {contentStyle}">
-                                <span>{cellData.split(/\s+/)[0]}</span>
-                                <span>{cellData.split(/\s+/)[1]}</span>
-                            </div>
                         {:else}
                             <div style="display: inline-block; {contentStyle}">
                                 {cellData}
@@ -341,4 +367,3 @@
         font-style: italic;
     }
 </style>
-
