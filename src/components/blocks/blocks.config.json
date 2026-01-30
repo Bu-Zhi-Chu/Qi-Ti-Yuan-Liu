@@ -872,11 +872,6 @@
             "backgroundColor": "transparent"
         },
         "featureProps": {
-            "hideScrollbar": {
-                "label": "无滚动条",
-                "type": "switch",
-                "default": true
-            },
             "alternateRow": {
                 "label": "隔行换色",
                 "type": "switch",
@@ -907,9 +902,9 @@
                 "label": "表头列名",
                 "type": "columnLabels",
                 "default": [
-                    { "label": "列1", "frozen": false, "previewLength": 0 },
-                    { "label": "列2", "frozen": false, "previewLength": 0 },
-                    { "label": "列3", "frozen": false, "previewLength": 0 }
+                    { "label": "列1", "frozen": false, "previewLength": 10 },
+                    { "label": "列2", "frozen": false, "previewLength": 10 },
+                    { "label": "列3", "frozen": false, "previewLength": 10 }
                 ]
             }
         }
@@ -928,6 +923,7 @@
             "height": "100%",
             "display": "flex",
             "flexDirection": "column",
+            "boxSizing": "border-box",
             "backgroundColor": "transparent",
             "borderWidth": "calc(1px * var(--scale-ratio, 1))",
             "borderStyle": "solid",
@@ -950,6 +946,26 @@
                 "group": true,
                 "fields": [
                     { "key": "label", "label": "列名", "control": "text" },
+                    {
+                        "key": "widthMode",
+                        "label": "宽度模式",
+                        "control": "select",
+                        "options": [
+                            { "value": "balanced", "label": "均衡" },
+                            { "value": "value", "label": "数值" },
+                            { "value": "chars", "label": "字数" }
+                        ]
+                    },
+                    { "key": "widthValue", "label": "宽度", "control": "number", "min": 0 },
+                    {
+                        "key": "widthUnit",
+                        "label": "单位",
+                        "control": "select",
+                        "options": [
+                            { "value": "px", "label": "px" },
+                            { "value": "%", "label": "%" }
+                        ]
+                    },
                     { "key": "previewLength", "label": "字数", "control": "number", "min": 0 },
                     { "key": "frozen", "label": "冻结", "control": "switch" }
                 ],
@@ -969,7 +985,11 @@
             "width": "100%",
             "height": "calc(40px * var(--scale-ratio, 1))",
             "display": "flex",
-            "backgroundColor": "rgba(0, 212, 255, 0.2)"
+            "fontSize": "calc(13px * var(--scale-ratio, 1))",
+            "fontWeight": "bolder",
+            "color": "rgb(29, 143, 211)",
+            "backgroundColor": "rgb(201, 221, 245)",
+            "borderColor": "rgb(29, 143, 211)"
         }
     },
     {
@@ -984,7 +1004,7 @@
             "width": "100%",
             "flex": "1",
             "overflowY": "auto",
-            "backgroundColor": "rgba(255, 255, 255, 0.1)"
+            "backgroundColor": "rgb(255, 255, 255)"
         }
     },
     {

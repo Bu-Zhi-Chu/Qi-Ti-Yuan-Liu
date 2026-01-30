@@ -41,24 +41,30 @@
     let rowStyles = $state<string[]>([])
     let cellConfigs = $state<CellConfig[][]>([])
     let imageUrls = $state<Record<string, string>>({})
+    let rootEl: HTMLDivElement | null = null
 
     let stickyOffsets = $derived.by(() => {
         const offsets: string[] = []
-        let currentOffset = 0
         const widths = columnWidths.length > 0 ? columnWidths : []
         const count = headers.length
+        let currentOffset = '0'
 
         for (let i = 0; i < count; i++) {
-            offsets.push(`${currentOffset}%`)
+            offsets.push(currentOffset)
             const header = headers[i]
             if (header && typeof header === 'object' && header.frozen) {
-                let w = 0
-                if (widths.length > i) {
+                let w = ''
+                if (widths.length > i && widths[i]) {
                     w = widths[i]
                 } else {
-                    w = numColumns > 0 ? 100 / numColumns : 100
+                    const widthPercent = numColumns > 0 ? 100 / numColumns : 100
+                    w = `${widthPercent}%`
                 }
-                currentOffset += w
+                if (currentOffset === '0') {
+                    currentOffset = w
+                } else {
+                    currentOffset = `calc(${currentOffset} + ${w})`
+                }
             }
         }
         return offsets
@@ -124,6 +130,17 @@
                 imageUrls = { ...imageUrls, ...newUrls }
             }
         })
+    })
+
+    $effect(() => {
+        if (!context || typeof context.setHasVerticalScrollbar !== 'function') return
+        if (!rootEl) return
+        const scrollbarWidth = rootEl.offsetWidth - rootEl.clientWidth
+        const hasScrollbar = scrollbarWidth > 0
+        context.setHasVerticalScrollbar(hasScrollbar)
+        if (typeof context.setVerticalScrollbarWidth === 'function') {
+            context.setVerticalScrollbarWidth(scrollbarWidth)
+        }
     })
 
     onDestroy(() => {
@@ -220,8 +237,8 @@
 
     function getCellStyle(rowIndex: number, colIndex: number) {
         let widthStr = ''
-        if (columnWidths && columnWidths.length > colIndex) {
-            widthStr = `${columnWidths[colIndex]}%`
+        if (columnWidths && columnWidths.length > colIndex && columnWidths[colIndex]) {
+            widthStr = columnWidths[colIndex]
         } else {
             const widthPercent = numColumns > 0 ? 100 / numColumns : 100
             widthStr = `${widthPercent}%`
@@ -247,11 +264,8 @@
             width: ${widthStr};
             display: flex;
             align-items: center;
-            justify-content: center;
-            text-align: center;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            justify-content: flex-start;
+            text-align: left;
             ${stickyStyle}
             ${extra}
         `
@@ -292,7 +306,7 @@
     }
 </script>
 
-<div class="dynamic-table-body {className}" {style} {...rest}>
+<div bind:this={rootEl} class="dynamic-table-body {className}" {style} {...rest}>
     <div style="display: none;">
         {@render children?.()}
     </div>
@@ -316,7 +330,7 @@
                                 <img src={replacement.url} alt={String(cellData)} style="max-width: 100%; max-height: 100%; object-fit: contain; width: {replacement.width || 'auto'}; height: {replacement.height || 'auto'};" />
                             </div>
                         {:else}
-                            <div style="display: inline-block; {contentStyle}">
+                            <div class="cell-content" style={`display: inline-block; ${contentStyle}`} title={cellData == null ? '' : String(cellData)}>
                                 {cellData}
                             </div>
                         {/if}
@@ -333,12 +347,29 @@
     .dynamic-table-body {
         overflow-y: auto;
         box-sizing: border-box;
+        scrollbar-width: auto;
+        scrollbar-color: #8b8b8b transparent;
+    }
+    .dynamic-table-body::-webkit-scrollbar {
+        width: calc(10px * var(--scale-ratio, 1));
+    }
+    .dynamic-table-body::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .dynamic-table-body::-webkit-scrollbar-thumb {
+        background: #8b8b8b;
+        border-radius: calc(5px * var(--scale-ratio, 1));
+    }
+    .dynamic-table-body::-webkit-scrollbar-thumb:hover {
+        background: #8b8b8b;
+    }
+    .dynamic-table-body::-webkit-scrollbar-button {
+        background: #8b8b8b;
     }
     .body-row {
         display: flex;
         width: 100%;
         min-height: calc(36px * var(--scale-ratio, 1));
-        border-bottom: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.05);
         box-sizing: border-box;
         --bg-img: none;
         --bg-size: auto;
@@ -349,13 +380,27 @@
         background-repeat: var(--bg-repeat);
         background-position: var(--bg-pos);
     }
+    .body-row:not(:last-child) {
+        border-bottom: calc(1px * var(--scale-ratio, 1)) dashed rgb(29, 143, 211);
+    }
+    .body-row:hover {
+        background-color: rgb(233, 233, 233);
+    }
     .body-cell {
         min-height: calc(36px * var(--scale-ratio, 1));
         box-sizing: border-box;
         padding: calc(4px * var(--scale-ratio, 1));
         display: flex;
         align-items: center;
-        justify-content: center;
+        justify-content: flex-start;
+        overflow: hidden;
+        border-right: calc(1px * var(--scale-ratio, 1)) dashed rgb(29, 143, 211);
+    }
+    .cell-content {
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
     .empty-message {
         width: 100%;

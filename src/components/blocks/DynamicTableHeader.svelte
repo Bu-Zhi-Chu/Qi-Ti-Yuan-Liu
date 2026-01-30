@@ -16,8 +16,9 @@
 
     let headers = $derived(context?.headers ?? [])
     let numColumns = $derived(context?.numColumns ?? 0)
-    let hideScrollbar = $derived(context?.hideScrollbar ?? true)
     let columnWidths = $derived(context?.columnWidths ?? [])
+    let hasVerticalScrollbar = $derived(context?.hasVerticalScrollbar ?? false)
+    let verticalScrollbarWidth = $derived(context?.verticalScrollbarWidth ?? 0)
 
     let imageUrls = $state<Record<string, string>>({})
 
@@ -68,21 +69,26 @@
 
     let stickyOffsets = $derived.by(() => {
         const offsets: string[] = []
-        let currentOffset = 0
         const widths = columnWidths.length > 0 ? columnWidths : []
         const count = headers.length
+        let currentOffset = '0'
 
         for (let i = 0; i < count; i++) {
-            offsets.push(`${currentOffset}%`)
+            offsets.push(currentOffset)
             const header = headers[i]
             if (header && typeof header === 'object' && header.frozen) {
-                let w = 0
-                if (widths.length > i) {
+                let w = ''
+                if (widths.length > i && widths[i]) {
                     w = widths[i]
                 } else {
-                    w = numColumns > 0 ? 100 / numColumns : 100
+                    const widthPercent = numColumns > 0 ? 100 / numColumns : 100
+                    w = `${widthPercent}%`
                 }
-                currentOffset += w
+                if (currentOffset === '0') {
+                    currentOffset = w
+                } else {
+                    currentOffset = `calc(${currentOffset} + ${w})`
+                }
             }
         }
         return offsets
@@ -90,8 +96,8 @@
 
     function getCellStyle(index: number) {
         let widthStr = ''
-        if (columnWidths && columnWidths.length > index) {
-            widthStr = `${columnWidths[index]}%`
+        if (columnWidths && columnWidths.length > index && columnWidths[index]) {
+            widthStr = columnWidths[index]
         } else {
             const widthPercent = numColumns > 0 ? 100 / numColumns : 100
             widthStr = `${widthPercent}%`
@@ -116,7 +122,6 @@
             align-items: center;
             justify-content: center;
             text-align: center;
-            font-weight: bold;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -125,27 +130,39 @@
     }
 </script>
 
-<div class="dynamic-table-header {className}" class:has-scrollbar={!hideScrollbar} {style} {...rest}>
-    {#each headers as header, index}
-        {@const label = header && typeof header === 'object' ? header.label : header}
-        <div class="header-cell" style={getCellStyle(index)}>
-            {@html String(label ?? '')}
-        </div>
-    {/each}
-</div>
+{#if hasVerticalScrollbar}
+    {@const padding = verticalScrollbarWidth > 0 ? `${verticalScrollbarWidth}px` : '0px'}
+    {@const headerStyle = style ? `${style}; padding-right: ${padding}` : `padding-right: ${padding}`}
+    <div class="dynamic-table-header {className}" style={headerStyle} {...rest}>
+        {#each headers as header, index}
+            {@const label = header && typeof header === 'object' ? header.label : header}
+            <div class="header-cell" style={getCellStyle(index)} title={label == null ? '' : String(label)}>
+                {@html String(label ?? '')}
+            </div>
+        {/each}
+    </div>
+{:else}
+    <div class="dynamic-table-header {className}" {style} {...rest}>
+        {#each headers as header, index}
+            {@const label = header && typeof header === 'object' ? header.label : header}
+            <div class="header-cell" style={getCellStyle(index)} title={label == null ? '' : String(label)}>
+                {@html String(label ?? '')}
+            </div>
+        {/each}
+    </div>
+{/if}
 
 <style>
     .dynamic-table-header {
         display: flex;
         box-sizing: border-box;
         width: 100%;
-    }
-    .dynamic-table-header.has-scrollbar {
-        padding-right: var(--ft-scrollbar-width, calc(6px * var(--scale-ratio, 1)));
+        border-bottom: calc(1px * var(--scale-ratio, 1)) dashed rgb(29, 143, 211);
     }
     .header-cell {
         height: 100%;
         box-sizing: border-box;
         padding: 0 calc(4px * var(--scale-ratio, 1));
+        border-right: calc(1px * var(--scale-ratio, 1)) dashed rgb(29, 143, 211);
     }
 </style>

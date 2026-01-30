@@ -5,11 +5,20 @@
 
     import type { Snippet } from 'svelte'
 
+    interface ColumnLabelConfig {
+        label: string
+        frozen: boolean
+        previewLength?: number
+        widthMode?: 'balanced' | 'value' | 'chars'
+        widthValue?: number
+        widthUnit?: 'px' | '%'
+    }
+
     interface Props {
         id?: string
         hideScrollbar?: boolean
         alternateRow?: boolean
-        columnLabels?: (string | { label: string; frozen: boolean; previewLength?: number })[]
+        columnLabels?: (string | ColumnLabelConfig)[]
         headers?: string[]
         bodyData?: (string | number)[][]
         dataSource?: string
@@ -26,7 +35,7 @@
 
     let {
         id = '',
-        hideScrollbar = true,
+        hideScrollbar: _hideScrollbar = false,
         alternateRow = false,
         columnLabels = [],
         headers = [],
@@ -44,7 +53,7 @@
     }: Props = $props()
 
     let displayHeaders = $derived.by(() => {
-        let raw: (string | { label: string; frozen: boolean; previewLength?: number })[] = []
+        let raw: (string | ColumnLabelConfig)[] = []
         if (columnLabels && columnLabels.length > 0) {
             raw = columnLabels
         } else if (headers && headers.length > 0) {
@@ -57,9 +66,28 @@
 
         return raw.map((h) => {
             if (typeof h === 'string') {
-                return { label: h, frozen: false, previewLength: 0 }
+                return {
+                    label: h,
+                    frozen: false,
+                    previewLength: 10,
+                    widthMode: 'balanced',
+                    widthValue: 0,
+                    widthUnit: 'px'
+                }
             }
-            return h
+            const rawMode = (h as any).widthMode
+            const widthMode: 'balanced' | 'value' | 'chars' = rawMode === 'chars' ? 'chars' : rawMode === 'value' ? 'value' : 'balanced'
+            const widthValue = typeof h.widthValue === 'number' ? h.widthValue : 0
+            const widthUnit = h.widthUnit === '%' ? '%' : 'px'
+
+            return {
+                label: h.label ?? '',
+                frozen: h.frozen ?? false,
+                previewLength: h.previewLength ?? 10,
+                widthMode,
+                widthValue,
+                widthUnit
+            }
         })
     })
 
@@ -92,6 +120,8 @@
     let tableData = $state<any>(null)
     let isLoading = $state(false)
     let loadError = $state<string | null>(null)
+    let hasVerticalScrollbar = $state(false)
+    let verticalScrollbarWidth = $state(0)
 
     async function fetchTableData(path: string) {
         if (!path || path.trim() === '') {
@@ -177,7 +207,37 @@
     })
 
     let columnWidths = $derived.by(() => {
-        return []
+        const headers = displayHeaders as ColumnLabelConfig[]
+        const count = headers.length
+        if (count === 0) return []
+
+        const result: string[] = new Array(count).fill('')
+
+        for (let i = 0; i < count; i++) {
+            const h = headers[i]
+            if (!h) continue
+
+            const mode: 'balanced' | 'value' | 'chars' = h.widthMode === 'chars' ? 'chars' : h.widthMode === 'value' ? 'value' : 'balanced'
+            const unit: 'px' | '%' = h.widthUnit === '%' ? '%' : 'px'
+            const value = typeof h.widthValue === 'number' ? h.widthValue : 0
+
+            if (mode === 'value' && value > 0) {
+                if (unit === '%') {
+                    result[i] = `${value}%`
+                } else {
+                    result[i] = `calc(${value}px * var(--scale-ratio, 1))`
+                }
+            }
+        }
+
+        const hasAny = result.some((w) => w && w.length > 0)
+        if (!hasAny) {
+            const base = 100 / count
+            return Array.from({ length: count }, () => `${base}%`)
+        }
+
+        const fallback = 100 / count
+        return result.map((w) => (w && w.length > 0 ? w : `${fallback}%`))
     })
 
     setContext('dynamic-table', {
@@ -193,16 +253,25 @@
         get numColumns() {
             return numColumns
         },
-        get hideScrollbar() {
-            return hideScrollbar
-        },
         get alternateRow() {
             return alternateRow
+        },
+        get hasVerticalScrollbar() {
+            return hasVerticalScrollbar
+        },
+        setHasVerticalScrollbar(value: boolean) {
+            hasVerticalScrollbar = value
+        },
+        get verticalScrollbarWidth() {
+            return verticalScrollbarWidth
+        },
+        setVerticalScrollbarWidth(value: number) {
+            verticalScrollbarWidth = value
         }
     })
 </script>
 
-<div class="dynamic-table-container {className}" class:hide-scrollbar={hideScrollbar} {style} {id} {onclick} {...rest}>
+<div class="dynamic-table-container {className}" {style} {id} {onclick} {...rest}>
     {@render children?.()}
 </div>
 
@@ -213,29 +282,5 @@
         display: flex;
         flex-direction: column;
         overflow: hidden;
-        --ft-scrollbar-width: calc(6px * var(--scale-ratio, 1));
-    }
-
-    :global(.dynamic-table-container.hide-scrollbar *::-webkit-scrollbar) {
-        display: none;
-    }
-    :global(.dynamic-table-container.hide-scrollbar *) {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-    }
-
-    :global(.dynamic-table-container:not(.hide-scrollbar) *::-webkit-scrollbar) {
-        width: var(--ft-scrollbar-width);
-        height: var(--ft-scrollbar-width);
-    }
-    :global(.dynamic-table-container:not(.hide-scrollbar) *::-webkit-scrollbar-track) {
-        background: transparent;
-    }
-    :global(.dynamic-table-container:not(.hide-scrollbar) *::-webkit-scrollbar-thumb) {
-        background-color: rgba(255, 255, 255, 0.2);
-        border-radius: var(--ft-scrollbar-width);
-    }
-    :global(.dynamic-table-container:not(.hide-scrollbar) *::-webkit-scrollbar-thumb:hover) {
-        background-color: rgba(255, 255, 255, 0.3);
     }
 </style>

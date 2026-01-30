@@ -80,7 +80,17 @@
     // 添加新列
     function addColumn() {
         const currentLabels = currentValues['columnLabels'] || []
-        const newLabels = [...currentLabels, { label: `列${currentLabels.length + 1}`, frozen: false, previewLength: 0 }]
+        const newLabels = [
+            ...currentLabels,
+            {
+                label: `列${currentLabels.length + 1}`,
+                frozen: false,
+                previewLength: 10,
+                widthMode: 'balanced',
+                widthValue: 0,
+                widthUnit: 'px'
+            }
+        ]
         handleAttrChange('columnLabels', newLabels)
     }
 
@@ -961,7 +971,24 @@
                             <div class="overlay-list">
                                 {#if Array.isArray(currentValues[p.key]) && currentValues[p.key].length > 0}
                                     {#each currentValues[p.key] as col, index}
-                                        {@const colObj = typeof col === 'string' ? { label: col, frozen: false, previewLength: 0 } : col}
+                                        {@const colObj =
+                                            typeof col === 'string'
+                                                ? {
+                                                      label: col,
+                                                      frozen: false,
+                                                      previewLength: 10,
+                                                      widthMode: 'balanced',
+                                                      widthValue: 0,
+                                                      widthUnit: 'px'
+                                                  }
+                                                : {
+                                                      frozen: false,
+                                                      previewLength: col?.previewLength ?? 10,
+                                                      widthMode: col?.widthMode === 'chars' ? 'chars' : col?.widthMode === 'value' ? 'value' : 'balanced',
+                                                      widthValue: col?.widthValue ?? 0,
+                                                      widthUnit: col?.widthUnit ?? 'px',
+                                                      ...col
+                                                  }}
                                         <div class="overlay-row">
                                             <div class="overlay-item">
                                                 <div class="overlay-fields">
@@ -973,7 +1000,24 @@
                                                             value={colObj.label}
                                                             oninput={(e) => {
                                                                 const list = [...currentValues[p.key]]
-                                                                const oldVal = typeof list[index] === 'string' ? { label: list[index], frozen: false, previewLength: 0 } : list[index]
+                                                                const oldVal =
+                                                                    typeof list[index] === 'string'
+                                                                        ? {
+                                                                              label: list[index],
+                                                                              frozen: false,
+                                                                              previewLength: 10,
+                                                                              widthMode: 'balanced',
+                                                                              widthValue: 0,
+                                                                              widthUnit: 'px'
+                                                                          }
+                                                                        : {
+                                                                              frozen: false,
+                                                                              previewLength: list[index]?.previewLength ?? 10,
+                                                                              widthMode: list[index]?.widthMode === 'chars' ? 'chars' : list[index]?.widthMode === 'value' ? 'value' : 'balanced',
+                                                                              widthValue: list[index]?.widthValue ?? 0,
+                                                                              widthUnit: list[index]?.widthUnit ?? 'px',
+                                                                              ...(list[index] || {})
+                                                                          }
                                                                 list[index] = { ...oldVal, label: (e.currentTarget as HTMLInputElement).value }
                                                                 handleAttrChange(p.key, list)
                                                             }}
@@ -985,11 +1029,29 @@
                                                         <input
                                                             type="number"
                                                             class="overlay-input"
-                                                            value={colObj.previewLength ?? 0}
+                                                            value={colObj.previewLength ?? 10}
                                                             oninput={(e) => {
                                                                 const list = [...currentValues[p.key]]
-                                                                const oldVal = typeof list[index] === 'string' ? { label: list[index], frozen: false, previewLength: 0 } : list[index]
-                                                                list[index] = { ...oldVal, previewLength: parseInt((e.currentTarget as HTMLInputElement).value) || 0 }
+                                                                const oldVal =
+                                                                    typeof list[index] === 'string'
+                                                                        ? {
+                                                                              label: list[index],
+                                                                              frozen: false,
+                                                                              previewLength: 10,
+                                                                              widthMode: 'balanced',
+                                                                              widthValue: 0,
+                                                                              widthUnit: 'px'
+                                                                          }
+                                                                        : {
+                                                                              frozen: false,
+                                                                              previewLength: list[index]?.previewLength ?? 10,
+                                                                              widthMode: list[index]?.widthMode === 'chars' ? 'chars' : list[index]?.widthMode === 'value' ? 'value' : 'balanced',
+                                                                              widthValue: list[index]?.widthValue ?? 0,
+                                                                              widthUnit: list[index]?.widthUnit ?? 'px',
+                                                                              ...(list[index] || {})
+                                                                          }
+                                                                const len = parseInt((e.currentTarget as HTMLInputElement).value)
+                                                                list[index] = { ...oldVal, previewLength: Number.isFinite(len) && len > 0 ? len : 10 }
                                                                 handleAttrChange(p.key, list)
                                                             }}
                                                             placeholder="预览字数"
@@ -997,13 +1059,135 @@
                                                         />
                                                     </div>
                                                     <div class="overlay-field-row">
+                                                        <span class="overlay-field-label">宽度</span>
+                                                        <div class="overlay-select-wrapper">
+                                                            <select
+                                                                class="overlay-select"
+                                                                value={colObj.widthMode ?? 'balanced'}
+                                                                onchange={(e) => {
+                                                                    const mode = (e.currentTarget as HTMLSelectElement).value || 'balanced'
+                                                                    const list = [...currentValues[p.key]]
+                                                                    const oldVal =
+                                                                        typeof list[index] === 'string'
+                                                                            ? {
+                                                                                  label: list[index],
+                                                                                  frozen: false,
+                                                                                  previewLength: 10,
+                                                                                  widthMode: 'balanced',
+                                                                                  widthValue: 0,
+                                                                                  widthUnit: 'px'
+                                                                              }
+                                                                            : {
+                                                                                  frozen: false,
+                                                                                  previewLength: list[index]?.previewLength ?? 10,
+                                                                                  widthMode: list[index]?.widthMode === 'chars' ? 'chars' : list[index]?.widthMode === 'value' ? 'value' : 'balanced',
+                                                                                  widthValue: list[index]?.widthValue ?? 0,
+                                                                                  widthUnit: list[index]?.widthUnit ?? 'px',
+                                                                                  ...(list[index] || {})
+                                                                              }
+                                                                    list[index] = { ...oldVal, widthMode: mode }
+                                                                    handleAttrChange(p.key, list)
+                                                                }}
+                                                            >
+                                                                <option value="balanced">均衡</option>
+                                                                <option value="value">数值</option>
+                                                                <option value="chars">字数</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    {#if colObj.widthMode === 'value'}
+                                                        <div class="overlay-field-row">
+                                                            <span class="overlay-field-label">数值</span>
+                                                            <div class="overlay-field-inline">
+                                                                <input
+                                                                    type="number"
+                                                                    class="overlay-input overlay-value-input"
+                                                                    min="0"
+                                                                    value={colObj.widthValue ?? 0}
+                                                                    oninput={(e) => {
+                                                                        const v = parseFloat((e.currentTarget as HTMLInputElement).value)
+                                                                        const num = isNaN(v) || v < 0 ? 0 : v
+                                                                        const list = [...currentValues[p.key]]
+                                                                        const oldVal =
+                                                                            typeof list[index] === 'string'
+                                                                                ? {
+                                                                                      label: list[index],
+                                                                                      frozen: false,
+                                                                                      previewLength: 10,
+                                                                                      widthMode: 'value',
+                                                                                      widthValue: 0,
+                                                                                      widthUnit: 'px'
+                                                                                  }
+                                                                                : {
+                                                                                      frozen: false,
+                                                                                      previewLength: list[index]?.previewLength ?? 10,
+                                                                                      widthMode: list[index]?.widthMode === 'chars' ? 'chars' : 'value',
+                                                                                      widthValue: list[index]?.widthValue ?? 0,
+                                                                                      widthUnit: list[index]?.widthUnit ?? 'px',
+                                                                                      ...(list[index] || {})
+                                                                                  }
+                                                                        list[index] = { ...oldVal, widthValue: num }
+                                                                        handleAttrChange(p.key, list)
+                                                                    }}
+                                                                    placeholder="宽度"
+                                                                />
+                                                                <button
+                                                                    class="unit-toggle"
+                                                                    onclick={() => {
+                                                                        const nextUnit = colObj.widthUnit === 'px' ? '%' : 'px'
+                                                                        const list = [...currentValues[p.key]]
+                                                                        const oldVal =
+                                                                            typeof list[index] === 'string'
+                                                                                ? {
+                                                                                      label: list[index],
+                                                                                      frozen: false,
+                                                                                      previewLength: 10,
+                                                                                      widthMode: 'value',
+                                                                                      widthValue: 0,
+                                                                                      widthUnit: 'px'
+                                                                                  }
+                                                                                : {
+                                                                                      frozen: false,
+                                                                                      previewLength: list[index]?.previewLength ?? 10,
+                                                                                      widthMode: list[index]?.widthMode === 'chars' ? 'chars' : 'value',
+                                                                                      widthValue: list[index]?.widthValue ?? 0,
+                                                                                      widthUnit: list[index]?.widthUnit ?? 'px',
+                                                                                      ...(list[index] || {})
+                                                                                  }
+                                                                        list[index] = { ...oldVal, widthUnit: nextUnit }
+                                                                        handleAttrChange(p.key, list)
+                                                                    }}
+                                                                >
+                                                                    {colObj.widthUnit}
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    {/if}
+                                                    <div class="overlay-field-row">
                                                         <span class="overlay-field-label">冻结</span>
                                                         <div style="display: flex; align-items: center; justify-content: flex-start; flex: 1;">
                                                             <ToggleSwitch
                                                                 checked={colObj.frozen}
                                                                 on:change={(e) => {
                                                                     const list = [...currentValues[p.key]]
-                                                                    const oldVal = typeof list[index] === 'string' ? { label: list[index], frozen: false, previewLength: 0 } : list[index]
+                                                                    const oldVal =
+                                                                        typeof list[index] === 'string'
+                                                                            ? {
+                                                                                  label: list[index],
+                                                                                  frozen: false,
+                                                                                  previewLength: 10,
+                                                                                  widthMode: 'balanced',
+                                                                                  widthValue: 0,
+                                                                                  widthUnit: 'px'
+                                                                              }
+                                                                            : {
+                                                                                  frozen: false,
+                                                                                  previewLength: list[index]?.previewLength ?? 10,
+                                                                                  widthMode: list[index]?.widthMode === 'chars' ? 'chars' : list[index]?.widthMode === 'value' ? 'value' : 'balanced',
+                                                                                  widthValue: list[index]?.widthValue ?? 0,
+                                                                                  widthUnit: list[index]?.widthUnit ?? 'px',
+                                                                                  ...(list[index] || {})
+                                                                              }
                                                                     list[index] = { ...oldVal, frozen: e.detail }
                                                                     handleAttrChange(p.key, list)
                                                                 }}
@@ -1531,6 +1715,12 @@
         width: 100%;
     }
 
+    .overlay-field-inline {
+        display: flex;
+        align-items: center;
+        gap: calc(6px * var(--scale-ratio, 1));
+    }
+
     .overlay-field-label {
         width: calc(40px * var(--scale-ratio, 1));
         font-size: calc(12px * var(--scale-ratio, 1));
@@ -1546,6 +1736,57 @@
         justify-content: flex-start;
     }
 
+    .overlay-select-wrapper {
+        position: relative;
+        flex: 1 1 0;
+    }
+
+    .overlay-select-wrapper::after {
+        content: '';
+        position: absolute;
+        right: calc(12px * var(--scale-ratio, 1));
+        top: 50%;
+        transform: translateY(-50%);
+        width: 0;
+        height: 0;
+        border-left: calc(4px * var(--scale-ratio, 1)) solid transparent;
+        border-right: calc(4px * var(--scale-ratio, 1)) solid transparent;
+        border-top: calc(4px * var(--scale-ratio, 1)) solid #94a3b8;
+        pointer-events: none;
+    }
+
+    .overlay-select {
+        width: 100%;
+        padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
+        padding-right: calc(30px * var(--scale-ratio, 1));
+        border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.3);
+        border-radius: calc(6px * var(--scale-ratio, 1));
+        font-size: calc(13px * var(--scale-ratio, 1));
+        background: rgba(30, 41, 59, 0.95);
+        color: #e2e8f0;
+        transition: all 0.3s ease;
+        appearance: none;
+    }
+
+    .overlay-select option {
+        background: #1e293b;
+        color: #e2e8f0;
+        padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
+    }
+
+    .overlay-select:disabled {
+        color: #64748b;
+        cursor: not-allowed;
+        opacity: 0.5;
+    }
+
+    .overlay-select:focus {
+        outline: none;
+        border-color: #cbd5e1;
+        background: rgba(255, 255, 255, 0.15);
+        box-shadow: 0 0 0 calc(3px * var(--scale-ratio, 1)) rgba(255, 255, 255, 0.1);
+    }
+
     .overlay-input {
         flex: 1 1 0;
         padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
@@ -1556,6 +1797,11 @@
         color: #e2e8f0;
         transition: all 0.3s ease;
         min-width: 0;
+    }
+
+    .overlay-value-input {
+        flex: 0 0 auto;
+        width: calc(140px * var(--scale-ratio, 1));
     }
 
     .overlay-input:focus {
