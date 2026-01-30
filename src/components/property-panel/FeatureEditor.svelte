@@ -784,8 +784,8 @@
             if (img) {
                 list[index] = {
                     ...rule,
-                    width: `${img.width}px`,
-                    height: `${img.height}px`
+                    width: `calc(${img.width}px * var(--scale-ratio, 1))`,
+                    height: `calc(${img.height}px * var(--scale-ratio, 1))`
                 }
                 handleAttrChange(key, list)
             }

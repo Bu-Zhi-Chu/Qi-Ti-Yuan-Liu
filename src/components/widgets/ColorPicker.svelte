@@ -608,7 +608,7 @@
     $effect(() => {
         if (typeof value === 'string') {
             const valueStr = value
-            if (valueStr.startsWith('rgba')) {
+            if (valueStr.startsWith('rgba') || valueStr.startsWith('rgb(')) {
                 updateFromRgba(valueStr)
             } else if (valueStr.startsWith('#')) {
                 currentColor = valueStr

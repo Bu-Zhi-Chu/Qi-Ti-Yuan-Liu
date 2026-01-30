@@ -903,6 +903,146 @@
         }
     },
     {
+        "type": "DynamicTable",
+        "nameZh": "动态表格",
+        "path": "../blocks/DynamicTable.svelte",
+        "preview": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><rect x='2' y='4' width='28' height='24' fill='none' stroke='%230ea5e9' stroke-width='2' rx='2'/><rect x='2' y='4' width='28' height='6' fill='%230ea5e9' opacity='0.2'/><line x1='10' y1='10' x2='10' y2='28' stroke='%230ea5e9' stroke-width='1'/><line x1='18' y1='10' x2='18' y2='28' stroke='%230ea5e9' stroke-width='1'/><line x1='2' y1='16' x2='30' y2='16' stroke='%230ea5e9' stroke-width='1'/><line x1='2' y1='22' x2='30' y2='22' stroke='%230ea5e9' stroke-width='1'/></svg>",
+        "showFeatureTab": true,
+        "dataBindable": true,
+        "hideTextContent": true,
+        "positionAtOrigin": true,
+        "presetStyles": {
+            "width": "100%",
+            "height": "100%",
+            "display": "flex",
+            "flexDirection": "column",
+            "backgroundColor": "transparent",
+            "borderWidth": "calc(1px * var(--scale-ratio, 1))",
+            "borderStyle": "solid",
+            "borderColor": "rgb(149, 149, 255)"
+        },
+        "featureProps": {
+            "hideScrollbar": {
+                "label": "无滚动条",
+                "type": "switch",
+                "default": true
+            },
+            "alternateRow": {
+                "label": "隔行换色",
+                "type": "switch",
+                "default": false
+            },
+            "dateWrap": {
+                "label": "日期折行",
+                "type": "switch",
+                "default": true
+            },
+            "smartSizing": {
+                "label": "智能尺寸",
+                "type": "switch",
+                "default": false
+            },
+            "smartSizingFactor": {
+                "label": "智能因子",
+                "type": "number",
+                "min": 0.1,
+                "max": 5,
+                "default": 1,
+                "showIf": {
+                    "key": "smartSizing",
+                    "value": true
+                }
+            },
+            "columnLabels": {
+                "label": "表头列名",
+                "type": "columnLabels",
+                "default": ["列1", "列2", "列3"]
+            }
+        }
+    },
+    {
+        "type": "DynamicTableHeader",
+        "nameZh": "动态表头",
+        "hidden": true,
+        "path": "../blocks/DynamicTableHeader.svelte",
+        "preview": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><rect x='2' y='12' width='28' height='8' fill='%2300d4ff' opacity='0.5'/><text x='16' y='20' text-anchor='middle' fill='white' font-size='10' font-weight='bold'>Header</text></svg>",
+        "showFeatureTab": false,
+        "hideTextContent": true,
+        "presetStyles": {
+            "width": "100%",
+            "height": "calc(40px * var(--scale-ratio, 1))",
+            "display": "flex",
+            "backgroundColor": "rgba(0, 212, 255, 0.2)"
+        }
+    },
+    {
+        "type": "DynamicTableBody",
+        "nameZh": "动态表体",
+        "hidden": true,
+        "path": "../blocks/DynamicTableBody.svelte",
+        "preview": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><rect x='2' y='2' width='28' height='28' fill='none' stroke='%2300d4ff' stroke-width='1'/><line x1='2' y1='10' x2='30' y2='10' stroke='%2300d4ff' stroke-width='1'/><line x1='2' y1='18' x2='30' y2='18' stroke='%2300d4ff' stroke-width='1'/><line x1='2' y1='26' x2='30' y2='26' stroke='%2300d4ff' stroke-width='1'/></svg>",
+        "showFeatureTab": false,
+        "hideTextContent": true,
+        "presetStyles": {
+            "width": "100%",
+            "flex": "1",
+            "overflowY": "auto",
+            "backgroundColor": "rgba(255, 255, 255, 0.1)"
+        }
+    },
+    {
+        "type": "DynamicTableRow",
+        "nameZh": "动态表行",
+        "hidden": true,
+        "path": "../blocks/DynamicTableRow.svelte",
+        "preview": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><rect x='2' y='12' width='28' height='8' fill='%2300d4ff' opacity='0.5'/></svg>",
+        "showFeatureTab": false,
+        "hideTextContent": true,
+        "presetStyles": {
+            "width": "100%",
+            "display": "flex",
+            "boxSizing": "border-box"
+        }
+    },
+    {
+        "type": "DynamicTableCell",
+        "nameZh": "动态单元格",
+        "hidden": true,
+        "path": "../blocks/DynamicTableCell.svelte",
+        "preview": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><rect x='4' y='10' width='24' height='12' fill='%2300d4ff' opacity='0.5'/></svg>",
+        "showFeatureTab": true,
+        "hideTextContent": true,
+        "presetStyles": {
+            "padding": "calc(4px * var(--scale-ratio, 1))",
+            "display": "flex",
+            "alignItems": "center",
+            "justifyContent": "center",
+            "textAlign": "center",
+            "boxSizing": "border-box"
+        },
+        "featureProps": {
+            "contentBackgroundImage": {
+                "label": "内容背景",
+                "type": "image",
+                "default": ""
+            },
+            "enableImageReplacement": {
+                "label": "图片替换",
+                "type": "switch",
+                "default": false
+            },
+            "replacementRules": {
+                "label": "替换规则",
+                "type": "replacementRules",
+                "default": [{ "rule": "", "image": "" }],
+                "showIf": {
+                    "key": "enableImageReplacement",
+                    "value": true
+                }
+            }
+        }
+    },
+    {
         "type": "FlexibleTableHeader",
         "nameZh": "表格表头",
         "hidden": true,

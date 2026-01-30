@@ -223,14 +223,13 @@
             componentType: item.type,
             styles: {
                 position: 'absolute',
-                left: '0%', // 占位，松开时再写入
+                left: '0%',
                 top: '0%',
                 width: `${widthPercent}%`,
                 height: `${heightPercent}%`,
                 ...finalStyles
             },
             textContent: resolvedTextContent,
-            // 如果是按钮组，预先生成一个默认子按钮
             ...(item.type === 'ButtonGroup'
                 ? {
                       attributes: {
@@ -302,12 +301,64 @@
                             }
                         ]
                     }
-                  : {
-                        attributes: {
-                            'data-name': generateUniqueDataName(item.name ?? item.type)
-                        },
-                        children: []
-                    })
+                  : item.type === 'DynamicTable'
+                    ? {
+                          attributes: {
+                              'data-name': generateUniqueDataName(item.name ?? item.type)
+                          },
+                          children: [
+                              {
+                                  id: globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-header`,
+                                  componentType: 'DynamicTableHeader',
+                                  styles: (() => {
+                                      const meta = (blocksConfig as any[]).find((b) => b.type === 'DynamicTableHeader') as any
+                                      return meta?.presetStyles ? { ...meta.presetStyles } : {}
+                                  })(),
+                                  attributes: { 'data-name': '动态表头' },
+                                  children: []
+                              },
+                              {
+                                  id: globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-body`,
+                                  componentType: 'DynamicTableBody',
+                                  styles: (() => {
+                                      const meta = (blocksConfig as any[]).find((b) => b.type === 'DynamicTableBody') as any
+                                      return meta?.presetStyles ? { ...meta.presetStyles } : {}
+                                  })(),
+                                  attributes: { 'data-name': '动态表体' },
+                                  children: [
+                                      {
+                                          id: globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-row`,
+                                          componentType: 'DynamicTableRow',
+                                          styles: (() => {
+                                              const meta = (blocksConfig as any[]).find((b) => b.type === 'DynamicTableRow') as any
+                                              return meta?.presetStyles ? { ...meta.presetStyles } : {}
+                                          })(),
+                                          attributes: { 'data-name': '动态表行', rowIndex: 0 },
+                                          children: (() => {
+                                              const tableMeta = (blocksConfig as any[]).find((b) => b.type === 'DynamicTable') as any
+                                              const defaultLabels = tableMeta?.featureProps?.columnLabels?.default
+                                              const count = Array.isArray(defaultLabels) && defaultLabels.length > 0 ? defaultLabels.length : 3
+                                              const cellMeta = (blocksConfig as any[]).find((b) => b.type === 'DynamicTableCell') as any
+                                              const baseStyles = cellMeta?.presetStyles ? { ...cellMeta.presetStyles } : {}
+                                              return Array.from({ length: count }, (_, colIndex) => ({
+                                                  id: globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-cell-${colIndex}`,
+                                                  componentType: 'DynamicTableCell',
+                                                  styles: baseStyles,
+                                                  attributes: { 'data-name': `单元格 ${colIndex + 1}`, rowIndex: 0, colIndex },
+                                                  children: []
+                                              }))
+                                          })()
+                                      }
+                                  ]
+                              }
+                          ]
+                      }
+                    : {
+                          attributes: {
+                              'data-name': generateUniqueDataName(item.name ?? item.type)
+                          },
+                          children: []
+                      })
         }
 
         /* 3. 生成真实 DOM 作为预览 */
