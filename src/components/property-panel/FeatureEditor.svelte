@@ -968,6 +968,7 @@
                 {#if p.type === 'columnLabels'}
                     {#if p.group}
                         <PropertyRow label={`${p.label}`} alignTop={true}>
+                            {@const globalWidthMode = currentValues['columnWidthMode'] ?? 'balanced'}
                             <div class="overlay-list">
                                 {#if Array.isArray(currentValues[p.key]) && currentValues[p.key].length > 0}
                                     {#each currentValues[p.key] as col, index}
@@ -977,14 +978,12 @@
                                                       label: col,
                                                       frozen: false,
                                                       previewLength: 10,
-                                                      widthMode: 'balanced',
                                                       widthValue: 0,
                                                       widthUnit: 'px'
                                                   }
                                                 : {
                                                       frozen: false,
                                                       previewLength: col?.previewLength ?? 10,
-                                                      widthMode: col?.widthMode === 'chars' ? 'chars' : col?.widthMode === 'value' ? 'value' : 'balanced',
                                                       widthValue: col?.widthValue ?? 0,
                                                       widthUnit: col?.widthUnit ?? 'px',
                                                       ...col
@@ -1058,44 +1057,7 @@
                                                             min="0"
                                                         />
                                                     </div>
-                                                    <div class="overlay-field-row">
-                                                        <span class="overlay-field-label">宽度</span>
-                                                        <div class="overlay-select-wrapper">
-                                                            <select
-                                                                class="overlay-select"
-                                                                value={colObj.widthMode ?? 'balanced'}
-                                                                onchange={(e) => {
-                                                                    const mode = (e.currentTarget as HTMLSelectElement).value || 'balanced'
-                                                                    const list = [...currentValues[p.key]]
-                                                                    const oldVal =
-                                                                        typeof list[index] === 'string'
-                                                                            ? {
-                                                                                  label: list[index],
-                                                                                  frozen: false,
-                                                                                  previewLength: 10,
-                                                                                  widthMode: 'balanced',
-                                                                                  widthValue: 0,
-                                                                                  widthUnit: 'px'
-                                                                              }
-                                                                            : {
-                                                                                  frozen: false,
-                                                                                  previewLength: list[index]?.previewLength ?? 10,
-                                                                                  widthMode: list[index]?.widthMode === 'chars' ? 'chars' : list[index]?.widthMode === 'value' ? 'value' : 'balanced',
-                                                                                  widthValue: list[index]?.widthValue ?? 0,
-                                                                                  widthUnit: list[index]?.widthUnit ?? 'px',
-                                                                                  ...(list[index] || {})
-                                                                              }
-                                                                    list[index] = { ...oldVal, widthMode: mode }
-                                                                    handleAttrChange(p.key, list)
-                                                                }}
-                                                            >
-                                                                <option value="balanced">均衡</option>
-                                                                <option value="value">数值</option>
-                                                                <option value="chars">字数</option>
-                                                            </select>
-                                                        </div>
-                                                    </div>
-                                                    {#if colObj.widthMode === 'value'}
+                                                    {#if globalWidthMode === 'value'}
                                                         <div class="overlay-field-row">
                                                             <span class="overlay-field-label">数值</span>
                                                             <div class="overlay-field-inline">

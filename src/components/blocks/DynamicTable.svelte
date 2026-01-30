@@ -18,6 +18,9 @@
         id?: string
         hideScrollbar?: boolean
         alternateRow?: boolean
+        columnWidthMode?: 'balanced' | 'value' | 'chars'
+        columnCharsFillContainer?: boolean
+        columnCharsWidthCompensation?: number
         columnLabels?: (string | ColumnLabelConfig)[]
         headers?: string[]
         bodyData?: (string | number)[][]
@@ -37,6 +40,9 @@
         id = '',
         hideScrollbar: _hideScrollbar = false,
         alternateRow = false,
+        columnWidthMode = 'balanced',
+        columnCharsFillContainer = true,
+        columnCharsWidthCompensation = 60,
         columnLabels = [],
         headers = [],
         bodyData = [],
@@ -53,6 +59,8 @@
     }: Props = $props()
 
     let displayHeaders = $derived.by(() => {
+        const globalMode: 'balanced' | 'value' | 'chars' = columnWidthMode === 'chars' ? 'chars' : columnWidthMode === 'value' ? 'value' : 'balanced'
+
         let raw: (string | ColumnLabelConfig)[] = []
         if (columnLabels && columnLabels.length > 0) {
             raw = columnLabels
@@ -70,13 +78,11 @@
                     label: h,
                     frozen: false,
                     previewLength: 10,
-                    widthMode: 'balanced',
+                    widthMode: globalMode,
                     widthValue: 0,
                     widthUnit: 'px'
                 }
             }
-            const rawMode = (h as any).widthMode
-            const widthMode: 'balanced' | 'value' | 'chars' = rawMode === 'chars' ? 'chars' : rawMode === 'value' ? 'value' : 'balanced'
             const widthValue = typeof h.widthValue === 'number' ? h.widthValue : 0
             const widthUnit = h.widthUnit === '%' ? '%' : 'px'
 
@@ -84,7 +90,7 @@
                 label: h.label ?? '',
                 frozen: h.frozen ?? false,
                 previewLength: h.previewLength ?? 10,
-                widthMode,
+                widthMode: globalMode,
                 widthValue,
                 widthUnit
             }
@@ -211,17 +217,54 @@
         const count = headers.length
         if (count === 0) return []
 
+        if (columnWidthMode === 'chars') {
+            const maxLens: number[] = new Array(count).fill(1)
+
+            for (let i = 0; i < count; i++) {
+                const h = headers[i]
+                const label = h?.label ?? ''
+                const len = String(label).length
+                if (len > maxLens[i]) maxLens[i] = len || 1
+            }
+
+            const rows = processedTableData as any[]
+            if (Array.isArray(rows)) {
+                for (const row of rows) {
+                    if (!Array.isArray(row)) continue
+                    for (let i = 0; i < count; i++) {
+                        const v = row[i]
+                        const len = v == null ? 0 : String(v).length
+                        if (len > maxLens[i]) maxLens[i] = len || 1
+                    }
+                }
+            }
+
+            const total = maxLens.reduce((sum, v) => sum + (v > 0 ? v : 1), 0)
+            if (!total) {
+                const base = 100 / count
+                return Array.from({ length: count }, () => `${base}%`)
+            }
+
+            const rawScale = columnCharsFillContainer ? 100 : columnCharsWidthCompensation
+            const scale = rawScale <= 0 ? 1 : rawScale > 100 ? 100 : rawScale
+
+            return maxLens.map((len) => {
+                const value = len > 0 ? len : 1
+                const percent = (value * scale) / total
+                return `${percent.toFixed(3)}%`
+            })
+        }
+
         const result: string[] = new Array(count).fill('')
 
         for (let i = 0; i < count; i++) {
             const h = headers[i]
             if (!h) continue
 
-            const mode: 'balanced' | 'value' | 'chars' = h.widthMode === 'chars' ? 'chars' : h.widthMode === 'value' ? 'value' : 'balanced'
             const unit: 'px' | '%' = h.widthUnit === '%' ? '%' : 'px'
             const value = typeof h.widthValue === 'number' ? h.widthValue : 0
 
-            if (mode === 'value' && value > 0) {
+            if (columnWidthMode === 'value' && value > 0) {
                 if (unit === '%') {
                     result[i] = `${value}%`
                 } else {

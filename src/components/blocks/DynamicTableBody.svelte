@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { getContext, setContext, onDestroy } from 'svelte'
+    import { getContext, setContext, onDestroy, onMount } from 'svelte'
     import type { Snippet } from 'svelte'
     import { getImage } from '../../services/database/image-store.service'
     import { projectId } from '../../stores/dom-tree.store.svelte'
@@ -132,18 +132,33 @@
         })
     })
 
-    $effect(() => {
+    function updateScrollbarState() {
         if (!context || typeof context.setHasVerticalScrollbar !== 'function') return
         if (!rootEl) return
-        const scrollbarWidth = rootEl.offsetWidth - rootEl.clientWidth
-        const hasScrollbar = scrollbarWidth > 0
+        const hasScrollbar = rootEl.scrollHeight > rootEl.clientHeight
         context.setHasVerticalScrollbar(hasScrollbar)
         if (typeof context.setVerticalScrollbarWidth === 'function') {
-            context.setVerticalScrollbarWidth(scrollbarWidth)
+            const width = rootEl.offsetWidth - rootEl.clientWidth
+            context.setVerticalScrollbarWidth(width > 0 ? width : 0)
+        }
+    }
+
+    let resizeObserver: ResizeObserver | null = null
+
+    onMount(() => {
+        updateScrollbarState()
+        if (typeof ResizeObserver !== 'undefined' && rootEl) {
+            resizeObserver = new ResizeObserver(() => {
+                updateScrollbarState()
+            })
+            resizeObserver.observe(rootEl)
         }
     })
 
     onDestroy(() => {
+        if (resizeObserver && rootEl) {
+            resizeObserver.unobserve(rootEl)
+        }
         Object.values(imageUrls).forEach((url) => URL.revokeObjectURL(url))
     })
 

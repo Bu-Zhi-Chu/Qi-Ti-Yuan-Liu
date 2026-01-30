@@ -930,10 +930,35 @@
             "borderColor": "rgb(149, 149, 255)"
         },
         "featureProps": {
-            "hideScrollbar": {
-                "label": "无滚动条",
+            "columnWidthMode": {
+                "label": "宽度模式",
+                "type": "select",
+                "options": [
+                    { "value": "balanced", "label": "均衡" },
+                    { "value": "value", "label": "数值" },
+                    { "value": "chars", "label": "字数" }
+                ],
+                "default": "balanced"
+            },
+            "columnCharsFillContainer": {
+                "label": "占满容器",
                 "type": "switch",
-                "default": true
+                "default": true,
+                "showIf": {
+                    "key": "columnWidthMode",
+                    "value": "chars"
+                }
+            },
+            "columnCharsWidthCompensation": {
+                "label": "宽度系数",
+                "type": "number",
+                "default": 60,
+                "min": 0,
+                "max": 100,
+                "showIf": {
+                    "key": "columnCharsFillContainer",
+                    "value": false
+                }
             },
             "alternateRow": {
                 "label": "隔行换色",
@@ -946,26 +971,6 @@
                 "group": true,
                 "fields": [
                     { "key": "label", "label": "列名", "control": "text" },
-                    {
-                        "key": "widthMode",
-                        "label": "宽度模式",
-                        "control": "select",
-                        "options": [
-                            { "value": "balanced", "label": "均衡" },
-                            { "value": "value", "label": "数值" },
-                            { "value": "chars", "label": "字数" }
-                        ]
-                    },
-                    { "key": "widthValue", "label": "宽度", "control": "number", "min": 0 },
-                    {
-                        "key": "widthUnit",
-                        "label": "单位",
-                        "control": "select",
-                        "options": [
-                            { "value": "px", "label": "px" },
-                            { "value": "%", "label": "%" }
-                        ]
-                    },
                     { "key": "previewLength", "label": "字数", "control": "number", "min": 0 },
                     { "key": "frozen", "label": "冻结", "control": "switch" }
                 ],
