@@ -1293,6 +1293,39 @@
                                                             </div>
                                                         </div>
                                                     {/if}
+                                                    <div class="overlay-field-row">
+                                                        <span class="overlay-field-label">编辑</span>
+                                                        <div style="display: flex; align-items: center; justify-content: flex-start; flex: 1;">
+                                                            <ToggleSwitch
+                                                                checked={colObj.editable ?? false}
+                                                                on:change={(e) => {
+                                                                    const list = [...currentValues[p.key]]
+                                                                    const oldVal =
+                                                                        typeof list[index] === 'string'
+                                                                            ? {
+                                                                                  label: list[index],
+                                                                                  frozen: false,
+                                                                                  previewLength: 10,
+                                                                                  widthMode: 'balanced',
+                                                                                  widthValue: 0,
+                                                                                  widthUnit: 'px',
+                                                                                  editable: false
+                                                                              }
+                                                                            : {
+                                                                                  frozen: false,
+                                                                                  previewLength: list[index]?.previewLength ?? 10,
+                                                                                  widthMode: list[index]?.widthMode === 'chars' ? 'chars' : list[index]?.widthMode === 'value' ? 'value' : 'balanced',
+                                                                                  widthValue: list[index]?.widthValue ?? 0,
+                                                                                  widthUnit: list[index]?.widthUnit ?? 'px',
+                                                                                  editable: list[index]?.editable ?? false,
+                                                                                  ...(list[index] || {})
+                                                                              }
+                                                                    list[index] = { ...oldVal, editable: e.detail }
+                                                                    handleAttrChange(p.key, list)
+                                                                }}
+                                                            />
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                             <div class="overlay-row-actions">

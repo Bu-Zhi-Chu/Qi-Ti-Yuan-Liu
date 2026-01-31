@@ -42,6 +42,7 @@
     let columnWidthMode = $derived(context?.columnWidthMode ?? 'balanced')
     let selectedRowIndices = $derived(context?.selectedRowIndices ?? new Set())
     let toggleRow = context?.toggleRow
+    let handleCellUpdate = context?.handleCellUpdate
     let startRecord = $derived(context?.startRecord ?? 1)
 
     let rowStyles = $state<string[]>([])
@@ -50,7 +51,14 @@
     let frozenBodyEl = $state<HTMLDivElement | null>(null)
     let scrollableBodyEl = $state<HTMLDivElement | null>(null)
 
+    let editingCell = $state<{ rowIndex: number; colIndex: number } | null>(null)
+    let editingValue = $state('')
     let hoveredRowIndex = $state<number | null>(null)
+
+    // Smart navigation state
+    let editDirection = $state<'horizontal' | 'vertical'>('horizontal')
+    let lastEditedCell = $state<{ rowIndex: number; colIndex: number } | null>(null)
+    let isNavigating = false
 
     let stickyOffsets = $derived.by(() => {
         return []
@@ -294,6 +302,153 @@
         `
     }
 
+    function startEditing(rowIndex: number, colIndex: number, value: any, isEditable: boolean | undefined, source: 'manual' | 'auto' = 'manual') {
+        if (!isEditable) return
+
+        // Smart direction inference for manual clicks
+        if (source === 'manual' && lastEditedCell) {
+            const dRow = Math.abs(rowIndex - lastEditedCell.rowIndex)
+            const dCol = Math.abs(colIndex - lastEditedCell.colIndex)
+
+            // Check for adjacency (including wrapping, but simpler proximity check is usually enough for "adjacent click")
+            // Here we strictly check for immediate neighbors
+            if (dRow === 0 && dCol === 1) {
+                editDirection = 'horizontal'
+            } else if (dRow === 1 && dCol === 0) {
+                editDirection = 'vertical'
+            }
+        }
+
+        editingCell = { rowIndex, colIndex }
+        editingValue = value == null ? '' : String(value)
+
+        // Update last edited cell tracking (deferred to here so it captures the cell we just started editing as the "last visited")
+        // Wait, if I click A, lastEditedCell becomes A. Then I click B. We compare B with A. Then lastEditedCell becomes B.
+        lastEditedCell = { rowIndex, colIndex }
+    }
+
+    function finishEditing() {
+        if (isNavigating) return
+        if (!editingCell) return
+        const { rowIndex, colIndex } = editingCell
+        if (handleCellUpdate) {
+            handleCellUpdate(rowIndex, colIndex, editingValue)
+        }
+        editingCell = null
+        editingValue = ''
+    }
+
+    function cancelEditing() {
+        if (isNavigating) return
+        editingCell = null
+        editingValue = ''
+    }
+
+    function handleKeyDown(e: KeyboardEvent) {
+        if (e.key === 'Enter') {
+            finishEditing()
+        } else if (e.key === 'Escape') {
+            cancelEditing()
+        } else if (e.key === 'Tab') {
+            e.preventDefault()
+            e.stopPropagation()
+            handleTabNavigation()
+        }
+    }
+
+    function handleTabNavigation() {
+        if (!editingCell) return
+        const { rowIndex, colIndex } = editingCell
+
+        // Save current data manually
+        if (handleCellUpdate) {
+            handleCellUpdate(rowIndex, colIndex, editingValue)
+        }
+
+        // Set navigating flag to prevent onblur from interfering
+        isNavigating = true
+
+        // Clear current editing state
+        editingCell = null
+        editingValue = ''
+
+        // Find next editable cell based on direction
+        let nextRow = rowIndex
+        let nextCol = colIndex
+        let found = false
+
+        // Safety break to prevent infinite loops
+        let attempts = 0
+        const maxAttempts = bodyData.length * numColumns
+
+        while (!found && attempts < maxAttempts) {
+            attempts++
+
+            if (editDirection === 'horizontal') {
+                // Move next column
+                nextCol++
+                if (nextCol >= numColumns) {
+                    nextCol = 0
+                    nextRow++
+                    // If we run out of rows, stop or wrap to beginning?
+                    // User said "if this row has no more... automatically switch to next row".
+                    // Implies stop if no more rows.
+                    if (nextRow >= bodyData.length) {
+                        isNavigating = false
+                        return // End of table
+                    }
+                }
+            } else {
+                // Move next row
+                nextRow++
+                if (nextRow >= bodyData.length) {
+                    nextRow = 0
+                    nextCol++
+                    if (nextCol >= numColumns) {
+                        isNavigating = false
+                        return // End of table
+                    }
+                }
+            }
+
+            // Check if this cell is editable
+            // headers[nextCol] contains config
+            const header = headers[nextCol]
+            // Note: headers array includes system columns if they are in displayHeaders
+            // displayHeaders filters out hidden columns.
+            // Check if editable
+            if (header && typeof header === 'object' && header.editable) {
+                found = true
+            }
+        }
+
+        if (found) {
+            // Need to get value for the new cell
+            const row = bodyData[nextRow]
+            const val = row ? row[nextCol] : ''
+            const header = headers[nextCol]
+            const isEditable = header && typeof header === 'object' && header.editable
+
+            // Start editing next cell
+            // Use 'auto' source so we don't change direction logic
+            startEditing(nextRow, nextCol, val, isEditable, 'auto')
+
+            // Reset navigating flag after a short delay to ensure focus is established
+            setTimeout(() => {
+                isNavigating = false
+            }, 100)
+        } else {
+            isNavigating = false
+        }
+    }
+
+    function focus(el: HTMLInputElement) {
+        el.focus()
+        // Move cursor to the end of the text
+        const length = el.value.length
+        el.setSelectionRange(length, length)
+    }
+
     function toAdaptiveSize(val?: string): string {
         if (!val) return ''
         if (val.endsWith('px')) {
@@ -366,24 +521,40 @@
                         {:else}
                             {@const cellData = row[colIndex] !== undefined ? row[colIndex] : ''}
                             {@const config = getCellConfig(rowIndex, colIndex)}
-                            {@const replacement = config.enableImageReplacement ? getReplacementImage(cellData, config.replacementRules) : null}
-                            {@const contentBgUrl = getBackgroundUrl(config.contentBackgroundImage)}
-                            {@const contentStyle = `
+                            {@const isEditable = header && typeof header === 'object' ? header.editable : false}
+
+                            {#if editingCell?.rowIndex === rowIndex && editingCell?.colIndex === colIndex}
+                                <div class="body-cell" style={getCellStyle(col, rowIndex)}>
+                                    <input
+                                        type="text"
+                                        value={editingValue}
+                                        oninput={(e) => (editingValue = e.currentTarget.value)}
+                                        onblur={finishEditing}
+                                        onkeydown={handleKeyDown}
+                                        use:focus
+                                        style="width: 100%; height: 100%; box-sizing: border-box; border: none; outline: 2px solid #3b82f6; outline-offset: -2px; border-radius: 0; background: transparent; text-align: inherit; font-family: inherit; font-size: inherit; padding: 0; margin: 0; line-height: 1.5; min-height: 1.5em; color: inherit;"
+                                    />
+                                </div>
+                            {:else}
+                                {@const replacement = config.enableImageReplacement ? getReplacementImage(cellData, config.replacementRules) : null}
+                                {@const contentBgUrl = getBackgroundUrl(config.contentBackgroundImage)}
+                                {@const contentStyle = `
                             ${config.contentWidth ? `width: ${toAdaptiveSize(config.contentWidth)};` : ''}
                             ${config.contentHeight ? `height: ${toAdaptiveSize(config.contentHeight)};` : ''}
                             ${contentBgUrl ? `background-image: url('${contentBgUrl}'); background-size: 100% 100%; background-repeat: no-repeat; background-position: center;` : ''}
                         `}
-                            <div class="body-cell" style={getCellStyle(col, rowIndex)}>
-                                {#if replacement}
-                                    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
-                                        <img src={replacement.url} alt={String(cellData)} style="max-width: 100%; max-height: 100%; object-fit: contain; width: {replacement.width || 'auto'}; height: {replacement.height || 'auto'};" />
-                                    </div>
-                                {:else}
-                                    <div class="cell-content" style={`display: inline-block; ${contentStyle}`} title={cellData == null ? '' : String(cellData)}>
-                                        {cellData}
-                                    </div>
-                                {/if}
-                            </div>
+                                <div class="body-cell" style={getCellStyle(col, rowIndex)} ondblclick={() => startEditing(rowIndex, colIndex, cellData, isEditable)}>
+                                    {#if replacement}
+                                        <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
+                                            <img src={replacement.url} alt={String(cellData)} style="max-width: 100%; max-height: 100%; object-fit: contain; width: {replacement.width || 'auto'}; height: {replacement.height || 'auto'};" />
+                                        </div>
+                                    {:else}
+                                        <div class="cell-content" style={`display: inline-block; ${contentStyle}`} title={cellData == null ? '' : String(cellData)}>
+                                            {cellData}
+                                        </div>
+                                    {/if}
+                                </div>
+                            {/if}
                         {/if}
                     {/each}
                 </div>
@@ -421,24 +592,40 @@
                         {:else}
                             {@const cellData = row[colIndex] !== undefined ? row[colIndex] : ''}
                             {@const config = getCellConfig(rowIndex, colIndex)}
-                            {@const replacement = config.enableImageReplacement ? getReplacementImage(cellData, config.replacementRules) : null}
-                            {@const contentBgUrl = getBackgroundUrl(config.contentBackgroundImage)}
-                            {@const contentStyle = `
+                            {@const isEditable = header && typeof header === 'object' ? header.editable : false}
+
+                            {#if editingCell?.rowIndex === rowIndex && editingCell?.colIndex === colIndex}
+                                <div class="body-cell" style={getCellStyle(col, rowIndex)}>
+                                    <input
+                                        type="text"
+                                        value={editingValue}
+                                        oninput={(e) => (editingValue = e.currentTarget.value)}
+                                        onblur={finishEditing}
+                                        onkeydown={handleKeyDown}
+                                        use:focus
+                                        style="width: 100%; height: 100%; box-sizing: border-box; border: none; outline: 2px solid #3b82f6; outline-offset: -2px; border-radius: 0; background: transparent; text-align: inherit; font-family: inherit; font-size: inherit; padding: 0; margin: 0; line-height: 1.5; min-height: 1.5em; color: inherit;"
+                                    />
+                                </div>
+                            {:else}
+                                {@const replacement = config.enableImageReplacement ? getReplacementImage(cellData, config.replacementRules) : null}
+                                {@const contentBgUrl = getBackgroundUrl(config.contentBackgroundImage)}
+                                {@const contentStyle = `
                             ${config.contentWidth ? `width: ${toAdaptiveSize(config.contentWidth)};` : ''}
                             ${config.contentHeight ? `height: ${toAdaptiveSize(config.contentHeight)};` : ''}
                             ${contentBgUrl ? `background-image: url('${contentBgUrl}'); background-size: 100% 100%; background-repeat: no-repeat; background-position: center;` : ''}
                         `}
-                            <div class="body-cell" style={getCellStyle(col, rowIndex)}>
-                                {#if replacement}
-                                    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
-                                        <img src={replacement.url} alt={String(cellData)} style="max-width: 100%; max-height: 100%; object-fit: contain; width: {replacement.width || 'auto'}; height: {replacement.height || 'auto'};" />
-                                    </div>
-                                {:else}
-                                    <div class="cell-content" style={`display: inline-block; ${contentStyle}`} title={cellData == null ? '' : String(cellData)}>
-                                        {cellData}
-                                    </div>
-                                {/if}
-                            </div>
+                                <div class="body-cell" style={getCellStyle(col, rowIndex)} ondblclick={() => startEditing(rowIndex, colIndex, cellData, isEditable)}>
+                                    {#if replacement}
+                                        <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
+                                            <img src={replacement.url} alt={String(cellData)} style="max-width: 100%; max-height: 100%; object-fit: contain; width: {replacement.width || 'auto'}; height: {replacement.height || 'auto'};" />
+                                        </div>
+                                    {:else}
+                                        <div class="cell-content" style={`display: inline-block; ${contentStyle}`} title={cellData == null ? '' : String(cellData)}>
+                                            {cellData}
+                                        </div>
+                                    {/if}
+                                </div>
+                            {/if}
                         {/if}
                     {/each}
                 </div>

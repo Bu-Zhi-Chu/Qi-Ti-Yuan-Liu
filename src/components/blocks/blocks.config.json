@@ -1111,6 +1111,12 @@
                                 "chars"
                             ]
                         }
+                    },
+                    {
+                        "key": "editable",
+                        "label": "编辑",
+                        "control": "switch",
+                        "default": false
                     }
                 ],
                 "default": [

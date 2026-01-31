@@ -14,6 +14,7 @@
         widthValue?: number
         widthUnit?: 'px' | '%'
         type?: 'default' | 'index' | 'selection'
+        editable?: boolean
     }
 
     interface Props {
@@ -55,7 +56,7 @@
         columnFixedPadding = 100,
         columnLabels = [],
         headers = [],
-        bodyData = [],
+        bodyData: propBodyData = [],
         dataSource = 'json',
         requestPath = '',
         mockPath = '',
@@ -67,6 +68,12 @@
         onclick,
         ...rest
     }: Props = $props()
+
+    let bodyData = $state<(string | number)[][]>(propBodyData)
+
+    $effect(() => {
+        bodyData = propBodyData
+    })
 
     let currentPage = $state(1)
     let pageSize = $state(Number(initialPageSize))
@@ -108,7 +115,8 @@
                     widthMode: globalMode,
                     widthValue: 0,
                     widthUnit: 'px',
-                    type: 'default'
+                    type: 'default',
+                    editable: false
                 } as ColumnLabelConfig
             }
             const widthValue = typeof h.widthValue === 'number' ? h.widthValue : 0
@@ -121,7 +129,8 @@
                 widthMode: globalMode,
                 widthValue,
                 widthUnit,
-                type: 'default'
+                type: 'default',
+                editable: h.editable ?? false
             } as ColumnLabelConfig
         })
 
@@ -133,7 +142,8 @@
                 widthValue: 32,
                 widthUnit: 'px',
                 type: 'selection',
-                previewLength: 0
+                previewLength: 0,
+                editable: false
             })
         }
 
@@ -145,7 +155,8 @@
                 widthValue: 40,
                 widthUnit: 'px',
                 type: 'index',
-                previewLength: 0
+                previewLength: 0,
+                editable: false
             })
         }
 
@@ -257,17 +268,11 @@
         const systemCols = getSystemCols()
         const dataHeaderCount = allHeaders.filter((h) => !h.type || h.type === 'default').length
 
-        if (dataSource === 'json') {
-            if (bodyData && bodyData.length > 0) {
-                return bodyData.map((row) => [...systemCols, ...row])
-            }
-            // Fallback sample data
+        const generateSampleData = (rowCount: number) => {
             const numCols = displayHeaders.length - systemCols.length
-            const numRows = 50
             const baseText = '一二三四五六七八九十'
-
-            return Array.from({ length: numRows }, (_, rowIndex) => {
-                const dataRow = Array.from({ length: numCols }, (_, colIndex) => {
+            return Array.from({ length: rowCount }, (_, rowIndex) => {
+                return Array.from({ length: numCols }, (_, colIndex) => {
                     // Need to find corresponding header for data column
                     // displayHeaders includes system columns, so we need to offset
                     // But here we are generating data for data columns only
@@ -285,8 +290,16 @@
 
                     return `示例 ${rowIndex + 1}-${colIndex + 1}`
                 })
-                return [...systemCols, ...dataRow]
             })
+        }
+
+        if (dataSource === 'json') {
+            if (bodyData && bodyData.length > 0) {
+                return bodyData.map((row) => [...systemCols, ...row])
+            }
+            // Fallback sample data
+            const numRows = 50
+            return generateSampleData(numRows).map((row) => [...systemCols, ...row])
         }
 
         if ((dataSource === 'mock' || dataSource === 'real') && tableData && tableData.isSuccess && Array.isArray(tableData.result)) {
@@ -504,6 +517,99 @@
         selectedRowIndices = new Set()
     })
 
+    function handleCellUpdate(rowIndex: number, colIndex: number, value: any) {
+        // rowIndex is local to page (0 to pageSize-1)
+        // colIndex includes system columns
+
+        // 1. Calculate system column count
+        let systemColCount = 0
+        if (showRowNumber) systemColCount++
+        if (showCheckbox) systemColCount++
+
+        // 2. Check if it's a data column
+        const dataColIndex = colIndex - systemColCount
+        if (dataColIndex < 0) return // Cannot edit system columns
+
+        // 3. Update logic
+        if (dataSource === 'json') {
+            const dataRowIndex = (currentPage - 1) * pageSize + rowIndex
+
+            // Create a copy of bodyData
+            let newBodyData = bodyData ? [...bodyData.map((r) => [...r])] : []
+
+            if (newBodyData.length === 0) {
+                // Initialize with sample data if editing on empty/sample data
+                // Need to reconstruct generateSampleData logic or reuse it if it was hoisted.
+                // Since generateSampleData is inside $derived, we cannot access it here easily without duplicating logic or restructuring.
+                // Let's duplicate logic for now or move it to a helper function outside.
+                // Actually, best way is to hoist generateSampleData outside processedTableData.
+                // But it depends on displayHeaders and systemCols which are reactive.
+
+                // Let's recalculate systemCols and displayHeaders here or just access them if they are in scope (they are module scope? No, component scope).
+                // displayHeaders is available.
+
+                const getSystemCols = () => {
+                    const cols: string[] = []
+                    if (showRowNumber) cols.push('')
+                    if (showCheckbox) cols.push('')
+                    return cols
+                }
+                const systemCols = getSystemCols()
+                const numCols = displayHeaders.length - systemCols.length
+                const baseText = '一二三四五六七八九十'
+                const numRows = 50 // Match fallback rows
+
+                newBodyData = Array.from({ length: numRows }, (_, rIndex) => {
+                    return Array.from({ length: numCols }, (_, cIndex) => {
+                        const headerIndex = cIndex + systemCols.length
+                        const col = displayHeaders[headerIndex]
+                        const len = col && typeof col === 'object' && col.previewLength ? col.previewLength : 0
+
+                        if (len > 0) {
+                            let result = ''
+                            while (result.length < len) {
+                                result += baseText
+                            }
+                            return result.slice(0, len)
+                        }
+                        return `示例 ${rIndex + 1}-${cIndex + 1}`
+                    })
+                })
+            }
+
+            // Ensure row exists
+            if (newBodyData.length <= dataRowIndex) {
+                // If we are editing a row that doesn't exist in bodyData (e.g. fallback data), we should create it
+                // But fallback data logic in processedTableData generates 50 rows.
+                // If bodyData is empty, we are editing generated data.
+                // We should initialize bodyData with generated data if we want to support this?
+                // Or just assume bodyData is populated if we are editing.
+                // Let's just expand bodyData if needed.
+                while (newBodyData.length <= dataRowIndex) {
+                    newBodyData.push([])
+                }
+            }
+
+            const row = newBodyData[dataRowIndex]
+
+            // Ensure col exists
+            while (row.length <= dataColIndex) {
+                row.push('')
+            }
+
+            row[dataColIndex] = value
+
+            // Only update local state, do not persist to blocks.config.json
+            bodyData = newBodyData
+
+            // if (id) {
+            //     updateNodeProps(id, { attributes: { bodyData: newBodyData } })
+            // }
+        } else {
+            console.warn('Editing only supported for JSON data source currently')
+        }
+    }
+
     setContext('dynamic-table', {
         get headers() {
             return displayHeaders
@@ -557,7 +663,8 @@
             return startRecord
         },
         toggleRow,
-        toggleAll
+        toggleAll,
+        handleCellUpdate
     })
 </script>
 
