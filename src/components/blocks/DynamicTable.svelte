@@ -19,7 +19,6 @@
         hideScrollbar?: boolean
         alternateRow?: boolean
         columnWidthMode?: 'balanced' | 'value' | 'chars'
-        columnCharsFillContainer?: boolean
         columnCharsWidthCompensation?: number
         columnLabels?: (string | ColumnLabelConfig)[]
         headers?: string[]
@@ -41,8 +40,7 @@
         hideScrollbar: _hideScrollbar = false,
         alternateRow = false,
         columnWidthMode = 'balanced',
-        columnCharsFillContainer = true,
-        columnCharsWidthCompensation = 60,
+        columnFixedPadding = 100,
         columnLabels = [],
         headers = [],
         bodyData = [],
@@ -128,6 +126,7 @@
     let loadError = $state<string | null>(null)
     let hasVerticalScrollbar = $state(false)
     let verticalScrollbarWidth = $state(0)
+    let horizontalScrollLeft = $state(0)
 
     async function fetchTableData(path: string) {
         if (!path || path.trim() === '') {
@@ -218,40 +217,53 @@
         if (count === 0) return []
 
         if (columnWidthMode === 'chars') {
-            const maxLens: number[] = new Array(count).fill(1)
+            // In 'chars' mode, we use precise text measurement to sync header and body widths
+            // This achieves the "auto" effect while keeping columns aligned across the physical DOM split
+            let canvas: HTMLCanvasElement | null = null
+            let context: CanvasRenderingContext2D | null = null
 
+            if (typeof document !== 'undefined') {
+                canvas = document.createElement('canvas')
+                context = canvas.getContext('2d')
+                if (context) {
+                    context.font = '14px Microsoft YaHei, sans-serif' // Match default font
+                }
+            }
+
+            const getWidth = (str: string) => {
+                if (!context) return str.length * 14 // Fallback
+                return context.measureText(str).width
+            }
+
+            const maxPixelWidths: number[] = new Array(count).fill(0)
+
+            // Measure headers
             for (let i = 0; i < count; i++) {
                 const h = headers[i]
                 const label = h?.label ?? ''
-                const len = String(label).length
-                if (len > maxLens[i]) maxLens[i] = len || 1
+                const w = getWidth(String(label))
+                if (w > maxPixelWidths[i]) maxPixelWidths[i] = w
             }
 
+            // Measure body content
             const rows = processedTableData as any[]
             if (Array.isArray(rows)) {
                 for (const row of rows) {
                     if (!Array.isArray(row)) continue
                     for (let i = 0; i < count; i++) {
                         const v = row[i]
-                        const len = v == null ? 0 : String(v).length
-                        if (len > maxLens[i]) maxLens[i] = len || 1
+                        const w = getWidth(v == null ? '' : String(v))
+                        if (w > maxPixelWidths[i]) maxPixelWidths[i] = w
                     }
                 }
             }
 
-            const total = maxLens.reduce((sum, v) => sum + (v > 0 ? v : 1), 0)
-            if (!total) {
-                const base = 100 / count
-                return Array.from({ length: count }, () => `${base}%`)
-            }
+            // Add padding (12px left + 12px right = 24px) + Border buffer
+            const paddingBuffer = columnFixedPadding || 100
 
-            const rawScale = columnCharsFillContainer ? 100 : columnCharsWidthCompensation
-            const scale = rawScale <= 0 ? 1 : rawScale > 100 ? 100 : rawScale
-
-            return maxLens.map((len) => {
-                const value = len > 0 ? len : 1
-                const percent = (value * scale) / total
-                return `${percent.toFixed(3)}%`
+            return maxPixelWidths.map((w) => {
+                const width = w + paddingBuffer
+                return `calc(${width}px * var(--scale-ratio, 1))`
             })
         }
 
@@ -283,6 +295,18 @@
         return result.map((w) => (w && w.length > 0 ? w : `${fallback}%`))
     })
 
+    let allColumns = $derived.by(() => {
+        return displayHeaders.map((h, i) => ({
+            header: h,
+            width: columnWidths[i],
+            index: i,
+            isFrozen: h && typeof h === 'object' && h.frozen
+        }))
+    })
+
+    let frozenColumns = $derived(allColumns.filter((c) => c.isFrozen))
+    let scrollableColumns = $derived(allColumns.filter((c) => !c.isFrozen))
+
     setContext('dynamic-table', {
         get headers() {
             return displayHeaders
@@ -295,6 +319,12 @@
         },
         get numColumns() {
             return numColumns
+        },
+        get frozenColumns() {
+            return frozenColumns
+        },
+        get scrollableColumns() {
+            return scrollableColumns
         },
         get alternateRow() {
             return alternateRow
@@ -310,6 +340,12 @@
         },
         setVerticalScrollbarWidth(value: number) {
             verticalScrollbarWidth = value
+        },
+        get horizontalScrollLeft() {
+            return horizontalScrollLeft
+        },
+        setHorizontalScrollLeft(value: number) {
+            horizontalScrollLeft = value
         }
     })
 </script>

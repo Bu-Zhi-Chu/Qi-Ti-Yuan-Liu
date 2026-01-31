@@ -34,6 +34,8 @@
 
     let bodyData = $derived(context?.bodyData ?? [])
     let headers = $derived(context?.headers ?? [])
+    let frozenColumns = $derived(context?.frozenColumns ?? [])
+    let scrollableColumns = $derived(context?.scrollableColumns ?? [])
     let numColumns = $derived(context?.numColumns ?? 0)
     let alternateRow = $derived(context?.alternateRow ?? false)
     let columnWidths = $derived(context?.columnWidths ?? [])
@@ -41,33 +43,10 @@
     let rowStyles = $state<string[]>([])
     let cellConfigs = $state<CellConfig[][]>([])
     let imageUrls = $state<Record<string, string>>({})
-    let rootEl: HTMLDivElement | null = null
-
+    let frozenBodyEl: HTMLDivElement | null = null
+    let scrollableBodyEl: HTMLDivElement | null = null
     let stickyOffsets = $derived.by(() => {
-        const offsets: string[] = []
-        const widths = columnWidths.length > 0 ? columnWidths : []
-        const count = headers.length
-        let currentOffset = '0'
-
-        for (let i = 0; i < count; i++) {
-            offsets.push(currentOffset)
-            const header = headers[i]
-            if (header && typeof header === 'object' && header.frozen) {
-                let w = ''
-                if (widths.length > i && widths[i]) {
-                    w = widths[i]
-                } else {
-                    const widthPercent = numColumns > 0 ? 100 / numColumns : 100
-                    w = `${widthPercent}%`
-                }
-                if (currentOffset === '0') {
-                    currentOffset = w
-                } else {
-                    currentOffset = `calc(${currentOffset} + ${w})`
-                }
-            }
-        }
-        return offsets
+        return []
     })
 
     $effect(() => {
@@ -134,30 +113,60 @@
 
     function updateScrollbarState() {
         if (!context || typeof context.setHasVerticalScrollbar !== 'function') return
-        if (!rootEl) return
-        const hasScrollbar = rootEl.scrollHeight > rootEl.clientHeight
+        if (!scrollableBodyEl) return
+        const hasScrollbar = scrollableBodyEl.scrollHeight > scrollableBodyEl.clientHeight
         context.setHasVerticalScrollbar(hasScrollbar)
         if (typeof context.setVerticalScrollbarWidth === 'function') {
-            const width = rootEl.offsetWidth - rootEl.clientWidth
+            const width = scrollableBodyEl.offsetWidth - scrollableBodyEl.clientWidth
             context.setVerticalScrollbarWidth(width > 0 ? width : 0)
+        }
+    }
+
+    function handleFrozenWheel(e: WheelEvent) {
+        if (!scrollableBodyEl) return
+
+        const delta = e.deltaY
+        const prev = scrollableBodyEl.scrollTop
+        scrollableBodyEl.scrollTop += delta
+        const curr = scrollableBodyEl.scrollTop
+
+        if (prev !== curr) {
+            e.preventDefault()
+            if (frozenBodyEl) frozenBodyEl.scrollTop = curr
+        }
+    }
+
+    function handleScroll() {
+        if (!scrollableBodyEl) return
+
+        if (context && typeof context.setHorizontalScrollLeft === 'function') {
+            context.setHorizontalScrollLeft(scrollableBodyEl.scrollLeft)
+        }
+
+        if (frozenBodyEl) {
+            frozenBodyEl.scrollTop = scrollableBodyEl.scrollTop
         }
     }
 
     let resizeObserver: ResizeObserver | null = null
 
     onMount(() => {
-        updateScrollbarState()
-        if (typeof ResizeObserver !== 'undefined' && rootEl) {
+        setTimeout(updateScrollbarState, 0)
+
+        if (typeof ResizeObserver !== 'undefined' && scrollableBodyEl) {
             resizeObserver = new ResizeObserver(() => {
                 updateScrollbarState()
             })
-            resizeObserver.observe(rootEl)
+            resizeObserver.observe(scrollableBodyEl)
         }
     })
 
     onDestroy(() => {
-        if (resizeObserver && rootEl) {
-            resizeObserver.unobserve(rootEl)
+        if (resizeObserver && scrollableBodyEl) {
+            resizeObserver.unobserve(scrollableBodyEl)
+        }
+        if (scrollableBodyEl) {
+            // Event listener is on element, so handled by framework mostly, but safety check
         }
         Object.values(imageUrls).forEach((url) => URL.revokeObjectURL(url))
     })
@@ -250,11 +259,10 @@
         return row[colIndex] ?? { style: '' }
     }
 
-    function getCellStyle(rowIndex: number, colIndex: number) {
-        let widthStr = ''
-        if (columnWidths && columnWidths.length > colIndex && columnWidths[colIndex]) {
-            widthStr = columnWidths[colIndex]
-        } else {
+    function getCellStyle(col: any, rowIndex: number) {
+        const colIndex = col.index
+        let widthStr = col.width || ''
+        if (!widthStr) {
             const widthPercent = numColumns > 0 ? 100 / numColumns : 100
             widthStr = `${widthPercent}%`
         }
@@ -262,27 +270,17 @@
         const config = getCellConfig(rowIndex, colIndex)
         const extra = config.style || ''
 
-        const header = headers[colIndex]
-        const isFrozen = header && typeof header === 'object' && header.frozen
-
-        let stickyStyle = ''
-        if (isFrozen) {
-            stickyStyle = `
-                position: sticky;
-                left: ${stickyOffsets[colIndex]};
-                z-index: 5;
-                background: inherit;
-            `
-        }
-
-        return `
-            width: ${widthStr};
+        const baseStyle = `
             display: flex;
             align-items: center;
             justify-content: flex-start;
             text-align: left;
-            ${stickyStyle}
             ${extra}
+        `
+
+        return `
+            width: ${widthStr};
+            ${baseStyle}
         `
     }
 
@@ -321,38 +319,71 @@
     }
 </script>
 
-<div bind:this={rootEl} class="dynamic-table-body {className}" {style} {...rest}>
+<div class="dynamic-table-body {className}" {style} {...rest}>
     <div style="display: none;">
         {@render children?.()}
     </div>
 
     {#if bodyData.length > 0}
-        {#each bodyData as row, rowIndex}
-            <div class="body-row" style={getRowStyle(rowIndex)}>
-                {#each Array(numColumns) as _, colIndex}
-                    {@const cellData = row[colIndex] !== undefined ? row[colIndex] : ''}
-                    {@const config = getCellConfig(rowIndex, colIndex)}
-                    {@const replacement = config.enableImageReplacement ? getReplacementImage(cellData, config.replacementRules) : null}
-                    {@const contentBgUrl = getBackgroundUrl(config.contentBackgroundImage)}
-                    {@const contentStyle = `
-                        ${config.contentWidth ? `width: ${toAdaptiveSize(config.contentWidth)};` : ''}
-                        ${config.contentHeight ? `height: ${toAdaptiveSize(config.contentHeight)};` : ''}
-                        ${contentBgUrl ? `background-image: url('${contentBgUrl}'); background-size: 100% 100%; background-repeat: no-repeat; background-position: center;` : ''}
-                    `}
-                    <div class="body-cell" style={getCellStyle(rowIndex, colIndex)}>
-                        {#if replacement}
-                            <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
-                                <img src={replacement.url} alt={String(cellData)} style="max-width: 100%; max-height: 100%; object-fit: contain; width: {replacement.width || 'auto'}; height: {replacement.height || 'auto'};" />
-                            </div>
-                        {:else}
-                            <div class="cell-content" style={`display: inline-block; ${contentStyle}`} title={cellData == null ? '' : String(cellData)}>
-                                {cellData}
-                            </div>
-                        {/if}
-                    </div>
-                {/each}
-            </div>
-        {/each}
+        <div class="body-frozen" bind:this={frozenBodyEl}>
+            {#each bodyData as row, rowIndex}
+                <div class="body-row" style={getRowStyle(rowIndex)}>
+                    {#each frozenColumns as col}
+                        {@const colIndex = col.index}
+                        {@const cellData = row[colIndex] !== undefined ? row[colIndex] : ''}
+                        {@const config = getCellConfig(rowIndex, colIndex)}
+                        {@const replacement = config.enableImageReplacement ? getReplacementImage(cellData, config.replacementRules) : null}
+                        {@const contentBgUrl = getBackgroundUrl(config.contentBackgroundImage)}
+                        {@const contentStyle = `
+                            ${config.contentWidth ? `width: ${toAdaptiveSize(config.contentWidth)};` : ''}
+                            ${config.contentHeight ? `height: ${toAdaptiveSize(config.contentHeight)};` : ''}
+                            ${contentBgUrl ? `background-image: url('${contentBgUrl}'); background-size: 100% 100%; background-repeat: no-repeat; background-position: center;` : ''}
+                        `}
+                        <div class="body-cell" style={getCellStyle(col, rowIndex)}>
+                            {#if replacement}
+                                <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
+                                    <img src={replacement.url} alt={String(cellData)} style="max-width: 100%; max-height: 100%; object-fit: contain; width: {replacement.width || 'auto'}; height: {replacement.height || 'auto'};" />
+                                </div>
+                            {:else}
+                                <div class="cell-content" style={`display: inline-block; ${contentStyle}`} title={cellData == null ? '' : String(cellData)}>
+                                    {cellData}
+                                </div>
+                            {/if}
+                        </div>
+                    {/each}
+                </div>
+            {/each}
+        </div>
+
+        <div class="body-scrollable" bind:this={scrollableBodyEl} onscroll={handleScroll}>
+            {#each bodyData as row, rowIndex}
+                <div class="body-row" style={getRowStyle(rowIndex)}>
+                    {#each scrollableColumns as col}
+                        {@const colIndex = col.index}
+                        {@const cellData = row[colIndex] !== undefined ? row[colIndex] : ''}
+                        {@const config = getCellConfig(rowIndex, colIndex)}
+                        {@const replacement = config.enableImageReplacement ? getReplacementImage(cellData, config.replacementRules) : null}
+                        {@const contentBgUrl = getBackgroundUrl(config.contentBackgroundImage)}
+                        {@const contentStyle = `
+                            ${config.contentWidth ? `width: ${toAdaptiveSize(config.contentWidth)};` : ''}
+                            ${config.contentHeight ? `height: ${toAdaptiveSize(config.contentHeight)};` : ''}
+                            ${contentBgUrl ? `background-image: url('${contentBgUrl}'); background-size: 100% 100%; background-repeat: no-repeat; background-position: center;` : ''}
+                        `}
+                        <div class="body-cell" style={getCellStyle(col, rowIndex)}>
+                            {#if replacement}
+                                <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
+                                    <img src={replacement.url} alt={String(cellData)} style="max-width: 100%; max-height: 100%; object-fit: contain; width: {replacement.width || 'auto'}; height: {replacement.height || 'auto'};" />
+                                </div>
+                            {:else}
+                                <div class="cell-content" style={`display: inline-block; ${contentStyle}`} title={cellData == null ? '' : String(cellData)}>
+                                    {cellData}
+                                </div>
+                            {/if}
+                        </div>
+                    {/each}
+                </div>
+            {/each}
+        </div>
     {:else}
         <div class="empty-message">暂无数据</div>
     {/if}
@@ -360,70 +391,63 @@
 
 <style>
     .dynamic-table-body {
-        overflow-y: auto;
+        display: flex;
+        overflow: hidden;
         box-sizing: border-box;
+    }
+    .body-frozen {
+        flex: 0 0 auto;
+        overflow: hidden;
+        z-index: 1;
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    }
+    .body-scrollable {
+        flex: 1 1 auto;
+        overflow-y: auto;
+        overflow-x: auto;
         scrollbar-width: auto;
         scrollbar-color: #8b8b8b transparent;
     }
-    .dynamic-table-body::-webkit-scrollbar {
+    .body-scrollable::-webkit-scrollbar {
         width: calc(10px * var(--scale-ratio, 1));
+        height: calc(10px * var(--scale-ratio, 1));
     }
-    .dynamic-table-body::-webkit-scrollbar-track {
+    .body-scrollable::-webkit-scrollbar-track {
         background: transparent;
     }
-    .dynamic-table-body::-webkit-scrollbar-thumb {
+    .body-scrollable::-webkit-scrollbar-thumb {
         background: #8b8b8b;
         border-radius: calc(5px * var(--scale-ratio, 1));
     }
-    .dynamic-table-body::-webkit-scrollbar-thumb:hover {
+    .body-scrollable::-webkit-scrollbar-thumb:hover {
         background: #8b8b8b;
     }
-    .dynamic-table-body::-webkit-scrollbar-button {
+    .body-scrollable::-webkit-scrollbar-button {
         background: #8b8b8b;
     }
     .body-row {
         display: flex;
-        width: 100%;
-        min-height: calc(36px * var(--scale-ratio, 1));
-        box-sizing: border-box;
-        --bg-img: none;
-        --bg-size: auto;
-        --bg-repeat: no-repeat;
-        --bg-pos: 0% 0%;
-        background-image: var(--bg-img);
-        background-size: var(--bg-size);
-        background-repeat: var(--bg-repeat);
-        background-position: var(--bg-pos);
-    }
-    .body-row:not(:last-child) {
-        border-bottom: calc(1px * var(--scale-ratio, 1)) dashed rgb(29, 143, 211);
-    }
-    .body-row:hover {
-        background-color: rgb(233, 233, 233);
+        width: max-content;
+        min-width: 100%;
     }
     .body-cell {
-        min-height: calc(36px * var(--scale-ratio, 1));
+        flex: 0 0 auto;
         box-sizing: border-box;
         padding: calc(4px * var(--scale-ratio, 1));
-        display: flex;
-        align-items: center;
-        justify-content: flex-start;
-        overflow: hidden;
         border-right: calc(1px * var(--scale-ratio, 1)) dashed rgb(29, 143, 211);
+        border-bottom: calc(1px * var(--scale-ratio, 1)) dashed rgb(29, 143, 211);
+        overflow: hidden;
     }
     .cell-content {
-        max-width: 100%;
+        white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        white-space: nowrap;
+        max-width: 100%;
     }
     .empty-message {
         width: 100%;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        opacity: 0.5;
-        font-style: italic;
+        text-align: center;
+        padding: 20px;
+        color: #999;
     }
 </style>

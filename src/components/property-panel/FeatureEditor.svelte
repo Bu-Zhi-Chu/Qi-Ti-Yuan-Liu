@@ -517,6 +517,36 @@
                             }
                         })
                     }
+                } else if (node && node.componentType === 'DynamicTable') {
+                    const bodyNode = (node.children || []).find((c: any) => c.componentType === 'DynamicTableBody')
+                    if (bodyNode) {
+                        const desired = Array.isArray(value) ? value.length : 0
+                        const rowNodes = (bodyNode.children || []).filter((c: any) => c.componentType === 'DynamicTableRow')
+                        const cellMeta = (blocksConfig as any[]).find((b) => b.type === 'DynamicTableCell') as any
+                        const baseStyles = cellMeta?.presetStyles ? { ...cellMeta.presetStyles } : {}
+                        rowNodes.forEach((rowNode: any) => {
+                            const rowIndex = typeof rowNode.attributes?.rowIndex === 'number' ? rowNode.attributes.rowIndex : 0
+                            const cells = (rowNode.children || []).filter((c: any) => c.componentType === 'DynamicTableCell')
+                            const current = cells.length
+                            if (desired > current) {
+                                for (let i = current; i < desired; i++) {
+                                    const id = globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-dynamic-cell-${i}`
+                                    addNodeToParent(rowNode.id, {
+                                        id,
+                                        componentType: 'DynamicTableCell',
+                                        styles: baseStyles,
+                                        attributes: { 'data-name': `单元格 ${i + 1}`, rowIndex, colIndex: i },
+                                        children: []
+                                    } as any)
+                                }
+                            } else if (desired < current && cells.length) {
+                                const extras = cells.slice(desired)
+                                for (const c of extras) {
+                                    removeNodeById(c.id)
+                                }
+                            }
+                        })
+                    }
                 }
             }
         }

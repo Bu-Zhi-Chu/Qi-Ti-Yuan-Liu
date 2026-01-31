@@ -104,10 +104,22 @@
                 "label": "插件样式",
                 "type": "select",
                 "options": [
-                    { "value": "compact", "label": "精简" },
-                    { "value": "day", "label": "一天" },
-                    { "value": "three", "label": "三天" },
-                    { "value": "seven", "label": "七天" }
+                    {
+                        "value": "compact",
+                        "label": "精简"
+                    },
+                    {
+                        "value": "day",
+                        "label": "一天"
+                    },
+                    {
+                        "value": "three",
+                        "label": "三天"
+                    },
+                    {
+                        "value": "seven",
+                        "label": "七天"
+                    }
                 ],
                 "default": "compact"
             },
@@ -122,7 +134,10 @@
                 "default": "rgba(2, 6, 23, 0.22)",
                 "showIf": {
                     "key": "layout",
-                    "value": ["three", "seven"]
+                    "value": [
+                        "three",
+                        "seven"
+                    ]
                 }
             }
         }
@@ -182,10 +197,22 @@
                 "label": "加载方向",
                 "type": "select",
                 "options": [
-                    { "value": "up", "label": "上" },
-                    { "value": "down", "label": "下" },
-                    { "value": "left", "label": "左" },
-                    { "value": "right", "label": "右" }
+                    {
+                        "value": "up",
+                        "label": "上"
+                    },
+                    {
+                        "value": "down",
+                        "label": "下"
+                    },
+                    {
+                        "value": "left",
+                        "label": "左"
+                    },
+                    {
+                        "value": "right",
+                        "label": "右"
+                    }
                 ],
                 "default": "up",
                 "showIf": {
@@ -314,8 +341,14 @@
                 "label": "流光方向",
                 "type": "select",
                 "options": [
-                    { "value": "clockwise", "label": "顺时针" },
-                    { "value": "counterclockwise", "label": "逆时针" }
+                    {
+                        "value": "clockwise",
+                        "label": "顺时针"
+                    },
+                    {
+                        "value": "counterclockwise",
+                        "label": "逆时针"
+                    }
                 ],
                 "default": "clockwise",
                 "showIf": {
@@ -419,9 +452,18 @@
                 "label": "底图规范",
                 "type": "select",
                 "options": [
-                    { "value": "bing", "label": "Bing" },
-                    { "value": "tianditu", "label": "天地图" },
-                    { "value": "arcgis", "label": "ArcGIS" }
+                    {
+                        "value": "bing",
+                        "label": "Bing"
+                    },
+                    {
+                        "value": "tianditu",
+                        "label": "天地图"
+                    },
+                    {
+                        "value": "arcgis",
+                        "label": "ArcGIS"
+                    }
                 ],
                 "default": "bing"
             },
@@ -431,16 +473,27 @@
                 "default": "094fca72d164a2810961bb5fbd67862d",
                 "showIf": {
                     "key": "basemapStandard",
-                    "value": ["tianditu"]
+                    "value": [
+                        "tianditu"
+                    ]
                 }
             },
             "basemapType": {
                 "label": "底图类型",
                 "type": "select",
                 "options": [
-                    { "value": "imagery", "label": "影像" },
-                    { "value": "vector", "label": "平面" },
-                    { "value": "terrain", "label": "地形" }
+                    {
+                        "value": "imagery",
+                        "label": "影像"
+                    },
+                    {
+                        "value": "vector",
+                        "label": "平面"
+                    },
+                    {
+                        "value": "terrain",
+                        "label": "地形"
+                    }
                 ],
                 "default": "imagery"
             },
@@ -480,13 +533,44 @@
                 "type": "overlayServices",
                 "group": true,
                 "fields": [
-                    { "key": "id", "label": "标记", "control": "text" },
-                    { "key": "name", "label": "名称", "control": "text" },
-                    { "key": "url", "label": "路径", "control": "text" },
-                    { "key": "opacity", "label": "透明", "control": "number", "min": 0, "max": 1, "step": 0.05 },
-                    { "key": "zIndex", "label": "层级", "control": "number" }
+                    {
+                        "key": "id",
+                        "label": "标记",
+                        "control": "text"
+                    },
+                    {
+                        "key": "name",
+                        "label": "名称",
+                        "control": "text"
+                    },
+                    {
+                        "key": "url",
+                        "label": "路径",
+                        "control": "text"
+                    },
+                    {
+                        "key": "opacity",
+                        "label": "透明",
+                        "control": "number",
+                        "min": 0,
+                        "max": 1,
+                        "step": 0.05
+                    },
+                    {
+                        "key": "zIndex",
+                        "label": "层级",
+                        "control": "number"
+                    }
                 ],
-                "default": [{ "id": "", "name": "", "url": "", "opacity": 1, "zIndex": 0 }]
+                "default": [
+                    {
+                        "id": "",
+                        "name": "",
+                        "url": "",
+                        "opacity": 1,
+                        "zIndex": 0
+                    }
+                ]
             }
         }
     },
@@ -854,7 +938,6 @@
             }
         }
     },
-
     {
         "type": "FlexibleTable",
         "nameZh": "自由表格",
@@ -902,9 +985,21 @@
                 "label": "表头列名",
                 "type": "columnLabels",
                 "default": [
-                    { "label": "列1", "frozen": false, "previewLength": 10 },
-                    { "label": "列2", "frozen": false, "previewLength": 10 },
-                    { "label": "列3", "frozen": false, "previewLength": 10 }
+                    {
+                        "label": "列1",
+                        "frozen": false,
+                        "previewLength": 10
+                    },
+                    {
+                        "label": "列2",
+                        "frozen": false,
+                        "previewLength": 10
+                    },
+                    {
+                        "label": "列3",
+                        "frozen": false,
+                        "previewLength": 10
+                    }
                 ]
             }
         }
@@ -934,30 +1029,30 @@
                 "label": "宽度模式",
                 "type": "select",
                 "options": [
-                    { "value": "balanced", "label": "均衡" },
-                    { "value": "value", "label": "数值" },
-                    { "value": "chars", "label": "字数" }
+                    {
+                        "value": "balanced",
+                        "label": "均衡"
+                    },
+                    {
+                        "value": "value",
+                        "label": "数值"
+                    },
+                    {
+                        "value": "chars",
+                        "label": "字数"
+                    }
                 ],
                 "default": "balanced"
             },
-            "columnCharsFillContainer": {
-                "label": "占满容器",
-                "type": "switch",
-                "default": true,
-                "showIf": {
-                    "key": "columnWidthMode",
-                    "value": "chars"
-                }
-            },
-            "columnCharsWidthCompensation": {
-                "label": "宽度系数",
+            "columnFixedPadding": {
+                "label": "固定留白",
                 "type": "number",
-                "default": 60,
+                "default": 100,
                 "min": 0,
                 "max": 100,
                 "showIf": {
-                    "key": "columnCharsFillContainer",
-                    "value": false
+                    "key": "columnWidthMode",
+                    "value": "chars"
                 }
             },
             "alternateRow": {
@@ -970,11 +1065,28 @@
                 "type": "columnLabels",
                 "group": true,
                 "fields": [
-                    { "key": "label", "label": "列名", "control": "text" },
-                    { "key": "previewLength", "label": "字数", "control": "number", "min": 0 },
-                    { "key": "frozen", "label": "冻结", "control": "switch" }
+                    {
+                        "key": "label",
+                        "label": "列名",
+                        "control": "text"
+                    },
+                    {
+                        "key": "previewLength",
+                        "label": "字数",
+                        "control": "number",
+                        "min": 0
+                    },
+                    {
+                        "key": "frozen",
+                        "label": "冻结",
+                        "control": "switch"
+                    }
                 ],
-                "default": ["列1", "列2", "列3"]
+                "default": [
+                    "列1",
+                    "列2",
+                    "列3"
+                ]
             }
         }
     },
@@ -1058,10 +1170,23 @@
                 "type": "replacementRules",
                 "group": true,
                 "fields": [
-                    { "key": "rule", "label": "规则", "control": "text" },
-                    { "key": "image", "label": "图片", "control": "image" }
+                    {
+                        "key": "rule",
+                        "label": "规则",
+                        "control": "text"
+                    },
+                    {
+                        "key": "image",
+                        "label": "图片",
+                        "control": "image"
+                    }
                 ],
-                "default": [{ "rule": "", "image": "" }],
+                "default": [
+                    {
+                        "rule": "",
+                        "image": ""
+                    }
+                ],
                 "showIf": {
                     "key": "enableImageReplacement",
                     "value": true
@@ -1145,10 +1270,23 @@
                 "type": "replacementRules",
                 "group": true,
                 "fields": [
-                    { "key": "rule", "label": "规则", "control": "text" },
-                    { "key": "image", "label": "图片", "control": "image" }
+                    {
+                        "key": "rule",
+                        "label": "规则",
+                        "control": "text"
+                    },
+                    {
+                        "key": "image",
+                        "label": "图片",
+                        "control": "image"
+                    }
                 ],
-                "default": [{ "rule": "", "image": "" }],
+                "default": [
+                    {
+                        "rule": "",
+                        "image": ""
+                    }
+                ],
                 "showIf": {
                     "key": "enableImageReplacement",
                     "value": true
