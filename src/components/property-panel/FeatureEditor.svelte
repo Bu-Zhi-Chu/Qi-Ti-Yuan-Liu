@@ -406,7 +406,8 @@
                             const name = rowNodes.length === 0 ? '表格表行 1' : '表格表行 2'
                             const tableMeta = (blocksConfig as any[]).find((b) => b.type === 'FlexibleTable') as any
                             const defaultLabels = tableMeta?.featureProps?.columnLabels?.default
-                            const count = Array.isArray(defaultLabels) && defaultLabels.length > 0 ? defaultLabels.length : 3
+                            const currentLabels = currentValues['columnLabels']
+                            const count = Array.isArray(currentLabels) && currentLabels.length > 0 ? currentLabels.length : Array.isArray(defaultLabels) && defaultLabels.length > 0 ? defaultLabels.length : 3
                             const cellMeta = (blocksConfig as any[]).find((b) => b.type === 'FlexibleTableCell') as any
                             const cellStyles = cellMeta?.presetStyles ? { ...cellMeta.presetStyles } : {}
                             const rowIndex = rowNodes.length
@@ -437,7 +438,8 @@
                             const name = rowNodes.length === 0 ? '动态表行 1' : '动态表行 2'
                             const tableMeta = (blocksConfig as any[]).find((b) => b.type === 'DynamicTable') as any
                             const defaultLabels = tableMeta?.featureProps?.columnLabels?.default
-                            const count = Array.isArray(defaultLabels) && defaultLabels.length > 0 ? defaultLabels.length : 3
+                            const currentLabels = currentValues['columnLabels']
+                            const count = Array.isArray(currentLabels) && currentLabels.length > 0 ? currentLabels.length : Array.isArray(defaultLabels) && defaultLabels.length > 0 ? defaultLabels.length : 3
                             const cellMeta = (blocksConfig as any[]).find((b) => b.type === 'DynamicTableCell') as any
                             const cellStyles = cellMeta?.presetStyles ? { ...cellMeta.presetStyles } : {}
                             const rowIndex = rowNodes.length
@@ -1155,37 +1157,39 @@
                                                             </div>
                                                         </div>
                                                     {/if}
-                                                    <div class="overlay-field-row">
-                                                        <span class="overlay-field-label">冻结</span>
-                                                        <div style="display: flex; align-items: center; justify-content: flex-start; flex: 1;">
-                                                            <ToggleSwitch
-                                                                checked={colObj.frozen}
-                                                                on:change={(e) => {
-                                                                    const list = [...currentValues[p.key]]
-                                                                    const oldVal =
-                                                                        typeof list[index] === 'string'
-                                                                            ? {
-                                                                                  label: list[index],
-                                                                                  frozen: false,
-                                                                                  previewLength: 10,
-                                                                                  widthMode: 'balanced',
-                                                                                  widthValue: 0,
-                                                                                  widthUnit: 'px'
-                                                                              }
-                                                                            : {
-                                                                                  frozen: false,
-                                                                                  previewLength: list[index]?.previewLength ?? 10,
-                                                                                  widthMode: list[index]?.widthMode === 'chars' ? 'chars' : list[index]?.widthMode === 'value' ? 'value' : 'balanced',
-                                                                                  widthValue: list[index]?.widthValue ?? 0,
-                                                                                  widthUnit: list[index]?.widthUnit ?? 'px',
-                                                                                  ...(list[index] || {})
-                                                                              }
-                                                                    list[index] = { ...oldVal, frozen: e.detail }
-                                                                    handleAttrChange(p.key, list)
-                                                                }}
-                                                            />
+                                                    {#if globalWidthMode !== 'balanced'}
+                                                        <div class="overlay-field-row">
+                                                            <span class="overlay-field-label">冻结</span>
+                                                            <div style="display: flex; align-items: center; justify-content: flex-start; flex: 1;">
+                                                                <ToggleSwitch
+                                                                    checked={colObj.frozen}
+                                                                    on:change={(e) => {
+                                                                        const list = [...currentValues[p.key]]
+                                                                        const oldVal =
+                                                                            typeof list[index] === 'string'
+                                                                                ? {
+                                                                                      label: list[index],
+                                                                                      frozen: false,
+                                                                                      previewLength: 10,
+                                                                                      widthMode: 'balanced',
+                                                                                      widthValue: 0,
+                                                                                      widthUnit: 'px'
+                                                                                  }
+                                                                                : {
+                                                                                      frozen: false,
+                                                                                      previewLength: list[index]?.previewLength ?? 10,
+                                                                                      widthMode: list[index]?.widthMode === 'chars' ? 'chars' : list[index]?.widthMode === 'value' ? 'value' : 'balanced',
+                                                                                      widthValue: list[index]?.widthValue ?? 0,
+                                                                                      widthUnit: list[index]?.widthUnit ?? 'px',
+                                                                                      ...(list[index] || {})
+                                                                                  }
+                                                                        list[index] = { ...oldVal, frozen: e.detail }
+                                                                        handleAttrChange(p.key, list)
+                                                                    }}
+                                                                />
+                                                            </div>
                                                         </div>
-                                                    </div>
+                                                    {/if}
                                                 </div>
                                             </div>
                                             <div class="overlay-row-actions">

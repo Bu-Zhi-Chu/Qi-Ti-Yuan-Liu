@@ -1025,6 +1025,20 @@
             "borderColor": "rgb(149, 149, 255)"
         },
         "featureProps": {
+            "showToolPanel": {
+                "label": "工具面板",
+                "type": "switch",
+                "default": true
+            },
+            "enablePagination": {
+                "label": "数据分页",
+                "type": "switch",
+                "default": true,
+                "showIf": {
+                    "key": "showToolPanel",
+                    "value": true
+                }
+            },
             "columnWidthMode": {
                 "label": "宽度模式",
                 "type": "select",
@@ -1079,7 +1093,14 @@
                     {
                         "key": "frozen",
                         "label": "冻结",
-                        "control": "switch"
+                        "control": "switch",
+                        "showIf": {
+                            "key": "columnWidthMode",
+                            "value": [
+                                "value",
+                                "chars"
+                            ]
+                        }
                     }
                 ],
                 "default": [

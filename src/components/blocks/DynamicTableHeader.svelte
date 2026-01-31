@@ -24,7 +24,7 @@
     let horizontalScrollLeft = $derived(context?.horizontalScrollLeft ?? 0)
 
     let imageUrls = $state<Record<string, string>>({})
-    let scrollEl: HTMLDivElement | null = null
+    let scrollEl = $state<HTMLDivElement | null>(null)
 
     $effect(() => {
         const pid = get(projectId)
@@ -95,7 +95,7 @@
             text-overflow: ellipsis;
             white-space: nowrap;
         `
-        
+
         return `
             width: ${widthStr};
             ${baseStyle}

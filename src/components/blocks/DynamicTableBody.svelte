@@ -39,12 +39,16 @@
     let numColumns = $derived(context?.numColumns ?? 0)
     let alternateRow = $derived(context?.alternateRow ?? false)
     let columnWidths = $derived(context?.columnWidths ?? [])
+    let columnWidthMode = $derived(context?.columnWidthMode ?? 'balanced')
 
     let rowStyles = $state<string[]>([])
     let cellConfigs = $state<CellConfig[][]>([])
     let imageUrls = $state<Record<string, string>>({})
-    let frozenBodyEl: HTMLDivElement | null = null
-    let scrollableBodyEl: HTMLDivElement | null = null
+    let frozenBodyEl = $state<HTMLDivElement | null>(null)
+    let scrollableBodyEl = $state<HTMLDivElement | null>(null)
+
+    let hoveredRowIndex = $state<number | null>(null)
+
     let stickyOffsets = $derived.by(() => {
         return []
     })
@@ -139,7 +143,7 @@
     function handleScroll() {
         if (!scrollableBodyEl) return
 
-        if (context && typeof context.setHorizontalScrollLeft === 'function') {
+        if (columnWidthMode !== 'balanced' && context && typeof context.setHorizontalScrollLeft === 'function') {
             context.setHorizontalScrollLeft(scrollableBodyEl.scrollLeft)
         }
 
@@ -250,6 +254,9 @@
         } else {
             style = rowIndex % 2 === 0 ? base : alt
         }
+        if (hoveredRowIndex === rowIndex) {
+            style += '; background-color: rgba(150, 150, 150, 0.2) !important;'
+        }
         return replaceHashesInStyle(style)
     }
 
@@ -273,8 +280,8 @@
         const baseStyle = `
             display: flex;
             align-items: center;
-            justify-content: flex-start;
-            text-align: left;
+            justify-content: center;
+            text-align: center;
             ${extra}
         `
 
@@ -327,7 +334,7 @@
     {#if bodyData.length > 0}
         <div class="body-frozen" bind:this={frozenBodyEl}>
             {#each bodyData as row, rowIndex}
-                <div class="body-row" style={getRowStyle(rowIndex)}>
+                <div class="body-row" style={getRowStyle(rowIndex)} onmouseenter={() => (hoveredRowIndex = rowIndex)} onmouseleave={() => (hoveredRowIndex = null)} role="row" tabindex="-1">
                     {#each frozenColumns as col}
                         {@const colIndex = col.index}
                         {@const cellData = row[colIndex] !== undefined ? row[colIndex] : ''}
@@ -355,9 +362,9 @@
             {/each}
         </div>
 
-        <div class="body-scrollable" bind:this={scrollableBodyEl} onscroll={handleScroll}>
+        <div class="body-scrollable" bind:this={scrollableBodyEl} onscroll={handleScroll} style:overflow-x={columnWidthMode === 'balanced' ? 'hidden' : 'auto'}>
             {#each bodyData as row, rowIndex}
-                <div class="body-row" style={getRowStyle(rowIndex)}>
+                <div class="body-row" style={getRowStyle(rowIndex)} onmouseenter={() => (hoveredRowIndex = rowIndex)} onmouseleave={() => (hoveredRowIndex = null)} role="row" tabindex="-1">
                     {#each scrollableColumns as col}
                         {@const colIndex = col.index}
                         {@const cellData = row[colIndex] !== undefined ? row[colIndex] : ''}
