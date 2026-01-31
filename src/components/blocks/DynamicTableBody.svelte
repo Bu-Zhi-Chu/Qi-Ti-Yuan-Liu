@@ -40,6 +40,9 @@
     let alternateRow = $derived(context?.alternateRow ?? false)
     let columnWidths = $derived(context?.columnWidths ?? [])
     let columnWidthMode = $derived(context?.columnWidthMode ?? 'balanced')
+    let selectedRowIndices = $derived(context?.selectedRowIndices ?? new Set())
+    let toggleRow = context?.toggleRow
+    let startRecord = $derived(context?.startRecord ?? 1)
 
     let rowStyles = $state<string[]>([])
     let cellConfigs = $state<CellConfig[][]>([])
@@ -337,26 +340,51 @@
                 <div class="body-row" style={getRowStyle(rowIndex)} onmouseenter={() => (hoveredRowIndex = rowIndex)} onmouseleave={() => (hoveredRowIndex = null)} role="row" tabindex="-1">
                     {#each frozenColumns as col}
                         {@const colIndex = col.index}
-                        {@const cellData = row[colIndex] !== undefined ? row[colIndex] : ''}
-                        {@const config = getCellConfig(rowIndex, colIndex)}
-                        {@const replacement = config.enableImageReplacement ? getReplacementImage(cellData, config.replacementRules) : null}
-                        {@const contentBgUrl = getBackgroundUrl(config.contentBackgroundImage)}
-                        {@const contentStyle = `
+                        {@const header = col.header}
+                        {@const type = header && typeof header === 'object' ? header.type : 'default'}
+
+                        {#if type === 'index'}
+                            <div class="body-cell" style={getCellStyle(col, rowIndex)}>
+                                <div class="cell-content" style="text-align: center; width: 100%;">
+                                    {startRecord + rowIndex}
+                                </div>
+                            </div>
+                        {:else if type === 'selection'}
+                            <div class="body-cell" style={getCellStyle(col, rowIndex)}>
+                                <div class="cell-content" style="text-align: center; width: 100%; display: flex; justify-content: center; align-items: center;">
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedRowIndices.has(rowIndex)}
+                                        onclick={(e) => {
+                                            e.stopPropagation()
+                                            toggleRow && toggleRow(rowIndex)
+                                        }}
+                                        class="custom-checkbox"
+                                    />
+                                </div>
+                            </div>
+                        {:else}
+                            {@const cellData = row[colIndex] !== undefined ? row[colIndex] : ''}
+                            {@const config = getCellConfig(rowIndex, colIndex)}
+                            {@const replacement = config.enableImageReplacement ? getReplacementImage(cellData, config.replacementRules) : null}
+                            {@const contentBgUrl = getBackgroundUrl(config.contentBackgroundImage)}
+                            {@const contentStyle = `
                             ${config.contentWidth ? `width: ${toAdaptiveSize(config.contentWidth)};` : ''}
                             ${config.contentHeight ? `height: ${toAdaptiveSize(config.contentHeight)};` : ''}
                             ${contentBgUrl ? `background-image: url('${contentBgUrl}'); background-size: 100% 100%; background-repeat: no-repeat; background-position: center;` : ''}
                         `}
-                        <div class="body-cell" style={getCellStyle(col, rowIndex)}>
-                            {#if replacement}
-                                <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
-                                    <img src={replacement.url} alt={String(cellData)} style="max-width: 100%; max-height: 100%; object-fit: contain; width: {replacement.width || 'auto'}; height: {replacement.height || 'auto'};" />
-                                </div>
-                            {:else}
-                                <div class="cell-content" style={`display: inline-block; ${contentStyle}`} title={cellData == null ? '' : String(cellData)}>
-                                    {cellData}
-                                </div>
-                            {/if}
-                        </div>
+                            <div class="body-cell" style={getCellStyle(col, rowIndex)}>
+                                {#if replacement}
+                                    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
+                                        <img src={replacement.url} alt={String(cellData)} style="max-width: 100%; max-height: 100%; object-fit: contain; width: {replacement.width || 'auto'}; height: {replacement.height || 'auto'};" />
+                                    </div>
+                                {:else}
+                                    <div class="cell-content" style={`display: inline-block; ${contentStyle}`} title={cellData == null ? '' : String(cellData)}>
+                                        {cellData}
+                                    </div>
+                                {/if}
+                            </div>
+                        {/if}
                     {/each}
                 </div>
             {/each}
@@ -367,26 +395,51 @@
                 <div class="body-row" style={getRowStyle(rowIndex)} onmouseenter={() => (hoveredRowIndex = rowIndex)} onmouseleave={() => (hoveredRowIndex = null)} role="row" tabindex="-1">
                     {#each scrollableColumns as col}
                         {@const colIndex = col.index}
-                        {@const cellData = row[colIndex] !== undefined ? row[colIndex] : ''}
-                        {@const config = getCellConfig(rowIndex, colIndex)}
-                        {@const replacement = config.enableImageReplacement ? getReplacementImage(cellData, config.replacementRules) : null}
-                        {@const contentBgUrl = getBackgroundUrl(config.contentBackgroundImage)}
-                        {@const contentStyle = `
+                        {@const header = col.header}
+                        {@const type = header && typeof header === 'object' ? header.type : 'default'}
+
+                        {#if type === 'index'}
+                            <div class="body-cell" style={getCellStyle(col, rowIndex)}>
+                                <div class="cell-content" style="text-align: center; width: 100%;">
+                                    {startRecord + rowIndex}
+                                </div>
+                            </div>
+                        {:else if type === 'selection'}
+                            <div class="body-cell" style={getCellStyle(col, rowIndex)}>
+                                <div class="cell-content" style="text-align: center; width: 100%; display: flex; justify-content: center; align-items: center;">
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedRowIndices.has(rowIndex)}
+                                        onclick={(e) => {
+                                            e.stopPropagation()
+                                            toggleRow && toggleRow(rowIndex)
+                                        }}
+                                        class="custom-checkbox"
+                                    />
+                                </div>
+                            </div>
+                        {:else}
+                            {@const cellData = row[colIndex] !== undefined ? row[colIndex] : ''}
+                            {@const config = getCellConfig(rowIndex, colIndex)}
+                            {@const replacement = config.enableImageReplacement ? getReplacementImage(cellData, config.replacementRules) : null}
+                            {@const contentBgUrl = getBackgroundUrl(config.contentBackgroundImage)}
+                            {@const contentStyle = `
                             ${config.contentWidth ? `width: ${toAdaptiveSize(config.contentWidth)};` : ''}
                             ${config.contentHeight ? `height: ${toAdaptiveSize(config.contentHeight)};` : ''}
                             ${contentBgUrl ? `background-image: url('${contentBgUrl}'); background-size: 100% 100%; background-repeat: no-repeat; background-position: center;` : ''}
                         `}
-                        <div class="body-cell" style={getCellStyle(col, rowIndex)}>
-                            {#if replacement}
-                                <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
-                                    <img src={replacement.url} alt={String(cellData)} style="max-width: 100%; max-height: 100%; object-fit: contain; width: {replacement.width || 'auto'}; height: {replacement.height || 'auto'};" />
-                                </div>
-                            {:else}
-                                <div class="cell-content" style={`display: inline-block; ${contentStyle}`} title={cellData == null ? '' : String(cellData)}>
-                                    {cellData}
-                                </div>
-                            {/if}
-                        </div>
+                            <div class="body-cell" style={getCellStyle(col, rowIndex)}>
+                                {#if replacement}
+                                    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
+                                        <img src={replacement.url} alt={String(cellData)} style="max-width: 100%; max-height: 100%; object-fit: contain; width: {replacement.width || 'auto'}; height: {replacement.height || 'auto'};" />
+                                    </div>
+                                {:else}
+                                    <div class="cell-content" style={`display: inline-block; ${contentStyle}`} title={cellData == null ? '' : String(cellData)}>
+                                        {cellData}
+                                    </div>
+                                {/if}
+                            </div>
+                        {/if}
                     {/each}
                 </div>
             {/each}
@@ -406,7 +459,7 @@
         flex: 0 0 auto;
         overflow: hidden;
         z-index: 1;
-        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        /* box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1); */
     }
     .body-scrollable {
         flex: 1 1 auto;
@@ -450,11 +503,41 @@
         overflow: hidden;
         text-overflow: ellipsis;
         max-width: 100%;
+        min-height: 1.5em;
+        line-height: 1.5;
+        display: inline-block;
+        vertical-align: middle;
     }
     .empty-message {
         width: 100%;
         text-align: center;
         padding: 20px;
         color: #999;
+    }
+    .custom-checkbox {
+        appearance: none;
+        -webkit-appearance: none;
+        width: calc(16px * var(--scale-ratio, 1));
+        height: calc(16px * var(--scale-ratio, 1));
+        border: calc(1px * var(--scale-ratio, 1)) solid #9ca3af;
+        border-radius: calc(3px * var(--scale-ratio, 1));
+        background-color: #fff;
+        cursor: pointer;
+        display: inline-block;
+        position: relative;
+        margin: 0;
+        vertical-align: middle;
+        outline: none;
+    }
+    .custom-checkbox:checked {
+        background-color: #3b82f6;
+        border-color: #3b82f6;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
+        background-size: 80% 80%;
+        background-position: center;
+        background-repeat: no-repeat;
+    }
+    .custom-checkbox:hover {
+        border-color: #3b82f6;
     }
 </style>

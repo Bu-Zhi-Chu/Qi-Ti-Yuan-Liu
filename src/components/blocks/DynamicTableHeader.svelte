@@ -22,6 +22,8 @@
     let hasVerticalScrollbar = $derived(context?.hasVerticalScrollbar ?? false)
     let verticalScrollbarWidth = $derived(context?.verticalScrollbarWidth ?? 0)
     let horizontalScrollLeft = $derived(context?.horizontalScrollLeft ?? 0)
+    let isAllSelected = $derived(context?.isAllSelected ?? false)
+    let toggleAll = context?.toggleAll
 
     let imageUrls = $state<Record<string, string>>({})
     let scrollEl = $state<HTMLDivElement | null>(null)
@@ -111,8 +113,13 @@
             {#each frozenColumns as col}
                 {@const header = col.header}
                 {@const label = header && typeof header === 'object' ? header.label : header}
+                {@const type = header && typeof header === 'object' ? header.type : 'default'}
                 <div class="header-cell" style={getCellStyle(col)} title={label == null ? '' : String(label)}>
-                    {@html String(label ?? '')}
+                    {#if type === 'selection'}
+                        <input type="checkbox" checked={isAllSelected} onclick={toggleAll} class="custom-checkbox" />
+                    {:else}
+                        {@html String(label ?? '')}
+                    {/if}
                 </div>
             {/each}
         </div>
@@ -120,8 +127,13 @@
             {#each scrollableColumns as col}
                 {@const header = col.header}
                 {@const label = header && typeof header === 'object' ? header.label : header}
+                {@const type = header && typeof header === 'object' ? header.type : 'default'}
                 <div class="header-cell" style={getCellStyle(col)} title={label == null ? '' : String(label)}>
-                    {@html String(label ?? '')}
+                    {#if type === 'selection'}
+                        <input type="checkbox" checked={isAllSelected} onclick={toggleAll} class="custom-checkbox" />
+                    {:else}
+                        {@html String(label ?? '')}
+                    {/if}
                 </div>
             {/each}
         </div>
@@ -132,8 +144,13 @@
             {#each frozenColumns as col}
                 {@const header = col.header}
                 {@const label = header && typeof header === 'object' ? header.label : header}
+                {@const type = header && typeof header === 'object' ? header.type : 'default'}
                 <div class="header-cell" style={getCellStyle(col)} title={label == null ? '' : String(label)}>
-                    {@html String(label ?? '')}
+                    {#if type === 'selection'}
+                        <input type="checkbox" checked={isAllSelected} onclick={toggleAll} class="custom-checkbox" />
+                    {:else}
+                        {@html String(label ?? '')}
+                    {/if}
                 </div>
             {/each}
         </div>
@@ -141,8 +158,13 @@
             {#each scrollableColumns as col}
                 {@const header = col.header}
                 {@const label = header && typeof header === 'object' ? header.label : header}
+                {@const type = header && typeof header === 'object' ? header.type : 'default'}
                 <div class="header-cell" style={getCellStyle(col)} title={label == null ? '' : String(label)}>
-                    {@html String(label ?? '')}
+                    {#if type === 'selection'}
+                        <input type="checkbox" checked={isAllSelected} onclick={toggleAll} class="custom-checkbox" />
+                    {:else}
+                        {@html String(label ?? '')}
+                    {/if}
                 </div>
             {/each}
         </div>
@@ -163,7 +185,7 @@
         overflow: hidden;
         z-index: 2;
         background: inherit;
-        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        /* box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1); */
     }
     .header-scroll {
         display: flex;
@@ -176,6 +198,34 @@
     }
     .header-scroll {
         -ms-overflow-style: none;
+    }
+    .custom-checkbox {
+        appearance: none;
+        -webkit-appearance: none;
+        width: calc(16px * var(--scale-ratio, 1));
+        height: calc(16px * var(--scale-ratio, 1));
+        border: calc(1px * var(--scale-ratio, 1)) solid #9ca3af;
+        border-radius: calc(3px * var(--scale-ratio, 1));
+        background-color: #fff;
+        cursor: pointer;
+        display: inline-block;
+        position: relative;
+        margin: 0;
+        vertical-align: middle;
+        outline: none;
+    }
+    .custom-checkbox:checked {
+        background-color: #3b82f6;
+        border-color: #3b82f6;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
+        background-size: 80% 80%;
+        background-position: center;
+        background-repeat: no-repeat;
+    }
+    .custom-checkbox:hover {
+        border-color: #3b82f6;
+    }
+    .header-scroll {
         scrollbar-width: none;
     }
     .header-cell {

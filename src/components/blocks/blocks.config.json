@@ -1030,6 +1030,16 @@
                 "type": "switch",
                 "default": true
             },
+            "showRowNumber": {
+                "label": "显示序号",
+                "type": "switch",
+                "default": true
+            },
+            "showCheckbox": {
+                "label": "显示勾选",
+                "type": "switch",
+                "default": true
+            },
             "enablePagination": {
                 "label": "数据分页",
                 "type": "switch",

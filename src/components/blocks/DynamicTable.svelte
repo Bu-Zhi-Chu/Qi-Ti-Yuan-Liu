@@ -13,6 +13,7 @@
         widthMode?: 'balanced' | 'value' | 'chars'
         widthValue?: number
         widthUnit?: 'px' | '%'
+        type?: 'default' | 'index' | 'selection'
     }
 
     interface Props {
@@ -20,6 +21,8 @@
         hideScrollbar?: boolean
         alternateRow?: boolean
         showToolPanel?: boolean
+        showRowNumber?: boolean
+        showCheckbox?: boolean
         enablePagination?: boolean
         pageSize?: number | string
         columnWidthMode?: 'balanced' | 'value' | 'chars'
@@ -44,6 +47,8 @@
         hideScrollbar: _hideScrollbar = false,
         alternateRow = false,
         showToolPanel = true,
+        showRowNumber = true,
+        showCheckbox = true,
         enablePagination = true,
         pageSize: initialPageSize = 20,
         columnWidthMode = 'balanced',
@@ -67,9 +72,17 @@
     let pageSize = $state(Number(initialPageSize))
     let hiddenColumnIndices = $state(new Set<number>())
     let isColumnFilterOpen = $state(false)
+    let selectedRowIndices = $state(new Set<number>())
 
     $effect(() => {
         pageSize = Number(initialPageSize)
+    })
+
+    // Reset selection when data or page changes
+    $effect(() => {
+        if (processedTableData || currentPage) {
+            selectedRowIndices = new Set()
+        }
     })
 
     let allHeaders = $derived.by(() => {
@@ -86,7 +99,7 @@
             raw = ['列1', '列2', '列3']
         }
 
-        return raw.map((h) => {
+        const cols = raw.map((h) => {
             if (typeof h === 'string') {
                 return {
                     label: h,
@@ -94,8 +107,9 @@
                     previewLength: 10,
                     widthMode: globalMode,
                     widthValue: 0,
-                    widthUnit: 'px'
-                }
+                    widthUnit: 'px',
+                    type: 'default'
+                } as ColumnLabelConfig
             }
             const widthValue = typeof h.widthValue === 'number' ? h.widthValue : 0
             const widthUnit = h.widthUnit === '%' ? '%' : 'px'
@@ -106,36 +120,39 @@
                 previewLength: h.previewLength ?? 10,
                 widthMode: globalMode,
                 widthValue,
-                widthUnit
-            }
+                widthUnit,
+                type: 'default'
+            } as ColumnLabelConfig
         })
+
+        if (showCheckbox) {
+            cols.unshift({
+                label: '',
+                frozen: true,
+                widthMode: globalMode,
+                widthValue: 32,
+                widthUnit: 'px',
+                type: 'selection',
+                previewLength: 0
+            })
+        }
+
+        if (showRowNumber) {
+            cols.unshift({
+                label: '',
+                frozen: true,
+                widthMode: globalMode,
+                widthValue: 40,
+                widthUnit: 'px',
+                type: 'index',
+                previewLength: 0
+            })
+        }
+
+        return cols
     })
 
     let displayHeaders = $derived(allHeaders.filter((_, i) => !hiddenColumnIndices.has(i)))
-
-    let displayBodyData = $derived.by(() => {
-        if (bodyData && bodyData.length > 0) return bodyData
-        const numCols = displayHeaders.length
-        const numRows = 50
-        const baseText = '一二三四五六七八九十'
-
-        return Array.from({ length: numRows }, (_, rowIndex) =>
-            Array.from({ length: numCols }, (_, colIndex) => {
-                const col = displayHeaders[colIndex]
-                const len = col && typeof col === 'object' && col.previewLength ? col.previewLength : 0
-
-                if (len > 0) {
-                    let result = ''
-                    while (result.length < len) {
-                        result += baseText
-                    }
-                    return result.slice(0, len)
-                }
-
-                return `示例 ${rowIndex + 1}-${colIndex + 1}`
-            })
-        )
-    })
 
     let numColumns = $derived(displayHeaders.length)
 
@@ -228,7 +245,49 @@
     let processedTableData = $derived.by(() => {
         if (isLoading) return [['数据加载中...']]
         if (loadError) return [[`加载失败: ${loadError}`]]
-        if (dataSource === 'json') return displayBodyData
+
+        const getSystemCols = () => {
+            const cols: string[] = []
+            // Note: Order must match allHeaders construction (unshift order reversed)
+            // allHeaders: [RowNumber, Checkbox, ...Data]
+            if (showRowNumber) cols.push('')
+            if (showCheckbox) cols.push('')
+            return cols
+        }
+        const systemCols = getSystemCols()
+        const dataHeaderCount = allHeaders.filter((h) => !h.type || h.type === 'default').length
+
+        if (dataSource === 'json') {
+            if (bodyData && bodyData.length > 0) {
+                return bodyData.map((row) => [...systemCols, ...row])
+            }
+            // Fallback sample data
+            const numCols = displayHeaders.length - systemCols.length
+            const numRows = 50
+            const baseText = '一二三四五六七八九十'
+
+            return Array.from({ length: numRows }, (_, rowIndex) => {
+                const dataRow = Array.from({ length: numCols }, (_, colIndex) => {
+                    // Need to find corresponding header for data column
+                    // displayHeaders includes system columns, so we need to offset
+                    // But here we are generating data for data columns only
+                    const headerIndex = colIndex + systemCols.length
+                    const col = displayHeaders[headerIndex]
+                    const len = col && typeof col === 'object' && col.previewLength ? col.previewLength : 0
+
+                    if (len > 0) {
+                        let result = ''
+                        while (result.length < len) {
+                            result += baseText
+                        }
+                        return result.slice(0, len)
+                    }
+
+                    return `示例 ${rowIndex + 1}-${colIndex + 1}`
+                })
+                return [...systemCols, ...dataRow]
+            })
+        }
 
         if ((dataSource === 'mock' || dataSource === 'real') && tableData && tableData.isSuccess && Array.isArray(tableData.result)) {
             const resultData = tableData.result
@@ -237,23 +296,34 @@
             if (!mapping || mapping.length === 0) {
                 return resultData.map((row: any) => {
                     const keys = Object.keys(row)
-                    // Slice based on all headers, then filter hidden columns
-                    const originalCols = keys.slice(0, allHeaders.length)
-                    return originalCols.filter((_, i) => !hiddenColumnIndices.has(i)).map((key: string) => row[key] ?? '')
+                    // We only want 'dataHeaderCount' columns from data
+                    const originalCols = keys.slice(0, dataHeaderCount)
+                    const dataRow = originalCols
+                        .filter((_, i) => {
+                            // Check if this data column is hidden
+                            // The index 'i' here is relative to data columns (0 to dataHeaderCount-1)
+                            // In global hiddenColumnIndices, the index is shifted by systemCols.length
+                            return !hiddenColumnIndices.has(i + systemCols.length)
+                        })
+                        .map((key: string) => row[key] ?? '')
+
+                    return [...systemCols, ...dataRow]
                 })
             }
 
             return resultData.map((row: any) => {
-                return mapping
+                const dataRow = mapping
                     .map((key, i) => ({ key, i }))
-                    .filter(({ i }) => !hiddenColumnIndices.has(i))
+                    .filter(({ i }) => !hiddenColumnIndices.has(i + systemCols.length))
                     .map(({ key }) => {
                         if (!key) return ''
                         return row[key] ?? ''
                     })
+                return [...systemCols, ...dataRow]
             })
         }
-        return displayBodyData
+        // Fallback if no data but not json
+        return []
     })
 
     let totalPage = $derived(Math.ceil(processedTableData.length / pageSize) || 1)
@@ -379,6 +449,33 @@
     let frozenColumns = $derived(allColumns.filter((c) => c.isFrozen))
     let scrollableColumns = $derived(allColumns.filter((c) => !c.isFrozen))
 
+    function toggleRow(rowIndex: number) {
+        if (selectedRowIndices.has(rowIndex)) {
+            selectedRowIndices.delete(rowIndex)
+        } else {
+            selectedRowIndices.add(rowIndex)
+        }
+        selectedRowIndices = new Set(selectedRowIndices)
+    }
+
+    function toggleAll() {
+        const data = paginatedTableData
+        if (!data || data.length === 0) return
+
+        if (selectedRowIndices.size === data.length) {
+            selectedRowIndices = new Set()
+        } else {
+            selectedRowIndices = new Set(data.map((_: any, i: number) => i))
+        }
+    }
+
+    let isAllSelected = $derived(paginatedTableData && paginatedTableData.length > 0 && selectedRowIndices.size === paginatedTableData.length)
+
+    $effect(() => {
+        paginatedTableData
+        selectedRowIndices = new Set()
+    })
+
     setContext('dynamic-table', {
         get headers() {
             return displayHeaders
@@ -421,7 +518,18 @@
         },
         get columnWidthMode() {
             return columnWidthMode
-        }
+        },
+        get selectedRowIndices() {
+            return selectedRowIndices
+        },
+        get isAllSelected() {
+            return isAllSelected
+        },
+        get startRecord() {
+            return startRecord
+        },
+        toggleRow,
+        toggleAll
     })
 </script>
 
