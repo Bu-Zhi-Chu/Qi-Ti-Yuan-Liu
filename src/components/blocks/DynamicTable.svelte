@@ -397,6 +397,34 @@
             })
         }
 
+        if (columnWidthMode === 'balanced') {
+            let fixedWidthTotal = 0
+            let flexibleCount = 0
+            const result: string[] = new Array(count).fill('')
+
+            for (let i = 0; i < count; i++) {
+                const h = headers[i]
+                if (h && (h.type === 'index' || h.type === 'selection')) {
+                    const val = h.widthValue || 0
+                    fixedWidthTotal += val
+                    result[i] = `calc(${val}px * var(--scale-ratio, 1))`
+                } else {
+                    flexibleCount++
+                }
+            }
+
+            if (flexibleCount > 0) {
+                const flexWidth = `calc((100% - ${fixedWidthTotal}px * var(--scale-ratio, 1)) / ${flexibleCount})`
+                for (let i = 0; i < count; i++) {
+                    if (!result[i]) {
+                        result[i] = flexWidth
+                    }
+                }
+            }
+
+            return result
+        }
+
         const result: string[] = new Array(count).fill('')
 
         for (let i = 0; i < count; i++) {
