@@ -3,7 +3,7 @@
 -->
 <script lang="ts">
     import { getNodePropsStore, getNodeProps as _getNodeProps, getFullNode, updateNodeProps } from '../../services/parser/property-panel.service'
-    import { addNodeToParent, removeNodeById } from '../../stores/dom-tree.store.svelte'
+    import { addNodeToParent, removeNodeById, reorderChildren } from '../../stores/dom-tree.store.svelte'
     import blocksConfig from '../blocks/blocks.config.json'
     import PropertyRow from './PropertyRow.svelte'
     import PropertySelect from './PropertySelect.svelte'
@@ -443,13 +443,30 @@
                             const cellMeta = (blocksConfig as any[]).find((b) => b.type === 'DynamicTableCell') as any
                             const cellStyles = cellMeta?.presetStyles ? { ...cellMeta.presetStyles } : {}
                             const rowIndex = rowNodes.length
-                            const rowChildren = Array.from({ length: count }, (_, colIndex) => ({
-                                id: globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-dynamic-cell-alt-${colIndex}`,
+                            const showRowNumber = currentValues['showRowNumber'] ?? node.attributes?.showRowNumber ?? true
+                            const showCheckbox = currentValues['showCheckbox'] ?? node.attributes?.showCheckbox ?? true
+                            const systemCells: any[] = []
+                            if (showRowNumber) systemCells.push({ type: 'index', name: '序号列' })
+                            if (showCheckbox) systemCells.push({ type: 'selection', name: '勾选列' })
+
+                            const systemChildren = systemCells.map((sys, i) => ({
+                                id: globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-sys-cell-${i}`,
                                 componentType: 'DynamicTableCell',
                                 styles: cellStyles,
-                                attributes: { 'data-name': `单元格 ${colIndex + 1}`, rowIndex, colIndex },
+                                attributes: { 'data-name': sys.name, rowIndex, systemType: sys.type, colIndex: i },
                                 children: []
                             }))
+
+                            const systemOffset = systemChildren.length
+                            const dataChildren = Array.from({ length: count }, (_, i) => ({
+                                id: globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-dynamic-cell-alt-${i}`,
+                                componentType: 'DynamicTableCell',
+                                styles: cellStyles,
+                                attributes: { 'data-name': `单元格 ${i + 1}`, rowIndex, colIndex: i + systemOffset },
+                                children: []
+                            }))
+
+                            const rowChildren = [...systemChildren, ...dataChildren]
                             addNodeToParent(bodyNode.id, {
                                 id: newId,
                                 componentType: 'DynamicTableRow',
@@ -483,6 +500,73 @@
                                 removeNodeById(rowNodes[i].id)
                             }
                         }
+                    }
+                }
+            }
+
+            if (key === 'showRowNumber' || key === 'showCheckbox') {
+                const node = getFullNode(selectedId)
+                if (node && node.componentType === 'DynamicTable') {
+                    const bodyNode = (node.children || []).find((c: any) => c.componentType === 'DynamicTableBody')
+                    if (bodyNode) {
+                        const rowNodes = (bodyNode.children || []).filter((c: any) => c.componentType === 'DynamicTableRow')
+                        const showRowNumber = key === 'showRowNumber' ? value : (currentValues['showRowNumber'] ?? node.attributes?.showRowNumber ?? true)
+                        const showCheckbox = key === 'showCheckbox' ? value : (currentValues['showCheckbox'] ?? node.attributes?.showCheckbox ?? true)
+                        const cellMeta = (blocksConfig as any[]).find((b) => b.type === 'DynamicTableCell') as any
+                        const baseStyles = cellMeta?.presetStyles ? { ...cellMeta.presetStyles } : {}
+
+                        rowNodes.forEach((rowNode: any) => {
+                            const rowIndex = typeof rowNode.attributes?.rowIndex === 'number' ? rowNode.attributes.rowIndex : 0
+                            const allCells = (rowNode.children || []).filter((c: any) => c.componentType === 'DynamicTableCell')
+                            const systemCells = allCells.filter((c: any) => c.attributes?.systemType)
+                            const dataCells = allCells.filter((c: any) => !c.attributes?.systemType)
+
+                            const requiredSystemCells: { type: string; name: string }[] = []
+                            if (showRowNumber) requiredSystemCells.push({ type: 'index', name: '序号列' })
+                            if (showCheckbox) requiredSystemCells.push({ type: 'selection', name: '勾选列' })
+
+                            const finalSystemCells: any[] = []
+                            requiredSystemCells.forEach((req) => {
+                                const existing = systemCells.find((c: any) => c.attributes.systemType === req.type)
+                                if (existing) {
+                                    finalSystemCells.push(existing)
+                                } else {
+                                    const id = globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-sys-cell-${req.type}`
+                                    const newCell = {
+                                        id,
+                                        componentType: 'DynamicTableCell',
+                                        styles: baseStyles,
+                                        attributes: { 'data-name': req.name, rowIndex, systemType: req.type },
+                                        children: []
+                                    }
+                                    finalSystemCells.push(newCell)
+                                    addNodeToParent(rowNode.id, newCell as any)
+                                }
+                            })
+
+                            systemCells.forEach((c: any) => {
+                                if (!finalSystemCells.find((f) => f.id === c.id)) {
+                                    removeNodeById(c.id)
+                                }
+                            })
+
+                            // Reorder children to ensure system cells are first
+                            reorderChildren(rowNode.id, [...finalSystemCells, ...dataCells])
+
+                            finalSystemCells.forEach((c, i) => {
+                                if (c.attributes.colIndex !== i) {
+                                    updateNodeProps(c.id, { attributes: { colIndex: i } })
+                                }
+                            })
+
+                            const systemOffset = finalSystemCells.length
+                            dataCells.forEach((c: any, i: number) => {
+                                const newColIndex = systemOffset + i
+                                if (c.attributes.colIndex !== newColIndex) {
+                                    updateNodeProps(c.id, { attributes: { colIndex: newColIndex } })
+                                }
+                            })
+                        })
                     }
                 }
             }
@@ -528,8 +612,12 @@
                         const baseStyles = cellMeta?.presetStyles ? { ...cellMeta.presetStyles } : {}
                         rowNodes.forEach((rowNode: any) => {
                             const rowIndex = typeof rowNode.attributes?.rowIndex === 'number' ? rowNode.attributes.rowIndex : 0
-                            const cells = (rowNode.children || []).filter((c: any) => c.componentType === 'DynamicTableCell')
+                            const cells = (rowNode.children || []).filter((c: any) => c.componentType === 'DynamicTableCell' && !c.attributes?.systemType)
                             const current = cells.length
+                            const showRowNumber = currentValues['showRowNumber'] ?? node.attributes?.showRowNumber ?? true
+                            const showCheckbox = currentValues['showCheckbox'] ?? node.attributes?.showCheckbox ?? true
+                            const systemOffset = (showRowNumber ? 1 : 0) + (showCheckbox ? 1 : 0)
+
                             if (desired > current) {
                                 for (let i = current; i < desired; i++) {
                                     const id = globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-dynamic-cell-${i}`
@@ -537,7 +625,7 @@
                                         id,
                                         componentType: 'DynamicTableCell',
                                         styles: baseStyles,
-                                        attributes: { 'data-name': `单元格 ${i + 1}`, rowIndex, colIndex: i },
+                                        attributes: { 'data-name': `单元格 ${i + 1}`, rowIndex, colIndex: i + systemOffset },
                                         children: []
                                     } as any)
                                 }
@@ -547,6 +635,21 @@
                                     removeNodeById(c.id)
                                 }
                             }
+
+                            // Re-fetch children to ensure we have the latest list (including newly added ones)
+                            const currentChildren = rowNode.children || []
+                            const finalSystemCells = currentChildren.filter((c: any) => c.componentType === 'DynamicTableCell' && c.attributes?.systemType)
+                            const finalDataCells = currentChildren.filter((c: any) => c.componentType === 'DynamicTableCell' && !c.attributes?.systemType)
+
+                            // Ensure correct order: System Cells -> Data Cells
+                            reorderChildren(rowNode.id, [...finalSystemCells, ...finalDataCells])
+
+                            finalDataCells.forEach((c: any, i: number) => {
+                                const newColIndex = i + systemOffset
+                                if (c.attributes.colIndex !== newColIndex) {
+                                    updateNodeProps(c.id, { attributes: { colIndex: newColIndex } })
+                                }
+                            })
                         })
                     }
                 }

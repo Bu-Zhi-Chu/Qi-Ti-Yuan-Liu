@@ -1025,11 +1025,6 @@
             "borderColor": "rgb(149, 149, 255)"
         },
         "featureProps": {
-            "showToolPanel": {
-                "label": "工具面板",
-                "type": "switch",
-                "default": true
-            },
             "showRowNumber": {
                 "label": "显示序号",
                 "type": "switch",
@@ -1037,6 +1032,11 @@
             },
             "showCheckbox": {
                 "label": "显示勾选",
+                "type": "switch",
+                "default": true
+            },
+            "showToolPanel": {
+                "label": "工具面板",
                 "type": "switch",
                 "default": true
             },
