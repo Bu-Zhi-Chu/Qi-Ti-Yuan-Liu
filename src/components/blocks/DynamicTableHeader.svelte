@@ -14,11 +14,8 @@
 
     const context = getContext<any>('dynamic-table')
 
-    let headers = $derived(context?.headers ?? [])
     let frozenColumns = $derived(context?.frozenColumns ?? [])
     let scrollableColumns = $derived(context?.scrollableColumns ?? [])
-    let numColumns = $derived(context?.numColumns ?? 0)
-    let columnWidths = $derived(context?.columnWidths ?? [])
     let hasVerticalScrollbar = $derived(context?.hasVerticalScrollbar ?? false)
     let verticalScrollbarWidth = $derived(context?.verticalScrollbarWidth ?? 0)
     let horizontalScrollLeft = $derived(context?.horizontalScrollLeft ?? 0)
@@ -81,13 +78,211 @@
         })
     }
 
-    function getCellStyle(col: any) {
-        let widthStr = col.width || ''
-        if (!widthStr) {
-            const widthPercent = numColumns > 0 ? 100 / numColumns : 100
-            widthStr = `${widthPercent}%`
+    type HeaderType = 'default' | 'index' | 'selection' | 'group'
+
+    interface ColumnHeaderInfo {
+        col: any
+        type: HeaderType
+        rawLabel: string
+        groupLabel: string
+        leafLabel: string
+        segments: string[]
+    }
+
+    interface GroupCell {
+        label: string
+        width: string
+    }
+
+    function parseColumns(columns: any[]): ColumnHeaderInfo[] {
+        return columns.map((col) => {
+            const header = col.header
+            const type: HeaderType = header && typeof header === 'object' ? (header.type ?? 'default') : 'default'
+            const baseLabel = header && typeof header === 'object' ? (header.label ?? '') : (header ?? '')
+            if (type === 'index' || type === 'selection') {
+                const label = String(baseLabel ?? '')
+                return {
+                    col,
+                    type,
+                    rawLabel: label,
+                    groupLabel: '',
+                    leafLabel: label,
+                    segments: [label]
+                }
+            }
+            const str = String(baseLabel ?? '')
+            const parts = str
+                .split('|')
+                .map((p) => p.trim())
+                .filter((p) => p.length > 0)
+            const groupLabel = parts.length > 1 ? parts[0] : ''
+            const leafLabel = parts.length > 0 ? parts[parts.length - 1] : str
+            return {
+                col,
+                type: 'default',
+                rawLabel: str,
+                groupLabel,
+                leafLabel,
+                segments: parts.length > 0 ? parts : [str]
+            }
+        })
+    }
+
+    function combineWidths(a: string, b: string): string {
+        const wa = a && a.trim()
+        const wb = b && b.trim()
+        if (wa && wb) return `calc(${wa} + ${wb})`
+        if (wa) return wa
+        if (wb) return wb
+        return ''
+    }
+
+    interface HeaderCell {
+        rowStart: number
+        rowSpan: number
+        colStart: number
+        colSpan: number
+        label: string
+        type: HeaderType
+    }
+
+    function hasGroup(infos: ColumnHeaderInfo[]): boolean {
+        return infos.some((info) => info.segments && info.segments.length > 1)
+    }
+
+    const HEADER_BASE_PX = 40
+    const HEADER_ROW_HEIGHT = `calc(${HEADER_BASE_PX}px * var(--scale-ratio, 1))`
+
+    function buildColumnTemplate(infos: ColumnHeaderInfo[]): string {
+        const parts = infos.map((info) => {
+            const w = info.col.width
+            const s = w && String(w).trim()
+            return s && s.length > 0 ? s : 'auto'
+        })
+        return parts.join(' ')
+    }
+
+    interface HeaderNode {
+        label: string
+        level: number
+        startCol: number
+        endCol: number
+        type: HeaderType
+        children: HeaderNode[]
+    }
+
+    function buildCells(infos: ColumnHeaderInfo[], grouped: boolean, maxDepth: number): HeaderCell[] {
+        const cells: HeaderCell[] = []
+        if (infos.length === 0) return cells
+
+        const visualColStarts: number[] = []
+        let nextCol = 1
+        for (let i = 0; i < infos.length; i++) {
+            visualColStarts[i] = nextCol++
         }
 
+        if (!grouped) {
+            for (let i = 0; i < infos.length; i++) {
+                const info = infos[i]
+                cells.push({
+                    rowStart: 1,
+                    rowSpan: 1,
+                    colStart: visualColStarts[i],
+                    colSpan: 1,
+                    label: info.leafLabel,
+                    type: info.type
+                })
+            }
+            return cells
+        }
+
+        for (let i = 0; i < infos.length; i++) {
+            const info = infos[i]
+            const isSystem = info.type === 'index' || info.type === 'selection'
+            if (!isSystem) continue
+
+            cells.push({
+                rowStart: 1,
+                rowSpan: maxDepth,
+                colStart: visualColStarts[i],
+                colSpan: 1,
+                label: info.leafLabel,
+                type: info.type
+            })
+        }
+
+        const root: HeaderNode = {
+            label: '',
+            level: -1,
+            startCol: 0,
+            endCol: 0,
+            type: 'group',
+            children: []
+        }
+
+        for (let i = 0; i < infos.length; i++) {
+            const info = infos[i]
+            const isSystem = info.type === 'index' || info.type === 'selection'
+            if (isSystem) continue
+
+            const segs = info.segments && info.segments.length > 0 ? info.segments : [info.leafLabel]
+            const colPos = visualColStarts[i]
+            let current = root
+
+            for (let level = 0; level < segs.length; level++) {
+                const label = segs[level]
+                const siblings = current.children
+                const last = siblings[siblings.length - 1]
+                let node: HeaderNode
+
+                if (last && last.label === label && last.level === level) {
+                    node = last
+                } else {
+                    node = {
+                        label,
+                        level,
+                        startCol: colPos,
+                        endCol: colPos,
+                        type: level === segs.length - 1 ? info.type : 'group',
+                        children: []
+                    }
+                    siblings.push(node)
+                }
+
+                if (colPos < node.startCol) node.startCol = colPos
+                if (colPos > node.endCol) node.endCol = colPos
+
+                current = node
+            }
+        }
+
+        function collect(node: HeaderNode) {
+            for (const child of node.children) {
+                const isLeaf = child.children.length === 0
+                const rowStart = child.level + 1
+                const colStart = child.startCol
+                const colSpan = child.endCol - child.startCol + 1
+                const rowSpan = isLeaf ? maxDepth - child.level : 1
+
+                cells.push({
+                    rowStart,
+                    rowSpan,
+                    colStart,
+                    colSpan,
+                    label: child.label,
+                    type: child.type
+                })
+
+                collect(child)
+            }
+        }
+
+        collect(root)
+
+        return cells
+    }
+
+    function getHeaderCellStyle(cell: HeaderCell) {
         const baseStyle = `
             display: flex;
             align-items: center;
@@ -99,74 +294,97 @@
         `
 
         return `
-            width: ${widthStr};
+            grid-column: ${cell.colStart} / span ${cell.colSpan};
+            grid-row: ${cell.rowStart} / span ${cell.rowSpan};
             ${baseStyle}
+            ${cell.type === 'group' ? `border-bottom: calc(1px * var(--scale-ratio, 1)) dashed rgb(29, 143, 211);` : ''}
         `
     }
+
+    let frozenInfos = $derived(parseColumns(frozenColumns))
+    let scrollableInfos = $derived(parseColumns(scrollableColumns))
+    let headerRowCount = $derived(
+        (() => {
+            const all = [...frozenInfos, ...scrollableInfos]
+            let maxDepth = 1
+            for (const info of all) {
+                if (info.type === 'index' || info.type === 'selection') continue
+                const depth = info.segments && info.segments.length > 0 ? info.segments.length : 1
+                if (depth > maxDepth) maxDepth = depth
+            }
+            return maxDepth
+        })()
+    )
+    let hasAnyGroup = $derived(headerRowCount > 1)
+    let frozenCells = $derived(buildCells(frozenInfos, hasAnyGroup, headerRowCount))
+    let scrollableCells = $derived(buildCells(scrollableInfos, hasAnyGroup, headerRowCount))
+    let frozenTemplate = $derived(buildColumnTemplate(frozenInfos))
+    let scrollableTemplate = $derived(buildColumnTemplate(scrollableInfos))
 </script>
 
 {#if hasVerticalScrollbar}
     {@const padding = verticalScrollbarWidth > 0 ? `${verticalScrollbarWidth}px` : '0px'}
-    {@const headerStyle = style ? `${style}; padding-right: ${padding}` : `padding-right: ${padding}`}
+    {@const baseStyle = style ?? ''}
+    {@const heightStyle = `height: calc(${HEADER_BASE_PX * headerRowCount}px * var(--scale-ratio, 1));`}
+    {@const headerStyle = `${baseStyle ? `${baseStyle}; ` : ''}${heightStyle}; padding-right: ${padding}`}
     <div class="dynamic-table-header {className}" style={headerStyle} {...rest}>
         <div class="header-frozen">
-            {#each frozenColumns as col}
-                {@const header = col.header}
-                {@const label = header && typeof header === 'object' ? header.label : header}
-                {@const type = header && typeof header === 'object' ? header.type : 'default'}
-                <div class="header-cell" style={getCellStyle(col)} title={label == null ? '' : String(label)}>
-                    {#if type === 'selection'}
-                        <input type="checkbox" checked={isAllSelected} onclick={toggleAll} class="custom-checkbox" />
-                    {:else}
-                        {@html String(label ?? '')}
-                    {/if}
-                </div>
-            {/each}
+            <div class="header-grid" style={`grid-template-columns: ${frozenTemplate}; grid-template-rows: ${Array(headerRowCount).fill(HEADER_ROW_HEIGHT).join(' ')};`}>
+                {#each frozenCells as cell}
+                    <div class="header-cell" style={getHeaderCellStyle(cell)} title={cell.label == null ? '' : String(cell.label)}>
+                        {#if cell.type === 'selection'}
+                            <input type="checkbox" checked={isAllSelected} onclick={toggleAll} class="custom-checkbox" />
+                        {:else if cell.type === 'index'}{:else}
+                            {@html String(cell.label ?? '')}
+                        {/if}
+                    </div>
+                {/each}
+            </div>
         </div>
         <div class="header-scroll" bind:this={scrollEl}>
-            {#each scrollableColumns as col}
-                {@const header = col.header}
-                {@const label = header && typeof header === 'object' ? header.label : header}
-                {@const type = header && typeof header === 'object' ? header.type : 'default'}
-                <div class="header-cell" style={getCellStyle(col)} title={label == null ? '' : String(label)}>
-                    {#if type === 'selection'}
-                        <input type="checkbox" checked={isAllSelected} onclick={toggleAll} class="custom-checkbox" />
-                    {:else}
-                        {@html String(label ?? '')}
-                    {/if}
-                </div>
-            {/each}
+            <div class="header-grid" style={`grid-template-columns: ${scrollableTemplate}; grid-template-rows: ${Array(headerRowCount).fill(HEADER_ROW_HEIGHT).join(' ')};`}>
+                {#each scrollableCells as cell}
+                    <div class="header-cell" style={getHeaderCellStyle(cell)} title={cell.label == null ? '' : String(cell.label)}>
+                        {#if cell.type === 'selection'}
+                            <input type="checkbox" checked={isAllSelected} onclick={toggleAll} class="custom-checkbox" />
+                        {:else if cell.type === 'index'}{:else}
+                            {@html String(cell.label ?? '')}
+                        {/if}
+                    </div>
+                {/each}
+            </div>
         </div>
     </div>
 {:else}
-    <div class="dynamic-table-header {className}" {style} {...rest}>
+    {@const baseStyle = style ?? ''}
+    {@const heightStyle = `height: calc(${HEADER_BASE_PX * headerRowCount}px * var(--scale-ratio, 1));`}
+    {@const headerStyle = baseStyle ? `${baseStyle}; ${heightStyle}` : heightStyle}
+    <div class="dynamic-table-header {className}" style={headerStyle} {...rest}>
         <div class="header-frozen">
-            {#each frozenColumns as col}
-                {@const header = col.header}
-                {@const label = header && typeof header === 'object' ? header.label : header}
-                {@const type = header && typeof header === 'object' ? header.type : 'default'}
-                <div class="header-cell" style={getCellStyle(col)} title={label == null ? '' : String(label)}>
-                    {#if type === 'selection'}
-                        <input type="checkbox" checked={isAllSelected} onclick={toggleAll} class="custom-checkbox" />
-                    {:else}
-                        {@html String(label ?? '')}
-                    {/if}
-                </div>
-            {/each}
+            <div class="header-grid" style={`grid-template-columns: ${frozenTemplate}; grid-template-rows: ${Array(headerRowCount).fill(HEADER_ROW_HEIGHT).join(' ')};`}>
+                {#each frozenCells as cell}
+                    <div class="header-cell" style={getHeaderCellStyle(cell)} title={cell.label == null ? '' : String(cell.label)}>
+                        {#if cell.type === 'selection'}
+                            <input type="checkbox" checked={isAllSelected} onclick={toggleAll} class="custom-checkbox" />
+                        {:else if cell.type === 'index'}{:else}
+                            {@html String(cell.label ?? '')}
+                        {/if}
+                    </div>
+                {/each}
+            </div>
         </div>
         <div class="header-scroll" bind:this={scrollEl}>
-            {#each scrollableColumns as col}
-                {@const header = col.header}
-                {@const label = header && typeof header === 'object' ? header.label : header}
-                {@const type = header && typeof header === 'object' ? header.type : 'default'}
-                <div class="header-cell" style={getCellStyle(col)} title={label == null ? '' : String(label)}>
-                    {#if type === 'selection'}
-                        <input type="checkbox" checked={isAllSelected} onclick={toggleAll} class="custom-checkbox" />
-                    {:else}
-                        {@html String(label ?? '')}
-                    {/if}
-                </div>
-            {/each}
+            <div class="header-grid" style={`grid-template-columns: ${scrollableTemplate}; grid-template-rows: ${Array(headerRowCount).fill(HEADER_ROW_HEIGHT).join(' ')};`}>
+                {#each scrollableCells as cell}
+                    <div class="header-cell" style={getHeaderCellStyle(cell)} title={cell.label == null ? '' : String(cell.label)}>
+                        {#if cell.type === 'selection'}
+                            <input type="checkbox" checked={isAllSelected} onclick={toggleAll} class="custom-checkbox" />
+                        {:else if cell.type === 'index'}{:else}
+                            {@html String(cell.label ?? '')}
+                        {/if}
+                    </div>
+                {/each}
+            </div>
         </div>
     </div>
 {/if}
@@ -185,7 +403,6 @@
         overflow: hidden;
         z-index: 2;
         background: inherit;
-        /* box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1); */
     }
     .header-scroll {
         display: flex;
@@ -228,8 +445,14 @@
     .header-scroll {
         scrollbar-width: none;
     }
+    .header-grid {
+        display: grid;
+        width: max-content;
+        min-width: 100%;
+    }
     .header-cell {
         height: 100%;
+        min-height: calc(36px * var(--scale-ratio, 1));
         box-sizing: border-box;
         padding: 0 calc(4px * var(--scale-ratio, 1));
         border-right: calc(1px * var(--scale-ratio, 1)) dashed rgb(29, 143, 211);
