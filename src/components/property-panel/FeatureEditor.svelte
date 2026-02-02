@@ -504,7 +504,7 @@
                 }
             }
 
-            if (key === 'showRowNumber' || key === 'showCheckbox') {
+            if (key === 'showRowNumber' || key === 'showCheckbox' || key === 'showOperation') {
                 const node = getFullNode(selectedId)
                 if (node && node.componentType === 'DynamicTable') {
                     const bodyNode = (node.children || []).find((c: any) => c.componentType === 'DynamicTableBody')
@@ -512,6 +512,7 @@
                         const rowNodes = (bodyNode.children || []).filter((c: any) => c.componentType === 'DynamicTableRow')
                         const showRowNumber = key === 'showRowNumber' ? value : (currentValues['showRowNumber'] ?? node.attributes?.showRowNumber ?? true)
                         const showCheckbox = key === 'showCheckbox' ? value : (currentValues['showCheckbox'] ?? node.attributes?.showCheckbox ?? true)
+                        const showOperation = key === 'showOperation' ? value : (currentValues['showOperation'] ?? node.attributes?.showOperation ?? false)
                         const cellMeta = (blocksConfig as any[]).find((b) => b.type === 'DynamicTableCell') as any
                         const baseStyles = cellMeta?.presetStyles ? { ...cellMeta.presetStyles } : {}
 
@@ -524,6 +525,7 @@
                             const requiredSystemCells: { type: string; name: string }[] = []
                             if (showRowNumber) requiredSystemCells.push({ type: 'index', name: '序号列' })
                             if (showCheckbox) requiredSystemCells.push({ type: 'selection', name: '勾选列' })
+                            if (showOperation) requiredSystemCells.push({ type: 'operation', name: '操作列' })
 
                             const finalSystemCells: any[] = []
                             requiredSystemCells.forEach((req) => {
@@ -616,7 +618,8 @@
                             const current = cells.length
                             const showRowNumber = currentValues['showRowNumber'] ?? node.attributes?.showRowNumber ?? true
                             const showCheckbox = currentValues['showCheckbox'] ?? node.attributes?.showCheckbox ?? true
-                            const systemOffset = (showRowNumber ? 1 : 0) + (showCheckbox ? 1 : 0)
+                            const showOperation = currentValues['showOperation'] ?? node.attributes?.showOperation ?? false
+                            const systemOffset = (showRowNumber ? 1 : 0) + (showCheckbox ? 1 : 0) + (showOperation ? 1 : 0)
 
                             if (desired > current) {
                                 for (let i = current; i < desired; i++) {
