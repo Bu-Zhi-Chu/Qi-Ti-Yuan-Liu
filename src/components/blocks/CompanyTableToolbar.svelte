@@ -109,7 +109,7 @@
 <div {style} class={className} {...rest}>
     {#if normalizedConditions().length > 0}
         {#each normalizedConditions().filter((c: QueryCondition) => !c.disabled) as cond, index}
-            <div class="company-table-condition" style={index === 0 ? 'margin-left: 0.3%;' : ''}>
+            <div class="company-table-condition" style={index === 0 ? 'margin-left: calc(2px * var(--scale-ratio, 1));' : ''}>
                 {#if cond?.name}
                     <span class="company-table-condition-label">{cond.name}</span>
                 {/if}
