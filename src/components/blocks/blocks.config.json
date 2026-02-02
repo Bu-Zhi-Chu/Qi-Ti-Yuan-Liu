@@ -1382,6 +1382,11 @@
                 "group": true,
                 "fields": [
                     {
+                        "key": "id",
+                        "label": "标识",
+                        "control": "text"
+                    },
+                    {
                         "key": "name",
                         "label": "名称",
                         "control": "text"
@@ -1406,6 +1411,10 @@
                             {
                                 "value": "datetime",
                                 "label": "日期时间"
+                            },
+                            {
+                                "value": "year",
+                                "label": "年份"
                             }
                         ],
                         "default": "input"

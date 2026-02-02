@@ -2,8 +2,9 @@
     import { getContext } from 'svelte'
 
     interface QueryCondition {
+        id?: string
         name?: string
-        type?: 'input' | 'select' | 'date' | 'datetime'
+        type?: 'input' | 'select' | 'date' | 'datetime' | 'year'
         disabled?: boolean
     }
 
@@ -51,7 +52,7 @@
                 }
             }
             const name = typeof item.name === 'string' ? item.name : ''
-            const type = item.type === 'select' || item.type === 'date' || item.type === 'datetime' ? item.type : 'input'
+            const type = item.type === 'select' || item.type === 'date' || item.type === 'datetime' || item.type === 'year' ? item.type : 'input'
             const disabled = item.disabled === true
             return { name, type, disabled }
         })
@@ -104,6 +105,26 @@
             handleAddClick()
         }
     }
+
+    const currentYear = new Date().getFullYear()
+    let yearValues = $state<Record<number, number>>({})
+
+    function getYearDisplay(index: number): number {
+        const v = yearValues[index]
+        return typeof v === 'number' && Number.isFinite(v) ? v : currentYear
+    }
+
+    function setYearValue(index: number, value: number) {
+        if (!Number.isFinite(value)) return
+        yearValues = { ...yearValues, [index]: value }
+    }
+
+    function stepYear(index: number, delta: number) {
+        const base = yearValues[index]
+        const baseYear = typeof base === 'number' && Number.isFinite(base) ? base : currentYear
+        const next = baseYear + delta
+        setYearValue(index, next)
+    }
 </script>
 
 <div {style} class={className} {...rest}>
@@ -121,6 +142,31 @@
                     <input class="company-table-input" type="date" />
                 {:else if cond?.type === 'datetime'}
                     <input class="company-table-input" type="datetime-local" />
+                {:else if cond?.type === 'year'}
+                    {@const year = getYearDisplay(index)}
+                    <div class="company-table-year-wrapper">
+                        <input
+                            class="company-table-input company-table-year-input"
+                            type="number"
+                            value={year}
+                            disabled={cond?.disabled}
+                            oninput={(e) => {
+                                const raw = (e.currentTarget as HTMLInputElement).value
+                                const val = parseInt(raw, 10)
+                                if (!isNaN(val)) {
+                                    setYearValue(index, val)
+                                }
+                            }}
+                        />
+                        <div class="company-table-year-stepper">
+                            <button type="button" class="company-table-year-btn" disabled={cond?.disabled} onclick={() => stepYear(index, 1)}>
+                                <span class="company-table-year-symbol">∧</span>
+                            </button>
+                            <button type="button" class="company-table-year-btn" disabled={cond?.disabled} onclick={() => stepYear(index, -1)}>
+                                <span class="company-table-year-symbol">∨</span>
+                            </button>
+                        </div>
+                    </div>
                 {:else}
                     <input class="company-table-input" type="text" placeholder="" />
                 {/if}
@@ -158,6 +204,76 @@
         color: #000000;
         font-size: calc(13px * var(--scale-ratio, 1));
         box-sizing: border-box;
+    }
+
+    .company-table-year-wrapper {
+        display: inline-block;
+        position: relative;
+        width: calc(75px * var(--scale-ratio, 1));
+        height: calc(28px * var(--scale-ratio, 1));
+        border-radius: 0;
+        border: calc(1px * var(--scale-ratio, 1)) solid rgb(26, 156, 254);
+        background: #ffffff;
+        box-sizing: border-box;
+    }
+
+    .company-table-year-input {
+        width: 100%;
+        height: 100%;
+        border: none;
+        background: transparent;
+        padding: 0 calc(20px * var(--scale-ratio, 1)) 0 calc(8px * var(--scale-ratio, 1));
+        /* 隐藏浏览器自带的上下箭头 */
+        -moz-appearance: textfield;
+    }
+
+    .company-table-year-input::-webkit-outer-spin-button,
+    .company-table-year-input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    .company-table-year-stepper {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: calc(20px * var(--scale-ratio, 1));
+        display: flex;
+        flex-direction: column;
+    }
+
+    .company-table-year-btn {
+        flex: 1;
+        border: none;
+        border-left: calc(1px * var(--scale-ratio, 1)) solid rgb(26, 156, 254);
+        background: #daeef5;
+        color: #333333;
+        font-size: calc(10px * var(--scale-ratio, 1));
+        line-height: 1;
+        padding: 0;
+        cursor: pointer;
+        box-sizing: border-box;
+    }
+
+    .company-table-year-btn:first-child {
+        border-bottom: calc(1px * var(--scale-ratio, 1)) solid rgb(26, 156, 254);
+    }
+
+    .company-table-year-btn:hover:not(:disabled) {
+        background: #c0d8e8;
+    }
+
+    .company-table-year-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .company-table-year-symbol {
+        display: inline-block;
+        transform: scaleY(0.5);
+        transform-origin: center;
+        font-weight: bolder;
     }
 
     .company-table-btn {

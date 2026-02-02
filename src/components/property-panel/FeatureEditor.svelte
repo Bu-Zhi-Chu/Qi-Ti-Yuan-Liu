@@ -1610,6 +1610,25 @@
                                         <div class="overlay-item {cond?.disabled ? 'overlay-item-disabled' : ''}">
                                             <div class="overlay-fields">
                                                 <div class="overlay-field-row">
+                                                    <span class="overlay-field-label">标识</span>
+                                                    <input
+                                                        type="text"
+                                                        class="overlay-input"
+                                                        value={cond?.id ?? ''}
+                                                        disabled={cond?.disabled === true}
+                                                        oninput={(e) => {
+                                                            const list = Array.isArray(currentValues[p.key]) ? [...currentValues[p.key]] : []
+                                                            if (!list[index]) list[index] = {}
+                                                            list[index] = {
+                                                                ...list[index],
+                                                                id: (e.currentTarget as HTMLInputElement).value
+                                                            }
+                                                            handleAttrChange(p.key, list)
+                                                        }}
+                                                        placeholder="查询条件标识"
+                                                    />
+                                                </div>
+                                                <div class="overlay-field-row">
                                                     <span class="overlay-field-label">名称</span>
                                                     <input
                                                         type="text"
@@ -1648,6 +1667,7 @@
                                                         <option value="select">下拉框</option>
                                                         <option value="date">日期</option>
                                                         <option value="datetime">日期时间</option>
+                                                        <option value="year">年份</option>
                                                     </select>
                                                 </div>
                                                 <div class="overlay-field-row">
