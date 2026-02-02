@@ -18,7 +18,9 @@
     import { DEFAULT_DB_NAME } from '../../config/config'
     import { clearMemoryState } from '../../stores/dom-tree.store.svelte'
     import { importInto } from 'dexie-export-import'
-    import { ProjectThumbnailService } from '../../services/project/project-thumbnail.service'
+    import { getImage } from '../../services/database/image-store.service'
+    import { registerBlobUrl } from '../../services/utils/blob-url-manager'
+    import { Toast } from '../widgets/Toast.svelte'
 
     interface Project {
         id: string
@@ -35,10 +37,18 @@
         try {
             const dbName = DEFAULT_DB_NAME
             const rows = await DexieService.queryRecords<any>(dbName, 'projects')
-            projects = rows.map((r: any) => ({
+            const sorted = rows.sort((a: any, b: any) => {
+                const at = typeof a.updatedAt === 'number' ? a.updatedAt : (a.createdAt ?? 0)
+                const bt = typeof b.updatedAt === 'number' ? b.updatedAt : (b.createdAt ?? 0)
+                return bt - at
+            })
+            projects = sorted.map((r: any) => ({
                 id: String(r.id),
                 name: r.name,
-                createTime: new Date(r.createdAt).toLocaleString(),
+                createTime: (() => {
+                    const ts = typeof r.updatedAt === 'number' ? r.updatedAt : r.createdAt
+                    return ts ? new Date(ts).toLocaleString() : ''
+                })(),
                 thumbnail: r.thumbnail
             }))
             console.log(`✅【项目加载】成功加载 ${projects.length} 个项目`)
@@ -53,24 +63,112 @@
     }
 
     onMount(async () => {
-        // 直接加载项目列表，数据库已在 main.ts 中初始化完成
         await loadProjects()
     })
 
     onDestroy(() => {
-        // 清理资源
+        moduleObjectUrls.forEach((url) => URL.revokeObjectURL(url))
+        moduleObjectUrls = []
     })
 
     let showWindow = $state(false)
+    let showModuleSelector = $state(false)
+    let moduleProjectId = $state<string | null>(null)
+    let moduleProjectName = $state('')
+    let availableModules = $state<
+        {
+            id: string
+            name: string
+            updatedAt?: number
+            thumbnail?: string | Blob
+        }[]
+    >([])
+    let moduleImageMap = $state<Record<string, string>>({})
+    let moduleObjectUrls: string[] = []
+    const hashRegex = /^[a-f0-9]{40,}$/
 
     function createNewProject() {
-        // 打开新建项目窗口
         showWindow = true
     }
 
-    function openProject(projectId: string) {
-        // 跳转到编辑器并携带项目ID
-        window.location.hash = `#/editor/${projectId}`
+    async function buildModuleImageMap(projectId: string, modules: { id: string; thumbnail?: string | Blob }[]): Promise<void> {
+        moduleObjectUrls.forEach((url) => URL.revokeObjectURL(url))
+        moduleObjectUrls = []
+        const map: Record<string, string> = {}
+        for (const m of modules) {
+            const thumb = m.thumbnail
+            if (!thumb) continue
+            if (thumb instanceof Blob) {
+                const url = URL.createObjectURL(thumb)
+                moduleObjectUrls.push(url)
+                map[m.id] = url
+            } else {
+                const str = thumb.trim()
+                if (hashRegex.test(str)) {
+                    const record = await getImage(projectId, str)
+                    if (record) {
+                        const url = URL.createObjectURL(record.blob)
+                        registerBlobUrl(url)
+                        moduleObjectUrls.push(url)
+                        map[m.id] = url
+                        continue
+                    }
+                }
+                map[m.id] = str
+            }
+        }
+        moduleImageMap = map
+    }
+
+    async function openProject(projectId: string) {
+        try {
+            const db = await DexieService.getDatabase(DEFAULT_DB_NAME)
+            const moduleRows = await db.table('modules').where('projectId').equals(String(projectId)).toArray()
+            const modules =
+                moduleRows.length > 0
+                    ? moduleRows.map((m: any) => ({
+                          id: m.id ?? m.moduleId,
+                          name: m.name ?? m.moduleId ?? '',
+                          thumbnail: m.thumbnail,
+                          updatedAt: m.updatedAt
+                      }))
+                    : (await db.table('doms').where('projectId').equals(String(projectId)).toArray()).reduce((acc: any[], row: any) => {
+                          if (row.moduleId && !acc.find((m) => m.id === row.moduleId)) {
+                              acc.push({
+                                  id: row.moduleId,
+                                  name: row.moduleId,
+                                  updatedAt: row.updatedAt || Date.now()
+                              })
+                          }
+                          return acc
+                      }, [])
+
+            modules.sort((a: any, b: any) => {
+                const at = typeof a.updatedAt === 'number' ? a.updatedAt : 0
+                const bt = typeof b.updatedAt === 'number' ? b.updatedAt : 0
+                return bt - at
+            })
+
+            await buildModuleImageMap(String(projectId), modules as { id: string; thumbnail?: string | Blob }[])
+
+            const project = projects.find((p) => p.id === String(projectId))
+            moduleProjectId = String(projectId)
+            moduleProjectName = project?.name ?? ''
+            availableModules = modules
+            showModuleSelector = true
+        } catch (error) {
+            console.error('加载项目模块列表失败，直接进入编辑器:', error)
+            window.location.hash = `#/editor/${projectId}`
+        }
+    }
+
+    function openModule(moduleId: string) {
+        if (!moduleProjectId) return
+        try {
+            sessionStorage.setItem('currentModuleId', moduleId)
+        } catch {}
+        window.location.hash = `#/editor/${moduleProjectId}`
+        showModuleSelector = false
     }
 
     // 打开项目文件
@@ -85,7 +183,7 @@
                     await importProjectFromFile(file)
                 } catch (error) {
                     console.error('导入项目失败:', error)
-                    alert('导入项目失败，请检查文件格式')
+                    Toast.error('导入项目失败，请检查文件格式')
                 }
             }
         }
@@ -109,6 +207,19 @@
                 text = decodeURIComponent(escape(atob(base64)))
             }
             const data = JSON.parse(text)
+
+            const db = await DexieService.getDatabase(DEFAULT_DB_NAME)
+            const projectsTable = data?.data?.data?.find((t: any) => t.tableName === 'projects')
+            if (projectsTable?.rows?.length && db) {
+                const importedName = String(projectsTable.rows[0].name ?? '').trim()
+                if (importedName) {
+                    const existed = await db.table('projects').where('name').equals(importedName).first()
+                    if (existed) {
+                        Toast.warning('已存在同名项目，请修改项目名称后重新导入')
+                        return
+                    }
+                }
+            }
 
             // 生成新的项目ID
             const newProjectId = crypto.randomUUID()
@@ -142,7 +253,7 @@
         }
         if (!originalProjectId) throw new Error('无法解析导出数据中的项目 ID')
 
-        // 3. 遍历所有表，替换 id / projectId
+        // 3. 遍历所有表，替换 id / projectId，并适配新的模块表结构
         for (const table of cloned.data.data) {
             const { tableName, rows } = table
             if (!Array.isArray(rows)) continue
@@ -157,6 +268,14 @@
                             const now = Date.now()
                             row.createdAt = now
                             row.updatedAt = now
+                        }
+                    }
+                    break
+                case 'modules':
+                    // 模块表按 projectId 迁移到新项目ID
+                    for (const row of rows) {
+                        if (row.projectId === originalProjectId) {
+                            row.projectId = newProjectId
                         }
                     }
                     break
@@ -188,7 +307,6 @@
     async function deleteProject(projectId?: string | number) {
         if (projectId == null) return
 
-        // 先删除doms表中对应项目ID的所有记录
         const dbName = DEFAULT_DB_NAME
         console.log(`🗑️【数据交互】删除项目: 项目ID=${projectId}`)
         try {
@@ -196,9 +314,11 @@
             if (db) {
                 console.log(`🗑️【数据交互】删除项目相关DOM节点: 项目ID=${projectId}`)
                 await db.table('doms').where('projectId').equals(String(projectId)).delete()
+                console.log(`🗑️【数据交互】删除项目相关模块记录: 项目ID=${projectId}`)
+                await db.table('modules').where('projectId').equals(String(projectId)).delete()
             }
         } catch (error) {
-            console.error('删除项目DOM数据失败:', error)
+            console.error('删除项目关联DOM或模块数据失败:', error)
         }
 
         // 删除imageStore表中对应项目ID的所有图片记录
@@ -219,117 +339,278 @@
             projects = projects.filter((p) => p.id !== String(projectId))
         } catch (error) {
             console.error('删除项目记录失败:', error)
-            alert('删除失败，请重试')
+            Toast.error('删除失败，请重试')
         }
     }
 
     /** 重命名项目 */
     async function renameProject(projectId: string | number, newName: string) {
-        if (!projectId || !newName.trim()) return
+        const trimmed = newName.trim()
+        if (!projectId || !trimmed) return
 
         const dbName = DEFAULT_DB_NAME
-        console.log(`✏️【数据交互】重命名项目: 项目ID=${projectId}, 新名称=${newName}`)
+        console.log(`✏️【数据交互】重命名项目: 项目ID=${projectId}, 新名称=${trimmed}`)
 
         try {
-            // 更新数据库中的项目名称
+            const db = await DexieService.getDatabase(dbName)
+            const existed = await db.table('projects').where('name').equals(trimmed).first()
+
+            if (existed && String(existed.id) !== String(projectId)) {
+                Toast.warning('已存在同名项目，请修改项目名称')
+                return
+            }
+
             await DexieService.updateRecord(dbName, 'projects', projectId, {
-                name: newName.trim(),
+                name: trimmed,
                 updatedAt: Date.now()
             })
 
-            // 更新本地项目列表
-            projects = projects.map((p) => (p.id === String(projectId) ? { ...p, name: newName.trim() } : p))
+            projects = projects.map((p) => (p.id === String(projectId) ? { ...p, name: trimmed } : p))
 
             console.log(`✅【数据交互】项目重命名成功: 项目ID=${projectId}`)
         } catch (error) {
             console.error('重命名项目失败:', error)
-            alert('重命名失败，请重试')
+            Toast.error('重命名失败，请重试')
         }
     }
 
-    async function confirmNewProject(name: string, templateId: string = 'blank', width: number = 1920, height: number = 1000) {
-        // 清理内存中的旧项目数据
-        clearMemoryState()
+    async function deleteModule(moduleKey?: string | number) {
+        if (moduleKey == null || !moduleProjectId) return
 
-        const id = crypto.randomUUID()
-        const now = Date.now()
+        const dbName = DEFAULT_DB_NAME
+        const key = String(moduleKey)
+        const projectIdForUpdate = moduleProjectId
 
-        // 创建项目记录
-        await DexieService.addRecord(DEFAULT_DB_NAME, 'projects', {
-            id,
-            name,
-            templateId,
-            data: {},
-            designWidth: width,
-            designHeight: height,
-            createdAt: now,
-            updatedAt: now,
-            canvasState: { x: 0, y: 0, scale: 0.5 },
-            mode: 'normal' // 默认模式为正常模式，用户进入编辑器时隐藏工作区
-        })
-        // 根据模板加载DOM结构
         try {
-            const db = await DexieService.getDatabase(DEFAULT_DB_NAME)
-            if (db) {
-                const template = await db.table('templates').get(templateId)
-                if (template && template.domStructure && template.domStructure.length > 0) {
-                    // 使用模板的DOM结构
-                    const domNodes = template.domStructure.map((node: any) => ({
-                        ...node,
-                        projectId: id,
-                        id: node.id || crypto.randomUUID()
-                    }))
+            const db = await DexieService.getDatabase(dbName)
+            const moduleRow: any = await db.table('modules').get(key)
+            const moduleIdForDoms = moduleRow?.id ?? moduleRow?.moduleId ?? moduleRow?.name ?? key
 
-                    await db.table('doms').bulkAdd(domNodes)
-                    console.log(`【模板加载】使用模板 ${template.name} 的DOM结构，共 ${domNodes.length} 个节点`)
+            try {
+                await db
+                    .table('doms')
+                    .where('projectId')
+                    .equals(String(moduleProjectId))
+                    .and((row: any) => row.moduleId === moduleIdForDoms)
+                    .delete()
+            } catch (error) {
+                console.error('删除模块DOM数据失败:', error)
+            }
+
+            if (moduleRow) {
+                try {
+                    await DexieService.deleteRecord(dbName, 'modules', key)
+                } catch (error) {
+                    console.error('删除模块记录失败:', error)
+                }
+            }
+
+            availableModules = availableModules.filter((m) => m.id !== key)
+            const { [key]: _, ...rest } = moduleImageMap
+            moduleImageMap = rest
+
+            if (projectIdForUpdate) {
+                try {
+                    await DexieService.updateRecord(dbName, 'projects', projectIdForUpdate, {
+                        updatedAt: Date.now()
+                    })
+                } catch (error) {
+                    console.error('更新项目操作时间失败:', error)
                 }
             }
         } catch (error) {
-            console.error('加载模板DOM结构失败:', error)
-            // 回退到最简默认根节点，不设置任何样式
-            const rootNode = {
-                id: 'root',
-                projectId: id,
-                componentType: 'SimpleBox',
-                attributes: { type: 'SimpleBox' },
-                props: {},
-                style: {
-                    width: '100%',
-                    height: '100%',
-                    boxSizing: 'border-box',
-                    overflow: 'hidden',
-                    pointerEvents: 'auto'
-                },
-                children: [],
-                position: { x: 0, y: 0 },
-                size: { width: 100, height: 100 },
-                expanded: true,
+            console.error('删除模块失败:', error)
+        }
+    }
+
+    async function renameModule(moduleKey: string | number, newName: string) {
+        const trimmed = newName.trim()
+        if (!moduleKey || !trimmed) return
+
+        const dbName = DEFAULT_DB_NAME
+        const key = String(moduleKey)
+
+        try {
+            const db = await DexieService.getDatabase(dbName)
+            const moduleRow: any = await db.table('modules').get(key)
+            if (!moduleRow) return
+
+            const projectId = moduleRow.projectId ?? moduleProjectId
+            if (projectId) {
+                const existed = await db
+                    .table('modules')
+                    .where('projectId')
+                    .equals(String(projectId))
+                    .and((row: any) => (row.name ?? row.moduleId ?? '').trim() === trimmed && String(row.id) !== key)
+                    .first()
+
+                if (existed) {
+                    Toast.warning('已存在同名模块，请修改模块名称')
+                    return
+                }
+            }
+
+            const now = Date.now()
+            await DexieService.updateRecord(dbName, 'modules', key, {
+                name: trimmed,
+                updatedAt: now
+            })
+
+            availableModules = availableModules.map((m) => (m.id === key ? { ...m, name: trimmed, updatedAt: now } : m))
+
+            const projectIdForUpdate = moduleRow.projectId ?? moduleProjectId
+            if (projectIdForUpdate) {
+                try {
+                    await DexieService.updateRecord(dbName, 'projects', String(projectIdForUpdate), {
+                        updatedAt: now
+                    })
+                } catch (error) {
+                    console.error('更新项目操作时间失败:', error)
+                }
+            }
+        } catch (error) {
+            console.error('重命名模块失败:', error)
+        }
+    }
+
+    async function confirmNewProject(name: string, templateId: string = 'blank', width: number = 1920, height: number = 1000, thumbnail?: Blob) {
+        clearMemoryState()
+
+        const trimmed = name.trim()
+        if (!trimmed) return
+
+        const now = Date.now()
+
+        try {
+            const db = await DexieService.getDatabase(DEFAULT_DB_NAME)
+            const existed = await db.table('projects').where('name').equals(trimmed).first()
+
+            if (existed) {
+                Toast.warning('已存在同名项目，请修改项目名称')
+                return
+            }
+
+            const id = crypto.randomUUID()
+            await DexieService.addRecord(DEFAULT_DB_NAME, 'projects', {
+                id,
+                name: trimmed,
+                templateId,
+                data: {},
+                createdAt: now,
+                updatedAt: now,
+                canvasState: { x: 0, y: 0, scale: 0.5 },
+                mode: 'normal',
+                ...(thumbnail ? { thumbnail } : {})
+            })
+        } catch (error) {
+            console.error('创建项目失败:', error)
+            return
+        }
+
+        await loadProjects()
+
+        showWindow = false
+    }
+
+    async function confirmNewModule(name: string, templateId: string = 'blank', width: number = 1920, height: number = 1000, thumbnail?: Blob) {
+        if (!moduleProjectId) return
+
+        const now = Date.now()
+        const moduleName = name.trim()
+        if (!moduleName) return
+
+        const projectId = moduleProjectId
+
+        try {
+            const db = await DexieService.getDatabase(DEFAULT_DB_NAME)
+
+            const existed = await db
+                .table('modules')
+                .where('projectId')
+                .equals(String(projectId))
+                .and((row: any) => (row.name ?? row.moduleId ?? '').trim() === moduleName)
+                .first()
+
+            if (existed) {
+                Toast.warning('已存在同名模块，请修改模块名称')
+                return
+            }
+
+            const moduleRecord: any = {
+                id: crypto.randomUUID(),
+                projectId,
+                name: moduleName,
+                templateId,
+                designWidth: width,
+                designHeight: height,
                 createdAt: now,
                 updatedAt: now
             }
-            const db = await DexieService.getDatabase(DEFAULT_DB_NAME)
-            if (db) await db.table('doms').add(rootNode)
-        }
-
-        // 生成默认项目缩略图
-        try {
-            await ProjectThumbnailService.createDefaultThumbnail(id)
-        } catch (error) {
-            console.error('创建项目缩略图失败:', error)
-        }
-
-        // 更新项目列表
-        projects = [
-            ...projects,
-            {
-                id,
-                name,
-                createTime: new Date(now).toLocaleString()
+            if (thumbnail) {
+                moduleRecord.thumbnail = thumbnail
             }
-        ]
 
-        window.location.hash = `#/editor/${id}`
-        showWindow = false
+            await db.table('modules').add(moduleRecord)
+
+            try {
+                await DexieService.updateRecord(DEFAULT_DB_NAME, 'projects', projectId, {
+                    updatedAt: now
+                })
+            } catch (error) {
+                console.error('更新项目操作时间失败:', error)
+            }
+
+            const moduleIdForDom = moduleRecord.id
+            const domIdPrefix = moduleName
+
+            const template = await db.table('templates').get(templateId)
+            if (template && template.domStructure && template.domStructure.length > 0) {
+                const domNodes = template.domStructure.map((node: any) => {
+                    const originalId = node.id ?? crypto.randomUUID()
+                    const newId = `${domIdPrefix}::${originalId}`
+                    const originalParentId = node.parentId
+                    const newParentId = originalParentId ? `${domIdPrefix}::${originalParentId}` : originalParentId
+
+                    return {
+                        ...node,
+                        projectId,
+                        moduleId: moduleIdForDom,
+                        id: newId,
+                        parentId: newParentId
+                    }
+                })
+
+                await db.table('doms').bulkAdd(domNodes)
+                console.log(`【模块创建】使用模板 ${template.name} 的DOM结构，共 ${domNodes.length} 个节点`)
+            } else {
+                const rootNode = {
+                    id: `${domIdPrefix}::root`,
+                    projectId,
+                    moduleId: moduleIdForDom,
+                    componentType: 'SimpleBox',
+                    attributes: { type: 'SimpleBox' },
+                    props: {},
+                    style: {
+                        width: '100%',
+                        height: '100%',
+                        boxSizing: 'border-box',
+                        overflow: 'hidden',
+                        pointerEvents: 'auto'
+                    },
+                    children: [],
+                    position: { x: 0, y: 0 },
+                    size: { width: 100, height: 100 },
+                    expanded: true,
+                    createdAt: now,
+                    updatedAt: now
+                }
+                await db.table('doms').add(rootNode)
+            }
+
+            await openProject(projectId)
+        } catch (error) {
+            console.error('创建模块失败:', error)
+        }
     }
 </script>
 
@@ -411,18 +692,40 @@
 </ResponsiveBox>
 
 {#if showWindow}
-    <WindowBox title="新建项目" width={800} height={700} onClose={() => (showWindow = false)} showMaximize={false}>
-        <NewProjectDialog onConfirm={(name, templateId, width, height) => confirmNewProject(name, templateId, width, height)} onCancel={() => (showWindow = false)} />
+    <WindowBox title="新建项目" width={800} height={350} onClose={() => (showWindow = false)} showMaximize={false}>
+        <NewProjectDialog showTemplateAndSize={false} onConfirm={(name, templateId, width, height, thumbnail) => confirmNewProject(name, templateId, width, height, thumbnail)} onCancel={() => (showWindow = false)} />
     </WindowBox>
 {/if}
 
-<style>
-    @keyframes spin {
-        from {
-            transform: rotate(0deg);
-        }
-        to {
-            transform: rotate(360deg);
-        }
-    }
-</style>
+{#if showModuleSelector}
+    <WindowBox title="新建模块" width={1000} height={650} onClose={() => (showModuleSelector = false)} showMaximize={false}>
+        <ResponsiveBox style="height:100%; display:flex; padding:8px 24px; box-sizing:border-box; gap:24px;">
+            <ResponsiveBox style="flex:1; display:flex; flex-direction:column; gap:8px;">
+                <ResponsiveBox style="font-size:16px; font-weight:600; color:#e5e7eb;">模块列表</ResponsiveBox>
+                {#if availableModules.length === 0}
+                    <ResponsiveBox style="color:#cbd5e1; text-align:center; flex:1; display:flex; align-items:center; justify-content:center;">当前项目暂无模块</ResponsiveBox>
+                {:else}
+                    <ResponsiveBox style={`flex:1; padding-bottom:8px; overflow-x:hidden; overflow-y:${availableModules.length > 2 ? 'auto' : 'hidden'};`}>
+                        <ResponsiveBox style="display:grid; grid-template-columns:1fr; gap:8px;">
+                            {#each availableModules as module}
+                                <GenericCard
+                                    prop1={module.id}
+                                    prop2={module.name}
+                                    prop3={module.updatedAt ? new Date(module.updatedAt).toLocaleString() : '未知'}
+                                    prop4={moduleImageMap[module.id]}
+                                    showDelete={true}
+                                    onDelete={deleteModule}
+                                    onClick={() => openModule(module.id)}
+                                    onRename={renameModule}
+                                />
+                            {/each}
+                        </ResponsiveBox>
+                    </ResponsiveBox>
+                {/if}
+            </ResponsiveBox>
+            <ResponsiveBox style="flex:1; display:flex; flex-direction:column; border-left:1px solid rgba(148,163,184,0.3); padding-left:24px; box-sizing:border-box;">
+                <NewProjectDialog nameLabel="模块名称" namePlaceholder="请输入模块名称" onConfirm={(name, templateId, width, height, thumbnail) => confirmNewModule(name, templateId, width, height, thumbnail)} onCancel={() => (showModuleSelector = false)} />
+            </ResponsiveBox>
+        </ResponsiveBox>
+    </WindowBox>
+{/if}

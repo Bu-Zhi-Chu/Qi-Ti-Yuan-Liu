@@ -2,6 +2,7 @@
 
 /** 授权验证开关 */
 export const ENABLE_AUTH_VERIFICATION = false
+
 /** 授权验证目标URL */
 export const TARGET_URL = 'https://buzhichu.netlify.app/societies/99%20asset/json/qi-qiao-ban.json'
 /** 授权验证间隔时间（毫秒） */
@@ -13,7 +14,7 @@ export const CACHE_EXPIRY_TIME = 5 * 60 * 1000
 export const PROXY_URL = 'https://api.allorigins.win/get?url='
 
 /** 数据库配置 */
-export const DEFAULT_DB_NAME = 'qi-qiao-ban'
+export const DEFAULT_DB_NAME = 'qi-ti-yuan-liu'
 export const DB_VERSION = 1
 
 /** 缓存配置 */

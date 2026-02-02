@@ -38,6 +38,8 @@ let selectedNodeId = $state<string | null>('root');
 
 // 当前项目ID
 let currentProjectId = $state<string>('');
+// 当前模块ID（modules表的主键ID，用于按模块维度划分DOM）
+let currentModuleId = $state<string | null>(null);
 // 项目设计尺寸
 let designWidth = $state<number>(1920);
 let designHeight = $state<number>(1080);
@@ -80,6 +82,22 @@ export function setProjectId(newProjectId: string): void {
 }
 
 /**
+ * 设置当前模块ID（modules表主键）
+ */
+export function setModuleId(newModuleId: string | null): void {
+  currentModuleId = newModuleId;
+}
+
+function getCurrentModuleIdFromSession(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return window.sessionStorage.getItem('currentModuleId');
+  } catch {
+    return null;
+  }
+}
+
+/**
  * 同时设置项目设计尺寸
  */
 export function setDesignSize(width: number, height: number): void {
@@ -93,10 +111,24 @@ export function setDesignSize(width: number, height: number): void {
 async function loadDomNodesFromDomsTable(projectId: string): Promise<DomNode | null> {
   try {
     const db = await DexieService.getDatabase(DEFAULT_DB_NAME);
-    const nodes = await db.table('doms').where('projectId').equals(projectId).toArray();
+    const allNodes = await db.table('doms').where('projectId').equals(projectId).toArray();
 
-    if (nodes.length === 0) {
+    if (allNodes.length === 0) {
       return null;
+    }
+
+    const moduleIdFromSession = getCurrentModuleIdFromSession();
+    if (moduleIdFromSession) {
+      currentModuleId = moduleIdFromSession;
+    }
+
+    let nodes = allNodes;
+
+    if (currentModuleId) {
+      const filtered = allNodes.filter((row: any) => row.moduleId === currentModuleId);
+      if (filtered.length > 0) {
+        nodes = filtered;
+      }
     }
 
     // 构建节点映射
@@ -189,18 +221,18 @@ export async function loadDomTreeFromDatabase(projectId: string): Promise<boolea
       expanded: true,
       children: []
     });
-    selectedNodeId = savedSelectedNodeId || 'root';
+    selectedNodeId = savedSelectedNodeId || null;
 
-    // 首先尝试从doms表加载
+    // 首先尝试从doms表加载（按当前模块ID优先过滤）
     const domTreeFromDoms = await loadDomNodesFromDomsTable(projectId);
     if (domTreeFromDoms) {
       Object.assign(domTreeData, domTreeFromDoms);
       console.log('✅【数据交互】加载数据');
 
-      // 恢复之前保存的选中节点，如果节点存在的话
+      const fallbackId = domTreeData.id || 'root';
       const targetSelectedId = savedSelectedNodeId && hasNodeWithId(domTreeData, savedSelectedNodeId)
         ? savedSelectedNodeId
-        : 'root';
+        : fallbackId;
       await setSelectedId(targetSelectedId);
       return true;
     }
@@ -224,10 +256,24 @@ let saveTimeout: ReturnType<typeof setTimeout> | null = null;
  */
 async function saveDomNodesToDomsTable(projectId: string, domTree: DomNode): Promise<void> {
   try {
-    // 先删除该项目的所有旧节点
     const db = await DexieService.getDatabase(DEFAULT_DB_NAME);
     console.log('🗑️【数据交互】开始删除项目旧节点，项目ID:', projectId);
-    await db.table('doms').where({ projectId }).delete();
+
+    const moduleIdFromSession = getCurrentModuleIdFromSession();
+    if (moduleIdFromSession) {
+      currentModuleId = moduleIdFromSession;
+    }
+
+    if (currentModuleId) {
+      await db
+        .table('doms')
+        .where('projectId')
+        .equals(projectId)
+        .and((row: any) => row.moduleId === currentModuleId)
+        .delete();
+    } else {
+      await db.table('doms').where({ projectId }).delete();
+    }
 
     // 递归保存所有节点到doms表
     const saveNode = async (node: DomNode, parentId: string | null, order: number) => {
@@ -250,12 +296,13 @@ async function saveDomNodesToDomsTable(projectId: string, domTree: DomNode): Pro
 
       await DexieService.addRecord(DEFAULT_DB_NAME, 'doms', {
         projectId,
-        id: node.id, // 不变的节点UUID
+        moduleId: currentModuleId ?? null,
+        id: node.id,
         parentId,
         attributes: {
           expanded: node.expanded,
           hidden: node.hidden,
-          locked: node.locked, // 新增：持久化锁定状态
+          locked: node.locked,
           ...safeAttributes,
           type: node.componentType,
           textContent: node.textContent || ''
@@ -276,6 +323,22 @@ async function saveDomNodesToDomsTable(projectId: string, domTree: DomNode): Pro
     // 从根节点开始保存
     await saveNode(domTree, null, 0);
     console.log('💾【数据交互】所有DOM节点已保存到doms表');
+
+    if (currentModuleId) {
+      const now = Date.now();
+      try {
+        await DexieService.updateRecord(DEFAULT_DB_NAME, 'modules', currentModuleId, {
+          updatedAt: now
+        });
+        if (projectId) {
+          await DexieService.updateRecord(DEFAULT_DB_NAME, 'projects', projectId, {
+            updatedAt: now
+          });
+        }
+      } catch (e) {
+        console.error('❌【数据交互】更新模块或项目操作时间失败:', e);
+      }
+    }
   } catch (error) {
     console.error('❌【数据交互】保存DOM节点到doms表失败:', error);
   }

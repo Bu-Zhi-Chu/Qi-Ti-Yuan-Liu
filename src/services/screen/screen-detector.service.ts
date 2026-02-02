@@ -194,19 +194,35 @@ class ScreenDetector {
     }
 
     /**
-     * 使用store中的项目ID读取项目的设计尺寸
+     * 使用当前项目和模块的设计尺寸
      */
     private async applyProjectDesignSize(): Promise<void> {
-        // 从dom-tree.store获取当前项目ID（已静态导入，移除动态导入）
         const currentProjectId = get(projectId)
         if (!currentProjectId) return
 
         try {
-            const project: any = await DexieService.getRecord(DEFAULT_DB_NAME, 'projects', currentProjectId)
-            if (project && project.designWidth && project.designHeight) {
-                this.setDesignSize(project.designWidth, project.designHeight)
-            }
-        } catch { }
+            let designWidth = 1920
+            let designHeight = 1000
+
+            try {
+                const moduleId = typeof window !== 'undefined' ? window.sessionStorage.getItem('currentModuleId') : null
+                if (moduleId) {
+                    const db = await DexieService.getDatabase(DEFAULT_DB_NAME)
+                    const moduleRow = await db
+                        .table('modules')
+                        .where('projectId')
+                        .equals(currentProjectId)
+                        .and((m: any) => m.id === moduleId || m.moduleId === moduleId)
+                        .first()
+                    if (moduleRow && typeof moduleRow.designWidth === 'number' && typeof moduleRow.designHeight === 'number') {
+                        designWidth = moduleRow.designWidth
+                        designHeight = moduleRow.designHeight
+                    }
+                }
+            } catch {}
+
+            this.setDesignSize(designWidth, designHeight)
+        } catch {}
     }
 
     /**

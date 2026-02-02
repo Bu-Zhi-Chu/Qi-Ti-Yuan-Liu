@@ -127,11 +127,11 @@ export default class DexieService {
         // DatabaseLogger.creatingDatabase(dbName)
         const db = new Dexie(dbName)
 
-        // 使用全局版本号，结构变更需同步递增
         const stores: Record<string, string> = {
-            projects: 'id, name, templateId, createdAt, updatedAt, canvasState, mode, exportTime, designWidth, designHeight',
-            doms: '[projectId+id], projectId, parentId, attributes, style',
-            config: '++id, showLogs, perfMonitor, authCache, nextVerificationAt',
+            projects: 'id, name, templateId, createdAt, updatedAt, canvasState, mode, exportTime',
+            modules: 'id, projectId, name, thumbnail, templateId, exportTime, designWidth, designHeight, createdAt, updatedAt',
+            doms: '[projectId+id], projectId, parentId, attributes, style, moduleId',
+            config: '++id, showLogs, perfMonitor, authCache, nextVerificationAt, moduleId',
             imageStore: '[projectId+hash], blob, hash, height, name, projectId, refCount, width',
             requestCache: 'key, lastAccess'
         }

@@ -20,9 +20,6 @@
     import { getNodePropsStore, getNodeProps as _getNodeProps, updateNodeProps, getFullNode } from '../../services/parser/property-panel.service'
     import { getElementByNodeId } from '../../services/utils/dom-geometry.util'
     import { getScaleRatio } from '../../services/utils/get-scale-ratio.util'
-    import { projectId } from '../../stores/dom-tree.store.svelte'
-    import { ProjectThumbnailService } from '../../services/project/project-thumbnail.service'
-    import ColorPaletteService from '../../services/project/color-palette.service'
     import ColorPicker from '../widgets/ColorPicker.svelte'
     import ToggleSwitch from '../widgets/ToggleSwitch.svelte'
     import PropertyRow from './PropertyRow.svelte'
@@ -34,6 +31,7 @@
     import { getImage, addOrIncrement } from '../../services/database/image-store.service'
     import { processImageUpload } from '../../services/image/upload-image.service'
     import { useLQIP } from '../../services/utils/use-lqip'
+    import { projectId } from '../../stores/dom-tree.store.svelte'
 
     // 工具函数：安全获取字符串值
     function getStringValue(value: string | Blob | undefined): string {
@@ -69,7 +67,6 @@
     let backgroundPositionX = $state<string>('50')
     let backgroundPositionY = $state<string>('50')
     let backgroundRepeat = $state<string>('no-repeat')
-    let lastBackgroundImage = $state<string>('')
     let gradientColors = $state<Array<{ color: string; opacity: number }>>([])
     let gradientDirection = $state<string>('to right')
     let gradientRatio = $state<number>(50) // 渐变比例，0-100，控制两个颜色的占比
@@ -601,59 +598,6 @@
         }
 
         updateNodeProps(selectedId, { styles, attributes })
-
-        // 如果是根节点，仅当背景图片状态发生变化时才处理缩略图
-        if (selectedId === 'root') {
-            const isRealImage = (image: any): boolean => {
-                if (!image) return false
-                if (typeof image === 'string') {
-                    const str = image.trim()
-                    if (str.startsWith('url(')) return true
-                    // 40位及以上十六进制字符串视为哈希引用图片
-                    return /^[a-f0-9]{40,}$/.test(str)
-                }
-                return image instanceof Blob
-            }
-
-            const prevIsRealImage = isRealImage(lastBackgroundImage)
-            const currIsRealImage = isRealImage(backgroundImage)
-
-            if (currIsRealImage && !prevIsRealImage) {
-                // 新上传了图片，生成缩略图
-                await syncBackgroundToThumbnail()
-            } else if (!currIsRealImage && prevIsRealImage) {
-                // 图片被清空，恢复默认缩略图
-                const currentProjectId = get(projectId)
-                if (currentProjectId) {
-                    await ProjectThumbnailService.createDefaultThumbnail(currentProjectId)
-                }
-            }
-        }
-
-        // 更新上一次背景图片记录
-        lastBackgroundImage = typeof backgroundImage === 'string' ? backgroundImage : ''
-    }
-
-    // 同步背景图片到项目缩略图
-    async function syncBackgroundToThumbnail() {
-        try {
-            // 获取当前项目ID
-            const currentProjectId = get(projectId)
-            if (!currentProjectId) {
-                console.warn('无法获取项目ID，无法同步缩略图')
-                return
-            }
-
-            // 同步背景图片到项目缩略图
-            if (backgroundImage) {
-                await ProjectThumbnailService.syncBackgroundToThumbnail(currentProjectId, backgroundImage)
-            } else {
-                // 没有背景图片时重置为默认缩略图
-                await ProjectThumbnailService.createDefaultThumbnail(currentProjectId)
-            }
-        } catch (error) {
-            console.error('同步项目缩略图失败:', error)
-        }
     }
 
     // 清除背景图片
@@ -663,14 +607,6 @@
         // 清除本地状态
         backgroundImage = ''
         await updateBackgroundStyles()
-
-        // 若当前节点为根节点，重置项目缩略图为默认占位图
-        if (selectedId === 'root') {
-            const currentProjectId = get(projectId)
-            if (currentProjectId) {
-                await ProjectThumbnailService.createDefaultThumbnail(currentProjectId)
-            }
-        }
     }
 
     // 组件卸载时清理Blob URL

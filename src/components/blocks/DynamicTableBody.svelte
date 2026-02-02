@@ -543,7 +543,19 @@
                             ${config.contentHeight ? `height: ${toAdaptiveSize(config.contentHeight)};` : ''}
                             ${contentBgUrl ? `background-image: url('${contentBgUrl}'); background-size: 100% 100%; background-repeat: no-repeat; background-position: center;` : ''}
                         `}
-                                <div class="body-cell" style={getCellStyle(col, rowIndex)} ondblclick={() => startEditing(rowIndex, colIndex, cellData, isEditable)}>
+                                <div
+                                    class="body-cell"
+                                    style={getCellStyle(col, rowIndex)}
+                                    role="button"
+                                    tabindex="0"
+                                    onkeydown={(event) => {
+                                        if (event.key === 'Enter' || event.key === ' ') {
+                                            event.preventDefault()
+                                            startEditing(rowIndex, colIndex, cellData, isEditable)
+                                        }
+                                    }}
+                                    ondblclick={() => startEditing(rowIndex, colIndex, cellData, isEditable)}
+                                >
                                     {#if replacement}
                                         <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
                                             <img src={replacement.url} alt={String(cellData)} style="max-width: 100%; max-height: 100%; object-fit: contain; width: {replacement.width || 'auto'}; height: {replacement.height || 'auto'};" />
@@ -614,7 +626,19 @@
                             ${config.contentHeight ? `height: ${toAdaptiveSize(config.contentHeight)};` : ''}
                             ${contentBgUrl ? `background-image: url('${contentBgUrl}'); background-size: 100% 100%; background-repeat: no-repeat; background-position: center;` : ''}
                         `}
-                                <div class="body-cell" style={getCellStyle(col, rowIndex)} ondblclick={() => startEditing(rowIndex, colIndex, cellData, isEditable)}>
+                                <div
+                                    class="body-cell"
+                                    style={getCellStyle(col, rowIndex)}
+                                    role="button"
+                                    tabindex="0"
+                                    onkeydown={(event) => {
+                                        if (event.key === 'Enter' || event.key === ' ') {
+                                            event.preventDefault()
+                                            startEditing(rowIndex, colIndex, cellData, isEditable)
+                                        }
+                                    }}
+                                    ondblclick={() => startEditing(rowIndex, colIndex, cellData, isEditable)}
+                                >
                                     {#if replacement}
                                         <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
                                             <img src={replacement.url} alt={String(cellData)} style="max-width: 100%; max-height: 100%; object-fit: contain; width: {replacement.width || 'auto'}; height: {replacement.height || 'auto'};" />

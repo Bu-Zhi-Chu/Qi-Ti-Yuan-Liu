@@ -330,7 +330,7 @@ async function performRealBuild(request: BuildRequest): Promise<BuildResponse> {
   const startTime = Date.now();
 
   try {
-    const { liteData, outputDir = 'dist-lite', projectName } = request;
+    const { liteData, outputDir = 'dist-lite' } = request;
 
     // 确保输出目录存在，先删除确保干净
     const outputPath = resolve(process.cwd(), outputDir);
@@ -394,22 +394,13 @@ async function performRealBuild(request: BuildRequest): Promise<BuildResponse> {
       const indexPath = resolve(outputPath, 'index.html');
       if (existsSync(indexPath)) {
         let html = await readFile(indexPath, 'utf-8');
-        if (projectName) {
-          const escapedTitle = projectName
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
-          if (/<title>.*?<\/title>/i.test(html)) {
-            html = html.replace(/<title>.*?<\/title>/i, `<title>${escapedTitle}</title>`);
-          }
-        }
+        // 精简构建场景下，index.html 将被多个模块共享，标题在运行时按 moduleId 动态设置
+        // 因此这里不再用单个 projectName 覆盖 <title>，只移除图标以保持简洁
         html = html.replace(/<link[^>]+rel=["']icon["'][^>]*>\s*/gi, '');
         writeFileSync(indexPath, html);
       }
     } catch (e) {
-      console.warn('[vite-build-plugin] 更新 index.html 标题或图标失败', e);
+      console.warn('[vite-build-plugin] 更新 index.html 图标失败', e);
     }
 
     const duration = Date.now() - startTime;

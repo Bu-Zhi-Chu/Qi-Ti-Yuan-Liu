@@ -29,7 +29,7 @@
     import { applyLogConfig } from '../../services/utils/log-switch'
 
     // 引入 DOM 树集中式状态管理
-    import { domTree, selectedId, removeNodeById, projectId, findNodeById, setDesignSize } from '../../stores/dom-tree.store.svelte'
+    import { domTree, selectedId, removeNodeById, projectId, findNodeById, setDesignSize, setModuleId } from '../../stores/dom-tree.store.svelte'
     import DexieService from '../../services/database/dexie-service'
     import { DEFAULT_DB_NAME } from '../../config/config'
     let AsyncStatusBar: any = $state(null)
@@ -603,12 +603,38 @@
                 if (project.name) {
                     document.title = project.name as string
                 }
-                // 把设计尺寸写进 store，供所有组件复用
-                setDesignSize(project.designWidth || 1920, project.designHeight || 1000)
+
+                let designWidth = 1920
+                let designHeight = 1000
+
+                try {
+                    const moduleId = typeof window !== 'undefined' ? window.sessionStorage.getItem('currentModuleId') : null
+                    if (moduleId) {
+                        setModuleId(moduleId)
+                        const db = await DexieService.getDatabase(DEFAULT_DB_NAME)
+                        const moduleRow = await db
+                            .table('modules')
+                            .where('projectId')
+                            .equals(currentProjectId)
+                            .and((m: any) => m.id === moduleId || m.moduleId === moduleId)
+                            .first()
+                        if (moduleRow) {
+                            const moduleTitle = (moduleRow.name ?? moduleRow.moduleId) as string | undefined
+                            if (moduleTitle) {
+                                document.title = moduleTitle
+                            }
+                            if (typeof moduleRow.designWidth === 'number' && typeof moduleRow.designHeight === 'number') {
+                                designWidth = moduleRow.designWidth
+                                designHeight = moduleRow.designHeight
+                            }
+                        }
+                    }
+                } catch {}
+
+                setDesignSize(designWidth, designHeight)
             } else {
                 showWorkspace = false
             }
-            // 初始化完成
             modeInitialized = true
         } catch (error) {
             console.error('初始化项目模式失败:', error)

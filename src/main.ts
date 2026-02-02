@@ -218,11 +218,45 @@ setTimeout(() => {
 
 let app: ReturnType<typeof mount> | undefined // 提前声明，供导出使用
 
+function setFrameworkFavicon() {
+    try {
+        const head = document.head || document.getElementsByTagName('head')[0]
+        if (!head) return
+        const existing = head.querySelectorAll('link[rel="icon"], link[rel="shortcut icon"]')
+        existing.forEach((link) => {
+            if (link.parentNode) {
+                link.parentNode.removeChild(link)
+            }
+        })
+        const link = document.createElement('link')
+        link.rel = 'icon'
+        link.type = 'image/x-icon'
+        link.href = './favicon.ico'
+        head.appendChild(link)
+    } catch {
+    }
+}
+
 // 数据库初始化函数
 async function initializeDatabase() {
     try {
         // 精简模式下从project-data.qtyl导入数据并还原数据库
         if (isLiteMode()) {
+            // 精简模式中，通过 URL 查询参数支持模块选择
+            let urlModuleId: string | null = null
+            try {
+                const params = new URLSearchParams(window.location.search)
+                const qpModuleId = params.get('moduleId')
+                urlModuleId = qpModuleId && qpModuleId.trim() !== '' ? qpModuleId : null
+                if (urlModuleId) {
+                    try {
+                        window.sessionStorage.setItem('currentModuleId', urlModuleId)
+                    } catch {
+                    }
+                }
+            } catch {
+            }
+
             // 精简模式先清空网页标题，防止显示旧项目名称或默认标题
             document.title = ''
             // console.log('【数据交互】精简模式：从project-data.qtyl导入数据')
@@ -252,102 +286,166 @@ async function initializeDatabase() {
                 }
 
                 const db = await DexieService.getDatabaseUnsafe(DEFAULT_DB_NAME)
-                if (db) {
-                    // 读取并应用日志配置
+                if (!db) {
+                    throw new Error('无法获取数据库实例')
+                }
+
+                // 读取并应用日志配置
+                try {
+                    const cfgRecord = (await db.table('config').toArray())[0]
+                    applyLogConfig(cfgRecord ? (cfgRecord.showLogs ?? cfgRecord.value) === true : import.meta.env.DEV === true)
+                } catch { }
+                let jsonTimestamp = projectData.updatedAt || projectData.exportTime
+                let jsonModuleId: string | null = null
+
+                if (!jsonTimestamp && Array.isArray((projectData as any).rows)) {
+                    const row0 = (projectData as any).rows[0]
+                    jsonTimestamp = row0?.updatedAt || row0?.exportTime
+                    jsonModuleId = (projectData as any).rows[0]?.moduleId ?? null
+                }
+                let tablesArray: any[] | undefined
+                if (projectData.data) {
+                    if (Array.isArray(projectData.data)) {
+                        tablesArray = projectData.data
+                    } else if (Array.isArray((projectData.data as any).data)) {
+                        tablesArray = (projectData.data as any).data
+                    }
+                }
+                if (tablesArray) {
+                    const projectsTable = tablesArray.find((item: any) => item.tableName === 'projects')
+                    if (projectsTable && projectsTable.rows && projectsTable.rows.length > 0) {
+                        if (!jsonTimestamp) {
+                            const row0 = projectsTable.rows[0]
+                            jsonTimestamp = row0.updatedAt || row0.exportTime
+                        }
+                        if (!jsonModuleId) {
+                            jsonModuleId = projectsTable.rows[0].moduleId ?? null
+                        }
+                    }
+                }
+
+                const updateLiteTitle = async () => {
                     try {
-                        const cfgRecord = (await db.table('config').toArray())[0]
-                        applyLogConfig(cfgRecord ? (cfgRecord.showLogs ?? cfgRecord.value) === true : import.meta.env.DEV === true)
-                    } catch { }
-                    // 获取数据库中最新项目的导出时间
-                    let dbExportTime: string | null = null
+                        let moduleIdForTitle: string | null = urlModuleId
+                        if (!moduleIdForTitle) {
+                            try {
+                                const params = new URLSearchParams(window.location.search)
+                                const qpModuleId2 = params.get('moduleId')
+                                moduleIdForTitle = qpModuleId2 && qpModuleId2.trim() !== '' ? qpModuleId2 : null
+                            } catch {
+                            }
+                        }
+                        if (moduleIdForTitle) {
+                            const moduleRecord: any = await db.table('modules').get(moduleIdForTitle)
+                            if (moduleRecord) {
+                                let titleParts: string[] = []
+                                if (moduleRecord.name) {
+                                    titleParts.push(moduleRecord.name as string)
+                                }
+                                if (moduleRecord.projectId) {
+                                    try {
+                                        const proj: any = await db.table('projects').get(moduleRecord.projectId)
+                                        if (proj && proj.name) {
+                                            titleParts.push(proj.name as string)
+                                        }
+                                    } catch {
+                                    }
+                                }
+                                titleParts.push('炁体源流')
+                                const newTitle = titleParts.join(' - ')
+                                document.title = newTitle
+                            } else {
+                                document.title = '炁体源流 · Qi Ti Yuan Liu'
+                            }
+                        } else {
+                            document.title = '炁体源流 · Qi Ti Yuan Liu'
+                            setFrameworkFavicon()
+                        }
+                    } catch {
+                        document.title = '炁体源流 · Qi Ti Yuan Liu'
+                        setFrameworkFavicon()
+                    }
+                }
+
+                if (jsonModuleId) {
+                    let dbModuleTime: string | null = null
+                    try {
+                        const existingModule = await db.table('modules').get(jsonModuleId)
+                        if (existingModule) {
+                            dbModuleTime = existingModule.updatedAt || existingModule.exportTime || null
+                        }
+                    } catch (error) {
+                        console.warn('【数据交互】无法获取模块导出时间', error)
+                    }
+
+                    console.log(`⏰【数据交互】模块时间对比 - 模块=${jsonModuleId}, JSON时间: ${jsonTimestamp || '未提供'}, 数据库时间: ${dbModuleTime || '无'}`)
+
+                    const shouldImportModule = !dbModuleTime || (jsonTimestamp && new Date(jsonTimestamp) > new Date(dbModuleTime))
+
+                    if (shouldImportModule) {
+                        console.log('【数据交互】按模块ID清理旧数据', jsonModuleId)
+                        await db.table('modules').delete(jsonModuleId)
+                        await db.table('doms').where('moduleId').equals(jsonModuleId).delete()
+                        await db.table('config').where('moduleId').equals(jsonModuleId).delete()
+                    } else {
+                        console.log('⏭️【数据交互】模块已是最新，跳过导入')
+                        await updateLiteTitle()
+                        return
+                    }
+                } else {
+                    let dbTime: string | null = null
                     let existingProjectCount = 0
                     try {
                         const existingProjects = await db.table('projects').toArray()
                         existingProjectCount = existingProjects.length
-                        if (existingProjectCount > 0 && existingProjects[0].exportTime) {
-                            dbExportTime = existingProjects[0].exportTime
+                        if (existingProjectCount > 0) {
+                            const proj0: any = existingProjects[0]
+                            dbTime = proj0.updatedAt || proj0.exportTime || null
                         }
                     } catch (error) {
                         console.warn('【数据交互】无法获取现有导出时间', error)
                     }
 
-                    // 对于dexie-export-import格式，尝试从元数据中获取导出时间
-                    let jsonExportTime = projectData.exportTime
-                    // 兼容 projectData.rows 结构提取 exportTime
-                    // 兼容 projectData.rows 直接包含数据的结构
-                    if (!jsonExportTime && Array.isArray((projectData as any).rows)) {
-                        jsonExportTime = (projectData as any).rows[0]?.exportTime
-                    }
-                    // 兼容不同导出结构，获取 tables 数组
-                    let tablesArray: any[] | undefined
-                    if (projectData.data) {
-                        if (Array.isArray(projectData.data)) {
-                            tablesArray = projectData.data
-                        } else if (Array.isArray((projectData.data as any).data)) {
-                            tablesArray = (projectData.data as any).data
-                        }
-                    }
-                    if (!jsonExportTime && tablesArray) {
-                        // 查找projects表中是否有exportTime字段
-                        const projectsTable = tablesArray.find((item: any) => item.tableName === 'projects')
-                        console.log('📊【数据交互】projectsTable', projectsTable)
-                        if (projectsTable && projectsTable.rows && projectsTable.rows.length > 0) {
-                            jsonExportTime = projectsTable.rows[0].exportTime
-                        }
-                    }
+                    console.log(`⏰【数据交互】时间对比 - JSON时间: ${jsonTimestamp || '未提供'}, 数据库时间: ${dbTime || '无'}`)
 
-                    // 打印两侧时间戳以便调试
-                    console.log(`⏰【数据交互】时间对比 - JSON时间: ${jsonExportTime || '未提供'}, 数据库时间: ${dbExportTime || '无'}`)
-
-                    // 比较导出时间，决定是否导入
-                    const shouldImport = existingProjectCount === 0 ||
-                        !dbExportTime ||
-                        (jsonExportTime && new Date(jsonExportTime) > new Date(dbExportTime))
+                    const shouldImport = existingProjectCount === 0 || !dbTime || (jsonTimestamp && new Date(jsonTimestamp) > new Date(dbTime))
 
                     if (shouldImport) {
-
-
-                        // 清空旧数据，避免数据污染
                         console.log('【数据交互】清空数据库旧数据')
                         await db.table('projects').clear()
                         await db.table('doms').clear()
-
-                        console.log('📦【数据交互】使用dexie-export-import导入数据')
-
-                        // 将JSON数据转换为Blob，然后使用importInto导入
-                        const jsonString = JSON.stringify(projectData)
-                        const blob = new Blob([jsonString], { type: 'application/json' })
-                        await importInto(db, blob, { overwriteValues: true })
-
-
-                        console.log('【数据交互】dexie-export-import导入完成')
-
-                        // 重置所有项目的 canvasState 为默认值，确保初始缩放一致
-                        try {
-                            await db.table('projects').toCollection().modify((proj: any) => {
-                                proj.canvasState = { x: 0, y: 0, scale: 0.5 }
-                            })
-                            console.log('🔄【数据交互】已重置项目 canvasState 为默认值 (scale=0.5, x=0, y=0)')
-                        } catch (resetErr) {
-                            console.warn('⚠️【数据交互】重置 canvasState 失败', resetErr)
-                        }
                     } else {
-                        console.log(`⏭️【数据交互】数据库已是最新，跳过导入 - JSON时间: ${jsonExportTime}, 数据库时间: ${dbExportTime || '无'}`)
+                        console.log(`⏭️【数据交互】数据库已是最新，跳过导入 - JSON时间: ${jsonTimestamp}, 数据库时间: ${dbTime || '无'}`)
+                        await updateLiteTitle()
+                        return
                     }
-
-
-
-
-
-                    // 验证导入的数据
-                    const finalProjectCount = await db.table('projects').count()
-                    const finalDomCount = await db.table('doms').count()
-                    console.log(`✅【数据交互】精简模式：验证完成 - 项目: ${finalProjectCount}个, DOM节点: ${finalDomCount}个`)
-                    console.log(`🔇【数据交互】默认关闭日志打印`)
-
-                } else {
-                    throw new Error('无法获取数据库实例')
                 }
+
+                console.log('📦【数据交互】使用dexie-export-import导入数据')
+
+                // 将JSON数据转换为Blob，然后使用importInto导入
+                const jsonString = JSON.stringify(projectData)
+                const blob = new Blob([jsonString], { type: 'application/json' })
+                await importInto(db, blob, { overwriteValues: true })
+
+                console.log('【数据交互】dexie-export-import导入完成')
+
+                try {
+                    await db.table('projects').toCollection().modify((proj: any) => {
+                        proj.canvasState = { x: 0, y: 0, scale: 0.5 }
+                    })
+                    console.log('🔄【数据交互】已重置项目 canvasState 为默认值 (scale=0.5, x=0, y=0)')
+                } catch (resetErr) {
+                    console.warn('⚠️【数据交互】重置 canvasState 失败', resetErr)
+                }
+
+                // 验证导入的数据
+                const finalProjectCount = await db.table('projects').count()
+                const finalDomCount = await db.table('doms').count()
+                console.log(`✅【数据交互】精简模式：验证完成 - 项目: ${finalProjectCount}个, DOM节点: ${finalDomCount}个`)
+                console.log(`🔇【数据交互】默认关闭日志打印`)
+
+                await updateLiteTitle()
 
 
             } catch (error) {

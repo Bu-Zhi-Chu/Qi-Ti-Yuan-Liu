@@ -37,16 +37,28 @@ export class LiteExportService {
         try {
             console.log(`开始导出项目 ${projectId} 的精简数据（含Blob数据）...`);
 
+            const now = new Date().toISOString();
+
             // 在导出前更新项目的 exportTime，方便后续导入时比较时间戳
             await DexieService.updateRecord(
                 DEFAULT_DB_NAME,
                 'projects',
                 projectId,
-                { exportTime: new Date().toISOString() }
+                { exportTime: now }
             );
 
-            // 使用 dexie-export-import 直接导出完整数据库
-            const exportBlob = await this.exportTablesWithDexie(['projects', 'doms', 'imageStore'], projectId);
+            // 同步更新模块表中的导出时间
+            try {
+                const db = await DexieService.getDatabase(DEFAULT_DB_NAME);
+                await db.table('modules').where('projectId').equals(projectId).modify((m: any) => {
+                    m.exportTime = now;
+                });
+            } catch (e) {
+                console.warn('更新模块导出时间失败:', e);
+            }
+
+            // 使用 dexie-export-import 直接导出完整数据库（包含模块表）
+            const exportBlob = await this.exportTablesWithDexie(['projects', 'modules', 'doms', 'imageStore'], projectId);
 
             // 将JSON文本编码后再生成Blob
             const jsonText = await exportBlob.text();
@@ -109,6 +121,9 @@ export class LiteExportService {
                         case 'projects':
                             // projects表按id过滤
                             return value?.id === projectId;
+                        case 'modules':
+                            // modules表按projectId过滤
+                            return value?.projectId === projectId;
                         case 'doms':
                             // doms表按projectId过滤
                             return value?.projectId === projectId;

@@ -12,15 +12,17 @@
     import ResponsiveBox from '../core/ResponsiveBox.svelte'
     import GenericCard from './GenericCard.svelte'
     import DexieService from '../../services/database/dexie-service'
-import { DEFAULT_DB_NAME } from '../../config/config'
+    import { DEFAULT_DB_NAME } from '../../config/config'
     import { Toast } from './Toast.svelte'
 
-    // Props定义
     interface Props {
-        onConfirm?: (name: string, templateId: string, width: number, height: number) => void
+        onConfirm?: (name: string, templateId: string, width: number, height: number, thumbnail?: Blob) => void
         onCancel?: () => void
+        showTemplateAndSize?: boolean
+        nameLabel?: string
+        namePlaceholder?: string
     }
-    let { onConfirm, onCancel }: Props = $props()
+    let { onConfirm, onCancel, showTemplateAndSize = true, nameLabel = '项目名称', namePlaceholder = '请输入项目名称' }: Props = $props()
 
     // 类型定义
     interface TemplateInfo {
@@ -32,14 +34,15 @@ import { DEFAULT_DB_NAME } from '../../config/config'
         thumbnailUrl?: string | Blob
     }
 
-    // 状态管理
     let templates = $state<TemplateInfo[]>([])
     let selected = $state('')
     let projectName = $state('')
-    // 新增设计尺寸
+    let projectImage: Blob | null = null
+    let projectImageName = $state('')
     let designWidth = $state('1920')
     let designHeight = $state('1000')
     let isLoading = $state(true)
+    let projectImageInput: HTMLInputElement | null = null
     const inputId: string = 'project-name-' + Math.random().toString(36).slice(2)
 
     onMount(async () => {
@@ -66,7 +69,7 @@ import { DEFAULT_DB_NAME } from '../../config/config'
         })
     })
 
-    const confirm = () => {
+    const confirm = async () => {
         const name = projectName.trim()
         if (!name) {
             Toast.warning('请输入项目名称')
@@ -78,55 +81,90 @@ import { DEFAULT_DB_NAME } from '../../config/config'
             Toast.warning('请输入有效的设计宽高')
             return
         }
-        onConfirm?.(name, selected, w, h)
+
+        try {
+            await onConfirm?.(name, selected, w, h, projectImage || undefined)
+        } finally {
+            projectName = ''
+            projectImage = null
+            projectImageName = ''
+            if (projectImageInput) {
+                projectImageInput.value = ''
+            }
+        }
     }
 
     const cancel = () => onCancel?.()
 </script>
 
-<ResponsiveBox style="display:flex; flex-direction:column; height:100%; width:100%; padding:16px; box-sizing:border-box;">
+<ResponsiveBox style="display:flex; flex-direction:column; height:100%; width:100%; padding:12px; box-sizing:border-box;">
     <!-- 项目名称输入 -->
 
-    <!-- 项目名称输入 -->
-    <span style="font-size:calc(14px*var(--scale-ratio,1)); color:#cbd5e1; margin:calc(16px*var(--scale-ratio,1)) 0 calc(8px*var(--scale-ratio,1));">项目名称</span>
+    <span style="font-size:calc(14px*var(--scale-ratio,1)); color:#cbd5e1; margin:calc(8px*var(--scale-ratio,1)) 0 calc(4px*var(--scale-ratio,1));">
+        {nameLabel}
+    </span>
     <div style="display:flex; gap:calc(12px*var(--scale-ratio,1));">
         <input
             id={inputId}
             bind:value={projectName}
-            placeholder="请输入项目名称"
+            placeholder={namePlaceholder}
             style="flex:1; height:calc(36px*var(--scale-ratio,1)); font-size:calc(14px*var(--scale-ratio,1)); padding:0 calc(12px*var(--scale-ratio,1)); border-radius:calc(8px*var(--scale-ratio,1)); border:calc(1px*var(--scale-ratio,1)) solid rgba(148,163,184,0.3); background:rgba(15,23,42,0.4); color:#f1f5f9; outline:none;"
             autocomplete="off"
         />
     </div>
 
-    <!-- 设计尺寸输入 -->
-    <span style="font-size:calc(14px*var(--scale-ratio,1)); color:#cbd5e1; margin:calc(16px*var(--scale-ratio,1)) 0 calc(8px*var(--scale-ratio,1));">设计尺寸</span>
-    <div style="display:flex; gap:calc(12px*var(--scale-ratio,1));">
+    <span style="font-size:calc(14px*var(--scale-ratio,1)); color:#cbd5e1; margin:calc(8px*var(--scale-ratio,1)) 0 calc(4px*var(--scale-ratio,1));">项目图片（可选）</span>
+    <div style="display:flex; gap:calc(12px*var(--scale-ratio,1)); align-items:center;">
         <input
-            type="number"
-            bind:value={designWidth}
-            min="1"
-            placeholder="宽度(px)"
-            style="flex:1; height:calc(36px*var(--scale-ratio,1)); font-size:calc(14px*var(--scale-ratio,1)); padding:0 calc(12px*var(--scale-ratio,1)); border-radius:calc(8px*var(--scale-ratio,1)); border:calc(1px*var(--scale-ratio,1)) solid rgba(148,163,184,0.3); background:rgba(15,23,42,0.4); color:#f1f5f9; outline:none;"
+            type="file"
+            accept="image/*"
+            bind:this={projectImageInput}
+            onchange={(event) => {
+                const input = event.target as HTMLInputElement
+                const file = input.files && input.files[0] ? input.files[0] : null
+                projectImage = file
+                projectImageName = file ? file.name : ''
+            }}
+            style="display:none;"
         />
-        <input
-            type="number"
-            bind:value={designHeight}
-            min="1"
-            placeholder="高度(px)"
-            style="flex:1; height:calc(36px*var(--scale-ratio,1)); font-size:calc(14px*var(--scale-ratio,1)); padding:0 calc(12px*var(--scale-ratio,1)); border-radius:calc(8px*var(--scale-ratio,1)); border:calc(1px*var(--scale-ratio,1)) solid rgba(148,163,184,0.3); background:rgba(15,23,42,0.4); color:#f1f5f9; outline:none;"
-        />
+        <button
+            type="button"
+            style="flex:1; height:calc(36px*var(--scale-ratio,1)); font-size:calc(14px*var(--scale-ratio,1)); padding:0 calc(12px*var(--scale-ratio,1)); border-radius:calc(8px*var(--scale-ratio,1)); border:calc(1px*var(--scale-ratio,1)) solid rgba(148,163,184,0.3); background:rgba(15,23,42,0.15); color:#f1f5f9; outline:none; cursor:pointer; text-align:left;"
+            onclick={() => projectImageInput && projectImageInput.click()}
+        >
+            {projectImageName || '上传图片'}
+        </button>
     </div>
 
-    <!-- 模板选择 -->
-    <span style="font-size:calc(14px*var(--scale-ratio,1)); color:#cbd5e1; margin:calc(16px*var(--scale-ratio,1)) 0 calc(8px*var(--scale-ratio,1));">选择模板</span>
-    <div class="grid">
-        {#each templates as tpl}
-            <button type="button" class="tpl-btn" onclick={() => (selected = tpl.id)}>
-                <GenericCard prop1={tpl.id} prop2={tpl.name} prop3={tpl.desc} prop4={tpl.thumbnailUrl} prop5={tpl.tag} selected={selected === tpl.id} />
-            </button>
-        {/each}
-    </div>
+    <!-- 设计尺寸输入 -->
+    {#if showTemplateAndSize}
+        <span style="font-size:calc(14px*var(--scale-ratio,1)); color:#cbd5e1; margin:calc(8px*var(--scale-ratio,1)) 0 calc(4px*var(--scale-ratio,1));">设计尺寸</span>
+        <div style="display:flex; gap:calc(12px*var(--scale-ratio,1));">
+            <input
+                type="number"
+                bind:value={designWidth}
+                min="1"
+                placeholder="宽度(px)"
+                style="flex:1; height:calc(36px*var(--scale-ratio,1)); font-size:calc(14px*var(--scale-ratio,1)); padding:0 calc(12px*var(--scale-ratio,1)); border-radius:calc(8px*var(--scale-ratio,1)); border:calc(1px*var(--scale-ratio,1)) solid rgba(148,163,184,0.3); background:rgba(15,23,42,0.4); color:#f1f5f9; outline:none;"
+            />
+            <input
+                type="number"
+                bind:value={designHeight}
+                min="1"
+                placeholder="高度(px)"
+                style="flex:1; height:calc(36px*var(--scale-ratio,1)); font-size:calc(14px*var(--scale-ratio,1)); padding:0 calc(12px*var(--scale-ratio,1)); border-radius:calc(8px*var(--scale-ratio,1)); border:calc(1px*var(--scale-ratio,1)) solid rgba(148,163,184,0.3); background:rgba(15,23,42,0.4); color:#f1f5f9; outline:none;"
+            />
+        </div>
+
+        <span style="font-size:calc(14px*var(--scale-ratio,1)); color:#cbd5e1; margin:calc(10px*var(--scale-ratio,1)) 0 calc(6px*var(--scale-ratio,1));">选择模板</span>
+        <div class="grid">
+            {#each templates as tpl}
+                <button type="button" class="tpl-btn" onclick={() => (selected = tpl.id)}>
+                    <GenericCard prop1={tpl.id} prop2={tpl.name} prop3={tpl.desc} prop4={tpl.thumbnailUrl} prop5={tpl.tag} selected={selected === tpl.id} compact={true} />
+                </button>
+            {/each}
+        </div>
+    {/if}
 
     <!-- 操作按钮 -->
     <div class="btn-group" style="margin-top:auto;">
@@ -138,16 +176,16 @@ import { DEFAULT_DB_NAME } from '../../config/config'
 <style>
     .grid {
         display: grid;
+        flex: 1;
         grid-template-columns: repeat(auto-fill, minmax(calc(180px * var(--scale-ratio, 1)), 1fr));
-        gap: calc(24px * var(--scale-ratio, 1));
-        padding: calc(32px * var(--scale-ratio, 1)) calc(16px * var(--scale-ratio, 1));
+        gap: calc(16px * var(--scale-ratio, 1));
+        padding: calc(8px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));
         overflow-y: auto;
     }
     .btn-group {
         display: flex;
         justify-content: flex-end;
         gap: calc(16px * var(--scale-ratio, 1));
-        margin-top: calc(24px * var(--scale-ratio, 1));
     }
     /* 主按钮样式 */
     button {
