@@ -78,7 +78,7 @@
         })
     }
 
-    type HeaderType = 'default' | 'index' | 'selection' | 'group'
+    type HeaderType = 'default' | 'index' | 'selection' | 'operation' | 'group'
 
     interface ColumnHeaderInfo {
         col: any
@@ -99,7 +99,7 @@
             const header = col.header
             const type: HeaderType = header && typeof header === 'object' ? (header.type ?? 'default') : 'default'
             const baseLabel = header && typeof header === 'object' ? (header.label ?? '') : (header ?? '')
-            if (type === 'index' || type === 'selection') {
+            if (type === 'index' || type === 'selection' || type === 'operation') {
                 const label = String(baseLabel ?? '')
                 return {
                     col,

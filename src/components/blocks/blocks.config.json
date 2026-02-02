@@ -1028,6 +1028,11 @@
                 "type": "switch",
                 "default": true
             },
+            "showOperation": {
+                "label": "显示操作",
+                "type": "switch",
+                "default": false
+            },
             "showToolPanel": {
                 "label": "工具面板",
                 "type": "switch",

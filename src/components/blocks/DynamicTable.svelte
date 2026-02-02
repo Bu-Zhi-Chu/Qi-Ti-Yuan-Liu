@@ -13,7 +13,7 @@
         widthMode?: 'balanced' | 'value' | 'chars'
         widthValue?: number
         widthUnit?: 'px' | '%'
-        type?: 'default' | 'index' | 'selection'
+        type?: 'default' | 'index' | 'selection' | 'operation'
         editable?: boolean
     }
 
@@ -24,6 +24,7 @@
         showToolPanel?: boolean
         showRowNumber?: boolean
         showCheckbox?: boolean
+        showOperation?: boolean
         enablePagination?: boolean
         pageSize?: number | string
         columnWidthMode?: 'balanced' | 'value' | 'chars'
@@ -50,6 +51,7 @@
         showToolPanel = true,
         showRowNumber = true,
         showCheckbox = true,
+        showOperation = false,
         enablePagination = true,
         pageSize: initialPageSize = 20,
         columnWidthMode = 'balanced',
@@ -134,18 +136,7 @@
             } as ColumnLabelConfig
         })
 
-        if (showCheckbox) {
-            cols.unshift({
-                label: '',
-                frozen: true,
-                widthMode: globalMode,
-                widthValue: 32,
-                widthUnit: 'px',
-                type: 'selection',
-                previewLength: 0,
-                editable: false
-            })
-        }
+        let insertIndex = 0
 
         if (showRowNumber) {
             cols.unshift({
@@ -155,6 +146,34 @@
                 widthValue: 40,
                 widthUnit: 'px',
                 type: 'index',
+                previewLength: 0,
+                editable: false
+            })
+            insertIndex++
+        }
+
+        if (showCheckbox) {
+            cols.splice(insertIndex, 0, {
+                label: '',
+                frozen: true,
+                widthMode: globalMode,
+                widthValue: 32,
+                widthUnit: 'px',
+                type: 'selection',
+                previewLength: 0,
+                editable: false
+            })
+            insertIndex++
+        }
+
+        if (showOperation) {
+            cols.splice(insertIndex, 0, {
+                label: '操作',
+                frozen: false,
+                widthMode: globalMode,
+                widthValue: 80,
+                widthUnit: 'px',
+                type: 'operation',
                 previewLength: 0,
                 editable: false
             })
@@ -259,10 +278,11 @@
 
         const getSystemCols = () => {
             const cols: string[] = []
-            // Note: Order must match allHeaders construction (unshift order reversed)
-            // allHeaders: [RowNumber, Checkbox, ...Data]
+            // Order must match allHeaders construction:
+            // [RowNumber?, Checkbox?, Operation?, ...Data]
             if (showRowNumber) cols.push('')
             if (showCheckbox) cols.push('')
+            if (showOperation) cols.push('')
             return cols
         }
         const systemCols = getSystemCols()
@@ -417,7 +437,7 @@
 
             for (let i = 0; i < count; i++) {
                 const h = headers[i]
-                if (h && (h.type === 'index' || h.type === 'selection')) {
+                if (h && (h.type === 'index' || h.type === 'selection' || h.type === 'operation')) {
                     const val = h.widthValue || 0
                     fixedWidthTotal += val
                     result[i] = `calc(${val}px * var(--scale-ratio, 1))`

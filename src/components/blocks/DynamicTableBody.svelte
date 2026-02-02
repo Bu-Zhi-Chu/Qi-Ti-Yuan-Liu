@@ -518,6 +518,13 @@
                                     />
                                 </div>
                             </div>
+                        {:else if type === 'operation'}
+                            <div class="body-cell" style={getCellStyle(col, rowIndex)}>
+                                <div class="operation-cell">
+                                    <button type="button" class="operation-link">编辑</button>
+                                    <button type="button" class="operation-link">删除</button>
+                                </div>
+                            </div>
                         {:else}
                             {@const cellData = row[colIndex] !== undefined ? row[colIndex] : ''}
                             {@const config = getCellConfig(rowIndex, colIndex)}
@@ -599,6 +606,13 @@
                                         }}
                                         class="custom-checkbox"
                                     />
+                                </div>
+                            </div>
+                        {:else if type === 'operation'}
+                            <div class="body-cell" style={getCellStyle(col, rowIndex)}>
+                                <div class="operation-cell">
+                                    <button type="button" class="operation-link">编辑</button>
+                                    <button type="button" class="operation-link">删除</button>
                                 </div>
                             </div>
                         {:else}
@@ -750,5 +764,24 @@
     }
     .custom-checkbox:hover {
         border-color: #3b82f6;
+    }
+
+    .operation-cell {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: calc(8px * var(--scale-ratio, 1));
+        width: 100%;
+    }
+
+    .operation-link {
+        padding: 0;
+        margin: 0;
+        border: none;
+        background: none;
+        cursor: pointer;
+        color: rgb(0, 0, 238);
+        text-decoration: underline;
+        font-size: calc(13px * var(--scale-ratio, 1));
     }
 </style>
