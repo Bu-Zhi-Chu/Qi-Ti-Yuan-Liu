@@ -832,18 +832,20 @@
         display: flex;
         flex-direction: column;
         overflow: hidden;
+        border: calc(1px * var(--scale-ratio, 1)) solid rgb(149, 149, 255);
+        border-radius: calc(5px * var(--scale-ratio, 1));
     }
 
     .tool-panel {
         flex: 0 0 auto;
         width: 100%;
-        height: calc(30px * var(--scale-ratio, 1));
+        height: calc(40px * var(--scale-ratio, 1));
         background: #f5f5f5;
         border-top: calc(1px * var(--scale-ratio, 1)) solid #dedede;
         box-sizing: border-box;
         display: flex;
         align-items: center;
-        padding: 0 calc(6px * var(--scale-ratio, 1));
+        padding: 0 calc(8px * var(--scale-ratio, 1));
     }
 
     .pagination-control {
@@ -853,18 +855,18 @@
     }
 
     .pagination-control select {
-        height: calc(24px * var(--scale-ratio, 1));
-        padding-left: calc(4px * var(--scale-ratio, 1));
-        padding-right: calc(20px * var(--scale-ratio, 1));
-        margin-right: calc(6px * var(--scale-ratio, 1));
+        height: calc(32px * var(--scale-ratio, 1));
+        padding-left: calc(6px * var(--scale-ratio, 1));
+        padding-right: calc(24px * var(--scale-ratio, 1));
+        margin-right: calc(8px * var(--scale-ratio, 1));
         border: calc(1px * var(--scale-ratio, 1)) solid #dedede;
-        border-radius: calc(2px * var(--scale-ratio, 1));
+        border-radius: calc(3px * var(--scale-ratio, 1));
         background-color: white;
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1.5 2.5l4.5 4 4.5-4' stroke='%23666' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
         background-repeat: no-repeat;
-        background-position: right calc(4px * var(--scale-ratio, 1)) center;
-        background-size: calc(10px * var(--scale-ratio, 1));
-        font-size: calc(12px * var(--scale-ratio, 1));
+        background-position: right calc(6px * var(--scale-ratio, 1)) center;
+        background-size: calc(12px * var(--scale-ratio, 1));
+        font-size: calc(14px * var(--scale-ratio, 1));
         color: #333;
         outline: none;
         box-sizing: border-box;
@@ -878,11 +880,11 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        width: calc(24px * var(--scale-ratio, 1));
-        height: calc(24px * var(--scale-ratio, 1));
+        width: calc(28px * var(--scale-ratio, 1));
+        height: calc(28px * var(--scale-ratio, 1));
         cursor: pointer;
-        border-radius: calc(2px * var(--scale-ratio, 1));
-        margin: 0 calc(1px * var(--scale-ratio, 1));
+        border-radius: calc(3px * var(--scale-ratio, 1));
+        margin: 0 calc(2px * var(--scale-ratio, 1));
         border: none;
         background: none;
         padding: 0;
@@ -894,8 +896,8 @@
     }
 
     .pagination-btn svg {
-        width: calc(16px * var(--scale-ratio, 1));
-        height: calc(16px * var(--scale-ratio, 1));
+        width: calc(20px * var(--scale-ratio, 1));
+        height: calc(20px * var(--scale-ratio, 1));
     }
 
     .pagination-btn.disabled {
@@ -908,19 +910,19 @@
 
     .pagination-sep {
         width: calc(1px * var(--scale-ratio, 1));
-        height: calc(16px * var(--scale-ratio, 1));
+        height: calc(20px * var(--scale-ratio, 1));
         background-color: #ccc;
-        margin: 0 calc(2px * var(--scale-ratio, 1));
+        margin: 0 calc(3px * var(--scale-ratio, 1));
     }
 
     .record-info {
-        font-size: calc(12px * var(--scale-ratio, 1));
+        font-size: calc(15px * var(--scale-ratio, 1));
         color: #333;
         margin-left: auto;
     }
 
     .pagination-info {
-        font-size: calc(12px * var(--scale-ratio, 1));
+        font-size: calc(15px * var(--scale-ratio, 1));
         color: #333;
         display: flex;
         align-items: center;
@@ -928,14 +930,14 @@
     }
 
     .pagination-num {
-        width: calc(30px * var(--scale-ratio, 1));
-        height: calc(22px * var(--scale-ratio, 1));
+        width: calc(34px * var(--scale-ratio, 1));
+        height: calc(26px * var(--scale-ratio, 1));
         border: calc(1px * var(--scale-ratio, 1)) solid #dedede;
         border-radius: calc(2px * var(--scale-ratio, 1));
         margin: 0 calc(4px * var(--scale-ratio, 1));
         text-align: center;
         outline: none;
-        font-size: calc(12px * var(--scale-ratio, 1));
+        font-size: calc(15px * var(--scale-ratio, 1));
     }
 
     .column-filter-control {

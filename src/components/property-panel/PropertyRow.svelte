@@ -47,7 +47,11 @@
     }
 
     /* 通用输入/选择控件样式，保持与旧面板一致 */
-    :global(input),
+    :global(input[type='text']),
+    :global(input[type='number']),
+    :global(input[type='password']),
+    :global(input[type='email']),
+    :global(input[type='search']),
     :global(select),
     :global(textarea) {
         flex: 1;
@@ -61,7 +65,11 @@
         appearance: none;
     }
 
-    :global(input:disabled),
+    :global(input[type='text']:disabled),
+    :global(input[type='number']:disabled),
+    :global(input[type='password']:disabled),
+    :global(input[type='email']:disabled),
+    :global(input[type='search']:disabled),
     :global(select:disabled),
     :global(textarea:disabled) {
         color: #64748b;
@@ -103,7 +111,11 @@
         -webkit-user-select: auto;
     }
 
-    :global(input:focus),
+    :global(input[type='text']:focus),
+    :global(input[type='number']:focus),
+    :global(input[type='password']:focus),
+    :global(input[type='email']:focus),
+    :global(input[type='search']:focus),
     :global(textarea:focus) {
         outline: none;
         border-color: #cbd5e1;

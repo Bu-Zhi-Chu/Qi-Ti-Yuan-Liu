@@ -32,19 +32,7 @@
         onRename?: (id: string | number, newName: string) => void | Promise<void>
     }
 
-    let {
-        prop1,
-        prop2,
-        prop3,
-        prop4,
-        prop5,
-        onClick,
-        showDelete = false,
-        selected = false,
-        compact = false,
-        onDelete,
-        onRename
-    }: Props = $props()
+    let { prop1, prop2, prop3, prop4, prop5, onClick, showDelete = false, selected = false, compact = false, onDelete, onRename }: Props = $props()
 
     import { getImage } from '../../services/database/image-store.service'
     import { registerBlobUrl } from '../../services/utils/blob-url-manager'
@@ -196,9 +184,7 @@
     id="card-{prop1}"
     style={`position: relative; background: ${selected ? 'rgba(30, 41, 59, 0.8)' : 'rgba(30, 41, 59, 0.5)'}; border-radius: 16px; padding: ${compact ? '12px' : '20px'}; box-shadow: ${
         selected ? '0 0 20px rgba(99, 102, 241, 0.6), 0 0 40px rgba(139, 92, 246, 0.4)' : '0 8px 32px rgba(0,0,0,0.3)'
-    }; cursor: pointer; transition: all 0.3s ease; width: 100%; border: 1px solid ${
-        selected ? 'rgba(99, 102, 241, 1)' : 'rgba(99, 102, 241, 0.2)'
-    }; backdrop-filter: blur(10px); transform: translateY(0px);`}
+    }; cursor: pointer; transition: all 0.3s ease; width: 100%; border: 1px solid ${selected ? 'rgba(99, 102, 241, 1)' : 'rgba(99, 102, 241, 0.2)'}; backdrop-filter: blur(10px); transform: translateY(0px);`}
     onclick={(e: MouseEvent) => {
         // 如果在编辑模式下点击了非编辑区域，则取消编辑
         if (isEditing) {
@@ -233,11 +219,7 @@
         target.style.borderColor = selected ? 'rgba(99, 102, 241, 0.8)' : 'rgba(99, 102, 241, 0.2)'
     }}
 >
-    <ResponsiveBox
-        style={`width: 100%; height: ${compact ? '120px' : '160px'}; background: rgba(15, 23, 42, 0.5); border-radius: 12px; margin-bottom: ${
-            compact ? '12px' : '16px'
-        }; overflow: hidden; border: 1px solid rgba(99, 102, 241, 0.1);`}
-    >
+    <ResponsiveBox style={`width: 100%; height: ${compact ? '120px' : '160px'}; background: rgba(15, 23, 42, 0.5); border-radius: 12px; margin-bottom: ${compact ? '12px' : '16px'}; overflow: hidden; border: 1px solid rgba(99, 102, 241, 0.1);`}>
         {#if imageSrc}
             <img src={imageSrc} alt={prop2 || '卡片图片'} style="width: 100%; height: 100%; object-fit: cover;" />
         {:else}
@@ -271,11 +253,7 @@
 
     <!-- 主标题 -->
     {#if prop2}
-        <ResponsiveBox
-            style={`font-size: ${compact ? '14px' : '16px'}; font-weight: 600; color: #f8fafc; margin-bottom: ${
-                compact ? '6px' : '8px'
-            }; line-height: 1.4; position: relative;`}
-        >
+        <ResponsiveBox style={`font-size: ${compact ? '14px' : '16px'}; font-weight: 600; color: #f8fafc; margin-bottom: ${compact ? '6px' : '8px'}; line-height: 1.4; position: relative;`}>
             {#if isEditing}
                 <ResponsiveBox id="edit-container-{prop1}" style="display: flex; align-items: center; gap: 8px;">
                     <input

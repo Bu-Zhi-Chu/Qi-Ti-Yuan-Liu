@@ -219,10 +219,10 @@ class ScreenDetector {
                         designHeight = moduleRow.designHeight
                     }
                 }
-            } catch {}
+            } catch { }
 
             this.setDesignSize(designWidth, designHeight)
-        } catch {}
+        } catch { }
     }
 
     /**

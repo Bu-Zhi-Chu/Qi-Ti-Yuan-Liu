@@ -134,10 +134,7 @@
                 "default": "rgba(2, 6, 23, 0.22)",
                 "showIf": {
                     "key": "layout",
-                    "value": [
-                        "three",
-                        "seven"
-                    ]
+                    "value": ["three", "seven"]
                 }
             }
         }
@@ -473,9 +470,7 @@
                 "default": "094fca72d164a2810961bb5fbd67862d",
                 "showIf": {
                     "key": "basemapStandard",
-                    "value": [
-                        "tianditu"
-                    ]
+                    "value": ["tianditu"]
                 }
             },
             "basemapType": {
@@ -1007,6 +1002,7 @@
     {
         "type": "DynamicTable",
         "nameZh": "动态表格",
+        "hidden": true,
         "path": "../blocks/DynamicTable.svelte",
         "preview": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><rect x='2' y='4' width='28' height='24' fill='none' stroke='%230ea5e9' stroke-width='2' rx='2'/><rect x='2' y='4' width='28' height='6' fill='%230ea5e9' opacity='0.2'/><line x1='10' y1='10' x2='10' y2='28' stroke='%230ea5e9' stroke-width='1'/><line x1='18' y1='10' x2='18' y2='28' stroke='%230ea5e9' stroke-width='1'/><line x1='2' y1='16' x2='30' y2='16' stroke='%230ea5e9' stroke-width='1'/><line x1='2' y1='22' x2='30' y2='22' stroke='%230ea5e9' stroke-width='1'/></svg>",
         "showFeatureTab": true,
@@ -1019,10 +1015,7 @@
             "display": "flex",
             "flexDirection": "column",
             "boxSizing": "border-box",
-            "backgroundColor": "transparent",
-            "borderWidth": "calc(1px * var(--scale-ratio, 1))",
-            "borderStyle": "solid",
-            "borderColor": "rgb(149, 149, 255)"
+            "backgroundColor": "transparent"
         },
         "featureProps": {
             "showRowNumber": {
@@ -1106,10 +1099,7 @@
                         "control": "switch",
                         "showIf": {
                             "key": "columnWidthMode",
-                            "value": [
-                                "value",
-                                "chars"
-                            ]
+                            "value": ["value", "chars"]
                         }
                     },
                     {
@@ -1119,11 +1109,7 @@
                         "default": false
                     }
                 ],
-                "default": [
-                    "列1",
-                    "列2",
-                    "列3"
-                ]
+                "default": ["列1", "列2", "列3"]
             }
         }
     },
@@ -1328,6 +1314,182 @@
                     "key": "enableImageReplacement",
                     "value": true
                 }
+            }
+        }
+    },
+    {
+        "type": "FilterTree",
+        "nameZh": "过滤树",
+        "hidden": true,
+        "path": "../blocks/FilterTree.svelte",
+        "preview": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><rect x='6' y='4' width='22' height='24' fill='%23ffffff' stroke='%2300d4ff' stroke-width='1'/><rect x='4' y='4' width='6' height='24' fill='%23007bdc'/><line x1='10' y1='12' x2='28' y2='12' stroke='%2300d4ff' stroke-width='1'/><circle cx='7' cy='10' r='1.5' fill='%23ffffff'/><circle cx='7' cy='16' r='1.5' fill='%23ffffff'/></svg>",
+        "showFeatureTab": true,
+        "dataBindable": true,
+        "hideTextContent": true,
+        "presetStyles": {
+            "width": "238px",
+            "height": "979px"
+        },
+        "featureProps": {
+            "multiList": {
+                "label": "多重列表",
+                "type": "switch",
+                "default": false
+            },
+            "enableMultiSelect": {
+                "label": "开启多选",
+                "type": "switch",
+                "default": false
+            }
+        }
+    },
+    {
+        "type": "CompanyTable",
+        "nameZh": "公司表格",
+        "path": "../blocks/CompanyTable.svelte",
+        "preview": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><rect x='2' y='6' width='28' height='20' fill='none' stroke='%2300d4ff' stroke-width='1'/><rect x='4' y='8' width='8' height='16' fill='%23007bdc'/><rect x='13' y='8' width='15' height='16' fill='none' stroke='%2300d4ff' stroke-width='1'/><line x1='13' y1='13' x2='28' y2='13' stroke='%2300d4ff' stroke-width='1'/><line x1='13' y1='18' x2='28' y2='18' stroke='%2300d4ff' stroke-width='1'/></svg>",
+        "showFeatureTab": false,
+        "hideTextContent": true,
+        "positionAtOrigin": true,
+        "presetStyles": {
+            "width": "100%",
+            "height": "100%",
+            "position": "absolute"
+        }
+    },
+    {
+        "type": "CompanyTableToolbar",
+        "nameZh": "公司表格工具栏",
+        "hidden": true,
+        "path": "../blocks/CompanyTableToolbar.svelte",
+        "preview": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><rect x='4' y='8' width='24' height='6' fill='none' stroke='%2300d4ff' stroke-width='1' rx='2'/><rect x='18' y='9' width='4' height='4' fill='%2300d4ff' rx='1'/><rect x='23' y='9' width='4' height='4' fill='%2316a34a' rx='1'/></svg>",
+        "showFeatureTab": true,
+        "hideTextContent": true,
+        "presetStyles": {
+            "width": "100%",
+            "height": "3.4%",
+            "display": "flex",
+            "justifyContent": "flex-start",
+            "alignItems": "center",
+            "gap": "calc(14px * var(--scale-ratio, 1))",
+            "boxSizing": "border-box",
+            "flex": "0 0 auto"
+        },
+        "featureProps": {
+            "queryConditions": {
+                "label": "查询条件",
+                "type": "queryConditions",
+                "group": true,
+                "fields": [
+                    {
+                        "key": "name",
+                        "label": "名称",
+                        "control": "text"
+                    },
+                    {
+                        "key": "type",
+                        "label": "类型",
+                        "control": "select",
+                        "options": [
+                            {
+                                "value": "input",
+                                "label": "输入框"
+                            },
+                            {
+                                "value": "select",
+                                "label": "下拉框"
+                            },
+                            {
+                                "value": "date",
+                                "label": "日期"
+                            },
+                            {
+                                "value": "datetime",
+                                "label": "日期时间"
+                            }
+                        ],
+                        "default": "input"
+                    },
+                    {
+                        "key": "disabled",
+                        "label": "禁用",
+                        "control": "switch"
+                    }
+                ],
+                "default": [
+                    {
+                        "name": "条件一",
+                        "type": "input",
+                        "disabled": false
+                    }
+                ]
+            },
+            "actionButtons": {
+                "label": "功能按钮",
+                "type": "toolbarButtons",
+                "group": true,
+                "fields": [
+                    {
+                        "key": "name",
+                        "label": "名称",
+                        "control": "text"
+                    },
+                    {
+                        "key": "icon",
+                        "label": "图标",
+                        "control": "select",
+                        "options": [
+                            {
+                                "value": "search",
+                                "label": "查询"
+                            },
+                            {
+                                "value": "add",
+                                "label": "新增"
+                            },
+                            {
+                                "value": "delete",
+                                "label": "删除"
+                            },
+                            {
+                                "value": "excel",
+                                "label": "输出excel"
+                            }
+                        ],
+                        "default": "search"
+                    },
+                    {
+                        "key": "disabled",
+                        "label": "禁用",
+                        "control": "switch"
+                    }
+                ],
+                "default": [
+                    {
+                        "name": "查询",
+                        "icon": "search",
+                        "buttonType": "search",
+                        "disabled": false
+                    },
+                    {
+                        "name": "新增",
+                        "icon": "add",
+                        "buttonType": "add",
+                        "disabled": false
+                    },
+                    {
+                        "name": "删除",
+                        "icon": "delete",
+                        "buttonType": "delete",
+                        "disabled": false
+                    },
+                    {
+                        "name": "输出excel",
+                        "icon": "excel",
+                        "buttonType": "export",
+                        "disabled": false
+                    }
+                ]
             }
         }
     },

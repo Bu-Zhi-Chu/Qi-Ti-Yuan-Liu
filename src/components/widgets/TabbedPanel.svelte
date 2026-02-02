@@ -353,12 +353,111 @@
                               }
                           ]
                       }
-                    : {
-                          attributes: {
-                              'data-name': generateUniqueDataName(item.name ?? item.type)
-                          },
-                          children: []
-                      })
+                    : item.type === 'CompanyTable'
+                      ? {
+                            attributes: {
+                                'data-name': generateUniqueDataName(item.name ?? item.type)
+                            },
+                            children: [
+                                {
+                                    id: globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-toolbar`,
+                                    componentType: 'CompanyTableToolbar',
+                                    styles: (() => {
+                                        const meta = (blocksConfig as any[]).find((b) => b.type === 'CompanyTableToolbar') as any
+                                        return meta?.presetStyles ? { ...meta.presetStyles } : {}
+                                    })(),
+                                    attributes: { 'data-name': '表格工具栏' },
+                                    children: []
+                                },
+                                {
+                                    id: globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-filter-tree`,
+                                    componentType: 'FilterTree',
+                                    styles: (() => {
+                                        const meta = (blocksConfig as any[]).find((b) => b.type === 'FilterTree') as any
+                                        const baseStyles = meta?.presetStyles ? { ...meta.presetStyles } : {}
+                                        return {
+                                            ...baseStyles,
+                                            width: '11.8%',
+                                            height: '98.1%',
+                                            position: 'absolute',
+                                            top: '0.7%',
+                                            left: '0.2%'
+                                        }
+                                    })(),
+                                    attributes: { 'data-name': '过滤树' },
+                                    children: []
+                                },
+                                {
+                                    id: globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-dynamic-table`,
+                                    componentType: 'DynamicTable',
+                                    styles: (() => {
+                                        const meta = (blocksConfig as any[]).find((b) => b.type === 'DynamicTable') as any
+                                        const baseStyles = meta?.presetStyles ? { ...meta.presetStyles } : {}
+                                        return {
+                                            ...baseStyles,
+                                            width: '86.7%',
+                                            height: '93.6%',
+                                            position: 'absolute',
+                                            top: '5.2%',
+                                            left: '12.7%'
+                                        }
+                                    })(),
+                                    attributes: { 'data-name': '动态表格' },
+                                    children: [
+                                        {
+                                            id: globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-header`,
+                                            componentType: 'DynamicTableHeader',
+                                            styles: (() => {
+                                                const meta = (blocksConfig as any[]).find((b) => b.type === 'DynamicTableHeader') as any
+                                                return meta?.presetStyles ? { ...meta.presetStyles } : {}
+                                            })(),
+                                            attributes: { 'data-name': '动态表头' },
+                                            children: []
+                                        },
+                                        {
+                                            id: globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-body`,
+                                            componentType: 'DynamicTableBody',
+                                            styles: (() => {
+                                                const meta = (blocksConfig as any[]).find((b) => b.type === 'DynamicTableBody') as any
+                                                return meta?.presetStyles ? { ...meta.presetStyles } : {}
+                                            })(),
+                                            attributes: { 'data-name': '动态表体' },
+                                            children: [
+                                                {
+                                                    id: globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-row`,
+                                                    componentType: 'DynamicTableRow',
+                                                    styles: (() => {
+                                                        const meta = (blocksConfig as any[]).find((b) => b.type === 'DynamicTableRow') as any
+                                                        return meta?.presetStyles ? { ...meta.presetStyles } : {}
+                                                    })(),
+                                                    attributes: { 'data-name': '动态表行', rowIndex: 0 },
+                                                    children: (() => {
+                                                        const tableMeta = (blocksConfig as any[]).find((b) => b.type === 'DynamicTable') as any
+                                                        const defaultLabels = tableMeta?.featureProps?.columnLabels?.default
+                                                        const count = Array.isArray(defaultLabels) && defaultLabels.length > 0 ? defaultLabels.length : 3
+                                                        const cellMeta = (blocksConfig as any[]).find((b) => b.type === 'DynamicTableCell') as any
+                                                        const baseStyles = cellMeta?.presetStyles ? { ...cellMeta.presetStyles } : {}
+                                                        return Array.from({ length: count }, (_, colIndex) => ({
+                                                            id: globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-cell-${colIndex}`,
+                                                            componentType: 'DynamicTableCell',
+                                                            styles: baseStyles,
+                                                            attributes: { 'data-name': `单元格 ${colIndex + 1}`, rowIndex: 0, colIndex },
+                                                            children: []
+                                                        }))
+                                                    })()
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                      : {
+                            attributes: {
+                                'data-name': generateUniqueDataName(item.name ?? item.type)
+                            },
+                            children: []
+                        })
         }
 
         /* 3. 生成真实 DOM 作为预览 */

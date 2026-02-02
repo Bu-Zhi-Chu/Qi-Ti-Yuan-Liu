@@ -802,6 +802,43 @@
         handleAttrChange(key, list)
     }
 
+    function addQueryCondition(key: string) {
+        const list = Array.isArray(currentValues[key]) ? [...currentValues[key]] : []
+        const index = list.length
+        list.push({
+            name: `条件${index + 1}`,
+            type: 'input',
+            disabled: false
+        })
+        handleAttrChange(key, list)
+    }
+
+    function removeQueryCondition(key: string, index: number) {
+        const list = Array.isArray(currentValues[key]) ? [...currentValues[key]] : []
+        if (index < 0 || index >= list.length) return
+        list.splice(index, 1)
+        handleAttrChange(key, list)
+    }
+
+    function addToolbarButton(key: string) {
+        const list = Array.isArray(currentValues[key]) ? [...currentValues[key]] : []
+        const index = list.length
+        list.push({
+            name: `按钮${index + 1}`,
+            icon: 'add',
+            buttonType: 'custom',
+            disabled: false
+        })
+        handleAttrChange(key, list)
+    }
+
+    function removeToolbarButton(key: string, index: number) {
+        const list = Array.isArray(currentValues[key]) ? [...currentValues[key]] : []
+        if (index < 4 || index >= list.length) return
+        list.splice(index, 1)
+        handleAttrChange(key, list)
+    }
+
     // 记录各属性对应的隐藏文件输入
     const fileInputs: Record<string, HTMLInputElement> = {}
 
@@ -1564,6 +1601,179 @@
                             {/if}
                         </div>
                     </PropertyRow>
+                {:else if p.group && p.type === 'queryConditions'}
+                    <PropertyRow label={`${p.label}`} alignTop={true}>
+                        <div class="overlay-list">
+                            {#if Array.isArray(currentValues[p.key]) && currentValues[p.key].length > 0}
+                                {#each currentValues[p.key] as cond, index}
+                                    <div class="overlay-row">
+                                        <div class="overlay-item {cond?.disabled ? 'overlay-item-disabled' : ''}">
+                                            <div class="overlay-fields">
+                                                <div class="overlay-field-row">
+                                                    <span class="overlay-field-label">名称</span>
+                                                    <input
+                                                        type="text"
+                                                        class="overlay-input"
+                                                        value={cond?.name ?? ''}
+                                                        disabled={cond?.disabled === true}
+                                                        oninput={(e) => {
+                                                            const list = Array.isArray(currentValues[p.key]) ? [...currentValues[p.key]] : []
+                                                            if (!list[index]) list[index] = {}
+                                                            list[index] = {
+                                                                ...list[index],
+                                                                name: (e.currentTarget as HTMLInputElement).value
+                                                            }
+                                                            handleAttrChange(p.key, list)
+                                                        }}
+                                                        placeholder="查询条件名称"
+                                                    />
+                                                </div>
+                                                <div class="overlay-field-row">
+                                                    <span class="overlay-field-label">类型</span>
+                                                    <select
+                                                        class="overlay-input"
+                                                        value={cond?.type ?? 'input'}
+                                                        disabled={cond?.disabled === true}
+                                                        onchange={(e) => {
+                                                            const list = Array.isArray(currentValues[p.key]) ? [...currentValues[p.key]] : []
+                                                            if (!list[index]) list[index] = {}
+                                                            list[index] = {
+                                                                ...list[index],
+                                                                type: (e.currentTarget as HTMLSelectElement).value || 'input'
+                                                            }
+                                                            handleAttrChange(p.key, list)
+                                                        }}
+                                                    >
+                                                        <option value="input">输入框</option>
+                                                        <option value="select">下拉框</option>
+                                                        <option value="date">日期</option>
+                                                        <option value="datetime">日期时间</option>
+                                                    </select>
+                                                </div>
+                                                <div class="overlay-field-row">
+                                                    <span class="overlay-field-label">禁用</span>
+                                                    <div style="display: flex; align-items: center; justify-content: flex-start; flex: 1;">
+                                                        <ToggleSwitch
+                                                            checked={cond?.disabled ?? false}
+                                                            on:change={(e) => {
+                                                                const list = Array.isArray(currentValues[p.key]) ? [...currentValues[p.key]] : []
+                                                                if (!list[index]) list[index] = {}
+                                                                list[index] = {
+                                                                    ...list[index],
+                                                                    disabled: e.detail
+                                                                }
+                                                                handleAttrChange(p.key, list)
+                                                            }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="overlay-row-actions">
+                                            {#if index === 0}
+                                                <button class="unit-toggle add-btn" onclick={() => addQueryCondition(p.key)} title="添加查询条件" style="background: rgba(34, 197, 94, 0.2); color: #4ade80;">+</button>
+                                            {:else}
+                                                <button class="unit-toggle remove-btn" onclick={() => removeQueryCondition(p.key, index)} title="移除查询条件" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">−</button>
+                                            {/if}
+                                        </div>
+                                    </div>
+                                {/each}
+                            {:else}
+                                <div class="overlay-empty">暂无查询条件</div>
+                                <div class="overlay-row-actions" style="justify-content: center; margin-top: 8px;">
+                                    <button class="unit-toggle add-btn" onclick={() => addQueryCondition(p.key)} title="添加查询条件" style="background: rgba(34, 197, 94, 0.2); color: #4ade80;">+</button>
+                                </div>
+                            {/if}
+                        </div>
+                    </PropertyRow>
+                {:else if p.group && p.type === 'toolbarButtons'}
+                    <PropertyRow label={`${p.label}`} alignTop={true}>
+                        <div class="overlay-list">
+                            {#if Array.isArray(currentValues[p.key]) && currentValues[p.key].length > 0}
+                                {#each currentValues[p.key] as btn, index}
+                                    <div class="overlay-row">
+                                        <div class="overlay-item {btn?.disabled ? 'overlay-item-disabled' : ''}">
+                                            <div class="overlay-fields">
+                                                <div class="overlay-field-row">
+                                                    <span class="overlay-field-label">名称</span>
+                                                    <input
+                                                        type="text"
+                                                        class="overlay-input"
+                                                        value={btn?.name ?? ''}
+                                                        disabled={index < 4}
+                                                        oninput={(e) => {
+                                                            const list = Array.isArray(currentValues[p.key]) ? [...currentValues[p.key]] : []
+                                                            if (!list[index]) list[index] = {}
+                                                            list[index] = {
+                                                                ...list[index],
+                                                                name: (e.currentTarget as HTMLInputElement).value
+                                                            }
+                                                            handleAttrChange(p.key, list)
+                                                        }}
+                                                        placeholder="按钮名称"
+                                                    />
+                                                </div>
+                                                <div class="overlay-field-row">
+                                                    <span class="overlay-field-label">图标</span>
+                                                    <select
+                                                        class="overlay-input"
+                                                        value={btn?.icon ?? 'search'}
+                                                        disabled={index < 4}
+                                                        onchange={(e) => {
+                                                            const list = Array.isArray(currentValues[p.key]) ? [...currentValues[p.key]] : []
+                                                            if (!list[index]) list[index] = {}
+                                                            list[index] = {
+                                                                ...list[index],
+                                                                icon: (e.currentTarget as HTMLSelectElement).value || 'search'
+                                                            }
+                                                            handleAttrChange(p.key, list)
+                                                        }}
+                                                    >
+                                                        <option value="search">查询</option>
+                                                        <option value="add">新增</option>
+                                                        <option value="delete">删除</option>
+                                                        <option value="excel">输出excel</option>
+                                                    </select>
+                                                </div>
+                                                <div class="overlay-field-row">
+                                                    <span class="overlay-field-label">禁用</span>
+                                                    <div style="display: flex; align-items: center; justify-content: flex-start; flex: 1;">
+                                                        <ToggleSwitch
+                                                            checked={btn?.disabled ?? false}
+                                                            on:change={(e) => {
+                                                                const list = Array.isArray(currentValues[p.key]) ? [...currentValues[p.key]] : []
+                                                                if (!list[index]) list[index] = {}
+                                                                list[index] = {
+                                                                    ...list[index],
+                                                                    disabled: e.detail
+                                                                }
+                                                                handleAttrChange(p.key, list)
+                                                            }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="overlay-row-actions">
+                                            {#if index === 0}
+                                                <button class="unit-toggle add-btn" onclick={() => addToolbarButton(p.key)} title="添加按钮" style="background: rgba(34, 197, 94, 0.2); color: #4ade80;">+</button>
+                                            {:else if index >= 4}
+                                                <button class="unit-toggle remove-btn" onclick={() => removeToolbarButton(p.key, index)} title="移除按钮" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">−</button>
+                                            {:else}
+                                                <!-- 占位按钮，保持与查询条件组一致的右侧宽度 -->
+                                                <button class="unit-toggle" style="visibility: hidden;">+</button>
+                                            {/if}
+                                        </div>
+                                    </div>
+                                {/each}
+                            {:else}
+                                <div class="overlay-empty">暂无功能按钮</div>
+                                <div class="overlay-row-actions" style="justify-content: center; margin-top: 8px;">
+                                    <button class="unit-toggle add-btn" onclick={() => addToolbarButton(p.key)} title="添加按钮" style="background: rgba(34, 197, 94, 0.2); color: #4ade80;">+</button>
+                                </div>
+                            {/if}
+                        </div>
+                    </PropertyRow>
                 {:else}
                     <PropertyRow label={`${p.label}`}>
                         {#if p.type === 'select'}
@@ -1816,6 +2026,8 @@
         gap: calc(8px * var(--scale-ratio, 1));
         flex: 1 1 0;
         min-width: 0;
+        width: 100%;
+        box-sizing: border-box;
     }
 
     .overlay-row {
@@ -1823,6 +2035,7 @@
         align-items: flex-start;
         gap: calc(8px * var(--scale-ratio, 1));
         width: 100%;
+        box-sizing: border-box;
     }
 
     .overlay-item {
@@ -1832,6 +2045,11 @@
         border-radius: calc(8px * var(--scale-ratio, 1));
         border: calc(1px * var(--scale-ratio, 1)) solid rgba(148, 163, 184, 0.45);
         background: rgba(15, 23, 42, 0.7);
+    }
+
+    .overlay-item-disabled {
+        opacity: 0.6;
+        background: rgba(15, 23, 42, 0.4);
     }
 
     .overlay-fields {
@@ -1878,6 +2096,22 @@
         color: #e2e8f0;
         transition: all 0.3s ease;
         min-width: 0;
+    }
+
+    select.overlay-input {
+        background: rgba(30, 41, 59, 0.95);
+    }
+
+    select.overlay-input option {
+        background: #1e293b;
+        color: #e2e8f0;
+        padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
+    }
+
+    select.overlay-input option:hover,
+    select.overlay-input option:focus,
+    select.overlay-input option:checked {
+        color: #e2e8f0;
     }
 
     .overlay-value-input {

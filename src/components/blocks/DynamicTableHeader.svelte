@@ -396,6 +396,7 @@
         width: 100%;
         border-bottom: calc(1px * var(--scale-ratio, 1)) dashed rgb(29, 143, 211);
         overflow: hidden;
+        font-size: calc(15px * var(--scale-ratio, 1));
     }
     .header-frozen {
         display: flex;
