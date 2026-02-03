@@ -1363,7 +1363,7 @@
         },
         "featureProps": {
             "showTreeColumn": {
-                "label": "竖向显示树列",
+                "label": "显示树列",
                 "type": "switch",
                 "default": true
             }
