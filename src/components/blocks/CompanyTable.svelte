@@ -12,18 +12,20 @@
         selectedId?: string | null
         editing?: boolean
         select?: (id: string) => void
+        showTreeColumn?: boolean
         [key: string]: any
     }
 
-    let { style = '', 'data-id': dataId = '', childrenNodes = [], selectedId = null, editing = false, select, ...restProps }: Props = $props()
+    let { style = '', 'data-id': dataId = '', childrenNodes = [], selectedId = null, editing = false, select, showTreeColumn = true, ...restProps }: Props = $props()
 
     let containerRef: HTMLDivElement
     let leftWidthPercent = $state(11.8)
     let extraHeightPercent = $state(0)
 
-    const rightWidthPercent = $derived(87 + (11.8 - leftWidthPercent))
-    const rightLeftPercent = $derived(leftWidthPercent + 0.7)
-    const splitPercent = $derived(leftWidthPercent + 0.45)
+    const effectiveLeftWidthPercent = $derived(showTreeColumn ? leftWidthPercent : 0)
+    const rightWidthPercent = $derived(showTreeColumn ? 87 + (11.8 - leftWidthPercent) : 99.6)
+    const rightLeftPercent = $derived(showTreeColumn ? leftWidthPercent + 0.7 : 0.2)
+    const splitPercent = $derived(showTreeColumn ? leftWidthPercent + 0.45 : 0)
 
     const baseUrl = import.meta.env.BASE_URL || '/'
     const searchIcon = `${baseUrl}img/hold/search.png`
@@ -144,12 +146,14 @@
 
 <ResponsiveBox {style} data-id={dataId} {...restProps}>
     <div class="company-table" bind:this={containerRef}>
-        <div class="company-table-left" style={`width: ${leftWidthPercent}%;`}>
-            {#if treeNode}
-                <NodeRenderer node={treeNode} {selectedId} {editing} {select} />
-            {/if}
-        </div>
-        <div class="company-table-resizer" style={`left: ${splitPercent}%;`} onpointerdown={handleResizerPointerDown}></div>
+        {#if showTreeColumn}
+            <div class="company-table-left" style={`width: ${effectiveLeftWidthPercent}%;`}>
+                {#if treeNode}
+                    <NodeRenderer node={treeNode} {selectedId} {editing} {select} />
+                {/if}
+            </div>
+            <div class="company-table-resizer" style={`left: ${splitPercent}%;`} onpointerdown={handleResizerPointerDown}></div>
+        {/if}
         <div class="company-table-right" style={`width: ${rightWidthPercent}%; left: ${rightLeftPercent}%;`}>
             {#if toolbarNode}
                 <NodeRenderer node={toolbarNode} {selectedId} {editing} {select} />

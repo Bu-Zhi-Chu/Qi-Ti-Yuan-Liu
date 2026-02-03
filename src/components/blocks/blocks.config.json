@@ -1353,13 +1353,20 @@
         "nameZh": "公司表格",
         "path": "../blocks/CompanyTable.svelte",
         "preview": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><rect x='2' y='6' width='28' height='20' fill='none' stroke='%2300d4ff' stroke-width='1'/><rect x='4' y='8' width='8' height='16' fill='%23007bdc'/><rect x='13' y='8' width='15' height='16' fill='none' stroke='%2300d4ff' stroke-width='1'/><line x1='13' y1='13' x2='28' y2='13' stroke='%2300d4ff' stroke-width='1'/><line x1='13' y1='18' x2='28' y2='18' stroke='%2300d4ff' stroke-width='1'/></svg>",
-        "showFeatureTab": false,
+        "showFeatureTab": true,
         "hideTextContent": true,
         "positionAtOrigin": true,
         "presetStyles": {
             "width": "100%",
             "height": "100%",
             "position": "absolute"
+        },
+        "featureProps": {
+            "showTreeColumn": {
+                "label": "竖向显示树列",
+                "type": "switch",
+                "default": true
+            }
         }
     },
     {
