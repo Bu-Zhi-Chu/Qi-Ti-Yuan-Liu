@@ -224,6 +224,7 @@
         background: transparent;
         padding: 0 calc(20px * var(--scale-ratio, 1)) 0 calc(8px * var(--scale-ratio, 1));
         /* 隐藏浏览器自带的上下箭头 */
+        appearance: textfield;
         -moz-appearance: textfield;
     }
 

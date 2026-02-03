@@ -1031,7 +1031,7 @@
             "showOperation": {
                 "label": "显示操作",
                 "type": "switch",
-                "default": false
+                "default": true
             },
             "showToolPanel": {
                 "label": "工具面板",

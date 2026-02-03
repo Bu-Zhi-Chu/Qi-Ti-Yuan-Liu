@@ -531,7 +531,7 @@
                             {@const isEditable = header && typeof header === 'object' ? header.editable : false}
 
                             {#if editingCell?.rowIndex === rowIndex && editingCell?.colIndex === colIndex}
-                                <div class="body-cell" style={getCellStyle(col, rowIndex)}>
+                                <div class="body-cell" style={getCellStyle(col, rowIndex) + '; padding: 0;'}>
                                     <input
                                         type="text"
                                         value={editingValue}
@@ -539,7 +539,7 @@
                                         onblur={finishEditing}
                                         onkeydown={handleKeyDown}
                                         use:focus
-                                        style="width: 100%; height: 100%; box-sizing: border-box; border: none; outline: 2px solid #3b82f6; outline-offset: -2px; border-radius: 0; background: transparent; text-align: inherit; font-family: inherit; font-size: inherit; padding: 0; margin: 0; line-height: 1.5; min-height: 1.5em; color: inherit;"
+                                        style="width: 100%; height: 100%; box-sizing: border-box; border: none; outline: 2px solid #3b82f6; outline-offset: -2px; border-radius: 0; background: transparent; text-align: inherit; font-family: inherit; font-size: inherit; padding: calc(4px * var(--scale-ratio, 1)); margin: 0; line-height: 1.5; min-height: 1.5em; color: inherit;"
                                     />
                                 </div>
                             {:else}
@@ -621,7 +621,7 @@
                             {@const isEditable = header && typeof header === 'object' ? header.editable : false}
 
                             {#if editingCell?.rowIndex === rowIndex && editingCell?.colIndex === colIndex}
-                                <div class="body-cell" style={getCellStyle(col, rowIndex)}>
+                                <div class="body-cell" style={getCellStyle(col, rowIndex) + '; padding: 0;'}>
                                     <input
                                         type="text"
                                         value={editingValue}
@@ -629,7 +629,7 @@
                                         onblur={finishEditing}
                                         onkeydown={handleKeyDown}
                                         use:focus
-                                        style="width: 100%; height: 100%; box-sizing: border-box; border: none; outline: 2px solid #3b82f6; outline-offset: -2px; border-radius: 0; background: transparent; text-align: inherit; font-family: inherit; font-size: inherit; padding: 0; margin: 0; line-height: 1.5; min-height: 1.5em; color: inherit;"
+                                        style="width: 100%; height: 100%; box-sizing: border-box; border: none; outline: 2px solid #3b82f6; outline-offset: -2px; border-radius: 0; background: transparent; text-align: inherit; font-family: inherit; font-size: inherit; padding: calc(4px * var(--scale-ratio, 1)); margin: 0; line-height: 1.5; min-height: 1.5em; color: inherit;"
                                     />
                                 </div>
                             {:else}

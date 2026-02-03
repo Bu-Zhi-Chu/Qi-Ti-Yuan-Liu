@@ -51,7 +51,7 @@
         showToolPanel = true,
         showRowNumber = true,
         showCheckbox = true,
-        showOperation = false,
+        showOperation = true,
         enablePagination = true,
         pageSize: initialPageSize = 20,
         columnWidthMode = 'balanced',
