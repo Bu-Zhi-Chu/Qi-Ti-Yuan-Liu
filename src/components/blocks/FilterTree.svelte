@@ -72,10 +72,23 @@
             id: raw.id ?? raw.ID,
             label: raw.label ?? raw.NAME ?? '',
             checked: raw.checked ?? false,
-            expanded: raw.expanded ?? true,
+            expanded: raw.expanded,
             children,
             SELF_CODE: raw.SELF_CODE
         }
+    }
+
+    function applyDefaultExpansion(nodes: TreeNode[], depth = 0): TreeNode[] {
+        return nodes.map((node) => {
+            const next: TreeNode = {
+                ...node,
+                expanded: node.expanded ?? depth === 0
+            }
+            if (node.children && node.children.length > 0) {
+                next.children = applyDefaultExpansion(node.children, depth + 1)
+            }
+            return next
+        })
     }
 
     function buildTreeFromFlat(list: any[]): TreeNode[] {
@@ -120,15 +133,15 @@
         console.log('[FilterTree] normalizeTreeData 输入类型:', Array.isArray(data) ? 'array' : typeof data, 'length:', Array.isArray(data) ? data.length : 0)
         if (!data || data.length === 0) {
             console.log('[FilterTree] 使用默认示例树')
-            return defaultTreeData
+            return applyDefaultExpansion(defaultTreeData)
         }
         const first = data[0] as any
         if (first && 'ID' in first && 'PARENT_ID' in first) {
             console.log('[FilterTree] 检测到 ID/PARENT_ID 扁平结构，开始转树')
-            return buildTreeFromFlat(data)
+            return applyDefaultExpansion(buildTreeFromFlat(data))
         }
         console.log('[FilterTree] 检测到已是树形结构，直接映射')
-        return data.map(convertRawNode)
+        return applyDefaultExpansion(data.map(convertRawNode))
     }
 
     function findNodeById(nodes: TreeNode[], id: string | number): TreeNode | null {
@@ -241,38 +254,60 @@
                         {#each visibleTreeData as node}
                             <li>
                                 <div class="tree-node">
+                                    {#if node.children && node.children.length > 0}
+                                        <button
+                                            type="button"
+                                            class="ztree-state-icon"
+                                            onclick={(e) => {
+                                                e.stopPropagation()
+                                                toggleExpand(node)
+                                            }}
+                                            aria-label={(node.expanded ?? true) ? '收起' : '展开'}
+                                        >
+                                            {#if node.expanded ?? true}
+                                                <svg viewBox="0 0 18 18" aria-hidden="true">
+                                                    <rect x="1" y="1" width="16" height="16" rx="2" ry="2" fill="#ffffff" stroke="#5f9bdb" stroke-width="1" />
+                                                    <rect x="4" y="8" width="10" height="2" fill="#2b2b2b" />
+                                                </svg>
+                                            {:else}
+                                                <svg viewBox="0 0 18 18" aria-hidden="true">
+                                                    <rect x="1" y="1" width="16" height="16" rx="2" ry="2" fill="#ffffff" stroke="#5f9bdb" stroke-width="1" />
+                                                    <rect x="4" y="8" width="10" height="2" fill="#2b2b2b" />
+                                                    <rect x="8" y="4" width="2" height="10" fill="#2b2b2b" />
+                                                </svg>
+                                            {/if}
+                                        </button>
+                                    {:else}
+                                        <span class="ztree-state-placeholder"></span>
+                                    {/if}
                                     <div
                                         class="tree-node-inner"
                                         class:selected={node.id === selectedNodeId}
                                         role="button"
                                         tabindex="0"
                                         onclick={() => selectNode(node)}
+                                        ondblclick={() => {
+                                            if (node.children && node.children.length > 0) {
+                                                toggleExpand(node)
+                                            }
+                                        }}
                                         onkeydown={(e) => {
                                             if (e.key === 'Enter' || e.key === ' ') selectNode(node)
                                         }}
                                     >
                                         {#if node.children && node.children.length > 0}
-                                            <button type="button" class="ztree-state-icon" onclick={() => toggleExpand(node)} aria-label={(node.expanded ?? true) ? '收起' : '展开'}>
-                                                {#if node.expanded ?? true}
-                                                    <!-- 减号：白底 + 蓝色边框 + 黑色横线 -->
-                                                    <svg viewBox="0 0 18 18" aria-hidden="true">
-                                                        <rect x="1" y="1" width="16" height="16" rx="2" ry="2" fill="#ffffff" stroke="#5f9bdb" stroke-width="1" />
-                                                        <rect x="4" y="8" width="10" height="2" fill="#2b2b2b" />
-                                                    </svg>
-                                                {:else}
-                                                    <!-- 加号：白底 + 蓝色边框 + 黑色十字 -->
-                                                    <svg viewBox="0 0 18 18" aria-hidden="true">
-                                                        <rect x="1" y="1" width="16" height="16" rx="2" ry="2" fill="#ffffff" stroke="#5f9bdb" stroke-width="1" />
-                                                        <rect x="4" y="8" width="10" height="2" fill="#2b2b2b" />
-                                                        <rect x="8" y="4" width="2" height="10" fill="#2b2b2b" />
-                                                    </svg>
-                                                {/if}
-                                            </button>
-                                            <button type="button" class="toggle-button" onclick={() => toggleExpand(node)} aria-label={(node.expanded ?? true) ? '收起' : '展开'}>
+                                            <button
+                                                type="button"
+                                                class="toggle-button"
+                                                onclick={(e) => {
+                                                    e.stopPropagation()
+                                                    toggleExpand(node)
+                                                }}
+                                                aria-label={(node.expanded ?? true) ? '收起' : '展开'}
+                                            >
                                                 <img class="toggle-icon" src={(node.expanded ?? true) ? expandedIcon : collapsedIcon} alt="" />
                                             </button>
                                         {:else}
-                                            <span class="ztree-state-placeholder"></span>
                                             <span class="toggle-leaf">
                                                 <img class="toggle-icon" src={leafIcon} alt="" />
                                             </span>
@@ -288,36 +323,60 @@
                                         {#each node.children as child}
                                             <li>
                                                 <div class="tree-node">
+                                                    {#if child.children && child.children.length > 0}
+                                                        <button
+                                                            type="button"
+                                                            class="ztree-state-icon"
+                                                            onclick={(e) => {
+                                                                e.stopPropagation()
+                                                                toggleExpand(child)
+                                                            }}
+                                                            aria-label={(child.expanded ?? true) ? '收起' : '展开'}
+                                                        >
+                                                            {#if child.expanded ?? true}
+                                                                <svg viewBox="0 0 18 18" aria-hidden="true">
+                                                                    <rect x="1" y="1" width="16" height="16" rx="2" ry="2" fill="#ffffff" stroke="#5f9bdb" stroke-width="1" />
+                                                                    <rect x="4" y="8" width="10" height="2" fill="#2b2b2b" />
+                                                                </svg>
+                                                            {:else}
+                                                                <svg viewBox="0 0 18 18" aria-hidden="true">
+                                                                    <rect x="1" y="1" width="16" height="16" rx="2" ry="2" fill="#ffffff" stroke="#5f9bdb" stroke-width="1" />
+                                                                    <rect x="4" y="8" width="10" height="2" fill="#2b2b2b" />
+                                                                    <rect x="8" y="4" width="2" height="10" fill="#2b2b2b" />
+                                                                </svg>
+                                                            {/if}
+                                                        </button>
+                                                    {:else}
+                                                        <span class="ztree-state-placeholder"></span>
+                                                    {/if}
                                                     <div
                                                         class="tree-node-inner"
                                                         class:selected={child.id === selectedNodeId}
                                                         role="button"
                                                         tabindex="0"
                                                         onclick={() => selectNode(child)}
+                                                        ondblclick={() => {
+                                                            if (child.children && child.children.length > 0) {
+                                                                toggleExpand(child)
+                                                            }
+                                                        }}
                                                         onkeydown={(e) => {
                                                             if (e.key === 'Enter' || e.key === ' ') selectNode(child)
                                                         }}
                                                     >
                                                         {#if child.children && child.children.length > 0}
-                                                            <button type="button" class="ztree-state-icon" onclick={() => toggleExpand(child)} aria-label={(child.expanded ?? true) ? '收起' : '展开'}>
-                                                                {#if child.expanded ?? true}
-                                                                    <svg viewBox="0 0 18 18" aria-hidden="true">
-                                                                        <rect x="1" y="1" width="16" height="16" rx="2" ry="2" fill="#ffffff" stroke="#5f9bdb" stroke-width="1" />
-                                                                        <rect x="4" y="8" width="10" height="2" fill="#2b2b2b" />
-                                                                    </svg>
-                                                                {:else}
-                                                                    <svg viewBox="0 0 18 18" aria-hidden="true">
-                                                                        <rect x="1" y="1" width="16" height="16" rx="2" ry="2" fill="#ffffff" stroke="#5f9bdb" stroke-width="1" />
-                                                                        <rect x="4" y="8" width="10" height="2" fill="#2b2b2b" />
-                                                                        <rect x="8" y="4" width="2" height="10" fill="#2b2b2b" />
-                                                                    </svg>
-                                                                {/if}
-                                                            </button>
-                                                            <button type="button" class="toggle-button" onclick={() => toggleExpand(child)} aria-label={(child.expanded ?? true) ? '收起' : '展开'}>
+                                                            <button
+                                                                type="button"
+                                                                class="toggle-button"
+                                                                onclick={(e) => {
+                                                                    e.stopPropagation()
+                                                                    toggleExpand(child)
+                                                                }}
+                                                                aria-label={(child.expanded ?? true) ? '收起' : '展开'}
+                                                            >
                                                                 <img class="toggle-icon" src={(child.expanded ?? true) ? expandedIcon : collapsedIcon} alt="" />
                                                             </button>
                                                         {:else}
-                                                            <span class="ztree-state-placeholder"></span>
                                                             <span class="toggle-leaf">
                                                                 <img class="toggle-icon" src={leafIcon} alt="" />
                                                             </span>
@@ -477,7 +536,7 @@
     .tree-node-inner {
         display: inline-flex;
         align-items: center;
-        gap: calc(4px * var(--scale-ratio, 1));
+        gap: calc(2px * var(--scale-ratio, 1));
         font-size: calc(15px * var(--scale-ratio, 1));
         color: #333333;
         padding: 0 calc(2px * var(--scale-ratio, 1));
@@ -496,8 +555,8 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: calc(20px * var(--scale-ratio, 1));
-        height: calc(20px * var(--scale-ratio, 1));
+        width: calc(12px * var(--scale-ratio, 1));
+        height: calc(12px * var(--scale-ratio, 1));
         border: none;
         padding: 0;
         margin: 0;
@@ -505,13 +564,13 @@
         cursor: pointer;
     }
     .tree-node .ztree-state-icon svg {
-        width: calc(14px * var(--scale-ratio, 1));
-        height: calc(14px * var(--scale-ratio, 1));
+        width: calc(12px * var(--scale-ratio, 1));
+        height: calc(12px * var(--scale-ratio, 1));
         display: block;
     }
     .tree-node .ztree-state-placeholder {
         display: inline-block;
-        width: calc(20px * var(--scale-ratio, 1));
+        width: calc(12px * var(--scale-ratio, 1));
         height: calc(20px * var(--scale-ratio, 1));
     }
     .tree-node .toggle-button {

@@ -400,7 +400,7 @@
         min-width: calc(120px * var(--scale-ratio, 1));
     }
     .company-table-input-label {
-        font-size: calc(12px * var(--scale-ratio, 1));
+        font-size: calc(15px * var(--scale-ratio, 1));
         color: #000;
         white-space: nowrap;
         flex-shrink: 0;
@@ -408,8 +408,8 @@
         text-align: right;
     }
     .company-table-input {
-        width: calc(188px * var(--scale-ratio, 1));
-        height: calc(28px * var(--scale-ratio, 1));
+        width: calc(260px * var(--scale-ratio, 1));
+        height: calc(30px * var(--scale-ratio, 1));
         border: calc(1px * var(--scale-ratio, 1)) solid rgb(26, 156, 254);
         padding: 0 calc(8px * var(--scale-ratio, 1));
         font-size: calc(13px * var(--scale-ratio, 1));
