@@ -193,6 +193,11 @@
     }
 
     function selectNode(node: TreeNode) {
+        console.log('[FilterTree] 选中节点:', {
+            ID: node.id,
+            NAME: node.label,
+            SELF_CODE: node.SELF_CODE
+        })
         selectedNodeId = node.id
     }
 
