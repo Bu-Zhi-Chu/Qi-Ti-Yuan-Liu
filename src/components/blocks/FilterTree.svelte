@@ -329,7 +329,7 @@
                                                     </div>
                                                 </div>
                                                 {#if child.children && child.children.length > 0 && (child.expanded ?? true)}
-                                                    <ul class="tree-level child">
+                                                    <ul class="tree-level grand">
                                                         {#each child.children as grand}
                                                             <li>
                                                                 <div class="tree-node">
@@ -463,6 +463,10 @@
     }
     .tree-level.child {
         padding-left: calc(24px * var(--scale-ratio, 1));
+        margin-top: calc(2px * var(--scale-ratio, 1));
+    }
+    .tree-level.grand {
+        padding-left: calc(40px * var(--scale-ratio, 1));
         margin-top: calc(2px * var(--scale-ratio, 1));
     }
     .tree-node {
