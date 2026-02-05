@@ -7,6 +7,7 @@
         checked?: boolean
         children?: TreeNode[]
         expanded?: boolean
+        SELF_CODE?: string
     }
 
     interface Props {
@@ -14,12 +15,13 @@
         treeData?: TreeNode[]
         multiList?: boolean
         enableMultiSelect?: boolean
+        dataSource?: string
         style?: string
         'data-id'?: string
         [key: string]: any
     }
 
-    let { tabs = ['点类型', '管理单位', '自定义'], treeData: initialTreeData = [], multiList = false, enableMultiSelect = false, style = '', 'data-id': dataId = '', ...restProps }: Props = $props()
+    let { tabs = ['点类型', '管理单位', '自定义'], treeData: rawTreeData = [], multiList = false, enableMultiSelect = false, dataSource = 'example', style = '', 'data-id': dataId = '', ...restProps }: Props = $props()
 
     let activeTabIndex = $state(0)
     let searchText = $state('')
@@ -64,8 +66,103 @@
         }
     ]
 
-    let treeData = $state<TreeNode[]>(initialTreeData.length > 0 ? initialTreeData : defaultTreeData)
-    let selectedNodeId = $state<string | number | null>((initialTreeData[0] && initialTreeData[0].id) || defaultTreeData[0]?.id || null)
+    function convertRawNode(raw: any): TreeNode {
+        const children = Array.isArray(raw.children) ? raw.children.map(convertRawNode) : []
+        return {
+            id: raw.id ?? raw.ID,
+            label: raw.label ?? raw.NAME ?? '',
+            checked: raw.checked ?? false,
+            expanded: raw.expanded ?? true,
+            children,
+            SELF_CODE: raw.SELF_CODE
+        }
+    }
+
+    function buildTreeFromFlat(list: any[]): TreeNode[] {
+        console.log('[FilterTree] buildTreeFromFlat 输入条数:', Array.isArray(list) ? list.length : '非数组')
+        const map = new Map<string | number, any>()
+        for (const item of list) {
+            const id = item.ID ?? item.id
+            if (id === undefined || id === null) continue
+            const copy = { ...item, children: [] }
+            map.set(id, copy)
+        }
+        const roots: any[] = []
+        for (const item of list) {
+            const id = item.ID ?? item.id
+            if (id === undefined || id === null) continue
+            const parentId = item.PARENT_ID ?? item.parentId
+            const node = map.get(id)
+            if (parentId === undefined || parentId === null || parentId === '') {
+                roots.push(node)
+            } else {
+                const parent = map.get(parentId)
+                if (parent) {
+                    parent.children.push(node)
+                } else {
+                    roots.push(node)
+                }
+            }
+        }
+        const result = roots.map(convertRawNode)
+        console.log(
+            '[FilterTree] 构建完成，根节点:',
+            result.map((n) => ({
+                id: n.id,
+                label: n.label,
+                childrenCount: n.children ? n.children.length : 0
+            }))
+        )
+        return result
+    }
+
+    function normalizeTreeData(data: any[]): TreeNode[] {
+        console.log('[FilterTree] normalizeTreeData 输入类型:', Array.isArray(data) ? 'array' : typeof data, 'length:', Array.isArray(data) ? data.length : 0)
+        if (!data || data.length === 0) {
+            console.log('[FilterTree] 使用默认示例树')
+            return defaultTreeData
+        }
+        const first = data[0] as any
+        if (first && 'ID' in first && 'PARENT_ID' in first) {
+            console.log('[FilterTree] 检测到 ID/PARENT_ID 扁平结构，开始转树')
+            return buildTreeFromFlat(data)
+        }
+        console.log('[FilterTree] 检测到已是树形结构，直接映射')
+        return data.map(convertRawNode)
+    }
+
+    function findNodeById(nodes: TreeNode[], id: string | number): TreeNode | null {
+        for (const node of nodes) {
+            if (node.id === id) return node
+            if (node.children && node.children.length > 0) {
+                const found = findNodeById(node.children, id)
+                if (found) return found
+            }
+        }
+        return null
+    }
+
+    export function getSelfCode(nodeId?: string | number | null): string | null {
+        const id = nodeId ?? selectedNodeId
+        if (id == null) return null
+        const node = findNodeById(treeData, id)
+        return node?.SELF_CODE ?? null
+    }
+
+    let treeData = $state<TreeNode[]>(rawTreeData.length > 0 ? normalizeTreeData(rawTreeData as any[]) : defaultTreeData)
+    let selectedNodeId = $state<string | number | null>(treeData[0]?.id ?? null)
+
+    $effect(() => {
+        console.log('[FilterTree] effect 触发，dataSource:', dataSource, 'rawTreeData length:', Array.isArray(rawTreeData) ? rawTreeData.length : '非数组')
+        if (dataSource === 'json') {
+            treeData = rawTreeData.length > 0 ? normalizeTreeData(rawTreeData as any[]) : defaultTreeData
+        } else if (dataSource === 'example') {
+            treeData = defaultTreeData
+        }
+        if (!selectedNodeId && treeData.length > 0) {
+            selectedNodeId = treeData[0].id
+        }
+    })
 
     function toggleNode(node: TreeNode) {
         node.checked = !node.checked
@@ -201,15 +298,64 @@
                                                             if (e.key === 'Enter' || e.key === ' ') selectNode(child)
                                                         }}
                                                     >
-                                                        <span class="toggle-leaf">
-                                                            <img class="toggle-icon" src={leafIcon} alt="" />
-                                                        </span>
+                                                        {#if child.children && child.children.length > 0}
+                                                            <button type="button" class="ztree-state-icon" onclick={() => toggleExpand(child)} aria-label={(child.expanded ?? true) ? '收起' : '展开'}>
+                                                                {#if child.expanded ?? true}
+                                                                    <svg viewBox="0 0 18 18" aria-hidden="true">
+                                                                        <rect x="1" y="1" width="16" height="16" rx="2" ry="2" fill="#ffffff" stroke="#5f9bdb" stroke-width="1" />
+                                                                        <rect x="4" y="8" width="10" height="2" fill="#2b2b2b" />
+                                                                    </svg>
+                                                                {:else}
+                                                                    <svg viewBox="0 0 18 18" aria-hidden="true">
+                                                                        <rect x="1" y="1" width="16" height="16" rx="2" ry="2" fill="#ffffff" stroke="#5f9bdb" stroke-width="1" />
+                                                                        <rect x="4" y="8" width="10" height="2" fill="#2b2b2b" />
+                                                                        <rect x="8" y="4" width="2" height="10" fill="#2b2b2b" />
+                                                                    </svg>
+                                                                {/if}
+                                                            </button>
+                                                            <button type="button" class="toggle-button" onclick={() => toggleExpand(child)} aria-label={(child.expanded ?? true) ? '收起' : '展开'}>
+                                                                <img class="toggle-icon" src={(child.expanded ?? true) ? expandedIcon : collapsedIcon} alt="" />
+                                                            </button>
+                                                        {:else}
+                                                            <span class="ztree-state-placeholder"></span>
+                                                            <span class="toggle-leaf">
+                                                                <img class="toggle-icon" src={leafIcon} alt="" />
+                                                            </span>
+                                                        {/if}
                                                         {#if enableMultiSelect}
                                                             <input type="checkbox" checked={child.checked} onclick={() => toggleNode(child)} />
                                                         {/if}
                                                         <span class="node-label">{child.label}</span>
                                                     </div>
                                                 </div>
+                                                {#if child.children && child.children.length > 0 && (child.expanded ?? true)}
+                                                    <ul class="tree-level child">
+                                                        {#each child.children as grand}
+                                                            <li>
+                                                                <div class="tree-node">
+                                                                    <div
+                                                                        class="tree-node-inner"
+                                                                        class:selected={grand.id === selectedNodeId}
+                                                                        role="button"
+                                                                        tabindex="0"
+                                                                        onclick={() => selectNode(grand)}
+                                                                        onkeydown={(e) => {
+                                                                            if (e.key === 'Enter' || e.key === ' ') selectNode(grand)
+                                                                        }}
+                                                                    >
+                                                                        <span class="toggle-leaf">
+                                                                            <img class="toggle-icon" src={leafIcon} alt="" />
+                                                                        </span>
+                                                                        {#if enableMultiSelect}
+                                                                            <input type="checkbox" checked={grand.checked} onclick={() => toggleNode(grand)} />
+                                                                        {/if}
+                                                                        <span class="node-label">{grand.label}</span>
+                                                                    </div>
+                                                                </div>
+                                                            </li>
+                                                        {/each}
+                                                    </ul>
+                                                {/if}
                                             </li>
                                         {/each}
                                     </ul>
@@ -267,7 +413,7 @@
     .filter-tree-search {
         position: relative;
         flex: 0 0 auto;
-        margin-bottom: calc(4px * var(--scale-ratio, 1));
+        margin-bottom: calc(8px * var(--scale-ratio, 1));
     }
     .filter-tree-search input {
         width: 100%;
@@ -304,7 +450,7 @@
         flex: 1 1 auto;
         overflow: auto;
         border-top: calc(1px * var(--scale-ratio, 1)) solid #e0e7ff;
-        padding-top: calc(4px * var(--scale-ratio, 1));
+        padding-top: calc(8px * var(--scale-ratio, 1));
         padding-left: calc(10px * var(--scale-ratio, 1));
     }
     .tree-level {
@@ -316,7 +462,7 @@
         margin-top: calc(4px * var(--scale-ratio, 1));
     }
     .tree-level.child {
-        padding-left: calc(48px * var(--scale-ratio, 1));
+        padding-left: calc(24px * var(--scale-ratio, 1));
         margin-top: calc(2px * var(--scale-ratio, 1));
     }
     .tree-node {

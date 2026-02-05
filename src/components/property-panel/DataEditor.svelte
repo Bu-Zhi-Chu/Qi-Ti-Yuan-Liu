@@ -413,6 +413,33 @@
         // 逻辑已下沉到 regenerateBodyData，由映射变动时主动调用，无需再监听
     })
 
+    function updateFilterTreeData(code: string) {
+        if (!selectedId) return
+
+        console.log('[FilterTree][DataEditor] 接收临时数据代码，length:', code.length)
+
+        handleAttrChange('treeDataCode', code)
+
+        try {
+            const trimmed = code.trim()
+            if (!trimmed) {
+                handleAttrChange('treeData', [])
+                return
+            }
+
+            const resultArray = extractResultArray(trimmed)
+            console.log('[FilterTree][DataEditor] 解析结果类型:', Array.isArray(resultArray) ? 'array' : typeof resultArray, 'length:', Array.isArray(resultArray) ? resultArray.length : 0)
+            if (!Array.isArray(resultArray)) {
+                throw new Error('临时数据必须是数组')
+            }
+
+            console.log('[FilterTree][DataEditor] 写入 treeData，示例节点:', resultArray[0])
+            handleAttrChange('treeData', resultArray)
+        } catch (err) {
+            console.error('[FilterTree][DataEditor] 更新过滤树临时数据失败', err)
+        }
+    }
+
     /** 实时更新第 index 个 request data 映射路径 */
     function updateRequestSeriesMapping(index: number, path: string) {
         if (!selectedId || requestSeriesMapping()[index] === path) return
@@ -510,6 +537,10 @@
                     </PropertyRow>
                 {/each}
             {/if}
+        {:else if componentType === 'FilterTree'}
+            <PropertyRow label="临时数据">
+                <CodeEditor code={currentValues.treeDataCode ?? ''} language="json" theme="one-dark" height="calc(120px * var(--scale-ratio, 1))" run={(code: string) => updateFilterTreeData(code)} toolbar={false} autoRun={true} wrap={true} showLineNumbers={false} style="flex:1; width:0;" />
+            </PropertyRow>
         {:else if dataArrays.length > 0}
             {#each dataArrays as arr, idx}
                 <PropertyRow label={`${getChineseOrdinal(idx)}序列`}>

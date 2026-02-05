@@ -1331,6 +1331,31 @@
         "showFeatureTab": true,
         "dataBindable": true,
         "hideTextContent": true,
+        "dataSource": {
+            "dataAccess": {
+                "label": "数据接入",
+                "type": "select",
+                "options": [
+                    {
+                        "value": "example",
+                        "label": "示例数据"
+                    },
+                    {
+                        "value": "json",
+                        "label": "临时数据"
+                    },
+                    {
+                        "value": "mock",
+                        "label": "模拟接口"
+                    },
+                    {
+                        "value": "real",
+                        "label": "真实请求"
+                    }
+                ],
+                "default": "example"
+            }
+        },
         "presetStyles": {
             "width": "238px",
             "height": "979px"

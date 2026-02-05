@@ -280,15 +280,20 @@
     .company-table-right-extra {
         flex: 0 0 auto;
         height: 0;
-        transition: height 0.25s ease;
         box-sizing: border-box;
         border-radius: calc(5px * var(--scale-ratio, 1));
+        border: calc(1px * var(--scale-ratio, 1)) solid transparent;
         display: flex;
         flex-direction: column;
         overflow: hidden;
+        opacity: 0;
+        transition:
+            opacity 0.2s ease,
+            border-color 0.2s ease;
     }
     .company-table-right-extra.expanded {
-        border: calc(1px * var(--scale-ratio, 1)) solid rgb(26, 156, 254);
+        border-color: rgb(26, 156, 254);
+        opacity: 1;
     }
     .company-table-right-extra-wrapper {
         flex: 1;
