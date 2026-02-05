@@ -714,6 +714,7 @@
         display: flex;
         width: max-content;
         min-width: 100%;
+        height: calc(42px * var(--scale-ratio, 1));
     }
     .body-cell {
         flex: 0 0 auto;
@@ -782,6 +783,6 @@
         cursor: pointer;
         color: rgb(0, 0, 238);
         text-decoration: underline;
-        font-size: calc(13px * var(--scale-ratio, 1));
+        font-size: calc(14px * var(--scale-ratio, 1));
     }
 </style>

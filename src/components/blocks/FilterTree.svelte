@@ -473,14 +473,16 @@
         position: relative;
         flex: 0 0 auto;
         margin-bottom: calc(8px * var(--scale-ratio, 1));
+        font-size: calc(14px * var(--scale-ratio, 1));
+        height: calc(30px * var(--scale-ratio, 1));
     }
     .filter-tree-search input {
         width: 100%;
         padding: 0 calc(28px * var(--scale-ratio, 1)) 0 calc(4px * var(--scale-ratio, 1));
-        height: calc(28px * var(--scale-ratio, 1));
+        height: calc(30px * var(--scale-ratio, 1));
         border-radius: calc(2px * var(--scale-ratio, 1));
         border: calc(1px * var(--scale-ratio, 1)) solid #1990ff;
-        font-size: calc(12px * var(--scale-ratio, 1));
+        font-size: calc(14px * var(--scale-ratio, 1));
         box-sizing: border-box;
     }
     .filter-tree-search .search-button {

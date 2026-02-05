@@ -396,7 +396,8 @@
         width: 100%;
         border-bottom: calc(1px * var(--scale-ratio, 1)) dashed rgb(29, 143, 211);
         overflow: hidden;
-        font-size: calc(15px * var(--scale-ratio, 1));
+        height: calc(42px * var(--scale-ratio, 1));
+        font-size: calc(16px * var(--scale-ratio, 1));
     }
     .header-frozen {
         display: flex;
@@ -458,5 +459,6 @@
         padding: 0 calc(4px * var(--scale-ratio, 1));
         border-right: calc(1px * var(--scale-ratio, 1)) dashed rgb(29, 143, 211);
         flex: 0 0 auto;
+        font-size: calc(16px * var(--scale-ratio, 1));
     }
 </style>
