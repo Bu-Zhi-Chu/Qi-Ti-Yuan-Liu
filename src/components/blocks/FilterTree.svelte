@@ -25,7 +25,6 @@
 
     let activeTabIndex = $state(0)
     let searchText = $state('')
-    let searchKeyword = $state('')
 
     const baseUrl = import.meta.env.BASE_URL || '/'
     const searchIcon = `${baseUrl}img/hold/searchbox_button.png`
@@ -164,16 +163,19 @@
 
     let treeData = $state<TreeNode[]>(rawTreeData.length > 0 ? normalizeTreeData(rawTreeData as any[]) : defaultTreeData)
     let selectedNodeId = $state<string | number | null>(treeData[0]?.id ?? null)
+    let lastSearchTerm = $state('')
+    let lastMatchedNodeId = $state<string | number | null>(null)
 
     $effect(() => {
         console.log('[FilterTree] effect 触发，dataSource:', dataSource, 'rawTreeData length:', Array.isArray(rawTreeData) ? rawTreeData.length : '非数组')
         if (dataSource === 'json') {
-            treeData = rawTreeData.length > 0 ? normalizeTreeData(rawTreeData as any[]) : defaultTreeData
+            const normalized = rawTreeData.length > 0 ? normalizeTreeData(rawTreeData as any[]) : defaultTreeData
+            treeData = normalized
+            selectedNodeId = normalized[0]?.id ?? null
         } else if (dataSource === 'example') {
-            treeData = defaultTreeData
-        }
-        if (!selectedNodeId && treeData.length > 0) {
-            selectedNodeId = treeData[0].id
+            const normalized = defaultTreeData
+            treeData = normalized
+            selectedNodeId = normalized[0]?.id ?? null
         }
     })
 
@@ -194,29 +196,107 @@
         selectedNodeId = node.id
     }
 
-    function triggerSearch() {
-        searchKeyword = searchText.trim()
-    }
-
-    function getFilteredNodes(nodes: TreeNode[]): TreeNode[] {
-        const term = searchKeyword.trim()
-        if (!term) return nodes
-        const lower = term.toLowerCase()
+    function collectAllNodes(nodes: TreeNode[]): TreeNode[] {
         const result: TreeNode[] = []
-        for (const node of nodes) {
-            const labelMatch = node.label.toLowerCase().includes(lower)
-            const children = node.children ? getFilteredNodes(node.children) : []
-            if (labelMatch || children.length > 0) {
-                result.push({
-                    ...node,
-                    children: children.length > 0 ? children : node.children
-                })
+        function dfs(list: TreeNode[]) {
+            for (const node of list) {
+                result.push(node)
+                if (node.children && node.children.length > 0) {
+                    dfs(node.children)
+                }
             }
         }
+        dfs(nodes)
         return result
     }
 
-    let visibleTreeData = $derived(getFilteredNodes(treeData))
+    function expandAncestors(targetId: string | number) {
+        function helper(nodes: TreeNode[]): [TreeNode[], boolean] {
+            let foundInThisLevel = false
+            const newNodes = nodes.map((node) => {
+                let foundInChildren = false
+                let newChildren = node.children
+
+                if (node.children && node.children.length > 0) {
+                    const [updatedChildren, childFound] = helper(node.children)
+                    if (childFound) {
+                        foundInChildren = true
+                        newChildren = updatedChildren
+                    }
+                }
+
+                const isTarget = node.id === targetId
+                const shouldExpand = isTarget || foundInChildren
+
+                if (shouldExpand) {
+                    foundInThisLevel = true
+                }
+
+                if (foundInChildren && node.children && node.children.length > 0) {
+                    return {
+                        ...node,
+                        expanded: true,
+                        children: newChildren
+                    }
+                }
+
+                if (newChildren !== node.children) {
+                    return {
+                        ...node,
+                        children: newChildren
+                    }
+                }
+
+                return node
+            })
+
+            return [newNodes, foundInThisLevel]
+        }
+
+        const [updated, found] = helper(treeData)
+        if (found) {
+            treeData = updated
+        }
+    }
+
+    function locateNext() {
+        const term = searchText.trim()
+        if (!term) return
+        const lower = term.toLowerCase()
+        const flat = collectAllNodes(treeData)
+        if (flat.length === 0) return
+
+        let startIndex = 0
+        if (lastSearchTerm === term && lastMatchedNodeId != null) {
+            const currentIndex = flat.findIndex((n) => n.id === lastMatchedNodeId)
+            startIndex = currentIndex >= 0 ? currentIndex + 1 : 0
+        } else {
+            lastSearchTerm = term
+            lastMatchedNodeId = null
+        }
+
+        let foundIndex = -1
+        for (let i = 0; i < flat.length; i++) {
+            const idx = (startIndex + i) % flat.length
+            const node = flat[idx]
+            if (node.label.toLowerCase().includes(lower)) {
+                foundIndex = idx
+                break
+            }
+        }
+        if (foundIndex === -1) return
+        const found = flat[foundIndex]
+        lastSearchTerm = term
+        lastMatchedNodeId = found.id
+        expandAncestors(found.id)
+        selectedNodeId = found.id
+    }
+
+    function triggerSearch() {
+        locateNext()
+    }
+
+    let visibleTreeData = $derived(treeData)
 </script>
 
 <ResponsiveBox {style} data-id={dataId} {...restProps}>
