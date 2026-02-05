@@ -408,7 +408,7 @@
         text-align: right;
     }
     .company-table-input {
-        width: calc(225px * var(--scale-ratio, 1));
+        width: calc(188px * var(--scale-ratio, 1));
         height: calc(28px * var(--scale-ratio, 1));
         border: calc(1px * var(--scale-ratio, 1)) solid rgb(26, 156, 254);
         padding: 0 calc(8px * var(--scale-ratio, 1));
