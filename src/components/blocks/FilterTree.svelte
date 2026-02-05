@@ -171,11 +171,21 @@
         if (dataSource === 'json') {
             const normalized = rawTreeData.length > 0 ? normalizeTreeData(rawTreeData as any[]) : defaultTreeData
             treeData = normalized
-            selectedNodeId = normalized[0]?.id ?? null
+            const first = normalized[0]
+            if (first) {
+                selectNode(first)
+            } else {
+                selectedNodeId = null
+            }
         } else if (dataSource === 'example') {
             const normalized = defaultTreeData
             treeData = normalized
-            selectedNodeId = normalized[0]?.id ?? null
+            const first = normalized[0]
+            if (first) {
+                selectNode(first)
+            } else {
+                selectedNodeId = null
+            }
         }
     })
 
