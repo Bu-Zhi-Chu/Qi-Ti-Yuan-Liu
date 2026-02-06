@@ -774,7 +774,7 @@
         transition: all 0.3s ease;
         gap: calc(16px * var(--scale-ratio, 1));
         padding-left: calc(12px * var(--scale-ratio, 1));
-        padding-right: calc(12px * var(--scale-ratio, 1));
+        padding-right: calc(4px * var(--scale-ratio, 1));
     }
 
     .date-picker-button:hover:not(.disabled) {
