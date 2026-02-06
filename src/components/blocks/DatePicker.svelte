@@ -89,7 +89,7 @@
 
     let isOpen = $state(false)
     let pickerRef = $state<HTMLDivElement>()
-    let buttonRef = $state<HTMLButtonElement>()
+    let buttonRef = $state<HTMLElement>()
     // 面板定位样式（挂载到 body 后使用 fixed 定位）
     let panelStyle = $state('')
 
@@ -125,7 +125,7 @@
 
     $effect(() => {
         const newVal = normalizeDate(value)
-        if (newVal.getTime() !== internalDate.getTime()) {
+        if (!isOpen && newVal.getTime() !== internalDate.getTime()) {
             internalDate = new Date(newVal)
         }
     })
@@ -161,23 +161,34 @@
         if (mode === 'datetime') {
             newDate.setHours(hours, minutes, seconds)
         }
-        value = new Date(newDate) // 这会自动触发 bind:value 更新
-        dispatch('change', new Date(newDate))
+        const committed = new Date(newDate)
+        value = committed
+        dispatch('change', new Date(committed))
         if (onChange) {
-            onChange(new Date(newDate))
+            onChange(new Date(committed))
         }
         // Persist to doms attr if dateRecording enabled
         if (dateRecording && id) {
-            updateNodeProps(id, { attributes: { recordedDate: toInputValue(newDate) } })
+            updateNodeProps(id, { attributes: { recordedDate: toInputValue(committed) } })
         }
     }
 
-    // 格式化显示文本
-    let displayText = $derived(formatDisplay(internalDate))
+    // 格式化显示文本（始终基于已提交的外部值）
+    let displayText = $derived(formatDisplay(normalizeDate(value)))
+    let isEditingDisplay = $state(false)
+    let displayInput = $state('')
+    let displayInputRef = $state<HTMLInputElement>()
+
+    $effect(() => {
+        if (!isEditingDisplay) {
+            displayInput = displayText
+        }
+    })
 
     let year = $derived(internalDate.getFullYear())
     let month = $derived(internalDate.getMonth())
     let date = $derived(internalDate.getDate())
+    let panelBaseDate = $state<Date | null>(null)
 
     // 面板数据
     let daysInMonth = $derived(new Date(year, month + 1, 0).getDate())
@@ -233,6 +244,71 @@
     let activeTimeSegment = $state<TimeSegment>('hour')
     let timeInputRef = $state<HTMLInputElement>()
 
+    function parseDisplayInput(raw: string): Date | null {
+        const text = raw.trim()
+        if (!text) return null
+        if (mode === 'date') {
+            const d = new Date(text)
+            return isValidDate(d) ? d : null
+        }
+        if (mode === 'datetime') {
+            const parts = text.split(/\s+/)
+            if (parts.length < 2) return null
+            const d = new Date(`${parts[0]}T${parts[1]}`)
+            return isValidDate(d) ? d : null
+        }
+        return null
+    }
+
+    function commitDisplayInput() {
+        if (mode === 'year') return
+        const parsed = parseDisplayInput(displayInput)
+        if (!parsed) {
+            displayInput = displayText
+            return
+        }
+        const next = new Date(parsed)
+        internalDate = next
+        if (mode === 'datetime') {
+            hours = next.getHours()
+            minutes = next.getMinutes()
+            seconds = next.getSeconds()
+            timeInput = formatTimeString(hours, minutes, seconds)
+            isEditingTime = false
+        }
+        updateValue(next)
+    }
+
+    function handleDisplayClick() {
+        if (disabled || mode === 'year') return
+        isEditingDisplay = true
+        displayInput = displayText
+        tick().then(() => {
+            if (displayInputRef) {
+                displayInputRef.focus()
+                displayInputRef.select()
+            }
+        })
+    }
+
+    function handleDisplayBlur() {
+        if (!isEditingDisplay) return
+        isEditingDisplay = false
+        commitDisplayInput()
+    }
+
+    function handleDisplayKeydown(e: KeyboardEvent) {
+        if (e.key === 'Enter') {
+            e.preventDefault()
+            isEditingDisplay = false
+            commitDisplayInput()
+        } else if (e.key === 'Escape') {
+            e.preventDefault()
+            isEditingDisplay = false
+            displayInput = displayText
+        }
+    }
+
     function selectTimeSegment(segment: TimeSegment) {
         activeTimeSegment = segment
         if (!timeInputRef) return
@@ -267,7 +343,6 @@
         internalDate = next
         timeInput = formatTimeString(hours, minutes, seconds)
         isEditingTime = true
-        updateValue(next)
         await tick()
         if (timeInputRef) {
             timeInputRef.focus()
@@ -392,6 +467,12 @@
         return isSameDay(d, internalDate)
     }
 
+    function isBaseSelected(d: Date): boolean {
+        if (!panelBaseDate) return false
+        if (isSameDay(d, internalDate)) return false
+        return isSameDay(d, panelBaseDate)
+    }
+
     function isDisabled(d: Date): boolean {
         if (min && d < min) return true
         if (max && d > max) return true
@@ -400,23 +481,24 @@
 
     function selectDate(d: Date) {
         if (isDisabled(d)) return
-        internalDate = d
-        updateValue(d)
-        if (mode === 'date') {
-            isOpen = false
+        const next = new Date(d)
+        if (mode === 'datetime') {
+            next.setHours(hours, minutes, seconds)
         }
+        internalDate = next
     }
 
     function setToday() {
         const now = new Date()
-        const newDate = new Date(now)
-        internalDate = newDate
+        const todayOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+        const next = new Date(todayOnly)
         if (mode === 'datetime') {
-            hours = newDate.getHours()
-            minutes = newDate.getMinutes()
-            seconds = newDate.getSeconds()
+            next.setHours(hours, minutes, seconds)
         }
-        updateValue(newDate)
+        internalDate = next
+        updateValue(next)
+        isOpen = false
+        selectingYearMonth = false
     }
 
     function confirmSelection() {
@@ -431,27 +513,35 @@
     }
 
     function prevMonth() {
-        const newDate = new Date(year, month - 1, Math.min(date, new Date(year, month, 0).getDate()))
-        internalDate = newDate
-        updateValue(newDate)
+        const base = new Date(year, month - 1, Math.min(date, new Date(year, month, 0).getDate()))
+        if (mode === 'datetime') {
+            base.setHours(hours, minutes, seconds)
+        }
+        internalDate = base
     }
 
     function nextMonth() {
-        const newDate = new Date(year, month + 1, Math.min(date, new Date(year, month + 2, 0).getDate()))
-        internalDate = newDate
-        updateValue(newDate)
+        const base = new Date(year, month + 1, Math.min(date, new Date(year, month + 2, 0).getDate()))
+        if (mode === 'datetime') {
+            base.setHours(hours, minutes, seconds)
+        }
+        internalDate = base
     }
 
     function prevYear() {
-        const newDate = new Date(year - 1, month, Math.min(date, new Date(year - 1, month + 1, 0).getDate()))
-        internalDate = newDate
-        updateValue(newDate)
+        const base = new Date(year - 1, month, Math.min(date, new Date(year - 1, month + 1, 0).getDate()))
+        if (mode === 'datetime') {
+            base.setHours(hours, minutes, seconds)
+        }
+        internalDate = base
     }
 
     function nextYear() {
-        const newDate = new Date(year + 1, month, Math.min(date, new Date(year + 1, month + 1, 0).getDate()))
-        internalDate = newDate
-        updateValue(newDate)
+        const base = new Date(year + 1, month, Math.min(date, new Date(year + 1, month + 1, 0).getDate()))
+        if (mode === 'datetime') {
+            base.setHours(hours, minutes, seconds)
+        }
+        internalDate = base
     }
 
     function togglePanel() {
@@ -459,6 +549,9 @@
         if (mode === 'year') return
         isOpen = !isOpen
         if (isOpen) {
+            const committed = normalizeDate(value)
+            internalDate = new Date(committed)
+            panelBaseDate = new Date(committed)
             // 当模式为 date 或 datetime 时，始终默认显示日期选择界面
             selectingYearMonth = false
             // 面板初始定位：挂载后再测量尺寸并计算位置
@@ -478,11 +571,18 @@
     onMount(() => {
         function handleClickOutside(event: MouseEvent) {
             if (isOpen && pickerRef && !pickerRef.contains(event.target as Node) && !buttonRef?.contains(event.target as Node)) {
-                // 应用当前选择的结果
-                updateValue(internalDate)
                 isOpen = false
-                // Reset to day view so next open shows calendar
                 selectingYearMonth = false
+                const committed = normalizeDate(value)
+                internalDate = new Date(committed)
+                if (mode === 'datetime') {
+                    hours = committed.getHours()
+                    minutes = committed.getMinutes()
+                    seconds = committed.getSeconds()
+                    if (!isEditingTime) {
+                        timeInput = formatTimeString(hours, minutes, seconds)
+                    }
+                }
             }
         }
         document.addEventListener('mousedown', handleClickOutside)
@@ -659,12 +759,18 @@
             </div>
         </div>
     {:else}
-        <button bind:this={buttonRef} class="date-picker-button" class:disabled onclick={togglePanel} type="button">
-            <span class="date-text">{displayText}</span>
-            <span class="date-icon">
+        <div bind:this={buttonRef} class="date-picker-button" class:disabled>
+            {#if isEditingDisplay}
+                <input class="date-picker-display-input" bind:this={displayInputRef} bind:value={displayInput} {disabled} onblur={handleDisplayBlur} onkeydown={handleDisplayKeydown} />
+            {:else}
+                <span class="date-text" role="textbox" tabindex="0" onclick={handleDisplayClick} onkeydown={handleDisplayKeydown}>
+                    {displayText}
+                </span>
+            {/if}
+            <button type="button" class="date-icon" onclick={togglePanel} {disabled}>
                 <img src={`${import.meta.env.BASE_URL}img/hold/datebox_arrow.png`} alt="" class="date-icon-image" />
-            </span>
-        </button>
+            </button>
+        </div>
 
         {#if isOpen}
             <div bind:this={pickerRef} use:portal={document.body} class="date-picker-panel portal" style={panelStyle}>
@@ -704,6 +810,7 @@
                             class="day"
                             class:today={isToday(cell.date)}
                             class:selected={isSelected(cell.date)}
+                            class:base-selected={isBaseSelected(cell.date)}
                             class:disabled={isDisabled(cell.date)}
                             class:weekend={w === 0 || w === 6}
                             class:sun={w === 0}
@@ -754,7 +861,6 @@
                                     next.setHours(hours, minutes, seconds)
                                     internalDate = next
                                     isEditingTime = false
-                                    updateValue(next)
                                 }}
                                 onkeydown={(e) => {
                                     if (e.key === 'Enter') {
@@ -771,7 +877,6 @@
                                         next.setHours(hours, minutes, seconds)
                                         internalDate = next
                                         isEditingTime = false
-                                        updateValue(next)
                                     }
                                 }}
                             />
@@ -972,6 +1077,20 @@
         line-height: inherit;
     }
 
+    .date-picker-display-input {
+        flex: 1;
+        border: none;
+        background: transparent;
+        padding: 0;
+        min-width: 0;
+        color: inherit;
+        font-size: inherit;
+        font-family: inherit;
+        font-weight: inherit;
+        line-height: inherit;
+        outline: none;
+    }
+
     .date-icon {
         flex-shrink: 0;
         width: calc(22px * var(--scale-ratio, 1));
@@ -979,6 +1098,10 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        border: none;
+        background: transparent;
+        padding: 0;
+        cursor: pointer;
     }
 
     .date-icon-image {
@@ -1085,7 +1208,7 @@
         background: #f2f6fc;
     }
 
-    .day.today {
+    .day.base-selected:not(.selected) {
         color: #409eff;
         font-weight: 600;
     }

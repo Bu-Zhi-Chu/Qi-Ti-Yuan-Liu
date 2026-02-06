@@ -1,5 +1,6 @@
 <script lang="ts">
     import { getContext } from 'svelte'
+    import DatePicker from './DatePicker.svelte'
 
     interface QueryCondition {
         id?: string
@@ -119,12 +120,6 @@
         yearValues = { ...yearValues, [index]: value }
     }
 
-    function stepYear(index: number, delta: number) {
-        const base = yearValues[index]
-        const baseYear = typeof base === 'number' && Number.isFinite(base) ? base : currentYear
-        const next = baseYear + delta
-        setYearValue(index, next)
-    }
 </script>
 
 <div {style} class={className} {...rest}>
@@ -139,34 +134,20 @@
                         <option value="">请选择</option>
                     </select>
                 {:else if cond?.type === 'date'}
-                    <input class="company-table-input" type="date" />
+                    <DatePicker mode="date" />
                 {:else if cond?.type === 'datetime'}
-                    <input class="company-table-input" type="datetime-local" />
+                    <DatePicker mode="datetime" />
                 {:else if cond?.type === 'year'}
                     {@const year = getYearDisplay(index)}
-                    <div class="company-table-year-wrapper">
-                        <input
-                            class="company-table-input company-table-year-input"
-                            type="number"
-                            value={year}
-                            disabled={cond?.disabled}
-                            oninput={(e) => {
-                                const raw = (e.currentTarget as HTMLInputElement).value
-                                const val = parseInt(raw, 10)
-                                if (!isNaN(val)) {
-                                    setYearValue(index, val)
-                                }
-                            }}
-                        />
-                        <div class="company-table-year-stepper">
-                            <button type="button" class="company-table-year-btn" disabled={cond?.disabled} onclick={() => stepYear(index, 1)}>
-                                <span class="company-table-year-symbol">∧</span>
-                            </button>
-                            <button type="button" class="company-table-year-btn" disabled={cond?.disabled} onclick={() => stepYear(index, -1)}>
-                                <span class="company-table-year-symbol">∨</span>
-                            </button>
-                        </div>
-                    </div>
+                    <DatePicker
+                        mode="year"
+                        value={new Date(year, 0, 1)}
+                        disabled={cond?.disabled}
+                        onChange={(d) => {
+                            const y = d.getFullYear()
+                            setYearValue(index, y)
+                        }}
+                    />
                 {:else}
                     <input class="company-table-input" type="text" placeholder="" />
                 {/if}
@@ -204,77 +185,6 @@
         color: #000000;
         font-size: calc(13px * var(--scale-ratio, 1));
         box-sizing: border-box;
-    }
-
-    .company-table-year-wrapper {
-        display: inline-block;
-        position: relative;
-        width: calc(75px * var(--scale-ratio, 1));
-        height: calc(28px * var(--scale-ratio, 1));
-        border-radius: 0;
-        border: calc(1px * var(--scale-ratio, 1)) solid rgb(26, 156, 254);
-        background: #ffffff;
-        box-sizing: border-box;
-    }
-
-    .company-table-year-input {
-        width: 100%;
-        height: 100%;
-        border: none;
-        background: transparent;
-        padding: 0 calc(20px * var(--scale-ratio, 1)) 0 calc(8px * var(--scale-ratio, 1));
-        /* 隐藏浏览器自带的上下箭头 */
-        appearance: textfield;
-        -moz-appearance: textfield;
-    }
-
-    .company-table-year-input::-webkit-outer-spin-button,
-    .company-table-year-input::-webkit-inner-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
-    }
-
-    .company-table-year-stepper {
-        position: absolute;
-        top: 0;
-        right: 0;
-        bottom: 0;
-        width: calc(20px * var(--scale-ratio, 1));
-        display: flex;
-        flex-direction: column;
-    }
-
-    .company-table-year-btn {
-        flex: 1;
-        border: none;
-        border-left: calc(1px * var(--scale-ratio, 1)) solid rgb(26, 156, 254);
-        background: #daeef5;
-        color: #333333;
-        font-size: calc(10px * var(--scale-ratio, 1));
-        line-height: 1;
-        padding: 0;
-        cursor: pointer;
-        box-sizing: border-box;
-    }
-
-    .company-table-year-btn:first-child {
-        border-bottom: calc(1px * var(--scale-ratio, 1)) solid rgb(26, 156, 254);
-    }
-
-    .company-table-year-btn:hover:not(:disabled) {
-        background: #c0d8e8;
-    }
-
-    .company-table-year-btn:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    .company-table-year-symbol {
-        display: inline-block;
-        transform: scaleY(0.5);
-        transform-origin: center;
-        font-weight: bolder;
     }
 
     .company-table-btn {
