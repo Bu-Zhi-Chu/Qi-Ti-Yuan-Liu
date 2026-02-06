@@ -123,17 +123,10 @@
         value = new Date(initialDate)
     }
 
-    // 同步外部 value 变化到内部
     $effect(() => {
         const newVal = normalizeDate(value)
         if (newVal.getTime() !== internalDate.getTime()) {
             internalDate = new Date(newVal)
-            // 如果是 datetime 模式，同步时分秒状态
-            if (mode === 'datetime') {
-                hours = internalDate.getHours()
-                minutes = internalDate.getMinutes()
-                seconds = internalDate.getSeconds()
-            }
         }
     })
 
@@ -182,7 +175,6 @@
     // 格式化显示文本
     let displayText = $derived(formatDisplay(internalDate))
 
-    // 生成年月数据
     let year = $derived(internalDate.getFullYear())
     let month = $derived(internalDate.getMonth())
     let date = $derived(internalDate.getDate())
@@ -192,23 +184,112 @@
     let firstDay = $derived(new Date(year, month, 1).getDay())
     let today = $derived(new Date())
 
-    // 选择年/月模式：仅 date/datetime 模式下用于切换“年+月”快速选择面板
+    type CalendarCell = {
+        date: Date
+        isCurrentMonth: boolean
+    }
+
+    function buildCalendarCells(year: number, month: number, daysInMonth: number, firstDay: number): CalendarCell[] {
+        const cells: CalendarCell[] = []
+        const total = 42
+        const prevMonthLastDate = new Date(year, month, 0)
+        const prevMonthDays = prevMonthLastDate.getDate()
+        const offset = firstDay === 0 ? 7 : firstDay
+        for (let i = 0; i < total; i++) {
+            if (i < offset) {
+                const day = prevMonthDays - offset + 1 + i
+                cells.push({
+                    date: new Date(year, month - 1, day),
+                    isCurrentMonth: false
+                })
+            } else if (i < offset + daysInMonth) {
+                const day = i - offset + 1
+                cells.push({
+                    date: new Date(year, month, day),
+                    isCurrentMonth: true
+                })
+            } else {
+                const day = i - offset - daysInMonth + 1
+                cells.push({
+                    date: new Date(year, month + 1, day),
+                    isCurrentMonth: false
+                })
+            }
+        }
+        return cells
+    }
+
+    let calendarCells = $derived(buildCalendarCells(year, month, daysInMonth, firstDay))
+
     let selectingYearMonth = $state(false)
 
-    // 时分秒状态（仅 datetime 模式使用）
     let hours = $state(0)
     let minutes = $state(0)
     let seconds = $state(0)
+    let timeInput = $state('')
+    let isEditingTime = $state(false)
 
-    // 同步时间状态与 internalDate
+    type TimeSegment = 'hour' | 'minute' | 'second'
+    let activeTimeSegment = $state<TimeSegment>('hour')
+    let timeInputRef = $state<HTMLInputElement>()
+
+    function selectTimeSegment(segment: TimeSegment) {
+        activeTimeSegment = segment
+        if (!timeInputRef) return
+        let start = 0
+        let end = 2
+        if (segment === 'minute') {
+            start = 3
+            end = 5
+        } else if (segment === 'second') {
+            start = 6
+            end = 8
+        }
+        timeInputRef.setSelectionRange(start, end)
+    }
+
+    async function adjustTimeBySegment(delta: number) {
+        const parsed = parseTimeString(timeInput)
+        if (parsed) {
+            hours = parsed.h
+            minutes = parsed.m
+            seconds = parsed.s
+        }
+        if (activeTimeSegment === 'hour') {
+            hours = (hours + delta + 24) % 24
+        } else if (activeTimeSegment === 'minute') {
+            minutes = (minutes + delta + 60) % 60
+        } else {
+            seconds = (seconds + delta + 60) % 60
+        }
+        const next = new Date(internalDate)
+        next.setHours(hours, minutes, seconds)
+        internalDate = next
+        timeInput = formatTimeString(hours, minutes, seconds)
+        isEditingTime = true
+        updateValue(next)
+        await tick()
+        if (timeInputRef) {
+            timeInputRef.focus()
+            selectTimeSegment(activeTimeSegment)
+        }
+    }
+
+    let yearListRef = $state<HTMLDivElement>()
+
     $effect(() => {
         if (mode === 'datetime') {
-            hours = internalDate.getHours()
-            minutes = internalDate.getMinutes()
-            seconds = internalDate.getSeconds()
+            const h = internalDate.getHours()
+            const m = internalDate.getMinutes()
+            const s = internalDate.getSeconds()
+            hours = h
+            minutes = m
+            seconds = s
+            if (!isEditingTime) {
+                timeInput = formatTimeString(h, m, s)
+            }
         }
     })
-    let yearListRef = $state<HTMLDivElement>()
 
     // 以当前年份为中心，上下各 10 年
     let yearsRange = $derived(Array.from({ length: 21 }, (_, i) => year - 10 + i))
@@ -264,6 +345,28 @@
         return `${y}-${m}-${d}`
     }
 
+    function formatTimeComponent(v: number): string {
+        return String(v).padStart(2, '0')
+    }
+
+    function formatTimeString(h: number, m: number, s: number): string {
+        return `${formatTimeComponent(h)}:${formatTimeComponent(m)}:${formatTimeComponent(s)}`
+    }
+
+    function parseTimeString(str: string): { h: number; m: number; s: number } | null {
+        const trimmed = str.trim()
+        const match = /^(\d{1,2}):(\d{1,2}):(\d{1,2})$/.exec(trimmed)
+        if (!match) return null
+        const h = parseInt(match[1], 10)
+        const m = parseInt(match[2], 10)
+        const s = parseInt(match[3], 10)
+        if (isNaN(h) || isNaN(m) || isNaN(s)) return null
+        if (h < 0 || h > 23) return null
+        if (m < 0 || m > 59) return null
+        if (s < 0 || s > 59) return null
+        return { h, m, s }
+    }
+
     function fromInputValue(str: string): Date | null {
         const [y, m, d] = str.split('-').map(Number)
         if (y && m && d) {
@@ -280,6 +383,11 @@
         return isSameDay(d, today)
     }
 
+    function isWeekend(d: Date): boolean {
+        const w = d.getDay()
+        return w === 0 || w === 6
+    }
+
     function isSelected(d: Date): boolean {
         return isSameDay(d, internalDate)
     }
@@ -290,12 +398,36 @@
         return false
     }
 
-    function selectDate(day: number) {
-        const newDate = new Date(year, month, day)
-        if (isDisabled(newDate)) return
+    function selectDate(d: Date) {
+        if (isDisabled(d)) return
+        internalDate = d
+        updateValue(d)
+        if (mode === 'date') {
+            isOpen = false
+        }
+    }
+
+    function setToday() {
+        const now = new Date()
+        const newDate = new Date(now)
         internalDate = newDate
+        if (mode === 'datetime') {
+            hours = newDate.getHours()
+            minutes = newDate.getMinutes()
+            seconds = newDate.getSeconds()
+        }
         updateValue(newDate)
+    }
+
+    function confirmSelection() {
+        updateValue(internalDate)
         isOpen = false
+        selectingYearMonth = false
+    }
+
+    function closePanel() {
+        isOpen = false
+        selectingYearMonth = false
     }
 
     function prevMonth() {
@@ -397,8 +529,13 @@
             const pw = panelEl.offsetWidth
             const ph = panelEl.offsetHeight
             const margin = 8
+            const targetEl = buttonRef as HTMLElement
+            const computedStyle = window.getComputedStyle(targetEl)
+            const ratioValue = parseFloat(computedStyle.getPropertyValue('--scale-ratio') || '1')
+            const ratio = isNaN(ratioValue) || ratioValue <= 0 ? 1 : ratioValue
+            const offset = 4 * ratio
             let left = rect.left
-            let top = rect.bottom
+            let top = rect.bottom + offset
             // 视口边界处理：水平
             if (left + pw + margin > window.innerWidth) {
                 left = Math.max(margin, window.innerWidth - pw - margin)
@@ -406,7 +543,7 @@
             if (left < margin) left = margin
             // 视口边界处理：垂直（下边缘放不下时，改为显示在按钮上方）
             if (top + ph + margin > window.innerHeight) {
-                top = Math.max(margin, rect.top - ph)
+                top = Math.max(margin, rect.top - ph - offset)
             }
             if (top < margin) top = margin
             panelStyle = `position:fixed;left:${Math.round(left)}px;top:${Math.round(top)}px;z-index:10000`
@@ -546,7 +683,8 @@
                         }}
                         style="cursor: pointer;"
                     >
-                        {year}年 {String(month + 1).padStart(2, '0')}月
+                        {['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'][month]}
+                        {year}
                     </span>
                     <button class="nav-button" onclick={nextMonth} type="button">›</button>
                     <button class="nav-button" onclick={nextYear} type="button">»</button>
@@ -554,88 +692,122 @@
 
                 <!-- 日期选择模式（用于 date 和 datetime 模式） -->
                 <div class="weekdays">
-                    {#each weekdayNames as day}
-                        <div class="weekday">{day}</div>
+                    {#each weekdayNames as day, i}
+                        <div class="weekday" class:sun={i === 0} class:sat={i === 6}>{day}</div>
                     {/each}
                 </div>
 
                 <div class="days">
-                    {#each Array(firstDay) as _}
-                        <div class="day-spacer"></div>
-                    {/each}
-                    {#each Array(daysInMonth) as _, i}
-                        {@const day = i + 1}
-                        {@const dayDate = new Date(year, month, day)}
-                        <button class="day" class:today={isToday(dayDate)} class:selected={isSelected(dayDate)} class:disabled={isDisabled(dayDate)} onclick={() => selectDate(day)} type="button">
-                            {day}
+                    {#each calendarCells as cell}
+                        {@const w = cell.date.getDay()}
+                        <button
+                            class="day"
+                            class:today={isToday(cell.date)}
+                            class:selected={isSelected(cell.date)}
+                            class:disabled={isDisabled(cell.date)}
+                            class:weekend={w === 0 || w === 6}
+                            class:sun={w === 0}
+                            class:sat={w === 6}
+                            class:outside={!cell.isCurrentMonth}
+                            onclick={() => selectDate(cell.date)}
+                            type="button"
+                        >
+                            {cell.date.getDate()}
                         </button>
                     {/each}
                 </div>
 
-                <!-- 时分秒输入（仅 datetime 模式） -->
                 {#if mode === 'datetime'}
                     <div class="time-inputs">
-                        <div class="time-group">
-                            <label for="hours-{id}" class="time-label">时</label>
+                        <div class="time-field">
                             <input
-                                id="hours-{id}"
-                                type="number"
+                                id="time-{id}"
+                                type="text"
                                 class="time-input"
-                                min="0"
-                                max="23"
-                                bind:value={hours}
-                                oninput={(e) => {
-                                    const target = e.target as HTMLInputElement
-                                    const val = parseInt(target.value)
-                                    if (!isNaN(val) && val >= 0 && val <= 23) {
-                                        hours = val
-                                        updateValue(internalDate)
+                                bind:this={timeInputRef}
+                                bind:value={timeInput}
+                                onfocus={() => {
+                                    isEditingTime = true
+                                }}
+                                onclick={(e) => {
+                                    const target = e.currentTarget as HTMLInputElement
+                                    const pos = target.selectionStart ?? 0
+                                    if (pos <= 2) {
+                                        selectTimeSegment('hour')
+                                    } else if (pos <= 5) {
+                                        selectTimeSegment('minute')
+                                    } else {
+                                        selectTimeSegment('second')
+                                    }
+                                }}
+                                onblur={() => {
+                                    const parsed = parseTimeString(timeInput)
+                                    if (!parsed) {
+                                        timeInput = formatTimeString(hours, minutes, seconds)
+                                        isEditingTime = false
+                                        return
+                                    }
+                                    hours = parsed.h
+                                    minutes = parsed.m
+                                    seconds = parsed.s
+                                    const next = new Date(internalDate)
+                                    next.setHours(hours, minutes, seconds)
+                                    internalDate = next
+                                    isEditingTime = false
+                                    updateValue(next)
+                                }}
+                                onkeydown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        const parsed = parseTimeString(timeInput)
+                                        if (!parsed) {
+                                            timeInput = formatTimeString(hours, minutes, seconds)
+                                            isEditingTime = false
+                                            return
+                                        }
+                                        hours = parsed.h
+                                        minutes = parsed.m
+                                        seconds = parsed.s
+                                        const next = new Date(internalDate)
+                                        next.setHours(hours, minutes, seconds)
+                                        internalDate = next
+                                        isEditingTime = false
+                                        updateValue(next)
                                     }
                                 }}
                             />
-                        </div>
-                        <div class="time-separator">:</div>
-                        <div class="time-group">
-                            <label for="minutes-{id}" class="time-label">分</label>
-                            <input
-                                id="minutes-{id}"
-                                type="number"
-                                class="time-input"
-                                min="0"
-                                max="59"
-                                bind:value={minutes}
-                                oninput={(e) => {
-                                    const target = e.target as HTMLInputElement
-                                    const val = parseInt(target.value)
-                                    if (!isNaN(val) && val >= 0 && val <= 59) {
-                                        minutes = val
-                                        updateValue(internalDate)
-                                    }
-                                }}
-                            />
-                        </div>
-                        <div class="time-separator">:</div>
-                        <div class="time-group">
-                            <label for="seconds-{id}" class="time-label">秒</label>
-                            <input
-                                id="seconds-{id}"
-                                type="number"
-                                class="time-input"
-                                min="0"
-                                max="59"
-                                bind:value={seconds}
-                                oninput={(e) => {
-                                    const target = e.target as HTMLInputElement
-                                    const val = parseInt(target.value)
-                                    if (!isNaN(val) && val >= 0 && val <= 59) {
-                                        seconds = val
-                                        updateValue(internalDate)
-                                    }
-                                }}
-                            />
+                            <div class="time-stepper">
+                                <button
+                                    type="button"
+                                    class="time-stepper-btn up"
+                                    onmousedown={(event) => {
+                                        event.preventDefault()
+                                        adjustTimeBySegment(1)
+                                    }}
+                                >
+                                    <span class="date-picker-year-symbol">∧</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    class="time-stepper-btn down"
+                                    onmousedown={(event) => {
+                                        event.preventDefault()
+                                        adjustTimeBySegment(-1)
+                                    }}
+                                >
+                                    <span class="date-picker-year-symbol">∨</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 {/if}
+
+                <div class="panel-footer" class:has-time={mode === 'datetime'}>
+                    <div class="panel-actions">
+                        <button type="button" class="panel-action-button" onclick={setToday}>今天</button>
+                        <button type="button" class="panel-action-button primary" onclick={confirmSelection}>确定</button>
+                        <button type="button" class="panel-action-button" onclick={closePanel}>关闭</button>
+                    </div>
+                </div>
             </div>
         {/if}
     {/if}
@@ -820,15 +992,16 @@
         top: 100%;
         left: 0;
         margin-top: calc(4px * var(--scale-ratio, 1));
-        background: #0f172a;
-        border: calc(1px * var(--scale-ratio, 1)) solid rgb(26, 156, 254);
+        background: #ffffff;
+        border: calc(1px * var(--scale-ratio, 1)) solid #c0c4cc;
         border-radius: 0;
-        padding: calc(16px * var(--scale-ratio, 1));
+        padding: calc(1px * var(--scale-ratio, 1));
         z-index: 1000;
         width: 100%;
         max-width: calc(280px * var(--scale-ratio, 1));
         min-width: calc(240px * var(--scale-ratio, 1));
-        color: #e2e8f0;
+        color: #303133;
+        box-shadow: 0 0 calc(4px * var(--scale-ratio, 1)) rgba(0, 0, 0, 0.15);
     }
 
     /* 当以 portal 方式挂载到 body 时，使用 fixed 定位并按内容宽度显示 */
@@ -844,134 +1017,204 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: calc(12px * var(--scale-ratio, 1));
+        padding: 0 calc(2px * var(--scale-ratio, 1)) calc(4px * var(--scale-ratio, 1));
+        background-color: #daeef5;
+        height: calc(30px * var(--scale-ratio, 1));
     }
 
     .nav-button {
-        background: none;
+        background: transparent;
         border: none;
-        color: #94a3b8;
+        color: #606266;
         cursor: pointer;
-        padding: calc(4px * var(--scale-ratio, 1));
-        border-radius: calc(4px * var(--scale-ratio, 1));
-        font-size: calc(16px * var(--scale-ratio, 1));
-        transition: color 0.2s ease;
+        padding: 0 calc(4px * var(--scale-ratio, 1));
+        border-radius: 0;
+        font-size: calc(14px * var(--scale-ratio, 1));
+        transition: all 0.2s ease;
     }
 
     .nav-button:hover {
-        color: #e2e8f0;
-        background-color: rgba(45, 55, 72, 0.9);
+        color: #409eff;
+        background-color: #f2f6fc;
     }
 
     .month-year {
-        font-size: calc(13px * var(--scale-ratio, 1));
-        font-weight: 600;
-        color: #e2e8f0;
+        font-size: calc(16px * var(--scale-ratio, 1));
     }
 
     .weekdays {
         display: grid;
         grid-template-columns: repeat(7, 1fr);
         gap: calc(2px * var(--scale-ratio, 1));
-        margin-bottom: calc(8px * var(--scale-ratio, 1));
+        background-color: #f5f5f5;
+        height: calc(25px * var(--scale-ratio, 1));
     }
 
     .weekday {
-        text-align: center;
-        font-size: calc(10px * var(--scale-ratio, 1));
-        color: #94a3b8;
-        padding: calc(4px * var(--scale-ratio, 1));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: calc(15px * var(--scale-ratio, 1));
+        color: #8d8d8d;
+        font-weight: 600;
+        padding: 0;
     }
 
     .days {
         display: grid;
         grid-template-columns: repeat(7, 1fr);
         gap: calc(2px * var(--scale-ratio, 1));
-    }
-
-    .day-spacer {
-        width: 100%;
-        aspect-ratio: 1;
+        padding-top: calc(4px * var(--scale-ratio, 1));
     }
 
     .day {
-        aspect-ratio: 1;
+        aspect-ratio: 1.1;
         border: none;
         background: transparent;
-        color: #e2e8f0;
-        font-size: calc(11px * var(--scale-ratio, 1));
+        color: #303133;
+        font-size: calc(14px * var(--scale-ratio, 1));
         cursor: pointer;
-        border-radius: calc(4px * var(--scale-ratio, 1));
+        border-radius: 0;
         transition: all 0.2s ease;
         display: flex;
         align-items: center;
         justify-content: center;
     }
 
-    .day:hover:not(.disabled) {
-        background: rgba(45, 55, 72, 0.9);
+    .day:hover:not(.disabled):not(.selected) {
+        background: #f2f6fc;
     }
 
     .day.today {
-        color: #38bdf8;
+        color: #409eff;
         font-weight: 600;
     }
 
     .day.selected {
-        background: #38bdf8;
-        color: #0f172a;
+        background: #409eff;
+        color: #ffffff;
         font-weight: 600;
     }
 
     .day.disabled {
-        opacity: 0.3;
+        color: #c0c4cc;
+        opacity: 1;
         cursor: not-allowed;
     }
 
-    /* 时分秒输入 */
+    .day.sun:not(.selected):not(.disabled):not(.outside) {
+        color: #cc2222;
+    }
+
+    .day.sat:not(.selected):not(.disabled):not(.outside) {
+        color: #00ee00;
+    }
+
+    .day.outside.sun:not(.selected):not(.disabled) {
+        color: #d3a3a6;
+    }
+
+    .day.outside.sat:not(.selected):not(.disabled) {
+        color: #9fd7a4;
+    }
+
+    .day.outside:not(.selected):not(.disabled):not(.sun):not(.sat) {
+        color: #c0c4cc;
+    }
+
     .time-inputs {
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: calc(8px * var(--scale-ratio, 1));
-        margin-top: calc(16px * var(--scale-ratio, 1));
-        padding-top: calc(16px * var(--scale-ratio, 1));
-        border-top: calc(1px * var(--scale-ratio, 1)) solid #334155;
+        margin-top: 0;
+        padding: 0 calc(4px * var(--scale-ratio, 1));
+        border-top: none;
+        box-sizing: border-box;
     }
 
-    .time-group {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: calc(4px * var(--scale-ratio, 1));
-    }
-
-    .time-label {
-        font-size: calc(10px * var(--scale-ratio, 1));
-        color: #94a3b8;
-        margin: 0;
+    .time-field {
+        position: relative;
+        width: 100%;
+        height: calc(30px * var(--scale-ratio, 1));
+        border: calc(1px * var(--scale-ratio, 1)) solid rgb(26, 156, 254);
+        background: #ffffff;
+        box-sizing: border-box;
     }
 
     .time-input {
-        width: calc(50px * var(--scale-ratio, 1));
-        padding: calc(6px * var(--scale-ratio, 1));
-        border: calc(1px * var(--scale-ratio, 1)) solid #334155;
-        border-radius: calc(4px * var(--scale-ratio, 1));
-        background: rgba(45, 55, 72, 0.9);
-        color: #e2e8f0;
-        font-size: calc(12px * var(--scale-ratio, 1));
-        text-align: center;
+        width: 100%;
+        height: 100%;
+        border: none;
+        background: transparent;
+        padding: 0 calc(20px * var(--scale-ratio, 1)) 0 calc(8px * var(--scale-ratio, 1));
+        color: #303133;
+        font-size: calc(15px * var(--scale-ratio, 1));
+        text-align: left;
         outline: none;
-        transition: border-color 0.2s ease;
+        box-sizing: border-box;
     }
 
-    .time-input:focus {
-        border-color: #38bdf8;
+    .time-stepper {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: calc(20px * var(--scale-ratio, 1));
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
     }
 
-    .time-separator {
-        font-size: calc(14px * var(--scale-ratio, 1));
-        color: #94a3b8;
-        margin-top: calc(16px * var(--scale-ratio, 1));
+    .time-stepper-btn {
+        flex: 1;
+        border: none;
+        border-left: calc(1px * var(--scale-ratio, 1)) solid rgb(26, 156, 254);
+        background: #daeef5;
+        padding: 0;
+        font-size: calc(10px * var(--scale-ratio, 1));
+        line-height: 1;
+        cursor: pointer;
+    }
+
+    .time-stepper-btn.up {
+        border-bottom: calc(1px * var(--scale-ratio, 1)) solid rgb(26, 156, 254);
+    }
+
+    .time-stepper-btn:hover:not(:disabled) {
+        background: #c0d8e8;
+    }
+
+    .panel-actions {
+        display: flex;
+        justify-content: center;
+        gap: calc(47px * var(--scale-ratio, 1));
+        height: calc(35px * var(--scale-ratio, 1));
+        background-color: #f5f5f5;
+    }
+
+    .panel-action-button {
+        min-width: auto;
+        height: auto;
+        padding: 0 calc(4px * var(--scale-ratio, 1));
+        border-radius: 0;
+        border: none;
+        background: transparent;
+        color: #8d8d8d;
+        font-size: calc(15px * var(--scale-ratio, 1));
+        font-weight: 600;
+        cursor: pointer;
+        box-sizing: border-box;
+    }
+
+    .panel-action-button:hover:not(:disabled) {
+        background: transparent;
+        border-color: transparent;
+        text-decoration: underline;
+    }
+
+    .panel-action-button.primary:hover:not(:disabled) {
+        background: transparent;
+        border-color: transparent;
+        text-decoration: underline;
     }
 </style>
