@@ -50,39 +50,20 @@
         /** 是否显示按钮上的日历图标（默认显示） */
         showIcon?: boolean
         /**
-         * 选择模式
-         * - "date": 年月日（默认）
+         * 选择模式（顺序：year → date → datetime）
          * - "year": 仅选择年份
-         * - "month": 仅选择年份+月份
+         * - "date": 年月日
          * - "datetime": 年月日时分秒
          */
-        mode?: 'date' | 'year' | 'month' | 'datetime'
+        mode?: 'year' | 'date' | 'datetime'
         onChange?: (date: Date) => void
         [key: string]: any
     }
 
-    let {
-        value = $bindable(new Date()),
-        disabled = false,
-        min,
-        max,
-        id,
-        style = '',
-        dateRecording = false,
-        recordedDate,
-        showIcon = true,
-        mode = 'date',
-        onChange,
-        panelBgColor = '#1a202c',
-        panelBorderColor = 'rgba(255, 255, 255, 0.1)',
-        panelShadowColor = 'rgba(0, 0, 0, 0.5)',
-        textColor = '#e2e8f0',
-        controlColor = '#94a3b8',
-        controlBgColor = 'rgba(45, 55, 72, 0.5)',
-        controlHoverBgColor = 'rgba(255, 255, 255, 0.1)',
-        accentColor = '#38bdf8',
-        ...rest
-    }: Props = $props()
+    let { value = $bindable(new Date()), disabled = false, min, max, id, style = '', dateRecording = false, recordedDate, showIcon = true, mode = 'date', onChange, ...rest }: Props = $props()
+
+    const baseBoxStyle = 'width: calc(205px * var(--scale-ratio, 1)); height: calc(30px * var(--scale-ratio, 1)); background-color: #ffffff; color: #000000; border: calc(1px * var(--scale-ratio, 1)) solid rgb(26, 156, 254)'
+    const boxStyle = $derived(style ? `${baseBoxStyle}; ${style}` : baseBoxStyle)
 
     const dispatch = createEventDispatcher<{ change: Date }>()
 
@@ -191,9 +172,8 @@
     let firstDay = $derived(new Date(year, month, 1).getDay())
     let today = $derived(new Date())
 
-    // 选择年/月模式
-    // 选择年/月模式：当 mode 为 year 或 month 时默认进入年/月选择界面
-    let selectingYearMonth = $state(mode !== 'date')
+    // 选择年/月模式：仅 date/datetime 模式下用于切换“年+月”快速选择面板
+    let selectingYearMonth = $state(false)
 
     // 时分秒状态（仅 datetime 模式使用）
     let hours = $state(0)
@@ -209,13 +189,9 @@
         }
     })
     let yearListRef = $state<HTMLDivElement>()
-    let monthListRef = $state<HTMLDivElement>()
 
     // 以当前年份为中心，上下各 10 年
     let yearsRange = $derived(Array.from({ length: 21 }, (_, i) => year - 10 + i))
-
-    // 月份名称
-    const monthNames = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月']
 
     // 星期名称
     const weekdayNames = ['日', '一', '二', '三', '四', '五', '六']
@@ -228,9 +204,6 @@
             case 'year':
                 // 年模式不显示“年”字，仅显示数字年份
                 return `${date.getFullYear()}`
-            case 'month':
-                // 月模式不显示“月”字，仅显示两位数字月份
-                return `${String(date.getMonth() + 1).padStart(2, '0')}`
             case 'datetime':
                 // 改为 ISO 风格日期 + 时间，例如 2025-01-09 12:34:56
                 return `${toInputValue(date)} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`
@@ -315,11 +288,11 @@
 
     function togglePanel() {
         if (disabled) return
+        if (mode === 'year') return
         isOpen = !isOpen
         if (isOpen) {
             // 当模式为 date 或 datetime 时，始终默认显示日期选择界面
-            // 当模式为 year 或 month 时，显示对应的年/月选择界面
-            selectingYearMonth = mode === 'year' || mode === 'month'
+            selectingYearMonth = false
             // 面板初始定位：挂载后再测量尺寸并计算位置
             tick().then(() => updatePanelPosition())
         }
@@ -330,9 +303,6 @@
         await tick()
         if (yearListRef) {
             yearListRef.querySelector('.year-item.selected')?.scrollIntoView({ block: 'center' })
-        }
-        if (monthListRef) {
-            monthListRef.querySelector('.month-item.selected')?.scrollIntoView({ block: 'center' })
         }
     }
 
@@ -372,10 +342,6 @@
                 if (mode === 'year' && yearListRef) {
                     yearListRef.querySelector('.year-item.selected')?.scrollIntoView({ block: 'center' })
                 }
-                // 月份模式：滚动到当前月份
-                if (mode === 'month' && monthListRef) {
-                    monthListRef.querySelector('.month-item.selected')?.scrollIntoView({ block: 'center' })
-                }
                 // 再次确保定位正确（面板内容可能改变尺寸）
                 updatePanelPosition()
             })
@@ -412,37 +378,72 @@
     }
 </script>
 
-<ResponsiveBox
-    {id}
-    class="date-picker"
-    style="{style}; --panel-bg: {panelBgColor}; --panel-border: {panelBorderColor}; --panel-shadow: {panelShadowColor}; --text-color: {textColor}; --control-color: {controlColor}; --control-bg: {controlBgColor}; --control-hover-bg: {controlHoverBgColor}; --accent-color: {accentColor};"
-    {...rest}
->
-    <button bind:this={buttonRef} class="date-picker-button" class:disabled onclick={togglePanel} type="button">
-        <span class="date-text">{displayText}</span>
-        {#if showIcon}
-            <span class="date-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                </svg>
-            </span>
-        {/if}
-    </button>
+<ResponsiveBox {id} class="date-picker" style={boxStyle} {...rest}>
+    {#if mode === 'year'}
+        <div class="date-picker-year-wrapper">
+            <input
+                class="date-picker-year-input"
+                type="number"
+                value={year}
+                min={min ? min.getFullYear() : undefined}
+                max={max ? max.getFullYear() : undefined}
+                {disabled}
+                oninput={(e) => {
+                    const raw = (e.currentTarget as HTMLInputElement).value
+                    const val = parseInt(raw, 10)
+                    if (!isNaN(val)) {
+                        let next = val
+                        if (min && next < min.getFullYear()) next = min.getFullYear()
+                        if (max && next > max.getFullYear()) next = max.getFullYear()
+                        const newDate = new Date(next, month, date)
+                        internalDate = newDate
+                        updateValue(newDate)
+                    }
+                }}
+            />
+            <div class="date-picker-year-stepper">
+                <button
+                    type="button"
+                    class="date-picker-year-btn"
+                    {disabled}
+                    onclick={() => {
+                        let next = year + 1
+                        if (max && next > max.getFullYear()) next = max.getFullYear()
+                        const newDate = new Date(next, month, date)
+                        internalDate = newDate
+                        updateValue(newDate)
+                    }}
+                >
+                    <span class="date-picker-year-symbol">∧</span>
+                </button>
+                <button
+                    type="button"
+                    class="date-picker-year-btn"
+                    {disabled}
+                    onclick={() => {
+                        let next = year - 1
+                        if (min && next < min.getFullYear()) next = min.getFullYear()
+                        const newDate = new Date(next, month, date)
+                        internalDate = newDate
+                        updateValue(newDate)
+                    }}
+                >
+                    <span class="date-picker-year-symbol">∨</span>
+                </button>
+            </div>
+        </div>
+    {:else}
+        <button bind:this={buttonRef} class="date-picker-button" class:disabled onclick={togglePanel} type="button">
+            <span class="date-text">{displayText}</span>
+            {#if showIcon}
+                <span class="date-icon">
+                    <img src={`${import.meta.env.BASE_URL}img/hold/datebox_arrow.png`} alt="" class="date-icon-image" />
+                </span>
+            {/if}
+        </button>
 
-    {#if isOpen}
-        <div bind:this={pickerRef} use:portal={document.body} class="date-picker-panel portal" style={panelStyle}>
-            {#if mode === 'year'}
-                <div class="panel-header">
-                    <span class="mode-title">选择年份</span>
-                </div>
-            {:else if mode === 'month'}
-                <div class="panel-header">
-                    <span class="mode-title">选择月份</span>
-                </div>
-            {:else}
+        {#if isOpen}
+            <div bind:this={pickerRef} use:portal={document.body} class="date-picker-panel portal" style={panelStyle}>
                 <div class="panel-header">
                     <button class="nav-button" onclick={prevYear} type="button">«</button>
                     <button class="nav-button" onclick={prevMonth} type="button">‹</button>
@@ -463,82 +464,7 @@
                     <button class="nav-button" onclick={nextMonth} type="button">›</button>
                     <button class="nav-button" onclick={nextYear} type="button">»</button>
                 </div>
-            {/if}
 
-            {#if mode === 'year'}
-                <!-- 年份选择模式 -->
-                <div class="year-list" bind:this={yearListRef}>
-                    {#each yearsRange as y}
-                        <button
-                            class="year-item"
-                            class:selected={y === year}
-                            onclick={() => {
-                                internalDate = new Date(y, month, date)
-                                isOpen = false
-                                updateValue(internalDate)
-                            }}
-                            type="button"
-                        >
-                            {y}
-                        </button>
-                    {/each}
-                </div>
-            {:else if mode === 'month'}
-                <!-- 月份选择模式 -->
-                <div class="month-list" bind:this={monthListRef}>
-                    {#each Array(12) as _, idx}
-                        <button
-                            class="month-item"
-                            class:selected={idx === month}
-                            onclick={() => {
-                                // 只改变月份，不改变年份
-                                internalDate = new Date(year, idx, Math.min(date, new Date(year, idx + 1, 0).getDate()))
-                                isOpen = false
-                                updateValue(internalDate)
-                            }}
-                            type="button"
-                        >
-                            {String(idx + 1).padStart(2, '0')}月
-                        </button>
-                    {/each}
-                </div>
-            {:else if selectingYearMonth}
-                <!-- 年月选择模式（用于 date 和 datetime 模式） -->
-                <div class="year-month-select">
-                    <div class="year-list" bind:this={yearListRef}>
-                        {#each yearsRange as y}
-                            <button
-                                class="year-item"
-                                class:selected={y === year}
-                                onclick={() => {
-                                    internalDate = new Date(y, month, date)
-                                    selectingYearMonth = false
-                                    updateValue(internalDate)
-                                }}
-                                type="button"
-                            >
-                                {y}
-                            </button>
-                        {/each}
-                    </div>
-                    <div class="month-list" bind:this={monthListRef}>
-                        {#each Array(12) as _, idx}
-                            <button
-                                class="month-item"
-                                class:selected={idx === month}
-                                onclick={() => {
-                                    internalDate = new Date(year, idx, date)
-                                    selectingYearMonth = false
-                                    updateValue(internalDate)
-                                }}
-                                type="button"
-                            >
-                                {String(idx + 1).padStart(2, '0')}月
-                            </button>
-                        {/each}
-                    </div>
-                </div>
-            {:else}
                 <!-- 日期选择模式（用于 date 和 datetime 模式） -->
                 <div class="weekdays">
                     {#each weekdayNames as day}
@@ -558,77 +484,145 @@
                         </button>
                     {/each}
                 </div>
-            {/if}
 
-            <!-- 时分秒输入（仅 datetime 模式） -->
-            {#if mode === 'datetime'}
-                <div class="time-inputs">
-                    <div class="time-group">
-                        <label for="hours-{id}" class="time-label">时</label>
-                        <input
-                            id="hours-{id}"
-                            type="number"
-                            class="time-input"
-                            min="0"
-                            max="23"
-                            bind:value={hours}
-                            oninput={(e) => {
-                                const target = e.target as HTMLInputElement
-                                const val = parseInt(target.value)
-                                if (!isNaN(val) && val >= 0 && val <= 23) {
-                                    hours = val
-                                    updateValue(internalDate)
-                                }
-                            }}
-                        />
+                <!-- 时分秒输入（仅 datetime 模式） -->
+                {#if mode === 'datetime'}
+                    <div class="time-inputs">
+                        <div class="time-group">
+                            <label for="hours-{id}" class="time-label">时</label>
+                            <input
+                                id="hours-{id}"
+                                type="number"
+                                class="time-input"
+                                min="0"
+                                max="23"
+                                bind:value={hours}
+                                oninput={(e) => {
+                                    const target = e.target as HTMLInputElement
+                                    const val = parseInt(target.value)
+                                    if (!isNaN(val) && val >= 0 && val <= 23) {
+                                        hours = val
+                                        updateValue(internalDate)
+                                    }
+                                }}
+                            />
+                        </div>
+                        <div class="time-separator">:</div>
+                        <div class="time-group">
+                            <label for="minutes-{id}" class="time-label">分</label>
+                            <input
+                                id="minutes-{id}"
+                                type="number"
+                                class="time-input"
+                                min="0"
+                                max="59"
+                                bind:value={minutes}
+                                oninput={(e) => {
+                                    const target = e.target as HTMLInputElement
+                                    const val = parseInt(target.value)
+                                    if (!isNaN(val) && val >= 0 && val <= 59) {
+                                        minutes = val
+                                        updateValue(internalDate)
+                                    }
+                                }}
+                            />
+                        </div>
+                        <div class="time-separator">:</div>
+                        <div class="time-group">
+                            <label for="seconds-{id}" class="time-label">秒</label>
+                            <input
+                                id="seconds-{id}"
+                                type="number"
+                                class="time-input"
+                                min="0"
+                                max="59"
+                                bind:value={seconds}
+                                oninput={(e) => {
+                                    const target = e.target as HTMLInputElement
+                                    const val = parseInt(target.value)
+                                    if (!isNaN(val) && val >= 0 && val <= 59) {
+                                        seconds = val
+                                        updateValue(internalDate)
+                                    }
+                                }}
+                            />
+                        </div>
                     </div>
-                    <div class="time-separator">:</div>
-                    <div class="time-group">
-                        <label for="minutes-{id}" class="time-label">分</label>
-                        <input
-                            id="minutes-{id}"
-                            type="number"
-                            class="time-input"
-                            min="0"
-                            max="59"
-                            bind:value={minutes}
-                            oninput={(e) => {
-                                const target = e.target as HTMLInputElement
-                                const val = parseInt(target.value)
-                                if (!isNaN(val) && val >= 0 && val <= 59) {
-                                    minutes = val
-                                    updateValue(internalDate)
-                                }
-                            }}
-                        />
-                    </div>
-                    <div class="time-separator">:</div>
-                    <div class="time-group">
-                        <label for="seconds-{id}" class="time-label">秒</label>
-                        <input
-                            id="seconds-{id}"
-                            type="number"
-                            class="time-input"
-                            min="0"
-                            max="59"
-                            bind:value={seconds}
-                            oninput={(e) => {
-                                const target = e.target as HTMLInputElement
-                                const val = parseInt(target.value)
-                                if (!isNaN(val) && val >= 0 && val <= 59) {
-                                    seconds = val
-                                    updateValue(internalDate)
-                                }
-                            }}
-                        />
-                    </div>
-                </div>
-            {/if}
-        </div>
+                {/if}
+            </div>
+        {/if}
     {/if}
 </ResponsiveBox>
 
 <style>
+    .date-picker-year-wrapper {
+        position: relative;
+        width: 100%;
+        height: 100%;
+    }
+
+    .date-picker-year-input {
+        width: 100%;
+        height: 100%;
+        border: none;
+        background: transparent;
+        padding: 0 calc(20px * var(--scale-ratio, 1)) 0 calc(8px * var(--scale-ratio, 1));
+        appearance: textfield;
+        -moz-appearance: textfield;
+        color: inherit;
+        font-size: inherit;
+        font-family: inherit;
+    }
+
+    .date-picker-year-input::-webkit-outer-spin-button,
+    .date-picker-year-input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    .date-picker-year-stepper {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: calc(20px * var(--scale-ratio, 1));
+        display: flex;
+        flex-direction: column;
+    }
+
+    .date-picker-year-btn {
+        flex: 1;
+        border: none;
+        border-left: calc(1px * var(--scale-ratio, 1)) solid rgb(26, 156, 254);
+        background: #daeef5;
+        color: #333333;
+        font-size: calc(10px * var(--scale-ratio, 1));
+        line-height: 1;
+        padding: 0;
+        cursor: pointer;
+        box-sizing: border-box;
+    }
+
+    .date-picker-year-btn:first-child {
+        border-bottom: calc(1px * var(--scale-ratio, 1)) solid rgb(26, 156, 254);
+    }
+
+    .date-picker-year-btn:hover:not(:disabled) {
+        background: #c0d8e8;
+    }
+
+    .date-picker-year-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .date-picker-year-symbol {
+        display: inline-block;
+        transform: scaleY(0.5);
+        transform-origin: center;
+        font-weight: bolder;
+    }
+
     .date-picker-button {
         display: flex;
         align-items: center;
@@ -678,18 +672,17 @@
 
     .date-icon {
         flex-shrink: 0;
-        width: calc(16px * var(--scale-ratio, 1));
-        height: calc(16px * var(--scale-ratio, 1));
-        opacity: 0.7;
-        color: inherit;
+        width: calc(22px * var(--scale-ratio, 1));
+        height: calc(22px * var(--scale-ratio, 1));
         display: flex;
         align-items: center;
         justify-content: center;
     }
 
-    .date-icon svg {
+    .date-icon-image {
         width: 100%;
         height: 100%;
+        display: block;
     }
 
     .date-picker-panel {
@@ -697,16 +690,15 @@
         top: 100%;
         left: 0;
         margin-top: calc(4px * var(--scale-ratio, 1));
-        background: var(--panel-bg, #0f172a);
-        border: calc(1px * var(--scale-ratio, 1)) solid var(--panel-border, #334155);
-        border-radius: calc(8px * var(--scale-ratio, 1));
+        background: #0f172a;
+        border: calc(1px * var(--scale-ratio, 1)) solid rgb(26, 156, 254);
+        border-radius: 0;
         padding: calc(16px * var(--scale-ratio, 1));
-        box-shadow: 0 calc(10px * var(--scale-ratio, 1)) calc(25px * var(--scale-ratio, 1)) var(--panel-shadow, rgba(0, 0, 0, 0.5));
         z-index: 1000;
         width: 100%;
         max-width: calc(280px * var(--scale-ratio, 1));
         min-width: calc(240px * var(--scale-ratio, 1));
-        color: var(--text-color, #e2e8f0);
+        color: #e2e8f0;
     }
 
     /* 当以 portal 方式挂载到 body 时，使用 fixed 定位并按内容宽度显示 */
@@ -728,7 +720,7 @@
     .nav-button {
         background: none;
         border: none;
-        color: var(--control-color, #94a3b8);
+        color: #94a3b8;
         cursor: pointer;
         padding: calc(4px * var(--scale-ratio, 1));
         border-radius: calc(4px * var(--scale-ratio, 1));
@@ -737,22 +729,14 @@
     }
 
     .nav-button:hover {
-        color: var(--text-color, #e2e8f0);
-        background-color: var(--control-hover-bg, rgba(45, 55, 72, 0.9));
+        color: #e2e8f0;
+        background-color: rgba(45, 55, 72, 0.9);
     }
 
     .month-year {
         font-size: calc(13px * var(--scale-ratio, 1));
         font-weight: 600;
-        color: var(--text-color, #e2e8f0);
-    }
-
-    .mode-title {
-        font-size: calc(14px * var(--scale-ratio, 1));
-        font-weight: 600;
-        color: var(--text-color, #e2e8f0);
-        text-align: center;
-        flex: 1;
+        color: #e2e8f0;
     }
 
     .weekdays {
@@ -765,7 +749,7 @@
     .weekday {
         text-align: center;
         font-size: calc(10px * var(--scale-ratio, 1));
-        color: var(--control-color, #94a3b8);
+        color: #94a3b8;
         padding: calc(4px * var(--scale-ratio, 1));
     }
 
@@ -784,7 +768,7 @@
         aspect-ratio: 1;
         border: none;
         background: transparent;
-        color: var(--text-color, #e2e8f0);
+        color: #e2e8f0;
         font-size: calc(11px * var(--scale-ratio, 1));
         cursor: pointer;
         border-radius: calc(4px * var(--scale-ratio, 1));
@@ -795,17 +779,17 @@
     }
 
     .day:hover:not(.disabled) {
-        background: var(--control-hover-bg, rgba(45, 55, 72, 0.9));
+        background: rgba(45, 55, 72, 0.9);
     }
 
     .day.today {
-        color: var(--accent-color, #38bdf8);
+        color: #38bdf8;
         font-weight: 600;
     }
 
     .day.selected {
-        background: var(--accent-color, #38bdf8);
-        color: var(--panel-bg, #0f172a);
+        background: #38bdf8;
+        color: #0f172a;
         font-weight: 600;
     }
 
@@ -813,60 +797,6 @@
         opacity: 0.3;
         cursor: not-allowed;
     }
-
-    /* 年/月选择面板 */
-    .year-month-select {
-        display: flex;
-        gap: calc(8px * var(--scale-ratio, 1));
-    }
-
-    .year-list,
-    .month-list {
-        display: flex;
-        flex-direction: column;
-        gap: calc(4px * var(--scale-ratio, 1));
-        flex: 1;
-        max-height: calc(200px * var(--scale-ratio, 1));
-        overflow-y: auto;
-        padding: calc(4px * var(--scale-ratio, 1));
-    }
-
-    /* 单独的年份列表（年份模式） */
-    .year-list:only-child {
-        max-height: calc(250px * var(--scale-ratio, 1));
-    }
-
-    /* 单独的月份列表（月份模式） */
-    .month-list:only-child {
-        max-height: calc(220px * var(--scale-ratio, 1));
-    }
-
-    .year-item,
-    .month-item {
-        padding: calc(6px * var(--scale-ratio, 1));
-        text-align: center;
-        border: none;
-        background: transparent;
-        color: var(--text-color, #e2e8f0);
-        cursor: pointer;
-        border-radius: calc(4px * var(--scale-ratio, 1));
-        transition: all 0.2s ease;
-        font-size: calc(11px * var(--scale-ratio, 1));
-    }
-
-    .year-item:hover,
-    .month-item:hover {
-        background: var(--control-hover-bg, rgba(45, 55, 72, 0.9));
-    }
-
-    .year-item.selected,
-    .month-item.selected {
-        background: var(--accent-color, #38bdf8);
-        color: var(--panel-bg, #0f172a);
-        font-weight: 600;
-    }
-
-    /* （已移除年份显示相关样式，避免未使用选择器警告） */
 
     /* 时分秒输入 */
     .time-inputs {
@@ -876,7 +806,7 @@
         gap: calc(8px * var(--scale-ratio, 1));
         margin-top: calc(16px * var(--scale-ratio, 1));
         padding-top: calc(16px * var(--scale-ratio, 1));
-        border-top: calc(1px * var(--scale-ratio, 1)) solid var(--panel-border, #334155);
+        border-top: calc(1px * var(--scale-ratio, 1)) solid #334155;
     }
 
     .time-group {
@@ -888,17 +818,17 @@
 
     .time-label {
         font-size: calc(10px * var(--scale-ratio, 1));
-        color: var(--control-color, #94a3b8);
+        color: #94a3b8;
         margin: 0;
     }
 
     .time-input {
         width: calc(50px * var(--scale-ratio, 1));
         padding: calc(6px * var(--scale-ratio, 1));
-        border: calc(1px * var(--scale-ratio, 1)) solid var(--panel-border, #334155);
+        border: calc(1px * var(--scale-ratio, 1)) solid #334155;
         border-radius: calc(4px * var(--scale-ratio, 1));
-        background: var(--control-bg, rgba(45, 55, 72, 0.9));
-        color: var(--text-color, #e2e8f0);
+        background: rgba(45, 55, 72, 0.9);
+        color: #e2e8f0;
         font-size: calc(12px * var(--scale-ratio, 1));
         text-align: center;
         outline: none;
@@ -906,12 +836,12 @@
     }
 
     .time-input:focus {
-        border-color: var(--accent-color, #38bdf8);
+        border-color: #38bdf8;
     }
 
     .time-separator {
         font-size: calc(14px * var(--scale-ratio, 1));
-        color: var(--control-color, #94a3b8);
+        color: #94a3b8;
         margin-top: calc(16px * var(--scale-ratio, 1));
     }
 </style>

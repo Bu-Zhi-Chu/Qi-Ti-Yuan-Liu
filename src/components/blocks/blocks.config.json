@@ -841,16 +841,11 @@
         "showFeatureTab": true,
         "positionAtOrigin": false,
         "presetStyles": {
-            "width": "20%",
-            "height": "8%",
+            "width": "calc(205px * var(--scale-ratio, 1))",
+            "height": "calc(30px * var(--scale-ratio, 1))",
             "display": "flex",
             "justifyContent": "center",
-            "alignItems": "center",
-            "backgroundColor": "rgba(30, 41, 59, 0.8)",
-            "color": "#e2e8f0",
-            "border": "1px solid rgba(56, 189, 248, 0.3)",
-            "borderRadius": "6px",
-            "boxShadow": "0 2px 8px rgba(0, 0, 0, 0.2)"
+            "alignItems": "center"
         },
         "featureProps": {
             "disabled": {
@@ -890,46 +885,6 @@
                     }
                 ],
                 "default": "date"
-            },
-            "panelBgColor": {
-                "label": "面板背景",
-                "type": "color",
-                "default": "#1a202c"
-            },
-            "panelBorderColor": {
-                "label": "面板边框",
-                "type": "color",
-                "default": "rgba(255, 255, 255, 0.1)"
-            },
-            "panelShadowColor": {
-                "label": "面板阴影",
-                "type": "color",
-                "default": "rgba(0, 0, 0, 0.5)"
-            },
-            "textColor": {
-                "label": "面板文字",
-                "type": "color",
-                "default": "#e2e8f0"
-            },
-            "controlColor": {
-                "label": "控件颜色",
-                "type": "color",
-                "default": "#94a3b8"
-            },
-            "controlBgColor": {
-                "label": "控件背景",
-                "type": "color",
-                "default": "rgba(45, 55, 72, 0.5)"
-            },
-            "controlHoverBgColor": {
-                "label": "控件悬停",
-                "type": "color",
-                "default": "rgba(255, 255, 255, 0.1)"
-            },
-            "accentColor": {
-                "label": "强调颜色",
-                "type": "color",
-                "default": "#38bdf8"
             }
         }
     },

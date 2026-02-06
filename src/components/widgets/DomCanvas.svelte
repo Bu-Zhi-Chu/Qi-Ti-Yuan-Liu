@@ -21,6 +21,7 @@
      */
     export interface Props {
         editing?: boolean
+        selectionBorderDisabled?: boolean
     }
 
     /** DOM 节点类型 */
@@ -40,7 +41,7 @@
 
 <script lang="ts">
     // 组件属性 - 使用 Runes $props 声明，selectedId 支持双向绑定
-    let { editing = false } = $props<{ editing?: boolean }>()
+    let { editing = false, selectionBorderDisabled = false } = $props<{ editing?: boolean; selectionBorderDisabled?: boolean }>()
 
     import { onMount } from 'svelte'
     import { domTree, selectedId, setSelectedId, setProjectId, loadDomTreeFromDatabase, projectId, addNodeToParent } from '../../stores/dom-tree.store.svelte'
@@ -553,7 +554,7 @@
     ondrop={handleDrop}
 >
     {#if !isLoading}
-        <NodeRenderer node={domTree} selectedId={selectedId()} {editing} select={handleSelect} />
+        <NodeRenderer node={domTree} selectedId={selectedId()} {editing} {selectionBorderDisabled} select={handleSelect} />
     {/if}
 
     {#if AsyncDrawModeOverlay}

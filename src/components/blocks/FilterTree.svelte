@@ -161,8 +161,9 @@
         return node?.SELF_CODE ?? null
     }
 
-    let treeData = $state<TreeNode[]>(rawTreeData.length > 0 ? normalizeTreeData(rawTreeData as any[]) : defaultTreeData)
-    let selectedNodeId = $state<string | number | null>(treeData[0]?.id ?? null)
+    const initialTreeData: TreeNode[] = rawTreeData.length > 0 ? normalizeTreeData(rawTreeData as any[]) : defaultTreeData
+    let treeData = $state<TreeNode[]>(initialTreeData)
+    let selectedNodeId = $state<string | number | null>(initialTreeData[0]?.id ?? null)
     let lastSearchTerm = $state('')
     let lastMatchedNodeId = $state<string | number | null>(null)
 

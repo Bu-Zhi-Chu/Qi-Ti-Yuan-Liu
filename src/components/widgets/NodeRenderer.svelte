@@ -12,6 +12,8 @@
         selectedId?: string | null
         /** 是否为编辑模式，控制高亮边框显示 */
         editing?: boolean
+        /** 是否禁用选中高亮边框（将其透明化） */
+        selectionBorderDisabled?: boolean
         /** 选择回调 */
         select?: (id: string) => void
     }
@@ -104,7 +106,7 @@
     })
 
     // Runes props - 保留 selectedId 响应式
-    const { node, selectedId, editing = false, select } = $props()
+    const { node, selectedId, editing = false, selectionBorderDisabled = false, select } = $props()
 
     // 最新选中 ID
 
@@ -261,7 +263,11 @@
         // 只在编辑模式下且当前节点被选中时显示高亮轮廓
         // 当边框宽度不为空且不为0时，不显示高亮边框以避免重叠
         if (editing && isSelected && !hasBorderWidth()) {
-            outlineStyles = `outline: none !important; box-shadow: 0 0 calc(2px * var(--scale-ratio, 1)) calc(2px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.8), 0 0 calc(4px * var(--scale-ratio, 1)) calc(4px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.5), 0 0 calc(6px * var(--scale-ratio, 1)) calc(6px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.3) !important`
+            if (selectionBorderDisabled) {
+                outlineStyles = `outline: none !important; box-shadow: 0 0 calc(2px * var(--scale-ratio, 1)) calc(2px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0), 0 0 calc(4px * var(--scale-ratio, 1)) calc(4px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0), 0 0 calc(6px * var(--scale-ratio, 1)) calc(6px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0) !important`
+            } else {
+                outlineStyles = `outline: none !important; box-shadow: 0 0 calc(2px * var(--scale-ratio, 1)) calc(2px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.8), 0 0 calc(4px * var(--scale-ratio, 1)) calc(4px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.5), 0 0 calc(6px * var(--scale-ratio, 1)) calc(6px * var(--scale-ratio, 1)) rgba(99, 102, 241, 0.3) !important`
+            }
         }
 
         // 根据 hidden 属性控制显示/隐藏
@@ -342,7 +348,7 @@
     <div id={nodeKey} data-name={dataNameAttr} style={finalStyle} class:use-pseudo-bg={hasPseudoBg} {...restAttrs} onclick={handleClick} onkeydown={handleKeyDown} tabindex={editing ? -1 : undefined}>
         {@html node.textContent || ''}
         {#each node.children ?? [] as child (child.id)}
-            <NodeRenderer node={child} {selectedId} {editing} {select} />
+            <NodeRenderer node={child} {selectedId} {editing} {selectionBorderDisabled} {select} />
         {/each}
     </div>
 {:else if componentType === 'CompanyTable'}
@@ -367,7 +373,7 @@
     <DynamicComponent type={componentType} id={nodeKey} data-name={dataNameAttr} style={finalStyle} {...componentProps} class={hasPseudoBg ? 'use-pseudo-bg' : undefined} onclick={handleClick} onkeydown={handleKeyDown} tabindex={editing ? -1 : undefined}>
         {@html node.textContent || ''}
         {#each node.children ?? [] as child (child.id)}
-            <NodeRenderer node={child} {selectedId} {editing} {select} />
+            <NodeRenderer node={child} {selectedId} {editing} {selectionBorderDisabled} {select} />
         {/each}
     </DynamicComponent>
 {/if}

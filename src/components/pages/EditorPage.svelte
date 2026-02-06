@@ -655,6 +655,7 @@
         }
     }
     let showLogsEnabled = $state<boolean | null>(null)
+    let selectionBorderDisabled = $state<boolean | null>(null)
     onMount(async () => {
         try {
             const db = await DexieService.getDatabase(DEFAULT_DB_NAME)
@@ -663,6 +664,7 @@
                 showLogsEnabled = (cfgRecord?.showLogs ?? cfgRecord?.value) === true
                 // 更新性能监视开关，默认为 true
                 perfMonitorEnabled.set(cfgRecord?.perfMonitor !== false)
+                selectionBorderDisabled = cfgRecord?.selectionBorderDisabled === true
             }
         } catch {}
     })
@@ -943,7 +945,7 @@
     {#if $projectId}
         <!-- 画布包裹元素，承担缩放与定位 -->
         <!-- @ts-ignore: props typing still WIP -->
-        <DomCanvas editing={showWorkspace} />
+        <DomCanvas editing={showWorkspace} selectionBorderDisabled={selectionBorderDisabled === true} />
     {/if}
 </div>
 
@@ -1108,6 +1110,26 @@
                     精简构建
                 </button>
             {/if}
+
+            <button
+                onclick={async (event) => {
+                    const button = event.target as HTMLButtonElement
+                    try {
+                        const db = await DexieService.getDatabase(DEFAULT_DB_NAME)
+                        if (!db) throw new Error('无法获取数据库')
+                        const cfgRecord = (await db.table('config').toArray())[0] || { showLogs: false, perfMonitor: true, authCache: null }
+                        const newVal = !(cfgRecord as any).selectionBorderDisabled
+                        await db.table('config').clear()
+                        await db.table('config').put({ ...cfgRecord, selectionBorderDisabled: newVal })
+                        selectionBorderDisabled = newVal
+                    } catch (e) {
+                        console.error('切换选中边框高亮失败', e)
+                    }
+                }}
+                style="padding: calc(4px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));background: none;border: none;color: white;cursor: pointer;font-size: calc(12px * var(--scale-ratio, 1));"
+            >
+                {selectionBorderDisabled === null ? '加载中...' : selectionBorderDisabled ? '开启选中边框' : '关闭选中边框'}
+            </button>
         </div>
 
         <div style="display: flex;justify-content: space-between;width: 100%;height: 94%;">
