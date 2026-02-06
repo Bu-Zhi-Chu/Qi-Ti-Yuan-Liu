@@ -858,33 +858,24 @@
                 "type": "switch",
                 "default": false
             },
-            "showIcon": {
-                "label": "显示图标",
-                "type": "switch",
-                "default": true
-            },
             "mode": {
                 "label": "选择模式",
                 "type": "select",
                 "options": [
                     {
-                        "value": "date",
-                        "label": "日期"
-                    },
-                    {
                         "value": "year",
                         "label": "年份"
                     },
                     {
-                        "value": "month",
-                        "label": "月份"
+                        "value": "date",
+                        "label": "日期"
                     },
                     {
                         "value": "datetime",
                         "label": "日期时间"
                     }
                 ],
-                "default": "date"
+                "default": "year"
             }
         }
     },

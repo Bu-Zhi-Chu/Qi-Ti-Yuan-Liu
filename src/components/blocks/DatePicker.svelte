@@ -47,8 +47,6 @@
         style?: string
         dateRecording?: boolean
         recordedDate?: string | Date
-        /** 是否显示按钮上的日历图标（默认显示） */
-        showIcon?: boolean
         /**
          * 选择模式（顺序：year → date → datetime）
          * - "year": 仅选择年份
@@ -60,10 +58,32 @@
         [key: string]: any
     }
 
-    let { value = $bindable(new Date()), disabled = false, min, max, id, style = '', dateRecording = false, recordedDate, showIcon = true, mode = 'date', onChange, ...rest }: Props = $props()
+    let { value = $bindable(new Date()), disabled = false, min, max, id, style = '', dateRecording = false, recordedDate, mode = 'year', onChange, ...rest }: Props = $props()
 
-    const baseBoxStyle = 'width: calc(205px * var(--scale-ratio, 1)); height: calc(30px * var(--scale-ratio, 1)); background-color: #ffffff; color: #000000; border: calc(1px * var(--scale-ratio, 1)) solid rgb(26, 156, 254)'
-    const boxStyle = $derived(style ? `${baseBoxStyle}; ${style}` : baseBoxStyle)
+    const baseBoxStyle = 'height: calc(30px * var(--scale-ratio, 1)); background-color: #ffffff; color: #000000; border: calc(1px * var(--scale-ratio, 1)) solid rgb(26, 156, 254)'
+
+    function getWidthValueByMode(m: 'year' | 'date' | 'datetime' | undefined): string {
+        if (m === 'year') return 'calc(80px * var(--scale-ratio, 1))'
+        if (m === 'date') return 'calc(150px * var(--scale-ratio, 1))'
+        return 'calc(205px * var(--scale-ratio, 1))'
+    }
+
+    function getWidthStyleByMode(m: 'year' | 'date' | 'datetime' | undefined): string {
+        return `width: ${getWidthValueByMode(m)}`
+    }
+
+    const widthStyle = $derived(getWidthStyleByMode(mode))
+    const boxStyle = $derived(style && style.trim().length > 0 ? `${widthStyle}; ${baseBoxStyle}; ${style}` : `${widthStyle}; ${baseBoxStyle}`)
+
+    $effect(() => {
+        if (!id) return
+        const expectedWidth = getWidthValueByMode(mode)
+        const currentStyle = (style || '').replace(/\s+/g, ' ')
+        const escaped = expectedWidth.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')
+        const pattern = new RegExp(`width\\s*:\\s*${escaped}`)
+        if (pattern.test(currentStyle)) return
+        updateNodeProps(id, { styles: { width: expectedWidth } })
+    })
 
     const dispatch = createEventDispatcher<{ change: Date }>()
 
@@ -192,6 +212,22 @@
 
     // 以当前年份为中心，上下各 10 年
     let yearsRange = $derived(Array.from({ length: 21 }, (_, i) => year - 10 + i))
+
+    let yearInput = $state('')
+    let yearError = $state(false)
+    let yearErrorMessage = $state('')
+
+    function isValidYearString(str: string): boolean {
+        if (!/^\d{4}$/.test(str)) return false
+        const num = parseInt(str, 10)
+        return num >= 1900 && num <= 2050
+    }
+
+    $effect(() => {
+        yearInput = String(internalDate.getFullYear())
+        yearError = false
+        yearErrorMessage = ''
+    })
 
     // 星期名称
     const weekdayNames = ['日', '一', '二', '三', '四', '五', '六']
@@ -380,27 +416,80 @@
 
 <ResponsiveBox {id} class="date-picker" style={boxStyle} {...rest}>
     {#if mode === 'year'}
-        <div class="date-picker-year-wrapper">
+        <div class="date-picker-year-wrapper" class:invalid={yearError}>
             <input
                 class="date-picker-year-input"
-                type="number"
-                value={year}
-                min={min ? min.getFullYear() : undefined}
-                max={max ? max.getFullYear() : undefined}
+                type="text"
+                bind:value={yearInput}
                 {disabled}
-                oninput={(e) => {
-                    const raw = (e.currentTarget as HTMLInputElement).value
-                    const val = parseInt(raw, 10)
+                oninput={() => {
+                    const digits = yearInput.replace(/[^\d]/g, '')
+                    yearInput = digits.slice(0, 4)
+                    if (yearInput.length === 0) {
+                        yearError = false
+                        yearErrorMessage = ''
+                    } else if (!isValidYearString(yearInput)) {
+                        yearError = true
+                        yearErrorMessage = '该输入项需要在1900年至2050年范围内'
+                    } else {
+                        yearError = false
+                        yearErrorMessage = ''
+                    }
+                }}
+                onblur={() => {
+                    const trimmed = yearInput.trim()
+                    if (trimmed === '') {
+                        yearInput = String(year)
+                        yearError = false
+                        yearErrorMessage = ''
+                        return
+                    }
+                    if (!isValidYearString(trimmed)) {
+                        yearError = true
+                        yearErrorMessage = '该输入项需要在1900年至2050年范围内'
+                        return
+                    }
+                    const val = parseInt(trimmed, 10)
                     if (!isNaN(val)) {
-                        let next = val
-                        if (min && next < min.getFullYear()) next = min.getFullYear()
-                        if (max && next > max.getFullYear()) next = max.getFullYear()
-                        const newDate = new Date(next, month, date)
+                        const newDate = new Date(val, month, date)
                         internalDate = newDate
                         updateValue(newDate)
+                        yearInput = String(val)
+                        yearError = false
+                        yearErrorMessage = ''
+                    }
+                }}
+                onkeydown={(e) => {
+                    if (e.key === 'Enter') {
+                        const trimmed = yearInput.trim()
+                        if (trimmed === '') {
+                            yearInput = String(year)
+                            yearError = false
+                            yearErrorMessage = ''
+                            return
+                        }
+                        if (!isValidYearString(trimmed)) {
+                            yearError = true
+                            yearErrorMessage = '该输入项需要在1900年至2050年范围内'
+                            return
+                        }
+                        const val = parseInt(trimmed, 10)
+                        if (!isNaN(val)) {
+                            const newDate = new Date(val, month, date)
+                            internalDate = newDate
+                            updateValue(newDate)
+                            yearInput = String(val)
+                            yearError = false
+                            yearErrorMessage = ''
+                        }
                     }
                 }}
             />
+            {#if yearError && yearErrorMessage}
+                <div class="date-picker-year-error">
+                    {yearErrorMessage}
+                </div>
+            {/if}
             <div class="date-picker-year-stepper">
                 <button
                     type="button"
@@ -435,11 +524,9 @@
     {:else}
         <button bind:this={buttonRef} class="date-picker-button" class:disabled onclick={togglePanel} type="button">
             <span class="date-text">{displayText}</span>
-            {#if showIcon}
-                <span class="date-icon">
-                    <img src={`${import.meta.env.BASE_URL}img/hold/datebox_arrow.png`} alt="" class="date-icon-image" />
-                </span>
-            {/if}
+            <span class="date-icon">
+                <img src={`${import.meta.env.BASE_URL}img/hold/datebox_arrow.png`} alt="" class="date-icon-image" />
+            </span>
         </button>
 
         {#if isOpen}
@@ -561,6 +648,10 @@
         height: 100%;
     }
 
+    .date-picker-year-wrapper.invalid .date-picker-year-input {
+        outline: calc(1px * var(--scale-ratio, 1)) solid #ef4444;
+    }
+
     .date-picker-year-input {
         width: 100%;
         height: 100%;
@@ -588,6 +679,46 @@
         width: calc(20px * var(--scale-ratio, 1));
         display: flex;
         flex-direction: column;
+    }
+
+    .date-picker-year-error {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 100%;
+        transform: translate(calc(6px * var(--scale-ratio, 1)), 0);
+        background: #ffffe1;
+        color: #000000;
+        padding: calc(2px * var(--scale-ratio, 1)) calc(8px * var(--scale-ratio, 1));
+        border-radius: 0;
+        border: calc(1px * var(--scale-ratio, 1)) solid #e5d48a;
+        font-size: calc(12px * var(--scale-ratio, 1));
+        white-space: nowrap;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+    }
+
+    .date-picker-year-error::before,
+    .date-picker-year-error::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 0;
+        height: 0;
+        border-top: calc(6px * var(--scale-ratio, 1)) solid transparent;
+        border-bottom: calc(6px * var(--scale-ratio, 1)) solid transparent;
+    }
+
+    .date-picker-year-error::before {
+        right: 100%;
+        border-right: calc(6px * var(--scale-ratio, 1)) solid #e5d48a;
+    }
+
+    .date-picker-year-error::after {
+        right: calc(100% - 1px);
+        border-right: calc(6px * var(--scale-ratio, 1)) solid #ffffe1;
     }
 
     .date-picker-year-btn {
@@ -630,9 +761,9 @@
         height: 100%;
         min-width: 0;
         padding: inherit;
-        border: inherit;
+        border: none;
         border-radius: inherit;
-        background: inherit;
+        background: transparent;
         color: inherit;
         font-size: inherit;
         font-family: inherit;
@@ -647,8 +778,7 @@
     }
 
     .date-picker-button:hover:not(.disabled) {
-        background: inherit;
-        border-color: inherit;
+        background: transparent;
     }
 
     .date-picker-button.disabled {

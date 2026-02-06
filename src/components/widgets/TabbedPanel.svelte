@@ -127,12 +127,22 @@
         const heightVal: string | undefined = presetStyles.height as any
         const widthRaw: string | undefined = typeof widthVal === 'string' ? widthVal.trim() : undefined
         const heightRaw: string | undefined = typeof heightVal === 'string' ? heightVal.trim() : undefined
-        // 若预设为百分比，直接解析；若为固定px，则稍后转换为百分比
+        // 若预设为百分比，直接解析；若为固定px或 calc(px * var(--scale-ratio))，则稍后转换为百分比
         if (widthRaw && /%$/.test(widthRaw)) widthPercent = parseFloat(widthRaw)
         if (heightRaw && /%$/.test(heightRaw)) heightPercent = parseFloat(heightRaw)
-        // 记录若为px值，稍后转换
-        const widthPxPreset = widthRaw && /px$/i.test(widthRaw) ? parseFloat(widthRaw) : null
-        const heightPxPreset = heightRaw && /px$/i.test(heightRaw) ? parseFloat(heightRaw) : null
+        // 记录若为px值（支持直接px或包含在calc中），稍后转换
+        let widthPxPreset: number | null = null
+        let heightPxPreset: number | null = null
+        if (widthRaw) {
+            const directPx = /px$/i.test(widthRaw) ? parseFloat(widthRaw) : null
+            const calcMatch = /(-?\d+(\.\d+)?)\s*px/i.exec(widthRaw)
+            widthPxPreset = directPx !== null ? directPx : calcMatch ? parseFloat(calcMatch[1]) : null
+        }
+        if (heightRaw) {
+            const directPx = /px$/i.test(heightRaw) ? parseFloat(heightRaw) : null
+            const calcMatch = /(-?\d+(\.\d+)?)\s*px/i.exec(heightRaw)
+            heightPxPreset = directPx !== null ? directPx : calcMatch ? parseFloat(calcMatch[1]) : null
+        }
 
         const parentId = selectedId() || 'root'
         const parentEl = getElementByNodeId(parentId) as HTMLElement | null
