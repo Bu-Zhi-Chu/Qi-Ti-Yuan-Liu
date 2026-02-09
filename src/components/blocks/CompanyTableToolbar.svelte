@@ -1,6 +1,6 @@
 <script lang="ts">
     import { getContext } from 'svelte'
-    import DatePicker from './DatePicker.svelte'
+    import ConditionInput from './ConditionInput.svelte'
 
     interface QueryCondition {
         id?: string
@@ -119,7 +119,6 @@
         if (!Number.isFinite(value)) return
         yearValues = { ...yearValues, [index]: value }
     }
-
 </script>
 
 <div {style} class={className} {...rest}>
@@ -134,12 +133,12 @@
                         <option value="">请选择</option>
                     </select>
                 {:else if cond?.type === 'date'}
-                    <DatePicker mode="date" />
+                    <ConditionInput mode="date" />
                 {:else if cond?.type === 'datetime'}
-                    <DatePicker mode="datetime" />
+                    <ConditionInput mode="datetime" />
                 {:else if cond?.type === 'year'}
                     {@const year = getYearDisplay(index)}
-                    <DatePicker
+                    <ConditionInput
                         mode="year"
                         value={new Date(year, 0, 1)}
                         disabled={cond?.disabled}
