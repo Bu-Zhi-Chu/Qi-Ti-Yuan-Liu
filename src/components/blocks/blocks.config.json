@@ -863,6 +863,18 @@
                 "type": "select",
                 "options": [
                     {
+                        "value": "input",
+                        "label": "输入"
+                    },
+                    {
+                        "value": "select",
+                        "label": "下拉选单"
+                    },
+                    {
+                        "value": "tree",
+                        "label": "下拉选树"
+                    },
+                    {
                         "value": "year",
                         "label": "年份"
                     },
@@ -875,7 +887,7 @@
                         "label": "日期时间"
                     }
                 ],
-                "default": "year"
+                "default": "input"
             }
         }
     },

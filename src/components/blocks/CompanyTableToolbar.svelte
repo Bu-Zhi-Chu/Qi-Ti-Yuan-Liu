@@ -129,9 +129,7 @@
                     <span class="company-table-condition-label">{cond.name}</span>
                 {/if}
                 {#if cond?.type === 'select'}
-                    <select class="company-table-input">
-                        <option value="">请选择</option>
-                    </select>
+                    <ConditionInput mode="select" />
                 {:else if cond?.type === 'date'}
                     <ConditionInput mode="date" />
                 {:else if cond?.type === 'datetime'}

@@ -47,28 +47,26 @@
         style?: string
         dateRecording?: boolean
         recordedDate?: string | Date
-        /**
-         * 选择模式（顺序：year → date → datetime）
-         * - "year": 仅选择年份
-         * - "date": 年月日
-         * - "datetime": 年月日时分秒
-         */
-        mode?: 'year' | 'date' | 'datetime'
+        mode?: 'input' | 'select' | 'tree' | 'year' | 'date' | 'datetime'
+        options?: string[]
         onChange?: (date: Date) => void
         [key: string]: any
     }
 
-    let { value = $bindable(new Date()), disabled = false, min, max, id, style = '', dateRecording = false, recordedDate, mode = 'year', onChange, ...rest }: Props = $props()
+    let { value = $bindable(new Date()), disabled = false, min, max, id, style = '', dateRecording = false, recordedDate, mode = 'input', options = [], onChange, ...rest }: Props = $props()
 
     const baseBoxStyle = 'height: calc(30px * var(--scale-ratio, 1)); background-color: #ffffff; color: #000000; border: calc(1px * var(--scale-ratio, 1)) solid rgb(26, 156, 254)'
 
-    function getWidthValueByMode(m: 'year' | 'date' | 'datetime' | undefined): string {
+    function getWidthValueByMode(m: 'input' | 'select' | 'tree' | 'year' | 'date' | 'datetime' | undefined): string {
         if (m === 'year') return 'calc(80px * var(--scale-ratio, 1))'
         if (m === 'date') return 'calc(150px * var(--scale-ratio, 1))'
+        if (m === 'datetime') return 'calc(205px * var(--scale-ratio, 1))'
+        if (m === 'select') return 'calc(150px * var(--scale-ratio, 1))'
+        if (m === 'tree') return 'calc(205px * var(--scale-ratio, 1))'
         return 'calc(205px * var(--scale-ratio, 1))'
     }
 
-    function getWidthStyleByMode(m: 'year' | 'date' | 'datetime' | undefined): string {
+    function getWidthStyleByMode(m: 'input' | 'select' | 'tree' | 'year' | 'date' | 'datetime' | undefined): string {
         return `width: ${getWidthValueByMode(m)}`
     }
 
@@ -116,7 +114,7 @@
         return typeof v === 'string' ? new Date(v) : new Date(v)
     }
 
-    const initialDate: Date = dateRecording && recordedDate ? normalizeDate(recordedDate) : normalizeDate(value)
+    const initialDate: Date = mode === 'select' || mode === 'input' ? new Date() : dateRecording && recordedDate ? normalizeDate(recordedDate) : normalizeDate(value)
     let internalDate = $state(initialDate)
     // 如果使用记录值，确保外部 value 同步
     if (dateRecording && recordedDate) {
@@ -124,6 +122,7 @@
     }
 
     $effect(() => {
+        if (mode === 'select' || mode === 'input') return
         const newVal = normalizeDate(value)
         if (!isOpen && newVal.getTime() !== internalDate.getTime()) {
             internalDate = new Date(newVal)
@@ -173,8 +172,7 @@
         }
     }
 
-    // 格式化显示文本（始终基于已提交的外部值）
-    let displayText = $derived(formatDisplay(normalizeDate(value)))
+    let displayText = $derived(mode === 'year' || mode === 'date' || mode === 'datetime' ? formatDisplay(normalizeDate(value)) : '')
     let isEditingDisplay = $state(false)
     let displayInput = $state('')
     let displayInputRef = $state<HTMLInputElement>()
@@ -184,6 +182,106 @@
             displayInput = displayText
         }
     })
+
+    let inputText = $state(typeof value === 'string' ? value : '')
+
+    $effect(() => {
+        if (mode !== 'input') return
+        if (typeof value === 'string' && value !== inputText) {
+            inputText = value
+        }
+    })
+
+    let selectOptions = $derived((options && options.length > 0 ? options : ['选项一', '选项二', '选项三']).slice())
+    let selectedIndex = $state<number | null>(null)
+
+    $effect(() => {
+        if (mode !== 'select') return
+        if (typeof value === 'string') {
+            const idx = selectOptions.indexOf(value)
+            if (idx !== -1 && idx !== selectedIndex) {
+                selectedIndex = idx
+            }
+        }
+    })
+
+    type TreeNode = {
+        id: string | number
+        label: string
+        children?: TreeNode[]
+        expanded?: boolean
+    }
+
+    const defaultTreeSelectData: TreeNode[] = [
+        {
+            id: 'root',
+            label: '根节点',
+            expanded: true,
+            children: [
+                { id: 'root-leaf-1', label: '根节点末端1' },
+                { id: 'root-leaf-2', label: '根节点末端2' }
+            ]
+        },
+        {
+            id: 'level1',
+            label: '一级节点',
+            expanded: true,
+            children: [
+                { id: 'level1-leaf-1', label: '一级末端1' },
+                { id: 'level1-leaf-2', label: '一级末端2' }
+            ]
+        },
+        {
+            id: 'level2',
+            label: '二级节点',
+            expanded: true,
+            children: [
+                { id: 'level2-leaf-1', label: '二级末端1' },
+                { id: 'level2-leaf-2', label: '二级末端2' }
+            ]
+        }
+    ]
+
+    let treeSelectData = $state<TreeNode[]>(defaultTreeSelectData)
+    let selectedTreeId = $state<string | number | null>(defaultTreeSelectData[0]?.id ?? null)
+
+    function findTreeNodeById(nodes: TreeNode[], id: string | number): TreeNode | null {
+        for (const node of nodes) {
+            if (node.id === id) return node
+            if (node.children && node.children.length > 0) {
+                const found = findTreeNodeById(node.children, id)
+                if (found) return found
+            }
+        }
+        return null
+    }
+
+    function findTreeNodeByLabel(nodes: TreeNode[], label: string): TreeNode | null {
+        for (const node of nodes) {
+            if (node.label === label) return node
+            if (node.children && node.children.length > 0) {
+                const found = findTreeNodeByLabel(node.children, label)
+                if (found) return found
+            }
+        }
+        return null
+    }
+
+    function getTreeSelectedText(): string {
+        if (selectedTreeId == null) return ''
+        const node = findTreeNodeById(treeSelectData, selectedTreeId)
+        return node?.label ?? ''
+    }
+
+    function toggleTreeExpand(node: TreeNode) {
+        node.expanded = !(node.expanded ?? true)
+        treeSelectData = treeSelectData.map((n) => ({ ...n }))
+    }
+
+    function selectTreeNode(node: TreeNode) {
+        selectedTreeId = node.id
+        isOpen = false
+    }
 
     let year = $derived(internalDate.getFullYear())
     let month = $derived(internalDate.getMonth())
@@ -277,6 +375,20 @@
             isEditingTime = false
         }
         updateValue(next)
+    }
+
+    function getSelectedText(): string {
+        if (selectedIndex === null || selectedIndex < 0 || selectedIndex >= selectOptions.length) return ''
+        return selectOptions[selectedIndex] ?? ''
+    }
+
+    function selectOption(index: number) {
+        if (index < 0 || index >= selectOptions.length) return
+        selectedIndex = index
+        if (mode === 'select') {
+            value = selectOptions[index] ?? ''
+        }
+        isOpen = false
     }
 
     function handleDisplayClick() {
@@ -546,15 +658,15 @@
 
     function togglePanel() {
         if (disabled) return
-        if (mode === 'year') return
+        if (mode === 'year' || mode === 'input') return
         isOpen = !isOpen
         if (isOpen) {
-            const committed = normalizeDate(value)
-            internalDate = new Date(committed)
-            panelBaseDate = new Date(committed)
-            // 当模式为 date 或 datetime 时，始终默认显示日期选择界面
-            selectingYearMonth = false
-            // 面板初始定位：挂载后再测量尺寸并计算位置
+            if (mode === 'date' || mode === 'datetime') {
+                const committed = normalizeDate(value)
+                internalDate = new Date(committed)
+                panelBaseDate = new Date(committed)
+                selectingYearMonth = false
+            }
             tick().then(() => updatePanelPosition())
         }
     }
@@ -573,14 +685,16 @@
             if (isOpen && pickerRef && !pickerRef.contains(event.target as Node) && !buttonRef?.contains(event.target as Node)) {
                 isOpen = false
                 selectingYearMonth = false
-                const committed = normalizeDate(value)
-                internalDate = new Date(committed)
-                if (mode === 'datetime') {
-                    hours = committed.getHours()
-                    minutes = committed.getMinutes()
-                    seconds = committed.getSeconds()
-                    if (!isEditingTime) {
-                        timeInput = formatTimeString(hours, minutes, seconds)
+                if (mode === 'date' || mode === 'datetime' || mode === 'year') {
+                    const committed = normalizeDate(value)
+                    internalDate = new Date(committed)
+                    if (mode === 'datetime') {
+                        hours = committed.getHours()
+                        minutes = committed.getMinutes()
+                        seconds = committed.getSeconds()
+                        if (!isEditingTime) {
+                            timeInput = formatTimeString(hours, minutes, seconds)
+                        }
                     }
                 }
             }
@@ -619,34 +733,34 @@
     // 计算并设置面板的 fixed 定位样式，使其不受父级 overflow 限制
     function updatePanelPosition() {
         if (!buttonRef || !pickerRef) return
-        const rect = buttonRef.getBoundingClientRect()
-        // 先设置一个最小样式以获得面板实际尺寸
+        const containerEl = buttonRef.parentElement as HTMLElement | null
+        const isFullWidthMode = mode === 'select' || mode === 'tree'
+        const baseRect = isFullWidthMode && containerEl ? containerEl.getBoundingClientRect() : buttonRef.getBoundingClientRect()
         panelStyle = 'position:fixed;left:-9999px;top:-9999px;z-index:10000'
-        // 下一帧读取尺寸
         tick().then(() => {
             const panelEl = pickerRef
             if (!panelEl) return
-            const pw = panelEl.offsetWidth
-            const ph = panelEl.offsetHeight
+            const rawWidth = panelEl.offsetWidth
+            const rawHeight = panelEl.offsetHeight
             const margin = 8
             const targetEl = buttonRef as HTMLElement
             const computedStyle = window.getComputedStyle(targetEl)
             const ratioValue = parseFloat(computedStyle.getPropertyValue('--scale-ratio') || '1')
             const ratio = isNaN(ratioValue) || ratioValue <= 0 ? 1 : ratioValue
-            const offset = 4 * ratio
-            let left = rect.left
-            let top = rect.bottom + offset
-            // 视口边界处理：水平
-            if (left + pw + margin > window.innerWidth) {
-                left = Math.max(margin, window.innerWidth - pw - margin)
+            const offset = isFullWidthMode ? 0 : 4 * ratio
+            const panelWidth = isFullWidthMode ? baseRect.width : rawWidth
+            const panelHeight = rawHeight
+            let left = baseRect.left
+            let top = baseRect.bottom + offset
+            if (left + panelWidth + margin > window.innerWidth) {
+                left = Math.max(margin, window.innerWidth - panelWidth - margin)
             }
             if (left < margin) left = margin
-            // 视口边界处理：垂直（下边缘放不下时，改为显示在按钮上方）
-            if (top + ph + margin > window.innerHeight) {
-                top = Math.max(margin, rect.top - ph - offset)
+            if (top + panelHeight + margin > window.innerHeight) {
+                top = Math.max(margin, baseRect.top - panelHeight - offset)
             }
             if (top < margin) top = margin
-            panelStyle = `position:fixed;left:${Math.round(left)}px;top:${Math.round(top)}px;z-index:10000`
+            panelStyle = `position:fixed;left:${Math.round(left)}px;top:${Math.round(top)}px;width:${Math.round(panelWidth)}px;z-index:10000`
         })
     }
 </script>
@@ -758,6 +872,223 @@
                 </button>
             </div>
         </div>
+    {:else if mode === 'input'}
+        <input class="date-picker-display-input" type="text" bind:value={inputText} {disabled} />
+    {:else if mode === 'select'}
+        <div bind:this={buttonRef} class="date-picker-button select-button" class:disabled>
+            <span class="date-text">
+                {#if getSelectedText()}
+                    {getSelectedText()}
+                {:else}
+                    请选择
+                {/if}
+            </span>
+            <button type="button" class="date-icon select-icon" onclick={togglePanel} {disabled}>
+                <img src={`${import.meta.env.BASE_URL}img/hold/combo_arrow.png`} alt="" class="date-icon-image" />
+            </button>
+        </div>
+
+        {#if isOpen}
+            <div bind:this={pickerRef} use:portal={document.body} class="date-picker-panel portal select-panel" style={panelStyle}>
+                <div class="select-options">
+                    {#each selectOptions as opt, i}
+                        <button type="button" class="select-option" class:selected={selectedIndex === i} onclick={() => selectOption(i)}>
+                            {opt}
+                        </button>
+                    {/each}
+                </div>
+            </div>
+        {/if}
+    {:else if mode === 'tree'}
+        <div bind:this={buttonRef} class="date-picker-button select-button" class:disabled>
+            <span class="date-text">
+                {#if getTreeSelectedText()}
+                    {getTreeSelectedText()}
+                {:else}
+                    请选择
+                {/if}
+            </span>
+            <button type="button" class="date-icon select-icon" onclick={togglePanel} {disabled}>
+                <img src={`${import.meta.env.BASE_URL}img/hold/combo_arrow.png`} alt="" class="date-icon-image" />
+            </button>
+        </div>
+
+        {#if isOpen}
+            <div bind:this={pickerRef} use:portal={document.body} class="date-picker-panel portal tree-panel" style={panelStyle}>
+                <div class="tree-select-list">
+                    <ul class="tree-level root">
+                        {#each treeSelectData as node}
+                            <li>
+                                <div class="tree-node">
+                                    {#if node.children && node.children.length > 0}
+                                        <button
+                                            type="button"
+                                            class="tree-toggle"
+                                            onclick={(e) => {
+                                                e.stopPropagation()
+                                                toggleTreeExpand(node)
+                                            }}
+                                            aria-label={(node.expanded ?? true) ? '收起' : '展开'}
+                                        >
+                                            {#if node.expanded ?? true}
+                                                <svg viewBox="0 0 12 12" aria-hidden="true">
+                                                    <polygon points="2,2 10,6 2,10" fill="#000000" />
+                                                </svg>
+                                            {:else}
+                                                <svg viewBox="0 0 12 12" aria-hidden="true">
+                                                    <polygon points="2,2 10,6 2,10" fill="#ffffff" stroke="#000000" stroke-width="1" />
+                                                </svg>
+                                            {/if}
+                                        </button>
+                                    {:else}
+                                        <span class="tree-toggle-placeholder"></span>
+                                    {/if}
+                                    <div
+                                        class="tree-node-inner"
+                                        class:selected={node.id === selectedTreeId}
+                                        role="button"
+                                        tabindex="0"
+                                        onclick={() => selectTreeNode(node)}
+                                        onkeydown={(e) => {
+                                            if (e.key === 'Enter' || e.key === ' ') selectTreeNode(node)
+                                        }}
+                                    >
+                                        {#if node.children && node.children.length > 0}
+                                            <span class="tree-icon">
+                                                {#if node.expanded ?? true}
+                                                    <svg viewBox="0 0 18 14" aria-hidden="true">
+                                                        <path d="M1 5h7l2 2h7v6H1z" fill="#ffd659" stroke="#c08a25" stroke-width="1" />
+                                                        <path d="M1 3h7l2 2H1z" fill="#ffe892" stroke="#c08a25" stroke-width="1" />
+                                                    </svg>
+                                                {:else}
+                                                    <svg viewBox="0 0 18 14" aria-hidden="true">
+                                                        <path d="M1 5h16v8H1z" fill="#ffd659" stroke="#c08a25" stroke-width="1" />
+                                                        <path d="M1 3h6l2 1h7v3H1z" fill="#ffe892" stroke="#c08a25" stroke-width="1" />
+                                                    </svg>
+                                                {/if}
+                                            </span>
+                                        {:else}
+                                            <span class="tree-icon">
+                                                <svg viewBox="0 0 14 16" aria-hidden="true">
+                                                    <path d="M3 1h5l3 3v11H3z" fill="#fffef0" stroke="#c0a840" stroke-width="1" />
+                                                    <path d="M8 1v3h3" fill="#fff9c2" />
+                                                    <path d="M4 7h6" stroke="#c0a840" stroke-width="0.7" />
+                                                    <path d="M4 9h6" stroke="#c0a840" stroke-width="0.7" />
+                                                    <path d="M4 11h4" stroke="#c0a840" stroke-width="0.7" />
+                                                </svg>
+                                            </span>
+                                        {/if}
+                                        <span class="node-label">{node.label}</span>
+                                    </div>
+                                </div>
+                                {#if node.children && node.children.length > 0 && (node.expanded ?? true)}
+                                    <ul class="tree-level child">
+                                        {#each node.children as child}
+                                            <li>
+                                                <div class="tree-node">
+                                                    {#if child.children && child.children.length > 0}
+                                                        <button
+                                                            type="button"
+                                                            class="tree-toggle"
+                                                            onclick={(e) => {
+                                                                e.stopPropagation()
+                                                                toggleTreeExpand(child)
+                                                            }}
+                                                            aria-label={(child.expanded ?? true) ? '收起' : '展开'}
+                                                        >
+                                                            {#if child.expanded ?? true}
+                                                                <svg viewBox="0 0 12 12" aria-hidden="true">
+                                                                    <polygon points="2,2 10,6 2,10" fill="#000000" />
+                                                                </svg>
+                                                            {:else}
+                                                                <svg viewBox="0 0 12 12" aria-hidden="true">
+                                                                    <polygon points="2,2 10,6 2,10" fill="#ffffff" stroke="#000000" stroke-width="1" />
+                                                                </svg>
+                                                            {/if}
+                                                        </button>
+                                                    {:else}
+                                                        <span class="tree-toggle-placeholder"></span>
+                                                    {/if}
+                                                    <div
+                                                        class="tree-node-inner"
+                                                        class:selected={child.id === selectedTreeId}
+                                                        role="button"
+                                                        tabindex="0"
+                                                        onclick={() => selectTreeNode(child)}
+                                                        onkeydown={(e) => {
+                                                            if (e.key === 'Enter' || e.key === ' ') selectTreeNode(child)
+                                                        }}
+                                                    >
+                                                        {#if child.children && child.children.length > 0}
+                                                            <span class="tree-icon">
+                                                                {#if child.expanded ?? true}
+                                                                    <svg viewBox="0 0 18 14" aria-hidden="true">
+                                                                        <path d="M1 5h7l2 2h7v6H1z" fill="#ffd659" stroke="#c08a25" stroke-width="1" />
+                                                                        <path d="M1 3h7l2 2H1z" fill="#ffe892" stroke="#c08a25" stroke-width="1" />
+                                                                    </svg>
+                                                                {:else}
+                                                                    <svg viewBox="0 0 18 14" aria-hidden="true">
+                                                                        <path d="M1 5h16v8H1z" fill="#ffd659" stroke="#c08a25" stroke-width="1" />
+                                                                        <path d="M1 3h6l2 1h7v3H1z" fill="#ffe892" stroke="#c08a25" stroke-width="1" />
+                                                                    </svg>
+                                                                {/if}
+                                                            </span>
+                                                        {:else}
+                                                            <span class="tree-icon">
+                                                                <svg viewBox="0 0 14 16" aria-hidden="true">
+                                                                    <path d="M3 1h5l3 3v11H3z" fill="#fffef0" stroke="#c0a840" stroke-width="1" />
+                                                                    <path d="M8 1v3h3" fill="#fff9c2" />
+                                                                    <path d="M4 7h6" stroke="#c0a840" stroke-width="0.7" />
+                                                                    <path d="M4 9h6" stroke="#c0a840" stroke-width="0.7" />
+                                                                    <path d="M4 11h4" stroke="#c0a840" stroke-width="0.7" />
+                                                                </svg>
+                                                            </span>
+                                                        {/if}
+                                                        <span class="node-label">{child.label}</span>
+                                                    </div>
+                                                </div>
+                                                {#if child.children && child.children.length > 0 && (child.expanded ?? true)}
+                                                    <ul class="tree-level grand">
+                                                        {#each child.children as grand}
+                                                            <li>
+                                                                <div class="tree-node">
+                                                                    <span class="tree-toggle-placeholder"></span>
+                                                                    <div
+                                                                        class="tree-node-inner"
+                                                                        class:selected={grand.id === selectedTreeId}
+                                                                        role="button"
+                                                                        tabindex="0"
+                                                                        onclick={() => selectTreeNode(grand)}
+                                                                        onkeydown={(e) => {
+                                                                            if (e.key === 'Enter' || e.key === ' ') selectTreeNode(grand)
+                                                                        }}
+                                                                    >
+                                                                        <span class="tree-icon">
+                                                                            <svg viewBox="0 0 14 16" aria-hidden="true">
+                                                                                <path d="M3 1h5l3 3v11H3z" fill="#fffef0" stroke="#c0a840" stroke-width="1" />
+                                                                                <path d="M8 1v3h3" fill="#fff9c2" />
+                                                                                <path d="M4 7h6" stroke="#c0a840" stroke-width="0.7" />
+                                                                                <path d="M4 9h6" stroke="#c0a840" stroke-width="0.7" />
+                                                                                <path d="M4 11h4" stroke="#c0a840" stroke-width="0.7" />
+                                                                            </svg>
+                                                                        </span>
+                                                                        <span class="node-label">{grand.label}</span>
+                                                                    </div>
+                                                                </div>
+                                                            </li>
+                                                        {/each}
+                                                    </ul>
+                                                {/if}
+                                            </li>
+                                        {/each}
+                                    </ul>
+                                {/if}
+                            </li>
+                        {/each}
+                    </ul>
+                </div>
+            </div>
+        {/if}
     {:else}
         <div bind:this={buttonRef} class="date-picker-button" class:disabled>
             {#if isEditingDisplay}
@@ -796,7 +1127,6 @@
                     <button class="nav-button" onclick={nextYear} type="button">»</button>
                 </div>
 
-                <!-- 日期选择模式（用于 date 和 datetime 模式） -->
                 <div class="weekdays">
                     {#each weekdayNames as day, i}
                         <div class="weekday" class:sun={i === 0} class:sat={i === 6}>{day}</div>
@@ -1054,6 +1384,10 @@
         padding-right: calc(4px * var(--scale-ratio, 1));
     }
 
+    .select-button {
+        padding-right: 0;
+    }
+
     .date-picker-button:hover:not(.disabled) {
         background: transparent;
     }
@@ -1104,10 +1438,157 @@
         cursor: pointer;
     }
 
+    .select-icon {
+        background-color: #daeef5;
+        width: calc(25px * var(--scale-ratio, 1));
+        height: 100%;
+        align-self: stretch;
+        padding: 0;
+    }
+
+    .select-icon:hover {
+        background-color: #6ba6f3;
+    }
+
+    .select-button .date-text {
+        display: block;
+        font-size: calc(16px * var(--scale-ratio, 1));
+        line-height: calc(30px * var(--scale-ratio, 1));
+    }
+
     .date-icon-image {
+        width: calc(18px * var(--scale-ratio, 1));
+        height: calc(24px * var(--scale-ratio, 1));
+        display: block;
+    }
+
+    .select-panel {
+        max-width: none;
+        min-width: 0;
+        padding: 0;
+    }
+
+    .select-options {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .select-option {
+        width: 100%;
+        height: calc(28px * var(--scale-ratio, 1));
+        border: none;
+        background: #ffffff;
+        text-align: left;
+        padding: 0 calc(8px * var(--scale-ratio, 1));
+        cursor: pointer;
+        font-size: calc(14px * var(--scale-ratio, 1));
+        color: #303133;
+    }
+
+    .select-option:hover {
+        background: #f5f7fa;
+    }
+
+    .select-option.selected {
+        background: #409eff;
+        color: #ffffff;
+    }
+
+    .tree-select-list {
+        max-height: calc(260px * var(--scale-ratio, 1));
+        overflow: auto;
+        padding: calc(4px * var(--scale-ratio, 1)) calc(4px * var(--scale-ratio, 1));
+        box-sizing: border-box;
+    }
+
+    .tree-level {
+        list-style: none;
+        padding-left: 0;
+        margin: 0;
+    }
+
+    .tree-level.root > li + li {
+        margin-top: calc(2px * var(--scale-ratio, 1));
+    }
+
+    .tree-level.child {
+        padding-left: calc(18px * var(--scale-ratio, 1));
+        margin-top: calc(2px * var(--scale-ratio, 1));
+    }
+
+    .tree-level.grand {
+        padding-left: calc(32px * var(--scale-ratio, 1));
+        margin-top: calc(2px * var(--scale-ratio, 1));
+    }
+
+    .tree-node {
+        display: flex;
+        align-items: center;
+        gap: calc(2px * var(--scale-ratio, 1));
+    }
+
+    .tree-node-inner {
+        display: inline-flex;
+        align-items: center;
+        gap: calc(4px * var(--scale-ratio, 1));
+        font-size: calc(14px * var(--scale-ratio, 1));
+        color: #333333;
+        padding: 0 calc(2px * var(--scale-ratio, 1));
+        border-radius: calc(2px * var(--scale-ratio, 1));
+        border: calc(1px * var(--scale-ratio, 1)) solid transparent;
+        cursor: pointer;
+    }
+
+    .tree-node-inner.selected {
+        background-color: rgb(201, 221, 245);
+        border-color: rgb(201, 221, 245);
+    }
+
+    .tree-toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: calc(16px * var(--scale-ratio, 1));
+        height: calc(16px * var(--scale-ratio, 1));
+        border: none;
+        padding: 0;
+        margin: 0;
+        background: transparent;
+        cursor: pointer;
+    }
+
+    .tree-toggle svg {
         width: 100%;
         height: 100%;
         display: block;
+    }
+
+    .tree-toggle-placeholder {
+        display: inline-block;
+        width: calc(16px * var(--scale-ratio, 1));
+        height: calc(16px * var(--scale-ratio, 1));
+    }
+
+    .tree-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: calc(16px * var(--scale-ratio, 1));
+        height: calc(16px * var(--scale-ratio, 1));
+        flex-shrink: 0;
+    }
+
+    .tree-icon svg {
+        width: 100%;
+        height: 100%;
+        display: block;
+    }
+
+    .node-label {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: calc(220px * var(--scale-ratio, 1));
     }
 
     .date-picker-panel {
@@ -1134,6 +1615,12 @@
         max-width: calc(320px * var(--scale-ratio, 1));
         min-width: calc(240px * var(--scale-ratio, 1));
         margin-top: 0;
+    }
+
+    .date-picker-panel.portal.select-panel,
+    .date-picker-panel.portal.tree-panel {
+        min-width: 0;
+        max-width: none;
     }
 
     .panel-header {
