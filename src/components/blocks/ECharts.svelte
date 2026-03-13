@@ -108,18 +108,20 @@
     async function refreshScale() {
         if (!containerRef) return
 
-        // 优先使用props中的设计尺寸，如果没有则使用store中的设计尺寸
         const storeDesignSize = getDesignSize()
-        const designWidth = propDesignWidth ?? storeDesignSize.width ?? 1920
-        const designHeight = propDesignHeight ?? storeDesignSize.height ?? 1080
+        const designWidth = propDesignWidth != null ? propDesignWidth * 1000 : (storeDesignSize.width ?? 1920)
+        const designHeight = propDesignHeight != null ? propDesignHeight * 1000 : (storeDesignSize.height ?? 1080)
 
         // 调试日志：输出实际使用的尺寸值
         // console.log(`[ECharts] 设计尺寸: ${designWidth}x${designHeight}, prop尺寸: ${propDesignWidth}x${propDesignHeight}, store尺寸: ${storeDesignSize.width}x${storeDesignSize.height}`)
 
-        const docWidth = window.innerWidth
-        const docHeight = window.innerHeight
-        const widthRatio = docWidth / designWidth
-        const heightRatio = docHeight / designHeight
+        const parentElement = containerRef.parentElement
+        const layoutWidth = parentElement && parentElement.offsetWidth > 0 ? parentElement.offsetWidth : 0
+        const layoutHeight = parentElement && parentElement.offsetHeight > 0 ? parentElement.offsetHeight : 0
+        const availableWidth = layoutWidth > 0 ? layoutWidth : window.innerWidth
+        const availableHeight = layoutHeight > 0 ? layoutHeight : window.innerHeight
+        const widthRatio = availableWidth / designWidth
+        const heightRatio = availableHeight / designHeight
 
         // 使用较小的比例，确保内容完整显示
         const scale = Math.min(widthRatio, heightRatio)
@@ -633,9 +635,9 @@
                     /* ---------- 自动补全 legend.data（仅 json 模式且用户提供了 legend 对象但 data 缺失时） ---------- */
                     if (dataSource === 'json' && codeResult.series && codeResult.series.length > 0 && codeResult.legend) {
                         // 只有当用户提供了 legend 对象，但没有提供 legend.data，或者 data 为空数组时，才进行自动填充
-                        const needFillLegendData = !Array.isArray(codeResult.legend.data) || codeResult.legend.data.length === 0;
+                        const needFillLegendData = !Array.isArray(codeResult.legend.data) || codeResult.legend.data.length === 0
                         if (needFillLegendData) {
-                            if (!codeResult.legend) codeResult.legend = {}; // 安全起见，虽然条件已经判断了legend存在
+                            if (!codeResult.legend) codeResult.legend = {} // 安全起见，虽然条件已经判断了legend存在
                             // 优先：饼图规则，从 series[].data[].name 提取唯一名称序列
                             const pieNames: string[] = []
                             const seen = new Set<string>()
@@ -722,9 +724,8 @@
 </script>
 
 <!-- 外层容器用于应用缩放变换         bind:chart={chartInstance} -->
-<div class="scale-container" bind:this={containerRef}>
-    <!-- 使用一个禁用指针事件的包装层，确保仅图表本身可以交互 -->
-    <div class="wrapper" {style} {...restProps} {id}>
+<div class="wrapper" {style} {...restProps} {id}>
+    <div class="scale-container" bind:this={containerRef}>
         {#if chartReady}
             <ECharts
                 class="chart"

@@ -181,15 +181,13 @@
                 if (cfg.default !== undefined && cfg.default !== null) {
                     defaults[key] = cfg.default
                 } else if (cfg.default === null && (key === 'designWidth' || key === 'designHeight')) {
-                    // 对于designWidth/designHeight，当配置默认值为null时，使用store中的动态值
                     const storeDesignSize = getDesignSize()
                     if (key === 'designWidth') {
-                        defaults[key] = storeDesignSize.width
+                        defaults[key] = storeDesignSize.width / 1000
                     } else if (key === 'designHeight') {
-                        defaults[key] = storeDesignSize.height
+                        defaults[key] = storeDesignSize.height / 1000
                     }
                 } else if (cfg.type === 'code') {
-                    // 为code类型属性提供空字符串默认值，避免绑定undefined
                     defaults[key] = ''
                 }
             })

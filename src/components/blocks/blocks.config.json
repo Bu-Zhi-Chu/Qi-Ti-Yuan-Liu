@@ -719,18 +719,18 @@
         },
         "featureProps": {
             "designWidth": {
-                "label": "理想宽度",
+                "label": "设计宽度",
                 "type": "number",
                 "default": null,
-                "min": 320,
-                "max": 3840
+                "min": 0.32,
+                "max": 3.84
             },
             "designHeight": {
-                "label": "理想高度",
+                "label": "设计高度",
                 "type": "number",
                 "default": null,
-                "min": 240,
-                "max": 2160
+                "min": 0.24,
+                "max": 2.16
             },
             "renderer": {
                 "label": "高级渲染",
