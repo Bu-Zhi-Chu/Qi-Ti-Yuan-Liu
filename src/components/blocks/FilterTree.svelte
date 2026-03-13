@@ -653,8 +653,8 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: calc(12px * var(--scale-ratio, 1));
-        height: calc(12px * var(--scale-ratio, 1));
+        width: calc(13px * var(--scale-ratio, 1));
+        height: calc(13px * var(--scale-ratio, 1));
         border: none;
         padding: 0;
         margin: 0;
