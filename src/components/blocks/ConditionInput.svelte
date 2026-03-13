@@ -1,37 +1,41 @@
 <!--
- * DatePicker.svelte
- * 日期选择器组件，完全自绘下拉面板，支持自适应缩放
+ * ConditionInput.svelte
+ * 多功能输入组件，支持多种输入模式，包括文本输入、下拉选择、日期选择等
  *
  * 功能特性：
- * - 原生 <input type="date"> 的替代，完全可控样式
+ * - 支持多种输入模式：input、select、tree、year、date、datetime
  * - 响应式尺寸，所有 px 均使用 calc(px * var(--scale-ratio, 1))
  * - 支持 bind:value 双向绑定
- * - 中文显示（年月日）
  * - 提供 getValue()、setValue() 方法
- * - 支持年份和月份切换
  * - 支持 change 事件和 onChange 回调
+ * - 自适应缩放，基于ResponsiveBox组件实现
  *
  * 使用方法：
- * <DatePicker
- *   bind:value={date}
- *   placeholder="请选择日期"
- *   onChange={(date) => console.log('日期改变:', date)}
+ * <ConditionInput
+ *   mode="input|select|tree|year|date|datetime"
+ *   bind:value={value}
+ *   placeholder="请输入..."
+ *   onChange={(value) => console.log('值改变:', value)}
  * />
  *
  * 属性说明：
- * - value: Date 类型，可绑定
+ * - value: 输入值，根据mode不同可以是字符串或日期类型
+ * - mode: 输入模式，支持 'input' | 'select' | 'tree' | 'year' | 'date' | 'datetime'
  * - disabled: 是否禁用
- * - min: 最小日期 Date
- * - max: 最大日期 Date
- * - onChange: 日期改变回调函数
+ * - min: 最小日期（日期模式限定）
+ * - max: 最大日期（日期模式限定）
+ * - options: 下拉选项（select模式使用）
+ * - onChange: 值改变回调函数
+ * - id: 组件ID
+ * - style: 样式字符串
  *
  * 方法说明：
- * - getValue(): Date - 获取当前日期值
- * - setValue(date: Date | string): void - 设置日期值
+ * - getValue(): 获取当前值
+ * - setValue(value: Date | string): 设置值
  *
  * 事件说明：
- * - change: 日期改变时触发，参数为新的日期值
- */-->
+ * - change: 值改变时触发，参数为新的值
+ -->
 
 <script lang="ts">
     import { onMount, createEventDispatcher, tick } from 'svelte'
