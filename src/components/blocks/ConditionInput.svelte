@@ -1457,7 +1457,7 @@
     }
 
     .date-icon-image {
-        width: calc(18px * var(--scale-ratio, 1));
+        width: calc(24px * var(--scale-ratio, 1));
         height: calc(24px * var(--scale-ratio, 1));
         display: block;
     }
