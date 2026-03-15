@@ -82,27 +82,26 @@
     }
 </script>
 
-<div style="display: flex; flex-direction: column; gap: 8px; align-items: center; transform-origin: center;">
+<div style="display: flex; flex-direction: column; gap: calc(8px * var(--scale-ratio, 1)); align-items: center; transform-origin: center;">
     {#each messages as message (message.id)}
         <div
             class="toast-message"
             style="
                 display: flex;
                 align-items: center;
-                gap: 8px;
-                padding: 12px 16px;
+                gap: calc(8px * var(--scale-ratio, 1));
+                padding: calc(12px * var(--scale-ratio, 1)) calc(16px * var(--scale-ratio, 1));
                 background: rgba(15, 23, 42, 0.95);
-                border: 1px solid rgba(148, 163, 184, 0.2);
-                border-radius: 8px;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+                border: calc(1px * var(--scale-ratio, 1)) solid rgba(148, 163, 184, 0.2);
+                border-radius: calc(8px * var(--scale-ratio, 1));
+                box-shadow: 0 calc(4px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1)) rgba(0, 0, 0, 0.3);
                 color: #f1f5f9;
-                font-size: 14px;
-                min-width: 200px;
-                max-width: 400px;
+                font-size: calc(14px * var(--scale-ratio, 1));
+                min-width: calc(200px * var(--scale-ratio, 1));
+                max-width: calc(400px * var(--scale-ratio, 1));
                 pointer-events: auto;
                 animation: slideIn 0.3s ease-out;
                 transform-origin: center;
-                transform: scale(var(--scale-ratio, 1));
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
@@ -119,8 +118,8 @@
                     border: none;
                     color: #94a3b8;
                     cursor: pointer;
-                    font-size: 16px;
-                    padding: 2px;
+                    font-size: calc(16px * var(--scale-ratio, 1));
+                    padding: calc(2px * var(--scale-ratio, 1));
                     display: flex;
                     align-items: center;
                     justify-content: center;
@@ -137,11 +136,11 @@
     @keyframes slideIn {
         from {
             opacity: 0;
-            transform: scale(var(--scale-ratio, 1)) translateX(100px);
+            transform: translateX(calc(100px * var(--scale-ratio, 1)));
         }
         to {
             opacity: 1;
-            transform: scale(var(--scale-ratio, 1)) translateX(0);
+            transform: translateX(0);
         }
     }
 

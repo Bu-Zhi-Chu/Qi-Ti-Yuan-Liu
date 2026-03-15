@@ -187,7 +187,6 @@
         justify-content: flex-end;
         gap: calc(16px * var(--scale-ratio, 1));
     }
-    /* 主按钮样式 */
     button {
         padding: calc(8px * var(--scale-ratio, 1)) calc(24px * var(--scale-ratio, 1));
         font-size: calc(14px * var(--scale-ratio, 1));
@@ -195,15 +194,11 @@
         border: none;
         background: linear-gradient(135deg, #6366f1 0%, #7c3aed 100%);
         color: #f8fafc;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         cursor: pointer;
-        transition:
-            transform 0.15s ease,
-            box-shadow 0.15s ease;
+        transition: transform 0.15s ease;
     }
     button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+        transform: scale(1.03);
     }
 
     /* 模板卡片按钮，重置默认按钮样式 */
