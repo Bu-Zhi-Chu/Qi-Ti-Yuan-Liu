@@ -671,8 +671,39 @@
                     {
                         "value": "jump",
                         "label": "跳转"
+                    },
+                    {
+                        "value": "business",
+                        "label": "业务"
                     }
                 ]
+            },
+            "businessStyle": {
+                "label": "按钮样式",
+                "type": "select",
+                "options": [
+                    {
+                        "value": "search",
+                        "label": "查询"
+                    },
+                    {
+                        "value": "add",
+                        "label": "新增"
+                    },
+                    {
+                        "value": "delete",
+                        "label": "删除"
+                    },
+                    {
+                        "value": "excel",
+                        "label": "输出excel"
+                    }
+                ],
+                "default": "search",
+                "showIf": {
+                    "key": "buttonType",
+                    "value": "business"
+                }
             },
             "defaultHome": {
                 "label": "默认首页",
@@ -1436,30 +1467,6 @@
                         "control": "text"
                     },
                     {
-                        "key": "icon",
-                        "label": "图标",
-                        "control": "select",
-                        "options": [
-                            {
-                                "value": "search",
-                                "label": "查询"
-                            },
-                            {
-                                "value": "add",
-                                "label": "新增"
-                            },
-                            {
-                                "value": "delete",
-                                "label": "删除"
-                            },
-                            {
-                                "value": "excel",
-                                "label": "输出excel"
-                            }
-                        ],
-                        "default": "search"
-                    },
-                    {
                         "key": "disabled",
                         "label": "禁用",
                         "control": "switch"
@@ -1468,26 +1475,26 @@
                 "default": [
                     {
                         "name": "查询",
-                        "icon": "search",
-                        "buttonType": "search",
+                        "buttonType": "business",
+                        "businessStyle": "search",
                         "disabled": false
                     },
                     {
                         "name": "新增",
-                        "icon": "add",
-                        "buttonType": "add",
+                        "buttonType": "business",
+                        "businessStyle": "add",
                         "disabled": false
                     },
                     {
                         "name": "删除",
-                        "icon": "delete",
-                        "buttonType": "delete",
+                        "buttonType": "business",
+                        "businessStyle": "delete",
                         "disabled": false
                     },
                     {
                         "name": "输出excel",
-                        "icon": "excel",
-                        "buttonType": "export",
+                        "buttonType": "business",
+                        "businessStyle": "excel",
                         "disabled": false
                     }
                 ]

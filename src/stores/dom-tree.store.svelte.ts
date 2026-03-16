@@ -226,6 +226,40 @@ function initCompanyToolbarChildren(root: DomNode): void {
           }
         }
       }
+
+      const buttons = attrs.actionButtons;
+      const desiredButtons = Array.isArray(buttons) ? buttons.length : 0;
+      if (desiredButtons > 0) {
+        if (!node.children) {
+          node.children = [];
+        }
+        const buttonNodes = node.children.filter((c: any) => c.componentType === 'Button');
+        let currentBtn = buttonNodes.length;
+        if (currentBtn < desiredButtons) {
+          const buttonMeta = (blocksConfig as any[]).find((b) => b.type === 'Button') as any;
+          const baseStyles: any = buttonMeta?.presetStyles ? { ...buttonMeta.presetStyles } : {};
+          for (let i = currentBtn; i < desiredButtons; i++) {
+            const cfg = buttons[i] || {};
+            const name =
+              typeof cfg?.name === 'string' && cfg.name.trim().length > 0 ? cfg.name.trim() : `按钮 ${i + 1}`;
+            const childId = globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-toolbar-btn-${i}-${Math.random()}`;
+            node.children.push({
+              id: childId,
+              componentType: 'Button',
+              styles: baseStyles,
+              textContent: name,
+              attributes: {
+                'data-name': name,
+                textContent: name,
+                buttonType: cfg.buttonType ?? '',
+                navigationTarget: cfg.navigationTarget ?? '',
+                jumpPath: cfg.jumpPath ?? ''
+              },
+              children: []
+            } as any);
+          }
+        }
+      }
     }
     if (node.children) {
       for (const child of node.children) {

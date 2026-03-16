@@ -12,9 +12,8 @@
     import PropertySelect from './PropertySelect.svelte'
     import SizeInput from './SizeInput.svelte'
     import NativeRange from './NativeRange.svelte'
-    import { updateNodeProperties } from '../../stores/dom-tree.store.svelte'
+    import { updateNodeProperties, findParentById, domTree, addNodeToParent, removeNodeById } from '../../stores/dom-tree.store.svelte'
     import blocksConfig from '../blocks/blocks.config.json'
-    import { addNodeToParent, removeNodeById, domTree } from '../../stores/dom-tree.store.svelte'
     interface BlockItem {
         type: string
         nameZh: string
@@ -249,6 +248,19 @@
         // 如果是Button组件，同步更新textContent
         if (isButtonComponent) {
             updateNodeProperties(selectedId, { textContent: newName })
+            const parent = findParentById(domTree, selectedId)
+            if (parent && parent.componentType === 'CompanyTableToolbar') {
+                const attrs = (parent.attributes ?? {}) as any
+                const actionButtons = Array.isArray(attrs.actionButtons) ? [...attrs.actionButtons] : []
+                const buttonNodes = (parent.children ?? []).filter((c: any) => c.componentType === 'Button')
+                const index = buttonNodes.findIndex((b: any) => b.id === selectedId)
+                if (index >= 0) {
+                    const cfg = actionButtons[index] ?? {}
+                    const next = { ...cfg, name: newName }
+                    actionButtons[index] = next
+                    updateNodeProps(parent.id, { attributes: { actionButtons } })
+                }
+            }
         }
     }
     // 修改组件类型

@@ -5,7 +5,6 @@
 
     interface ActionButtonConfig {
         name?: string
-        icon?: string
         buttonType?: string
         disabled?: boolean
     }
@@ -27,10 +26,10 @@
 
     const normalizedButtons = $derived((): ActionButtonConfig[] => {
         const fallback: ActionButtonConfig[] = [
-            { name: '查询', icon: 'search', buttonType: 'search', disabled: false },
-            { name: '新增', icon: 'add', buttonType: 'add', disabled: false },
-            { name: '删除', icon: 'delete', buttonType: 'delete', disabled: false },
-            { name: '输出excel', icon: 'excel', buttonType: 'export', disabled: false }
+            { name: '查询', buttonType: 'search', disabled: false },
+            { name: '新增', buttonType: 'add', disabled: false },
+            { name: '删除', buttonType: 'delete', disabled: false },
+            { name: '输出excel', buttonType: 'export', disabled: false }
         ]
         if (!Array.isArray(actionButtons) || actionButtons.length === 0) {
             return fallback
@@ -40,28 +39,13 @@
                 return fallback[index] || fallback[0]
             }
             const name = typeof item.name === 'string' && item.name ? item.name : fallback[index]?.name || fallback[0].name
-            const icon = typeof item.icon === 'string' && item.icon ? item.icon : fallback[index]?.icon || fallback[0].icon
             const buttonType = typeof item.buttonType === 'string' && item.buttonType ? item.buttonType : fallback[index]?.buttonType || fallback[0].buttonType
             const disabled = item.disabled === true
-            return { name, icon, buttonType, disabled }
+            return { name, buttonType, disabled }
         })
     })
 
     const context = getContext<any>('company-table')
-
-    const baseUrl = import.meta.env.BASE_URL || '/'
-    const searchIcon = `${baseUrl}img/hold/search.png`
-    const addIcon = `${baseUrl}img/hold/edit_add.png`
-    const removeIcon = `${baseUrl}img/hold/edit_remove.png`
-    const excelIcon = `${baseUrl}img/hold/excel.png`
-
-    function resolveIcon(key?: string) {
-        if (key === 'search') return searchIcon
-        if (key === 'add') return addIcon
-        if (key === 'delete') return removeIcon
-        if (key === 'excel') return excelIcon
-        return searchIcon
-    }
 
     function handleAddClick() {
         context?.toggleExtraRegion?.()
@@ -74,6 +58,7 @@
     }
 
     const conditionNodes: () => DomNode[] = $derived(() => (childrenNodes ?? []).filter((n) => n.componentType === 'ConditionInput'))
+    const buttonNodes: () => DomNode[] = $derived(() => (childrenNodes ?? []).filter((n) => n.componentType === 'Button'))
 </script>
 
 <div {style} class={className} {...rest}>
@@ -91,12 +76,17 @@
             {/if}
         {/each}
     {/if}
-    {#each normalizedButtons().filter((b) => !b.disabled) as btn}
-        <button type="button" class="company-table-btn" onclick={() => handleButtonClick(btn)}>
-            <img class="company-table-btn-icon" src={resolveIcon(btn.icon)} alt="" />
-            {btn.name}
-        </button>
-    {/each}
+    {#if buttonNodes().length > 0}
+        {#each buttonNodes() as btnNode}
+            <NodeRenderer node={btnNode} {selectedId} {editing} {selectionBorderDisabled} {select} />
+        {/each}
+    {:else}
+        {#each normalizedButtons().filter((b) => !b.disabled) as btn}
+            <button type="button" class="company-table-btn" onclick={() => handleButtonClick(btn)}>
+                {btn.name}
+            </button>
+        {/each}
+    {/if}
 </div>
 
 <style>

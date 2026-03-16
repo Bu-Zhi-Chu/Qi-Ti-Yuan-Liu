@@ -399,9 +399,12 @@
                                         const featureProps = toolbarMeta?.featureProps
                                         const defaultConditions = featureProps?.queryConditions?.default
                                         const queryConditions = Array.isArray(defaultConditions) ? defaultConditions.map((c: any) => ({ ...c })) : []
+                                        const defaultButtons = featureProps?.actionButtons?.default
+                                        const actionButtons = Array.isArray(defaultButtons) ? defaultButtons.map((b: any) => ({ ...b })) : []
                                         return {
                                             'data-name': '工具栏',
-                                            queryConditions
+                                            queryConditions,
+                                            actionButtons
                                         }
                                     })(),
                                     children: (() => {
@@ -411,13 +414,79 @@
                                         const conditions = Array.isArray(defaultConditions) && defaultConditions.length > 0 ? defaultConditions : [{ name: '条件一', type: 'input', disabled: false }]
                                         const conditionMeta = (blocksConfig as any[]).find((b) => b.type === 'ConditionInput') as any
                                         const baseStyles = conditionMeta?.presetStyles ? { ...conditionMeta.presetStyles } : {}
-                                        return conditions.map((_: any, idx: number) => ({
+                                        const conditionNodes = conditions.map((_: any, idx: number) => ({
                                             id: globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-condition-${idx}`,
                                             componentType: 'ConditionInput',
                                             styles: baseStyles,
                                             attributes: { 'data-name': `条件输入 ${idx + 1}` },
                                             children: []
                                         }))
+                                        const defaultButtons = featureProps?.actionButtons?.default
+                                        const buttons =
+                                            Array.isArray(defaultButtons) && defaultButtons.length > 0
+                                                ? defaultButtons
+                                                : [
+                                                      { name: '查询', icon: 'search', buttonType: 'search', disabled: false },
+                                                      { name: '新增', icon: 'add', buttonType: 'add', disabled: false },
+                                                      { name: '删除', icon: 'delete', buttonType: 'delete', disabled: false },
+                                                      { name: '输出excel', icon: 'excel', buttonType: 'export', disabled: false }
+                                                  ]
+                                        const buttonMeta = (blocksConfig as any[]).find((b) => b.type === 'Button') as any
+                                        const baseButtonStyles = buttonMeta?.presetStyles ? ({ ...buttonMeta.presetStyles } as any) : {}
+                                        const buttonNodes = buttons.map((btn: any, idx: number) => {
+                                            const name = typeof btn?.name === 'string' && btn.name.trim().length > 0 ? btn.name.trim() : `按钮 ${idx + 1}`
+                                            const businessStyle = typeof btn?.businessStyle === 'string' && btn.businessStyle ? btn.businessStyle : btn?.icon === 'excel' ? 'excel' : btn?.icon === 'delete' ? 'delete' : btn?.icon === 'add' ? 'add' : 'search'
+                                            const iconPath = businessStyle === 'search' ? 'img/hold/search.png' : businessStyle === 'add' ? 'img/hold/edit_add.png' : businessStyle === 'delete' ? 'img/hold/edit_remove.png' : 'img/hold/excel.png'
+                                            const width = businessStyle === 'excel' ? 'calc(125px * var(--scale-ratio, 1))' : 'calc(98px * var(--scale-ratio, 1))'
+                                            const textOffsetLeft = businessStyle === 'excel' ? '8px' : '-1px'
+                                            return {
+                                                id: globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-toolbar-btn-${idx}`,
+                                                componentType: 'Button',
+                                                styles:
+                                                    btn?.buttonType === 'business'
+                                                        ? {
+                                                              display: 'flex',
+                                                              justifyContent: 'center',
+                                                              alignItems: 'center',
+                                                              cursor: 'pointer',
+                                                              width,
+                                                              height: 'calc(30px * var(--scale-ratio, 1))',
+                                                              backgroundColor: 'rgb(0, 128, 236)',
+                                                              color: 'rgb(255, 255, 255)',
+                                                              fontSize: 'calc(18px * var(--scale-ratio, 1))',
+                                                              fontWeight: '400',
+                                                              lineHeight: 'calc(18px * var(--scale-ratio, 1))',
+                                                              textIndent: 'calc(19px * var(--scale-ratio, 1))',
+                                                              borderWidth: 'calc(0px * var(--scale-ratio, 1))',
+                                                              borderStyle: 'solid',
+                                                              borderColor: 'rgb(0, 0, 0)',
+                                                              borderRadius: 'calc(4px * var(--scale-ratio, 1))',
+                                                              backgroundImage: iconPath,
+                                                              backgroundSize: 'calc(24px * var(--scale-ratio, 1)) calc(18px * var(--scale-ratio, 1))',
+                                                              backgroundSizeX: '24px',
+                                                              backgroundSizeY: '18px',
+                                                              backgroundPositionX: '13.9%',
+                                                              backgroundPositionY: '50%',
+                                                              backgroundPosition: '13.9% 50%',
+                                                              backgroundRepeat: 'no-repeat',
+                                                              backgroundOpacity: '1',
+                                                              textOffsetLeft,
+                                                              textOffsetTop: '-2px'
+                                                          }
+                                                        : baseButtonStyles,
+                                                textContent: name,
+                                                attributes: {
+                                                    'data-name': name,
+                                                    textContent: name,
+                                                    buttonType: btn?.buttonType ?? '',
+                                                    businessStyle,
+                                                    navigationTarget: btn?.navigationTarget ?? '',
+                                                    jumpPath: btn?.jumpPath ?? ''
+                                                },
+                                                children: []
+                                            }
+                                        })
+                                        return [...conditionNodes, ...buttonNodes]
                                     })()
                                 },
                                 {

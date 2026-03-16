@@ -9,6 +9,7 @@
     import CodeEditor from '../widgets/CodeEditor.svelte'
     import blocksConfig from '../blocks/blocks.config.json'
     import { dataMappingKeysStore } from '../../stores/data-mapping.store.svelte'
+    import { cachedFetch } from '../../services/cache/cached-fetch'
 
     const defaultDataSourceConfig = {
         dataAccess: {
@@ -459,6 +460,196 @@
         }
     }
 
+    function unwrapArrayPayload(payload: any): any[] {
+        if (Array.isArray(payload)) return payload
+        if (payload && typeof payload === 'object') {
+            const candidateKeys = ['data', 'result', 'rows', 'list', 'items']
+            for (const k of candidateKeys) {
+                const v = (payload as any)[k]
+                if (Array.isArray(v)) return v
+            }
+        }
+        return []
+    }
+
+    function buildTreeFromFlatRecords(records: any[]): any[] {
+        const nodesById = new Map<any, any>()
+        const pendingChildrenByParentId = new Map<any, any[]>()
+        const roots: any[] = []
+
+        for (const raw of records) {
+            const id = raw?.id ?? raw?.ID
+            if (id == null) continue
+            const node = {
+                id,
+                label: raw?.label ?? raw?.NAME ?? '',
+                SELF_CODE: raw?.SELF_CODE,
+                checked: raw?.checked ?? false,
+                expanded: raw?.expanded,
+                children: [] as any[]
+            }
+            nodesById.set(id, node)
+
+            const pending = pendingChildrenByParentId.get(id)
+            if (pending && pending.length > 0) {
+                node.children.push(...pending)
+                pendingChildrenByParentId.delete(id)
+            }
+
+            const parentId = raw?.parentId ?? raw?.PARENT_ID
+            if (parentId == null) {
+                roots.push(node)
+                continue
+            }
+            const parent = nodesById.get(parentId)
+            if (parent) {
+                parent.children = parent.children ?? []
+                parent.children.push(node)
+            } else {
+                const bucket = pendingChildrenByParentId.get(parentId) ?? []
+                bucket.push(node)
+                pendingChildrenByParentId.set(parentId, bucket)
+            }
+        }
+
+        return roots
+    }
+
+    function normalizeFilterTreeRequestData(payload: any): any[] {
+        const arr = unwrapArrayPayload(payload)
+        if (!arr.length) return []
+        const first = arr[0]
+        if (first && typeof first === 'object' && Array.isArray((first as any).children)) {
+            return arr
+        }
+        if (first && typeof first === 'object' && ('PARENT_ID' in first || 'parentId' in first)) {
+            return buildTreeFromFlatRecords(arr)
+        }
+        return arr
+    }
+
+    function sanitizeUrlInput(raw: string): string {
+        let s = (raw || '').trim()
+        if (!s) return ''
+
+        if ((s.startsWith('`') && s.endsWith('`')) || (s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
+            s = s.slice(1, -1).trim()
+        }
+
+        while (s && /[`\s"'(<]/.test(s[0])) s = s.slice(1)
+        while (s && /[`\s"'()<>:,]/.test(s[s.length - 1])) s = s.slice(0, -1)
+
+        return s.trim()
+    }
+
+    function resolveAbsoluteUrl(raw: string): string {
+        const s = sanitizeUrlInput(raw)
+        if (!s) return ''
+        if (/^https?:\/\//i.test(s)) return s
+        if (s.startsWith('//')) return `https:${s}`
+        if (/^[\w.-]+\.[a-z]{2,}(\/|$)/i.test(s)) return `https://${s}`
+        const origin = window.location.origin
+        if (s.startsWith('/')) return `${origin}${s}`
+        return `${origin}/${s}`
+    }
+
+    let lastFilterTreeFetchKey: string | null = null
+    let filterTreeController: AbortController | null = null
+    let filterTreeTimer: ReturnType<typeof setTimeout> | null = null
+
+    function cancelFilterTreeRequest() {
+        if (filterTreeTimer) {
+            clearTimeout(filterTreeTimer)
+            filterTreeTimer = null
+        }
+        if (filterTreeController) {
+            filterTreeController.abort()
+            filterTreeController = null
+        }
+    }
+
+    $effect(() => {
+        return () => {
+            cancelFilterTreeRequest()
+        }
+    })
+
+    $effect(() => {
+        if (componentType !== 'FilterTree') {
+            cancelFilterTreeRequest()
+            lastFilterTreeFetchKey = null
+            return
+        }
+
+        if (!selectedId) {
+            cancelFilterTreeRequest()
+            lastFilterTreeFetchKey = null
+            return
+        }
+
+        if (dataSource !== 'real' && dataSource !== 'mock') {
+            cancelFilterTreeRequest()
+            lastFilterTreeFetchKey = null
+            return
+        }
+
+        const requestPath = String(currentValues.requestPath ?? '').trim()
+        const mockPath = String(currentValues.mockPath ?? '').trim()
+        const rawPath = dataSource === 'real' ? requestPath : mockPath
+        const url = resolveAbsoluteUrl(rawPath)
+        if (!url) {
+            cancelFilterTreeRequest()
+            lastFilterTreeFetchKey = null
+            return
+        }
+
+        const fetchKey = `${selectedId}|${dataSource}|${url}`
+        if (fetchKey === lastFilterTreeFetchKey) return
+        lastFilterTreeFetchKey = fetchKey
+
+        cancelFilterTreeRequest()
+        filterTreeController = new AbortController()
+        const controller = filterTreeController
+
+        console.log(`[FilterTree][CacheFlow] start source=${dataSource} url=${url}`)
+
+        filterTreeTimer = setTimeout(async () => {
+            try {
+                const ownerId = selectedId
+                const ownerKey = fetchKey
+                const applyTree = (payload: any, stage: string) => {
+                    if (controller.signal.aborted) return
+                    if (selectedId !== ownerId) return
+                    if (lastFilterTreeFetchKey !== ownerKey) return
+                    const tree = normalizeFilterTreeRequestData(payload)
+                    console.log(`[FilterTree][CacheFlow] apply stage=${stage} nodes=${Array.isArray(tree) ? tree.length : 0}`)
+                    handleAttrChange('treeData', tree)
+                }
+
+                const data = await cachedFetch<any>(
+                    url,
+                    { method: 'GET', signal: controller.signal },
+                    {
+                        onUpdate: (fresh) => {
+                            const next = normalizeFilterTreeRequestData(fresh)
+                            const prev = Array.isArray(currentValues.treeData) ? currentValues.treeData : []
+                            const changed = JSON.stringify(prev) !== JSON.stringify(next)
+                            console.log(`[FilterTree][CacheFlow] revalidate done changed=${changed} prevNodes=${prev.length} nextNodes=${next.length}`)
+                            if (changed) {
+                                applyTree(fresh, 'network-revalidate-replace')
+                            }
+                        }
+                    }
+                )
+
+                applyTree(data, 'cache-or-network-initial')
+            } catch (e) {
+                if ((e as any)?.name === 'AbortError') return
+                console.error(`[FilterTree][DataEditor] ${dataSource} 请求解析失败`, e)
+            }
+        }, 400)
+    })
+
     /** 实时更新第 index 个 request data 映射路径 */
     function updateRequestSeriesMapping(index: number, path: string) {
         if (!selectedId || requestSeriesMapping()[index] === path) return
@@ -482,6 +673,17 @@
         // DataEditor 只改 attributes；styles 由别的面板处理
         const attributesToUpdate: { [k: string]: any } = { [key]: value }
         updateNodeProps(selectedId, { attributes: attributesToUpdate })
+
+        if (componentType === 'FilterTree' && (key === 'requestPath' || key === 'mockPath')) {
+            const trimmed = String(value ?? '').trim()
+            const currentDataSource = currentValues.dataSource ?? dataSourceConfig?.default ?? 'json'
+            const clearedActive = (key === 'requestPath' && currentDataSource === 'real') || (key === 'mockPath' && currentDataSource === 'mock')
+            if (trimmed === '' && clearedActive) {
+                lastFilterTreeFetchKey = null
+                currentValues = { ...currentValues, dataSource: 'json', treeData: [] }
+                updateNodeProps(selectedId, { attributes: { dataSource: 'json', treeData: [] } })
+            }
+        }
     }
 
     // 工具函数：获取组件级别的 dataSource 配置
@@ -517,7 +719,15 @@
     <!-- 请求路径配置：只在选择真实请求时显示 -->
     {#if fullDataSourceConfig?.requestPath && (currentValues.dataSource ?? dataSourceConfig?.default ?? 'json') === 'real'}
         <PropertyRow label={fullDataSourceConfig.requestPath.label}>
-            <input type="text" autocomplete="off" value={currentValues.requestPath ?? fullDataSourceConfig.requestPath.default ?? '/api/data'} onchange={(e) => handleAttrChange('requestPath', (e.target as HTMLInputElement).value)} class="request-path-input" placeholder="请输入请求路径" />
+            <input
+                type="text"
+                autocomplete="off"
+                value={currentValues.requestPath ?? fullDataSourceConfig.requestPath.default ?? '/api/data'}
+                oninput={(e) => handleAttrChange('requestPath', (e.target as HTMLInputElement).value)}
+                onchange={(e) => handleAttrChange('requestPath', (e.target as HTMLInputElement).value)}
+                class="request-path-input"
+                placeholder="请输入请求路径"
+            />
         </PropertyRow>
     {/if}
 
@@ -535,7 +745,15 @@
     <!-- 模拟路径配置：只在选择模拟接口时显示 -->
     {#if fullDataSourceConfig?.mockPath && (currentValues.dataSource ?? dataSourceConfig?.default ?? 'json') === 'mock' && !(componentType === 'ConditionInput' && (conditionInputMode === 'year' || conditionInputMode === 'date' || conditionInputMode === 'datetime'))}
         <PropertyRow label={fullDataSourceConfig.mockPath.label}>
-            <input type="text" autocomplete="off" value={currentValues.mockPath ?? fullDataSourceConfig.mockPath.default ?? '/api/mock'} onchange={(e) => handleAttrChange('mockPath', (e.target as HTMLInputElement).value)} class="request-path-input" placeholder="请输入模拟路径" />
+            <input
+                type="text"
+                autocomplete="off"
+                value={currentValues.mockPath ?? fullDataSourceConfig.mockPath.default ?? '/api/mock'}
+                oninput={(e) => handleAttrChange('mockPath', (e.target as HTMLInputElement).value)}
+                onchange={(e) => handleAttrChange('mockPath', (e.target as HTMLInputElement).value)}
+                class="request-path-input"
+                placeholder="请输入模拟路径"
+            />
         </PropertyRow>
     {/if}
 

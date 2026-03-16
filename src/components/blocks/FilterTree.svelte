@@ -169,7 +169,7 @@
 
     $effect(() => {
         console.log('[FilterTree] effect 触发，dataSource:', dataSource, 'rawTreeData length:', Array.isArray(rawTreeData) ? rawTreeData.length : '非数组')
-        if (dataSource === 'json') {
+        if (dataSource === 'json' || dataSource === 'real' || dataSource === 'mock') {
             const normalized = rawTreeData.length > 0 ? normalizeTreeData(rawTreeData as any[]) : defaultTreeData
             treeData = normalized
             const first = normalized[0]

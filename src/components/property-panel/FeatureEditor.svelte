@@ -3,7 +3,7 @@
 -->
 <script lang="ts">
     import { getNodePropsStore, getNodeProps as _getNodeProps, getFullNode, updateNodeProps } from '../../services/parser/property-panel.service'
-    import { addNodeToParent, removeNodeById, reorderChildren } from '../../stores/dom-tree.store.svelte'
+    import { addNodeToParent, removeNodeById, reorderChildren, updateNodeProperties } from '../../stores/dom-tree.store.svelte'
     import blocksConfig from '../blocks/blocks.config.json'
     import PropertyRow from './PropertyRow.svelte'
     import PropertySelect from './PropertySelect.svelte'
@@ -313,12 +313,60 @@
 
             updateNodeProps(selectedId, { attributes: attributesToUpdate })
 
+            if (key === 'buttonType' || key === 'businessStyle') {
+                const node = getFullNode(selectedId)
+                if (node?.componentType === 'Button') {
+                    const attrs = (node.attributes ?? {}) as any
+                    if (attrs.buttonType === 'business') {
+                        const styleKey = typeof attrs.businessStyle === 'string' && attrs.businessStyle ? attrs.businessStyle : 'search'
+                        const labelText = styleKey === 'search' ? '查询' : styleKey === 'add' ? '新增' : styleKey === 'delete' ? '删除' : '输出excel'
+                        const iconPath = styleKey === 'search' ? 'img/hold/search.png' : styleKey === 'add' ? 'img/hold/edit_add.png' : styleKey === 'delete' ? 'img/hold/edit_remove.png' : 'img/hold/excel.png'
+                        const width = styleKey === 'excel' ? 'calc(125px * var(--scale-ratio, 1))' : 'calc(98px * var(--scale-ratio, 1))'
+
+                        updateNodeProps(selectedId, { attributes: { 'data-name': labelText, textContent: labelText } })
+                        updateNodeProperties(selectedId, { textContent: labelText })
+                        const textOffsetLeft = styleKey === 'excel' ? '8px' : '-1px'
+                        updateNodeProps(selectedId, {
+                            styles: {
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                cursor: 'pointer',
+                                width,
+                                height: 'calc(30px * var(--scale-ratio, 1))',
+                                backgroundColor: 'rgb(0, 128, 236)',
+                                color: 'rgb(255, 255, 255)',
+                                fontSize: 'calc(18px * var(--scale-ratio, 1))',
+                                fontWeight: '400',
+                                lineHeight: 'calc(18px * var(--scale-ratio, 1))',
+                                textIndent: 'calc(19px * var(--scale-ratio, 1))',
+                                borderWidth: 'calc(0px * var(--scale-ratio, 1))',
+                                borderStyle: 'solid',
+                                borderColor: 'rgb(0, 0, 0)',
+                                borderRadius: 'calc(4px * var(--scale-ratio, 1))',
+                                backgroundImage: iconPath,
+                                backgroundSize: 'calc(24px * var(--scale-ratio, 1)) calc(18px * var(--scale-ratio, 1))',
+                                backgroundSizeX: '24px',
+                                backgroundSizeY: '18px',
+                                backgroundPositionX: '13.9%',
+                                backgroundPositionY: '50%',
+                                backgroundPosition: '13.9% 50%',
+                                backgroundRepeat: 'no-repeat',
+                                backgroundOpacity: '1',
+                                textOffsetLeft,
+                                textOffsetTop: '-2px'
+                            }
+                        })
+                    }
+                }
+            }
+
             if (key === 'queryConditions') {
                 syncCompanyToolbarConditionNames(value)
             }
 
-            if (key === 'columnLabels') {
-                syncCompanyFormAreaWithColumns(value)
+            if (key === 'actionButtons') {
+                syncCompanyToolbarButtons(value)
             }
 
             // 额外逻辑：同级导航按钮唯一默认首页
@@ -940,6 +988,74 @@
         formArea.children = [...newFields, ...otherChildren]
     }
 
+    function syncCompanyToolbarButtons(buttons: any[]) {
+        if (!selectedId) return
+        const toolbar = getFullNode(selectedId)
+        if (!toolbar || toolbar.componentType !== 'CompanyTableToolbar') return
+
+        const btnConfigs = Array.isArray(buttons) ? buttons : []
+        if (!toolbar.children) toolbar.children = []
+        const children = toolbar.children
+        const buttonNodes = children.filter((c: any) => c.componentType === 'Button')
+        const otherChildren = children.filter((c: any) => c.componentType !== 'Button')
+
+        const buttonMeta = (blocksConfig as any[]).find((b) => b.type === 'Button') as any
+        const baseStyles = buttonMeta?.presetStyles ? { ...buttonMeta.presetStyles } : {}
+
+        const newButtonNodes: any[] = []
+
+        btnConfigs.forEach((cfg: any, index: number) => {
+            let node = buttonNodes[index]
+            const name = typeof cfg?.name === 'string' && cfg.name.trim().length > 0 ? cfg.name.trim() : `按钮 ${index + 1}`
+            const attrsUpdate: any = {
+                'data-name': name,
+                textContent: name,
+                buttonType: cfg?.buttonType ?? (node?.attributes as any)?.buttonType ?? '',
+                businessStyle: cfg?.businessStyle ?? (node?.attributes as any)?.businessStyle ?? undefined,
+                disabled: !!cfg?.disabled,
+                navigationTarget: cfg?.navigationTarget ?? (node?.attributes as any)?.navigationTarget ?? '',
+                jumpPath: cfg?.jumpPath ?? (node?.attributes as any)?.jumpPath ?? ''
+            }
+
+            if (node) {
+                if (!node.attributes) node.attributes = {}
+                node.attributes = { ...node.attributes, ...attrsUpdate }
+                updateNodeProps(node.id, { attributes: attrsUpdate })
+                if (cfg?.disabled) {
+                    updateNodeProps(node.id, { styles: { display: 'none' } })
+                } else if ((node.styles as any)?.display === 'none') {
+                    updateNodeProps(node.id, { styles: { display: 'flex' } })
+                }
+                if ((node as any).textContent !== name) {
+                    ;(node as any).textContent = name
+                    updateNodeProperties(node.id, { textContent: name })
+                }
+            } else {
+                const id = globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-toolbar-btn-${index}-${Math.random()}`
+                node = {
+                    id,
+                    componentType: 'Button',
+                    styles: baseStyles,
+                    textContent: name,
+                    attributes: attrsUpdate,
+                    children: []
+                }
+                addNodeToParent(toolbar.id, node)
+            }
+
+            newButtonNodes.push(node)
+        })
+
+        if (buttonNodes.length > btnConfigs.length) {
+            const extras = buttonNodes.slice(btnConfigs.length)
+            for (const b of extras) {
+                removeNodeById(b.id)
+            }
+        }
+
+        toolbar.children = [...otherChildren, ...newButtonNodes]
+    }
+
     function addQueryCondition(key: string) {
         const list = Array.isArray(currentValues[key]) ? [...currentValues[key]] : []
         const index = list.length
@@ -965,11 +1081,12 @@
         const index = list.length
         list.push({
             name: `按钮${index + 1}`,
-            icon: 'add',
-            buttonType: 'custom',
+            buttonType: 'business',
+            businessStyle: 'add',
             disabled: false
         })
         handleAttrChange(key, list)
+        syncCompanyToolbarButtons(list)
     }
 
     function removeToolbarButton(key: string, index: number) {
@@ -977,6 +1094,7 @@
         if (index < 4 || index >= list.length) return
         list.splice(index, 1)
         handleAttrChange(key, list)
+        syncCompanyToolbarButtons(list)
     }
 
     // 记录各属性对应的隐藏文件输入
