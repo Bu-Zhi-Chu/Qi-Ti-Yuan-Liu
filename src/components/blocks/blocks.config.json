@@ -673,8 +673,8 @@
                         "label": "跳转"
                     },
                     {
-                        "value": "business",
-                        "label": "业务"
+                        "value": "hongde",
+                        "label": "鸿德"
                     }
                 ]
             },
@@ -702,7 +702,7 @@
                 "default": "search",
                 "showIf": {
                     "key": "buttonType",
-                    "value": "business"
+                    "value": "hongde"
                 }
             },
             "defaultHome": {
@@ -1475,25 +1475,25 @@
                 "default": [
                     {
                         "name": "查询",
-                        "buttonType": "business",
+                        "buttonType": "hongde",
                         "businessStyle": "search",
                         "disabled": false
                     },
                     {
                         "name": "新增",
-                        "buttonType": "business",
+                        "buttonType": "hongde",
                         "businessStyle": "add",
                         "disabled": false
                     },
                     {
                         "name": "删除",
-                        "buttonType": "business",
+                        "buttonType": "hongde",
                         "businessStyle": "delete",
                         "disabled": false
                     },
                     {
                         "name": "输出excel",
-                        "buttonType": "business",
+                        "buttonType": "hongde",
                         "businessStyle": "excel",
                         "disabled": false
                     }

@@ -71,6 +71,7 @@
     let currentName = $state<string>('')
     let currentType = $state<string>('')
     let currentRemark = $state<string>('')
+    let currentNodeFunction = $state<'normal' | 'condition' | 'result'>('normal')
     // 新增根节点判断
     let isRoot = $state(false)
     // 根节点判定
@@ -104,6 +105,7 @@
         name: '',
         type: '',
         remark: '',
+        nodeFunction: 'normal',
         width: '',
         height: '',
         pointerEvents: 'auto',
@@ -127,6 +129,7 @@
                 const nextName = node?.attributes?.['data-name'] ?? ''
                 const nextType = node?.componentType || (node?.attributes as any)?.type || componentOptions[0]?.type || ''
                 const nextRemark = snapshot?.attributes?.['data-remark'] ?? ''
+                const nextNodeFunction = (snapshot?.attributes?.['data-function'] as any) || 'normal'
                 const [nextWidthValue, nextWidthUnit] = parseSize(snapshot?.styles?.width)
                 const [nextHeightValue, nextHeightUnit] = parseSize(snapshot?.styles?.height)
                 const nextPointerEvents = (snapshot?.styles?.pointerEvents as 'auto' | 'none') || 'auto'
@@ -145,6 +148,7 @@
                     lastSynced.name === finalName &&
                     lastSynced.type === nextType &&
                     lastSynced.remark === nextRemark &&
+                    lastSynced.nodeFunction === nextNodeFunction &&
                     lastSynced.width === `${nextWidthValue}${nextWidthUnit}` &&
                     lastSynced.height === `${nextHeightValue}${nextHeightUnit}` &&
                     lastSynced.pointerEvents === nextPointerEvents &&
@@ -163,6 +167,7 @@
                     name: finalName,
                     type: nextType,
                     remark: nextRemark,
+                    nodeFunction: nextNodeFunction,
                     width: `${nextWidthValue}${nextWidthUnit}`,
                     height: `${nextHeightValue}${nextHeightUnit}`,
                     pointerEvents: nextPointerEvents,
@@ -179,6 +184,7 @@
                 currentName = finalName
                 currentType = nextType
                 currentRemark = nextRemark
+                currentNodeFunction = nextNodeFunction
 
                 // 同步宽高
                 currentWidthValue = nextWidthValue
@@ -212,6 +218,7 @@
             currentName = ''
             currentType = ''
             currentRemark = ''
+            currentNodeFunction = 'normal'
             currentWidthValue = ''
             currentWidthUnit = '%'
             currentHeightValue = ''
@@ -336,6 +343,18 @@
         updateNodeProps(selectedId, {
             attributes: { 'data-remark': newRemark }
         })
+    }
+
+    const nodeFunctionOptions = [
+        { value: 'normal', label: '普通' },
+        { value: 'condition', label: '条件' },
+        { value: 'result', label: '结果' }
+    ]
+
+    function handleNodeFunctionChange(value: string) {
+        if (!selectedId) return
+        currentNodeFunction = (value as any) || 'normal'
+        updateNodeProps(selectedId, { attributes: { 'data-function': currentNodeFunction } })
     }
 
     // 工具函数：解析如 "100px"、"50%" 等字符串，拆分为数值与单位
@@ -489,6 +508,10 @@
             <!-- 新增：透明度（opacity） -->
             <PropertyRow label="节点透明">
                 <NativeRange min={0} max={1} step={0.05} bind:value={currentOpacity} onChange={handleOpacityChange} />
+            </PropertyRow>
+
+            <PropertyRow label="节点功能">
+                <PropertySelect bind:value={currentNodeFunction} options={nodeFunctionOptions} change={handleNodeFunctionChange} />
             </PropertyRow>
 
             <!-- 节点备注 -->

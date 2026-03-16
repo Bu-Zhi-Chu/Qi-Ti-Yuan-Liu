@@ -33,6 +33,14 @@
         return (blocksConfig as any[]).find((c) => c.type === type)?.featureProps ?? null
     })
 
+    const isCompanyToolbarButton: () => boolean = $derived(() => {
+        if (!selectedId) return false
+        const node = getFullNode(selectedId)
+        if (!node || node.componentType !== 'Button') return false
+        const parent = findParentById(domTree, selectedId)
+        return parent?.componentType === 'CompanyTableToolbar'
+    })
+
     let { selectedId = null } = $props<{ selectedId?: string | null }>()
 
     // 当前节点 props 快照
@@ -131,30 +139,42 @@
     const propEntries: () => PropEntry[] = $derived(() => {
         const fp = featureProps()
         if (!fp) return []
+        const node = selectedId ? getFullNode(selectedId) : null
+        const isButton = node?.componentType === 'Button' || (node?.attributes as any)?.type === 'Button'
 
         // 基础属性映射
-        const base: PropEntry[] = Object.entries(fp).map(([key, cfg]: [string, any]) => {
-            const entry: any = { key, ...cfg }
+        const base: PropEntry[] = Object.entries(fp)
+            .map(([key, cfg]: [string, any]) => {
+                const entry: any = { key, ...cfg }
 
-            // 处理动态选项
-            if (cfg.dynamicOptions === 'screens') {
-                // 收集 DOM 树中的 Screen 组件
-                const screens: { id: string; label: string }[] = []
-                function visit(node: any) {
-                    if (!node) return
-                    if (node.componentType === 'Screen' || (node.attributes as any)?.type === 'Screen') {
-                        const label = (node.attributes as any)?.['data-name'] || node.id
-                        screens.push({ id: node.id, label })
+                // 处理动态选项
+                if (cfg.dynamicOptions === 'screens') {
+                    // 收集 DOM 树中的 Screen 组件
+                    const screens: { id: string; label: string }[] = []
+                    function visit(node: any) {
+                        if (!node) return
+                        if (node.componentType === 'Screen' || (node.attributes as any)?.type === 'Screen') {
+                            const label = (node.attributes as any)?.['data-name'] || node.id
+                            screens.push({ id: node.id, label })
+                        }
+                        if (node.children) node.children.forEach(visit)
                     }
-                    if (node.children) node.children.forEach(visit)
+                    visit(domTree)
+
+                    entry.options = screens.map((s) => ({ value: s.id, label: s.label }))
                 }
-                visit(domTree)
 
-                entry.options = screens.map((s) => ({ value: s.id, label: s.label }))
-            }
+                if (isButton && key === 'businessStyle' && !isCompanyToolbarButton()) {
+                    return null
+                }
 
-            return entry
-        })
+                if (isButton && key === 'buttonType' && Array.isArray(entry.options) && !isCompanyToolbarButton()) {
+                    entry.options = entry.options.filter((opt: any) => opt?.value !== 'hongde')
+                }
+
+                return entry
+            })
+            .filter(Boolean) as any
 
         // 过滤基于 showIf
         const filtered = base.filter((e) => {
@@ -283,6 +303,9 @@
     }
     async function handleAttrChange(key: string, value: any) {
         const prevValue = currentValues[key]
+        if (key === 'buttonType' && value === 'business') {
+            value = 'hongde'
+        }
         // 如果是 DOM 树同步过来的 buttonCount 变更，则仅更新 view，不再触发增删按钮
         if (key === 'buttonCount' && syncingFromDomTree) {
             syncingFromDomTree = false
@@ -317,7 +340,7 @@
                 const node = getFullNode(selectedId)
                 if (node?.componentType === 'Button') {
                     const attrs = (node.attributes ?? {}) as any
-                    if (attrs.buttonType === 'business') {
+                    if (attrs.buttonType === 'hongde' && isCompanyToolbarButton()) {
                         const styleKey = typeof attrs.businessStyle === 'string' && attrs.businessStyle ? attrs.businessStyle : 'search'
                         const labelText = styleKey === 'search' ? '查询' : styleKey === 'add' ? '新增' : styleKey === 'delete' ? '删除' : '输出excel'
                         const iconPath = styleKey === 'search' ? 'img/hold/search.png' : styleKey === 'add' ? 'img/hold/edit_add.png' : styleKey === 'delete' ? 'img/hold/edit_remove.png' : 'img/hold/excel.png'
@@ -899,6 +922,14 @@
                 removeNodeById(c.id)
             }
         }
+
+        const latest = getFullNode(selectedId)
+        if (!latest || latest.componentType !== 'CompanyTableToolbar') return
+        const latestChildren = latest.children ?? []
+        const conds = latestChildren.filter((c: any) => c.componentType === 'ConditionInput')
+        const btns = latestChildren.filter((c: any) => c.componentType === 'Button')
+        const rest = latestChildren.filter((c: any) => c.componentType !== 'ConditionInput' && c.componentType !== 'Button')
+        reorderChildren(selectedId, [...conds, ...btns, ...rest] as any)
     }
 
     function syncCompanyToolbarConditionNames(conditions: any[]) {
@@ -1010,7 +1041,7 @@
             const attrsUpdate: any = {
                 'data-name': name,
                 textContent: name,
-                buttonType: cfg?.buttonType ?? (node?.attributes as any)?.buttonType ?? '',
+                buttonType: (cfg?.buttonType === 'business' ? 'hongde' : cfg?.buttonType) ?? ((node?.attributes as any)?.buttonType === 'business' ? 'hongde' : (node?.attributes as any)?.buttonType) ?? '',
                 businessStyle: cfg?.businessStyle ?? (node?.attributes as any)?.businessStyle ?? undefined,
                 disabled: !!cfg?.disabled,
                 navigationTarget: cfg?.navigationTarget ?? (node?.attributes as any)?.navigationTarget ?? '',
@@ -1053,7 +1084,11 @@
             }
         }
 
-        toolbar.children = [...otherChildren, ...newButtonNodes]
+        const conds = otherChildren.filter((c: any) => c.componentType === 'ConditionInput')
+        const rest = otherChildren.filter((c: any) => c.componentType !== 'ConditionInput')
+        const ordered = [...conds, ...newButtonNodes, ...rest]
+        toolbar.children = ordered
+        reorderChildren(toolbar.id, ordered as any)
     }
 
     function addQueryCondition(key: string) {
@@ -1081,7 +1116,7 @@
         const index = list.length
         list.push({
             name: `按钮${index + 1}`,
-            buttonType: 'business',
+            buttonType: 'hongde',
             businessStyle: 'add',
             disabled: false
         })

@@ -426,16 +426,16 @@
                                             Array.isArray(defaultButtons) && defaultButtons.length > 0
                                                 ? defaultButtons
                                                 : [
-                                                      { name: '查询', icon: 'search', buttonType: 'search', disabled: false },
-                                                      { name: '新增', icon: 'add', buttonType: 'add', disabled: false },
-                                                      { name: '删除', icon: 'delete', buttonType: 'delete', disabled: false },
-                                                      { name: '输出excel', icon: 'excel', buttonType: 'export', disabled: false }
+                                                      { name: '查询', buttonType: 'hongde', businessStyle: 'search', disabled: false },
+                                                      { name: '新增', buttonType: 'hongde', businessStyle: 'add', disabled: false },
+                                                      { name: '删除', buttonType: 'hongde', businessStyle: 'delete', disabled: false },
+                                                      { name: '输出excel', buttonType: 'hongde', businessStyle: 'excel', disabled: false }
                                                   ]
                                         const buttonMeta = (blocksConfig as any[]).find((b) => b.type === 'Button') as any
                                         const baseButtonStyles = buttonMeta?.presetStyles ? ({ ...buttonMeta.presetStyles } as any) : {}
                                         const buttonNodes = buttons.map((btn: any, idx: number) => {
                                             const name = typeof btn?.name === 'string' && btn.name.trim().length > 0 ? btn.name.trim() : `按钮 ${idx + 1}`
-                                            const businessStyle = typeof btn?.businessStyle === 'string' && btn.businessStyle ? btn.businessStyle : btn?.icon === 'excel' ? 'excel' : btn?.icon === 'delete' ? 'delete' : btn?.icon === 'add' ? 'add' : 'search'
+                                            const businessStyle = typeof btn?.businessStyle === 'string' && btn.businessStyle ? btn.businessStyle : 'search'
                                             const iconPath = businessStyle === 'search' ? 'img/hold/search.png' : businessStyle === 'add' ? 'img/hold/edit_add.png' : businessStyle === 'delete' ? 'img/hold/edit_remove.png' : 'img/hold/excel.png'
                                             const width = businessStyle === 'excel' ? 'calc(125px * var(--scale-ratio, 1))' : 'calc(98px * var(--scale-ratio, 1))'
                                             const textOffsetLeft = businessStyle === 'excel' ? '8px' : '-1px'
@@ -443,7 +443,7 @@
                                                 id: globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-toolbar-btn-${idx}`,
                                                 componentType: 'Button',
                                                 styles:
-                                                    btn?.buttonType === 'business'
+                                                    btn?.buttonType === 'hongde'
                                                         ? {
                                                               display: 'flex',
                                                               justifyContent: 'center',

@@ -260,6 +260,13 @@ function initCompanyToolbarChildren(root: DomNode): void {
           }
         }
       }
+
+      if (node.children && node.children.length) {
+        const conds = node.children.filter((c: any) => c.componentType === 'ConditionInput');
+        const btns = node.children.filter((c: any) => c.componentType === 'Button');
+        const rest = node.children.filter((c: any) => c.componentType !== 'ConditionInput' && c.componentType !== 'Button');
+        node.children = [...conds, ...btns, ...rest];
+      }
     }
     if (node.children) {
       for (const child of node.children) {
@@ -714,6 +721,15 @@ export function reorderChildren(parentId: string, orderedChildIds: string[] | Do
   }
   // 如果新数组与旧数组长度不一致，说明有未知 ID，放弃操作
   if (newChildren.length !== parent.children.length) return false;
+  // 顺序未变化则直接返回，避免触发不必要的响应式更新（防止循环）
+  let sameOrder = true;
+  for (let i = 0; i < newChildren.length; i++) {
+    if (parent.children[i]?.id !== newChildren[i]?.id) {
+      sameOrder = false;
+      break;
+    }
+  }
+  if (sameOrder) return true;
   parent.children = newChildren;
   return true;
 }

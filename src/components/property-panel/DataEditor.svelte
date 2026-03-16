@@ -115,14 +115,12 @@
     // -------------------- 表格组件 JSON 模式新增状态 --------------------
     let jsonMappingKeys = $state<string[]>([]) // 从临时数据解析出的可用字段
 
-    // 获取 FlexibleTable 的默认 columnLabels（从 blocks.config.json）
+    // 获取表格组件的默认 columnLabels（从 blocks.config.json）
     let defaultColumnLabels = $derived(() => {
-        if (componentType === 'FlexibleTable') {
-            const comp: any = (blocksConfig as any[]).find((b) => b.type === 'FlexibleTable')
-            const labels = comp?.featureProps?.columnLabels?.default
-            return Array.isArray(labels) ? labels : []
-        }
-        return []
+        if (componentType !== 'FlexibleTable' && componentType !== 'DynamicTable') return []
+        const comp: any = (blocksConfig as any[]).find((b) => b.type === componentType)
+        const labels = comp?.featureProps?.columnLabels?.default
+        return Array.isArray(labels) ? labels : []
     })
 
     // 表格的表头：优先使用 currentValues.columnLabels，其次根据 bodyData 推断，再退回默认
@@ -136,8 +134,8 @@
         const defaults = defaultColumnLabels()
         if (defaults && defaults.length > 0) return defaults
 
-        // 兜底：如果是 FlexibleTable，至少返回3列
-        if (componentType === 'FlexibleTable') {
+        // 兜底：表格类至少返回3列
+        if (componentType === 'FlexibleTable' || componentType === 'DynamicTable') {
             return ['列1', '列2', '列3']
         }
         return []
@@ -254,9 +252,16 @@
         }
     })
 
+    let mappingCount: () => number = $derived(() => {
+        if (componentType === 'DynamicTable' || componentType === 'FlexibleTable') {
+            return tableHeaders().length
+        }
+        return seriesCount
+    })
+
     let mockSeriesMapping = $derived(() => {
         const mapping = currentValues.mockSeriesMapping as string[] | undefined
-        const count = seriesCount
+        const count = mappingCount()
         if (mapping && Array.isArray(mapping) && mapping.length === count) {
             return mapping
         }
@@ -265,7 +270,7 @@
 
     let requestSeriesMapping = $derived(() => {
         const mapping = currentValues.requestSeriesMapping as string[] | undefined
-        const count = seriesCount
+        const count = mappingCount()
         if (mapping && Array.isArray(mapping) && mapping.length === count) {
             return mapping
         }
@@ -919,8 +924,8 @@
             </PropertyRow>
         {/if}
     {:else if dataSource === 'mock'}
-        {#if seriesCount > 0}
-            {#each Array(seriesCount) as _, idx}
+        {#if mappingCount() > 0}
+            {#each Array(mappingCount()) as _, idx}
                 <PropertyRow label={`${getChineseOrdinal(idx)}映射`}>
                     {#if dataMappingKeys.length > 0}
                         <PropertySelect value={mockSeriesMapping()[idx] || ''} options={dataMappingKeys.map((k) => ({ label: k, value: k }))} change={(v) => updateMockSeriesMapping(idx, v)} placeholder="选择数据字段" />
@@ -934,8 +939,8 @@
 
     <!-- 动态数据(real)模式：编辑 requestSeriesMapping -->
     {#if dataSource === 'real'}
-        {#if seriesCount > 0}
-            {#each Array(seriesCount) as _, idx}
+        {#if mappingCount() > 0}
+            {#each Array(mappingCount()) as _, idx}
                 <PropertyRow label={`${getChineseOrdinal(idx)}映射`}>
                     {#if dataMappingKeys.length > 0}
                         <PropertySelect value={requestSeriesMapping()[idx] || ''} options={dataMappingKeys.map((k) => ({ label: k, value: k }))} change={(v) => updateRequestSeriesMapping(idx, v)} placeholder="选择数据字段" />
