@@ -522,10 +522,7 @@
     {/if}
 
     <!-- 模拟平台链接组：只在选择模拟接口时显示 -->
-    {#if fullDataSourceConfig?.mockPlatforms
-        && (currentValues.dataSource ?? dataSourceConfig?.default ?? 'json') === 'mock'
-        && !(componentType === 'ConditionInput'
-            && (conditionInputMode === 'year' || conditionInputMode === 'date' || conditionInputMode === 'datetime'))}
+    {#if fullDataSourceConfig?.mockPlatforms && (currentValues.dataSource ?? dataSourceConfig?.default ?? 'json') === 'mock' && !(componentType === 'ConditionInput' && (conditionInputMode === 'year' || conditionInputMode === 'date' || conditionInputMode === 'datetime'))}
         <PropertyRow label={fullDataSourceConfig.mockPlatforms.label}>
             <div class="link-group" style="display:flex; gap: calc(8px * var(--scale-ratio, 1)); flex:1 1 0; width:0;">
                 {#each fullDataSourceConfig.mockPlatforms.links || [] as link}
@@ -536,10 +533,7 @@
     {/if}
 
     <!-- 模拟路径配置：只在选择模拟接口时显示 -->
-    {#if fullDataSourceConfig?.mockPath
-        && (currentValues.dataSource ?? dataSourceConfig?.default ?? 'json') === 'mock'
-        && !(componentType === 'ConditionInput'
-            && (conditionInputMode === 'year' || conditionInputMode === 'date' || conditionInputMode === 'datetime'))}
+    {#if fullDataSourceConfig?.mockPath && (currentValues.dataSource ?? dataSourceConfig?.default ?? 'json') === 'mock' && !(componentType === 'ConditionInput' && (conditionInputMode === 'year' || conditionInputMode === 'date' || conditionInputMode === 'datetime'))}
         <PropertyRow label={fullDataSourceConfig.mockPath.label}>
             <input type="text" autocomplete="off" value={currentValues.mockPath ?? fullDataSourceConfig.mockPath.default ?? '/api/mock'} onchange={(e) => handleAttrChange('mockPath', (e.target as HTMLInputElement).value)} class="request-path-input" placeholder="请输入模拟路径" />
         </PropertyRow>
@@ -591,8 +585,7 @@
     {/if}
 
     <!-- 动态数据(mock)模式：编辑 mockSeriesMapping 或条件输入的详细设置 -->
-    {#if componentType === 'ConditionInput'
-        && (conditionInputMode === 'year' || conditionInputMode === 'date' || conditionInputMode === 'datetime')}
+    {#if componentType === 'ConditionInput' && (conditionInputMode === 'year' || conditionInputMode === 'date' || conditionInputMode === 'datetime')}
         {#if conditionInputMode === 'year'}
             <PropertyRow label="年份设置">
                 <input

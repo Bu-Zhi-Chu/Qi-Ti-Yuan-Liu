@@ -316,30 +316,13 @@
         }
         const committed = new Date(newDate)
         value = committed
-        const committedCopy = new Date(committed)
-        dispatch('change', committedCopy)
+        dispatch('change', new Date(committed))
         if (onChange) {
-            onChange(committedCopy)
+            onChange(new Date(committed))
         }
-
-        if (id) {
-            const attrs: any = {}
-            // 记录显示用的 recordedDate（仅在 dateRecording 开启时）
-            if (dateRecording) {
-                attrs.recordedDate = toInputValue(committed)
-            }
-            // 同步详细设置字段，便于 DataEditor 双向显示
-            if (mode === 'year' || mode === 'date' || mode === 'datetime') {
-                attrs.detailYear = String(committed.getFullYear())
-                attrs.detailMonth = String(committed.getMonth() + 1)
-                attrs.detailDay = String(committed.getDate())
-                attrs.detailHour = String(committed.getHours())
-                attrs.detailMinute = String(committed.getMinutes())
-                attrs.detailSecond = String(committed.getSeconds())
-            }
-            if (Object.keys(attrs).length > 0) {
-                updateNodeProps(id, { attributes: attrs })
-            }
+        // Persist to doms attr if dateRecording enabled
+        if (dateRecording && id) {
+            updateNodeProps(id, { attributes: { recordedDate: toInputValue(committed) } })
         }
     }
 

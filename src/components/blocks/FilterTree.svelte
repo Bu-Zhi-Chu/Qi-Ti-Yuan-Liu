@@ -668,7 +668,7 @@
     }
     .tree-node .ztree-state-placeholder {
         display: inline-block;
-        width: calc(12px * var(--scale-ratio, 1));
+        width: calc(13px * var(--scale-ratio, 1));
         height: calc(20px * var(--scale-ratio, 1));
     }
     .tree-node .toggle-button {
@@ -691,7 +691,7 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: calc(18px * var(--scale-ratio, 1));
+        width: calc(20px * var(--scale-ratio, 1));
         height: calc(20px * var(--scale-ratio, 1));
     }
     .tree-node input[type='checkbox'] {
