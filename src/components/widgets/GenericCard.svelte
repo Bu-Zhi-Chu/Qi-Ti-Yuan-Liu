@@ -213,7 +213,7 @@
         target.style.borderColor = selected ? 'rgba(99, 102, 241, 1)' : 'rgba(99, 102, 241, 0.2)'
     }}
 >
-    <ResponsiveBox style={`width: 100%; height: ${compact ? '120px' : '160px'}; background: rgba(15, 23, 42, 0.5); border-radius: 12px; margin-bottom: ${compact ? '12px' : '16px'}; overflow: hidden; border: 1px solid rgba(99, 102, 241, 0.1);`}>
+    <ResponsiveBox style={`width: 100%; height: ${compact ? '112px' : '152px'}; background: rgba(15, 23, 42, 0.5); border-radius: 12px; margin-bottom: ${compact ? '8px' : '12px'}; overflow: hidden; border: 1px solid rgba(99, 102, 241, 0.1);`}>
         {#if imageSrc}
             <img src={imageSrc} alt={prop2 || '卡片图片'} style="width: 100%; height: 100%; object-fit: cover;" />
         {:else}
