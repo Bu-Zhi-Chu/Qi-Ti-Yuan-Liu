@@ -13,10 +13,11 @@
         editing?: boolean
         select?: (id: string) => void
         showTreeColumn?: boolean
+        selectionBorderDisabled?: boolean
         [key: string]: any
     }
 
-    let { style = '', 'data-id': dataId = '', childrenNodes = [], selectedId = null, editing = false, select, showTreeColumn = true, ...restProps }: Props = $props()
+    let { style = '', 'data-id': dataId = '', childrenNodes = [], selectedId = null, editing = false, select, showTreeColumn = true, selectionBorderDisabled = false, ...restProps }: Props = $props()
 
     let containerRef: HTMLDivElement
     let leftWidthPercent = $state(11.8)
@@ -149,14 +150,14 @@
         {#if showTreeColumn}
             <div class="company-table-left" style={`width: ${effectiveLeftWidthPercent}%;`}>
                 {#if treeNode}
-                    <NodeRenderer node={treeNode} {selectedId} {editing} {select} />
+                    <NodeRenderer node={treeNode} {selectedId} {editing} {selectionBorderDisabled} {select} />
                 {/if}
             </div>
             <div class="company-table-resizer" style={`left: ${splitPercent}%;`} onpointerdown={handleResizerPointerDown}></div>
         {/if}
         <div class="company-table-right" style={`width: ${rightWidthPercent}%; left: ${rightLeftPercent}%;`}>
             {#if toolbarNode}
-                <NodeRenderer node={toolbarNode} {selectedId} {editing} {select} />
+                <NodeRenderer node={toolbarNode} {selectedId} {editing} {selectionBorderDisabled} {select} />
             {:else}
                 <div class="company-table-right-toolbar">
                     <button type="button" class="company-table-btn">
@@ -211,7 +212,7 @@
             </div>
             <div class="company-table-right-table">
                 {#if tableNode}
-                    <NodeRenderer node={tableNode} {selectedId} {editing} {select} />
+                    <NodeRenderer node={tableNode} {selectedId} {editing} {selectionBorderDisabled} {select} />
                 {/if}
             </div>
         </div>

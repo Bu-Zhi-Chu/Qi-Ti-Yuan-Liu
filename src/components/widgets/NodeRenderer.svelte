@@ -366,6 +366,7 @@
         childrenNodes={node.children ?? []}
         {selectedId}
         {editing}
+        {selectionBorderDisabled}
         {select}
     />
 {:else}
