@@ -187,7 +187,7 @@
         justify-content: flex-end;
         gap: calc(16px * var(--scale-ratio, 1));
     }
-    button {
+    .btn-group > button {
         padding: calc(8px * var(--scale-ratio, 1)) calc(24px * var(--scale-ratio, 1));
         font-size: calc(14px * var(--scale-ratio, 1));
         border-radius: calc(8px * var(--scale-ratio, 1));
@@ -197,7 +197,7 @@
         cursor: pointer;
         transition: transform 0.15s ease;
     }
-    button:hover {
+    .btn-group > button:hover {
         transform: scale(1.03);
     }
 
