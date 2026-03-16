@@ -230,7 +230,7 @@
             // 点击调整节点按钮，按需按下/松开 V 键，模拟调整准备模式（仅当选中非根节点时生效）
             if (k === 'adjust') {
                 const currentSelectedId = selectedId()
-                if (!currentSelectedId || currentSelectedId === 'root') {
+                if (!currentSelectedId || currentSelectedId === domTree.id) {
                     // 如果是根节点，强制取消调整工具
                     activeTool = null
                 } else {
@@ -274,7 +274,7 @@
             } else if (selected.key === 'delete') {
                 // 触发 Delete 键删除逻辑，等同于按下 DEL
                 const currentSelectedId = selectedId()
-                if (currentSelectedId && currentSelectedId !== 'root') {
+                if (currentSelectedId && currentSelectedId !== domTree.id) {
                     console.log('点击删除按钮，删除节点:', currentSelectedId)
                     removeNodeById(currentSelectedId).then((success) => {
                         if (success) {
@@ -380,7 +380,7 @@
         unregisterDelKey = registerShortcut('Delete', () => {
             if (!showWorkspace) return
             const currentSelectedId = selectedId()
-            if (currentSelectedId && currentSelectedId !== 'root') {
+            if (currentSelectedId && currentSelectedId !== domTree.id) {
                 console.log('DEL键删除节点:', currentSelectedId)
                 removeNodeById(currentSelectedId).then((success) => {
                     if (success) {

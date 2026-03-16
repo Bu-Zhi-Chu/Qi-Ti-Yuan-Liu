@@ -28,7 +28,7 @@
 </script>
 
 <script lang="ts">
-    import { domTree, selectedId, setSelectedId, toggleExpanded, toggleHidden, toggleLocked, removeNodeById, moveNode, insertNodeBefore, insertNodeAfter, updateNodeName } from '../../stores/dom-tree.store.svelte'
+    import { domTree, selectedId, selectedIdStore, setSelectedId, toggleExpanded, toggleHidden, toggleLocked, removeNodeById, moveNode, insertNodeBefore, insertNodeAfter, updateNodeName } from '../../stores/dom-tree.store.svelte'
 
     import { TreeDragDropService } from '../../services/interactions/tree-drag-drop.service'
 
@@ -348,7 +348,7 @@
         `
     }
 
-    const htmlString = $derived(() => (domTree ? renderNode(domTree, 0, selectedId()) : ''))
+    const htmlString = $derived(() => (domTree ? renderNode(domTree, 0, $selectedIdStore) : ''))
     $effect(() => {
         // 暴露到全局供字符串模板里的 onclick/onkeydown 使用
         ;(window as any).confirmEdit = confirmEdit

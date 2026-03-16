@@ -52,6 +52,9 @@ let domTreeVersionData = $state(0);
 /** 可订阅的 domTree 版本号 store */
 export const domTreeVersionStore = writable(0);
 
+/** 当前选中节点ID的可订阅 store，用于视图联动 */
+export const selectedIdStore = writable<string | null>('root');
+
 
 
 /** 内部工具：递增版本号 */
@@ -221,7 +224,6 @@ export async function loadDomTreeFromDatabase(projectId: string): Promise<boolea
       expanded: true,
       children: []
     });
-    selectedNodeId = savedSelectedNodeId || null;
 
     // 首先尝试从doms表加载（按当前模块ID优先过滤）
     const domTreeFromDoms = await loadDomNodesFromDomsTable(projectId);
@@ -371,14 +373,15 @@ function autoSaveToDomsTable(): void {
  * 仅在节点ID发生变化时更新数据库，避免重复保存
  */
 export async function setSelectedId(id: string | null): Promise<void> {
-  // 如果选择的节点ID与当前相同，则跳过更新
-  if (selectedNodeId === id) {
+  const prevId = selectedNodeId;
+  selectedNodeId = id;
+  selectedIdStore.set(id);
+
+  // 仅在节点ID变化时更新数据库中的selectedNodeId，避免重复写入
+  if (prevId === id) {
     return;
   }
 
-  selectedNodeId = id;
-
-  // 仅在节点ID变化时更新数据库中的selectedNodeId
   if (currentProjectId) {
     try {
       console.log(`🎯【数据交互】更新项目选中节点ID: 项目ID=${currentProjectId}, 选中节点ID=${id}`)
@@ -459,6 +462,11 @@ function isDescendant(root: DomNode, targetId: string): boolean {
   return false;
 }
 
+function isRootIdValue(id: string | null | undefined): boolean {
+  if (!id) return false;
+  return id === domTreeData.id;
+}
+
 /**
  * 查找 targetId 的直接父节点
  */
@@ -476,7 +484,7 @@ export function findParentById(node: DomNode, targetId: string): DomNode | null 
  * 将 nodeId 对应节点插入到 targetId 对应节点之前（同级）
  */
 export async function insertNodeBefore(targetId: string, nodeId: string): Promise<boolean> {
-  if (targetId === 'root' || nodeId === 'root' || targetId === nodeId) return false;
+  if (isRootIdValue(targetId) || isRootIdValue(nodeId) || targetId === nodeId) return false;
   const parent = findParentById(domTreeData, targetId);
   const movingNode = findNodeById(domTreeData, nodeId);
   if (!parent || !parent.children || !movingNode) return false;
@@ -492,7 +500,7 @@ export async function insertNodeBefore(targetId: string, nodeId: string): Promis
  * 将 nodeId 对应节点插入到 targetId 对应节点之后（同级）
  */
 export async function insertNodeAfter(targetId: string, nodeId: string): Promise<boolean> {
-  if (targetId === 'root' || nodeId === 'root' || targetId === nodeId) return false;
+  if (isRootIdValue(targetId) || isRootIdValue(nodeId) || targetId === nodeId) return false;
   const parent = findParentById(domTreeData, targetId);
   const movingNode = findNodeById(domTreeData, nodeId);
   if (!parent || !parent.children || !movingNode) return false;
@@ -539,8 +547,7 @@ export function reorderChildren(parentId: string, orderedChildIds: string[] | Do
  * @returns 是否移动成功
  */
 export async function moveNode(nodeId: string, newParentId: string): Promise<boolean> {
-  if (nodeId === 'root' || nodeId === newParentId) return false; // 仍禁止把根节点本身移动，或移动到自身
-  // ✅ 允许 newParentId === 'root'，不再拦截
+  if (isRootIdValue(nodeId) || nodeId === newParentId) return false;
 
   const movingNode = findNodeById(domTreeData, nodeId);
   const newParent = findNodeById(domTreeData, newParentId);
@@ -594,7 +601,7 @@ export function toggleExpanded(nodeId: string): boolean {
  * @returns 是否切换成功
  */
 export function toggleHidden(nodeId: string): boolean {
-  if (nodeId === 'root') return false; // 根节点不可隐藏
+  if (isRootIdValue(nodeId)) return false;
   const node = findNodeById(domTreeData, nodeId);
   if (node) {
     node.hidden = !node.hidden;
@@ -630,7 +637,7 @@ function refreshLockStates(node: DomNode, inheritedFlag: boolean = false): void 
  * @returns 是否切换成功
  */
 export function toggleLocked(nodeId: string): boolean {
-  if (nodeId === 'root') return false; // 根节点不可锁定
+  if (isRootIdValue(nodeId)) return false;
   const node = findNodeById(domTreeData, nodeId);
   if (node) {
     node.selfLocked = !(node.selfLocked ?? false);
@@ -656,7 +663,7 @@ function hasLocked(node: DomNode): boolean {
 }
 
 export async function removeNodeById(nodeId: string): Promise<boolean> {
-  if (nodeId === 'root') return false;
+  if (isRootIdValue(nodeId)) return false;
   const parent = findParentById(domTreeData, nodeId);
   if (!parent || !parent.children) return false;
   const targetNode = parent.children.find((c: any) => c.id === nodeId);
@@ -667,7 +674,6 @@ export async function removeNodeById(nodeId: string): Promise<boolean> {
     return false;
   }
   releaseNodeResources(targetNode);
-  if (selectedNodeId === nodeId) await setSelectedId('root');
   parent.children = parent.children.filter((c: any) => c.id !== nodeId);
 
   // 如果父节点是 ButtonGroup 且已无子节点，则一并删除父节点
@@ -679,6 +685,11 @@ export async function removeNodeById(nodeId: string): Promise<boolean> {
     }
   }
 
+  // 删除之后如果当前选中节点已不存在，自动回退到画布（当前根节点）
+  if (!selectedNodeId || !hasNodeWithId(domTreeData, selectedNodeId)) {
+    await setSelectedId(domTreeData.id);
+  }
+
   bumpDomTreeVersion();
   autoSaveToDomsTable();
   return true;
@@ -686,11 +697,14 @@ export async function removeNodeById(nodeId: string): Promise<boolean> {
 
 // 拖拽专用删除：不释放图片引用计数
 export async function removeNodeByIdForMove(nodeId: string): Promise<boolean> {
-  if (nodeId === 'root') return false;
+  if (isRootIdValue(nodeId)) return false;
   const parent = findParentById(domTreeData, nodeId);
   if (!parent || !parent.children) return false;
-  if (selectedNodeId === nodeId) await setSelectedId('root');
   parent.children = parent.children.filter((c: any) => c.id !== nodeId);
+  // 拖拽删除后，同样确保选中节点仍然有效
+  if (!selectedNodeId || !hasNodeWithId(domTreeData, selectedNodeId)) {
+    await setSelectedId(domTreeData.id);
+  }
   autoSaveToDomsTable();
   return true;
 }
@@ -820,6 +834,7 @@ export function clearMemoryState(): void {
     children: []
   });
   selectedNodeId = 'root';
+  selectedIdStore.set('root');
   currentProjectId = '';
   resetActivePropertyTab(); // 新增：重置 activePropertyTab
   console.log('内存状态已清理');
@@ -928,7 +943,7 @@ async function tryReadClipboardNodeFromSystem() {
  * 复制当前选中节点及其子树到剪贴板
  */
 export function copySelectedNode(): boolean {
-  if (!selectedNodeId || selectedNodeId === 'root') return false;
+  if (!selectedNodeId || isRootIdValue(selectedNodeId)) return false;
   const node = findNodeById(domTreeData, selectedNodeId);
   if (!node) return false;
   clipboardNode = deepCopyNode(node);
@@ -943,7 +958,7 @@ export function copySelectedNode(): boolean {
  * 二次 Ctrl+X 时会真正删除上一次被标记的整棵子树
  */
 export async function cutSelectedNode(): Promise<boolean> {
-  if (!selectedNodeId || selectedNodeId === 'root') return false;
+  if (!selectedNodeId || isRootIdValue(selectedNodeId)) return false;
 
   // 如果有上一次被标记的子树，先真正删除整棵树
   if (lastCutId && lastCutId !== selectedNodeId) {
@@ -983,11 +998,11 @@ export async function pasteNodeToSelectedParent(toParent: boolean = false, selec
       return null;
     }
 
-    let targetParentId: string = selectedNodeId || 'root';
+    let targetParentId: string = selectedNodeId || domTreeData.id;
     if (toParent) {
-      if (selectedNodeId && selectedNodeId !== 'root') {
+      if (selectedNodeId && !isRootIdValue(selectedNodeId)) {
         const parentNode = findParentById(domTreeData, selectedNodeId);
-        targetParentId = parentNode?.id ?? 'root';
+        targetParentId = parentNode?.id ?? domTreeData.id;
       }
     }
 
@@ -1024,11 +1039,11 @@ export async function pasteNodeToSelectedParent(toParent: boolean = false, selec
     return null;
   }
 
-  let targetParentId: string = selectedNodeId || 'root';
+  let targetParentId: string = selectedNodeId || domTreeData.id;
   if (toParent) {
-    if (selectedNodeId && selectedNodeId !== 'root') {
+    if (selectedNodeId && !isRootIdValue(selectedNodeId)) {
       const parentNode = findParentById(domTreeData, selectedNodeId);
-      targetParentId = parentNode?.id ?? 'root';
+      targetParentId = parentNode?.id ?? domTreeData.id;
     }
   }
 

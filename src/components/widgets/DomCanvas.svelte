@@ -44,7 +44,7 @@
     let { editing = false, selectionBorderDisabled = false } = $props<{ editing?: boolean; selectionBorderDisabled?: boolean }>()
 
     import { onMount } from 'svelte'
-    import { domTree, selectedId, setSelectedId, setProjectId, loadDomTreeFromDatabase, projectId, addNodeToParent } from '../../stores/dom-tree.store.svelte'
+    import { domTree, selectedId, selectedIdStore, setSelectedId, setProjectId, loadDomTreeFromDatabase, projectId, addNodeToParent } from '../../stores/dom-tree.store.svelte'
     import { getElementByNodeId } from '../../services/utils/dom-geometry.util'
     import Dexie from 'dexie'
     import { isLiteMode } from '../../services/env/environment.service'
@@ -136,22 +136,11 @@
             // 立即加载domTree数据，确保数据是最新的
             await loadDomTreeFromDatabase(localProjectId)
 
-            // 恢复上次选中的节点
-
             const project = await DexieService.getRecord<any>(DEFAULT_DB_NAME, 'projects', localProjectId)
 
-            // 恢复上次选中的节点ID
-            // 恢复上次选中的节点ID
             // 根据项目设计尺寸设置 ScreenDetector
             if (project && project.designWidth && project.designHeight) {
                 screenDetector.setDesignSize(project.designWidth, project.designHeight)
-            }
-
-            if (project && project.selectedNodeId) {
-                await setSelectedId(project.selectedNodeId)
-            } else {
-                // 默认选中根节点
-                await setSelectedId('root')
             }
 
             if (project && project.canvasState) {
@@ -285,7 +274,7 @@
         const threshold = 1 // 屏幕像素阈值，小于该值判定为稳定
 
         // 若未选中或选中根节点，使用默认视图
-        if (!currentSelectedId || currentSelectedId === 'root') {
+        if (!currentSelectedId || currentSelectedId === domTree.id) {
             offsetX = 0
             offsetY = 0
             scale = editing ? 1 : 0.5
@@ -409,7 +398,7 @@
             return
         }
 
-        const parentId = selectedId() || 'root'
+        const parentId = selectedId() || domTree.id
         const parentEl = getElementByNodeId(parentId) ?? canvasContainerRef
         if (!parentEl) return
         const parentRect = parentEl.getBoundingClientRect()
@@ -544,7 +533,7 @@
         editingAccessor: () => editing,
         scaleAccessor: () => (editing ? scale * 0.5 : scale),
         selectedNodeAccessor: () => selectedId(),
-        isRootNodeAccessor: (nodeId) => nodeId === 'root'
+        isRootNodeAccessor: (nodeId) => nodeId === domTree.id
     }}
     role="application"
     onpointerdown={() => (isDragging = true)}
@@ -554,7 +543,7 @@
     ondrop={handleDrop}
 >
     {#if !isLoading}
-        <NodeRenderer node={domTree} selectedId={selectedId()} {editing} {selectionBorderDisabled} select={handleSelect} />
+        <NodeRenderer node={domTree} selectedId={$selectedIdStore} {editing} {selectionBorderDisabled} select={handleSelect} />
     {/if}
 
     {#if AsyncDrawModeOverlay}
