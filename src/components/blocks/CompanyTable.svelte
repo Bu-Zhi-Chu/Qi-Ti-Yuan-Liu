@@ -85,8 +85,9 @@
     }
 
     const treeNode = $derived.by(() => fillChild(childrenNodes.find((n) => n.componentType === 'FilterTree') ?? childrenNodes[0]))
-    const tableNode = $derived.by(() => fillChild(childrenNodes.find((n) => n.componentType === 'DynamicTable') ?? childrenNodes[1]))
     const toolbarNode = $derived.by(() => childrenNodes.find((n) => n.componentType === 'CompanyTableToolbar') ?? null)
+    const formNode = $derived.by(() => childrenNodes.find((n) => n.componentType === 'CompanyTableFormArea') ?? null)
+    const tableNode = $derived.by(() => fillChild(childrenNodes.find((n) => n.componentType === 'DynamicTable') ?? childrenNodes[childrenNodes.length - 1] ?? null))
 
     const addFormFields = $derived.by(() => {
         // Track dom tree version to ensure updates when properties change
@@ -178,37 +179,21 @@
                     </button>
                 </div>
             {/if}
-            <div class="company-table-right-extra {extraHeightPercent > 0 ? 'expanded' : ''}" style={`height: ${extraHeightPercent}%;`}>
+            <div class="company-table-right-extra {extraHeightPercent > 0 ? 'expanded' : ''}" style={`height: ${extraHeightPercent}%;`} id={formNode?.id} data-name={formNode?.attributes?.['data-name'] ?? '表单区域'}>
                 <div class="company-table-right-extra-wrapper">
-                    <div class="company-table-right-extra-slider" style={`transform: translateX(-${currentPage * (100 / (pages.length || 1))}%) translateZ(0); width: ${pages.length * 100}%;`}>
-                        {#each pages as page, pageIndex}
-                            <div class="company-table-right-extra-page" style={`width: ${100 / pages.length}%;`}>
-                                {#each page as field (field.label + '_' + field.index)}
-                                    <div class="company-table-input-group">
-                                        <span class="company-table-input-label">{field.label}</span>
-                                        <input class="company-table-input" type="text" />
-                                    </div>
-                                {/each}
-                            </div>
-                        {/each}
+                    <div class="company-table-right-extra-page">
+                        {#if formNode}
+                            {#each formNode.children ?? [] as fieldNode (fieldNode.id)}
+                                <div class="company-table-input-group">
+                                    {#if fieldNode.attributes?.['data-name']}
+                                        <span class="company-table-input-label">{fieldNode.attributes['data-name']}</span>
+                                    {/if}
+                                    <NodeRenderer node={fieldNode} {selectedId} {editing} {selectionBorderDisabled} {select} />
+                                </div>
+                            {/each}
+                        {/if}
                     </div>
                 </div>
-                {#if pages.length > 1}
-                    <div class="company-table-pagination">
-                        <div class="pagination-track">
-                            <div class="pagination-line"></div>
-                            <div class="pagination-active-dot" style={`left: calc(${currentPage} * 72px * var(--scale-ratio, 1) + 36px * var(--scale-ratio, 1));`}></div>
-                            <div class="pagination-items">
-                                {#each pages as _, i}
-                                    <button type="button" class="pagination-item" onclick={() => goToPage(i)} aria-label={`跳转到第${i + 1}页`} aria-current={currentPage === i ? 'page' : undefined}>
-                                        <div class="pagination-dot-anchor"></div>
-                                        <span class="pagination-number {currentPage === i ? 'active' : ''}">{i + 1}</span>
-                                    </button>
-                                {/each}
-                            </div>
-                        </div>
-                    </div>
-                {/if}
             </div>
             <div class="company-table-right-table">
                 {#if tableNode}
@@ -431,7 +416,7 @@
         position: absolute;
         top: 0;
         bottom: 0;
-        width: calc(6px * var(--scale-ratio, 1));
+        width: calc(3px * var(--scale-ratio, 1));
         transform: translateX(-50%);
         cursor: ew-resize;
     }

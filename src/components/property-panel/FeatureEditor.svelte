@@ -242,6 +242,17 @@
         // 标记这是从DOM树同步的过程，避免清空seriesData
         syncingFromCodeEditor = true
         currentValues = merged
+
+        // 如果当前节点是 CompanyTableToolbar，则根据当前查询条件数量同步子节点
+        if (selectedId) {
+            const node = getFullNode(selectedId)
+            if (node && node.componentType === 'CompanyTableToolbar') {
+                const conditions = merged['queryConditions']
+                const desiredCount = Array.isArray(conditions) ? conditions.length : 0
+                syncCompanyToolbarConditions(desiredCount)
+            }
+        }
+
         // 同步完成后重置标志
         queueMicrotask(() => {
             syncingFromCodeEditor = false
@@ -301,6 +312,14 @@
             }
 
             updateNodeProps(selectedId, { attributes: attributesToUpdate })
+
+            if (key === 'queryConditions') {
+                syncCompanyToolbarConditionNames(value)
+            }
+
+            if (key === 'columnLabels') {
+                syncCompanyFormAreaWithColumns(value)
+            }
 
             // 额外逻辑：同级导航按钮唯一默认首页
             if (key === 'defaultHome' && value === true) {
@@ -803,6 +822,124 @@
         handleAttrChange(key, list)
     }
 
+    function syncCompanyToolbarConditions(desiredCount: number) {
+        if (!selectedId) return
+        const node = getFullNode(selectedId)
+        if (!node || node.componentType !== 'CompanyTableToolbar') return
+
+        const children = node.children ?? []
+        const conditionNodes = children.filter((c: any) => c.componentType === 'ConditionInput')
+        const current = conditionNodes.length
+
+        const conditionMeta = (blocksConfig as any[]).find((b) => b.type === 'ConditionInput') as any
+        const baseStyles = conditionMeta?.presetStyles ? { ...conditionMeta.presetStyles } : {}
+
+        if (current < desiredCount) {
+            for (let i = current; i < desiredCount; i++) {
+                const childId = globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-${Math.random()}`
+                addNodeToParent(selectedId, {
+                    id: childId,
+                    componentType: 'ConditionInput',
+                    styles: baseStyles,
+                    attributes: { 'data-name': `条件输入 ${i + 1}` },
+                    children: []
+                } as any)
+            }
+        } else if (current > desiredCount) {
+            const extras = conditionNodes.slice(desiredCount)
+            for (const c of extras) {
+                removeNodeById(c.id)
+            }
+        }
+    }
+
+    function syncCompanyToolbarConditionNames(conditions: any[]) {
+        if (!selectedId) return
+        const toolbar = getFullNode(selectedId)
+        if (!toolbar || toolbar.componentType !== 'CompanyTableToolbar') return
+        const conds = Array.isArray(conditions) ? conditions : []
+        const children = toolbar.children ?? []
+        const condNodes = children.filter((c: any) => c.componentType === 'ConditionInput')
+        conds.forEach((cfg: any, index: number) => {
+            const node = condNodes[index]
+            if (!node) return
+            const rawName = typeof cfg?.name === 'string' ? cfg.name.trim() : ''
+            if (!rawName) return
+            if (!node.attributes) node.attributes = {}
+            node.attributes['data-name'] = rawName
+            updateNodeProps(node.id, { attributes: { 'data-name': rawName } })
+        })
+    }
+
+    function syncCompanyFormAreaWithColumns(columnLabels: any[]) {
+        if (!selectedId) return
+        const tableNode = getFullNode(selectedId)
+        if (!tableNode || tableNode.componentType !== 'DynamicTable') return
+
+        let parent = findParentById(domTree, tableNode.id)
+        let companyTable: any = null
+        while (parent) {
+            if (parent.componentType === 'CompanyTable') {
+                companyTable = parent
+                break
+            }
+            parent = findParentById(domTree, parent.id)
+        }
+        if (!companyTable || !companyTable.children) return
+
+        const formArea = companyTable.children.find((c: any) => c.componentType === 'CompanyTableFormArea')
+        if (!formArea) return
+
+        const labelsRaw = Array.isArray(columnLabels) ? columnLabels : []
+        const desiredLabels = labelsRaw
+            .map((col: any) => {
+                if (typeof col === 'string') return col
+                if (col && typeof col.label === 'string') return col.label
+                return ''
+            })
+            .filter((name: string) => name && name.trim().length > 0)
+
+        if (!formArea.children) formArea.children = []
+        const conditionMeta = (blocksConfig as any[]).find((b) => b.type === 'ConditionInput') as any
+        const baseStyles = conditionMeta?.presetStyles ? { ...conditionMeta.presetStyles } : {}
+
+        const existingFields = formArea.children.filter((c: any) => c.componentType === 'ConditionInput')
+        const otherChildren = formArea.children.filter((c: any) => c.componentType !== 'ConditionInput')
+
+        const newFields: any[] = []
+
+        for (let i = 0; i < desiredLabels.length; i++) {
+            const label = desiredLabels[i]
+            const existing = existingFields[i]
+            if (existing) {
+                if (!existing.attributes) existing.attributes = {}
+                existing.attributes['data-name'] = label
+                newFields.push(existing)
+                updateNodeProps(existing.id, { attributes: { 'data-name': label } })
+            } else {
+                const childId = globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-form-condition-${i}`
+                const newNode: any = {
+                    id: childId,
+                    componentType: 'ConditionInput',
+                    styles: baseStyles,
+                    attributes: { 'data-name': label },
+                    children: []
+                }
+                addNodeToParent(formArea.id, newNode)
+                newFields.push(newNode)
+            }
+        }
+
+        if (existingFields.length > desiredLabels.length) {
+            const extras = existingFields.slice(desiredLabels.length)
+            for (const c of extras) {
+                removeNodeById(c.id)
+            }
+        }
+
+        formArea.children = [...newFields, ...otherChildren]
+    }
+
     function addQueryCondition(key: string) {
         const list = Array.isArray(currentValues[key]) ? [...currentValues[key]] : []
         const index = list.length
@@ -812,6 +949,7 @@
             disabled: false
         })
         handleAttrChange(key, list)
+        syncCompanyToolbarConditions(list.length)
     }
 
     function removeQueryCondition(key: string, index: number) {
@@ -819,6 +957,7 @@
         if (index < 0 || index >= list.length) return
         list.splice(index, 1)
         handleAttrChange(key, list)
+        syncCompanyToolbarConditions(list.length)
     }
 
     function addToolbarButton(key: string) {
@@ -1148,6 +1287,7 @@
                                         {@const colObj =
                                             typeof col === 'string'
                                                 ? {
+                                                      id: '',
                                                       label: col,
                                                       frozen: false,
                                                       previewLength: 10,
@@ -1155,6 +1295,7 @@
                                                       widthUnit: 'px'
                                                   }
                                                 : {
+                                                      id: col?.id ?? '',
                                                       frozen: false,
                                                       previewLength: col?.previewLength ?? 10,
                                                       widthValue: col?.widthValue ?? 0,
@@ -1164,6 +1305,43 @@
                                         <div class="overlay-row">
                                             <div class="overlay-item">
                                                 <div class="overlay-fields">
+                                                    <div class="overlay-field-row">
+                                                        <span class="overlay-field-label">标识</span>
+                                                        <input
+                                                            type="text"
+                                                            class="overlay-input"
+                                                            value={colObj.id}
+                                                            oninput={(e) => {
+                                                                const list = [...currentValues[p.key]]
+                                                                const oldVal =
+                                                                    typeof list[index] === 'string'
+                                                                        ? {
+                                                                              id: '',
+                                                                              label: list[index],
+                                                                              frozen: false,
+                                                                              previewLength: 10,
+                                                                              widthMode: 'balanced',
+                                                                              widthValue: 0,
+                                                                              widthUnit: 'px'
+                                                                          }
+                                                                        : {
+                                                                              id: list[index]?.id ?? '',
+                                                                              frozen: false,
+                                                                              previewLength: list[index]?.previewLength ?? 10,
+                                                                              widthMode: list[index]?.widthMode === 'chars' ? 'chars' : list[index]?.widthMode === 'value' ? 'value' : 'balanced',
+                                                                              widthValue: list[index]?.widthValue ?? 0,
+                                                                              widthUnit: list[index]?.widthUnit ?? 'px',
+                                                                              ...(list[index] || {})
+                                                                          }
+                                                                list[index] = {
+                                                                    ...oldVal,
+                                                                    id: (e.currentTarget as HTMLInputElement).value
+                                                                }
+                                                                handleAttrChange(p.key, list)
+                                                            }}
+                                                            placeholder="列标识"
+                                                        />
+                                                    </div>
                                                     <div class="overlay-field-row">
                                                         <span class="overlay-field-label">列名</span>
                                                         <input
@@ -1175,6 +1353,7 @@
                                                                 const oldVal =
                                                                     typeof list[index] === 'string'
                                                                         ? {
+                                                                              id: '',
                                                                               label: list[index],
                                                                               frozen: false,
                                                                               previewLength: 10,
@@ -1183,6 +1362,7 @@
                                                                               widthUnit: 'px'
                                                                           }
                                                                         : {
+                                                                              id: list[index]?.id ?? '',
                                                                               frozen: false,
                                                                               previewLength: list[index]?.previewLength ?? 10,
                                                                               widthMode: list[index]?.widthMode === 'chars' ? 'chars' : list[index]?.widthMode === 'value' ? 'value' : 'balanced',
@@ -1190,7 +1370,10 @@
                                                                               widthUnit: list[index]?.widthUnit ?? 'px',
                                                                               ...(list[index] || {})
                                                                           }
-                                                                list[index] = { ...oldVal, label: (e.currentTarget as HTMLInputElement).value }
+                                                                list[index] = {
+                                                                    ...oldVal,
+                                                                    label: (e.currentTarget as HTMLInputElement).value
+                                                                }
                                                                 handleAttrChange(p.key, list)
                                                             }}
                                                             placeholder="列名"
@@ -1647,29 +1830,6 @@
                                                         }}
                                                         placeholder="查询条件名称"
                                                     />
-                                                </div>
-                                                <div class="overlay-field-row">
-                                                    <span class="overlay-field-label">类型</span>
-                                                    <select
-                                                        class="overlay-input"
-                                                        value={cond?.type ?? 'input'}
-                                                        disabled={cond?.disabled === true}
-                                                        onchange={(e) => {
-                                                            const list = Array.isArray(currentValues[p.key]) ? [...currentValues[p.key]] : []
-                                                            if (!list[index]) list[index] = {}
-                                                            list[index] = {
-                                                                ...list[index],
-                                                                type: (e.currentTarget as HTMLSelectElement).value || 'input'
-                                                            }
-                                                            handleAttrChange(p.key, list)
-                                                        }}
-                                                    >
-                                                        <option value="input">输入框</option>
-                                                        <option value="select">下拉框</option>
-                                                        <option value="date">日期</option>
-                                                        <option value="datetime">日期时间</option>
-                                                        <option value="year">年份</option>
-                                                    </select>
                                                 </div>
                                                 <div class="overlay-field-row">
                                                     <span class="overlay-field-label">禁用</span>

@@ -370,16 +370,6 @@
                             },
                             children: [
                                 {
-                                    id: globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-toolbar`,
-                                    componentType: 'CompanyTableToolbar',
-                                    styles: (() => {
-                                        const meta = (blocksConfig as any[]).find((b) => b.type === 'CompanyTableToolbar') as any
-                                        return meta?.presetStyles ? { ...meta.presetStyles } : {}
-                                    })(),
-                                    attributes: { 'data-name': '表格工具栏' },
-                                    children: []
-                                },
-                                {
                                     id: globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-filter-tree`,
                                     componentType: 'FilterTree',
                                     styles: (() => {
@@ -394,8 +384,73 @@
                                             left: '0.2%'
                                         }
                                     })(),
-                                    attributes: { 'data-name': '过滤树' },
+                                    attributes: { 'data-name': '左侧树' },
                                     children: []
+                                },
+                                {
+                                    id: globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-toolbar`,
+                                    componentType: 'CompanyTableToolbar',
+                                    styles: (() => {
+                                        const meta = (blocksConfig as any[]).find((b) => b.type === 'CompanyTableToolbar') as any
+                                        return meta?.presetStyles ? { ...meta.presetStyles } : {}
+                                    })(),
+                                    attributes: (() => {
+                                        const toolbarMeta = (blocksConfig as any[]).find((b) => b.type === 'CompanyTableToolbar') as any
+                                        const featureProps = toolbarMeta?.featureProps
+                                        const defaultConditions = featureProps?.queryConditions?.default
+                                        const queryConditions = Array.isArray(defaultConditions) ? defaultConditions.map((c: any) => ({ ...c })) : []
+                                        return {
+                                            'data-name': '工具栏',
+                                            queryConditions
+                                        }
+                                    })(),
+                                    children: (() => {
+                                        const toolbarMeta = (blocksConfig as any[]).find((b) => b.type === 'CompanyTableToolbar') as any
+                                        const featureProps = toolbarMeta?.featureProps
+                                        const defaultConditions = featureProps?.queryConditions?.default
+                                        const conditions = Array.isArray(defaultConditions) && defaultConditions.length > 0 ? defaultConditions : [{ name: '条件一', type: 'input', disabled: false }]
+                                        const conditionMeta = (blocksConfig as any[]).find((b) => b.type === 'ConditionInput') as any
+                                        const baseStyles = conditionMeta?.presetStyles ? { ...conditionMeta.presetStyles } : {}
+                                        return conditions.map((_: any, idx: number) => ({
+                                            id: globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-condition-${idx}`,
+                                            componentType: 'ConditionInput',
+                                            styles: baseStyles,
+                                            attributes: { 'data-name': `条件输入 ${idx + 1}` },
+                                            children: []
+                                        }))
+                                    })()
+                                },
+                                {
+                                    id: globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-form-area`,
+                                    componentType: 'CompanyTableFormArea',
+                                    styles: {
+                                        width: '100%',
+                                        height: 'auto',
+                                        position: 'relative'
+                                    },
+                                    attributes: { 'data-name': '表单' },
+                                    children: (() => {
+                                        const tableMeta = (blocksConfig as any[]).find((b) => b.type === 'DynamicTable') as any
+                                        const defaultLabels = tableMeta?.featureProps?.columnLabels?.default
+                                        const count = Array.isArray(defaultLabels) && defaultLabels.length > 0 ? defaultLabels.length : 3
+                                        const condMeta = (blocksConfig as any[]).find((b) => b.type === 'ConditionInput') as any
+                                        const baseStyles = condMeta?.presetStyles ? ({ ...condMeta.presetStyles } as any) : {}
+                                        return Array.from({ length: count }, (_: any, idx: number) => {
+                                            let label = `字段 ${idx + 1}`
+                                            const src = Array.isArray(defaultLabels) ? defaultLabels[idx] : undefined
+                                            if (typeof src === 'string' && src) label = src
+                                            else if (src && typeof src === 'object' && typeof src.label === 'string' && src.label) {
+                                                label = src.label
+                                            }
+                                            return {
+                                                id: globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-form-condition-${idx}`,
+                                                componentType: 'ConditionInput',
+                                                styles: baseStyles,
+                                                attributes: { 'data-name': label },
+                                                children: []
+                                            }
+                                        })
+                                    })()
                                 },
                                 {
                                     id: globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-dynamic-table`,
@@ -412,7 +467,7 @@
                                             left: '12.7%'
                                         }
                                     })(),
-                                    attributes: { 'data-name': '动态表格' },
+                                    attributes: { 'data-name': '表格' },
                                     children: [
                                         {
                                             id: globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-header`,

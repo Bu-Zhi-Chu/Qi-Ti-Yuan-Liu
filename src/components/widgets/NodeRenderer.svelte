@@ -369,6 +369,24 @@
         {selectionBorderDisabled}
         {select}
     />
+{:else if componentType === 'CompanyTableToolbar'}
+    <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+    <DynamicComponent
+        type={componentType}
+        id={nodeKey}
+        data-name={dataNameAttr}
+        style={finalStyle}
+        {...componentProps}
+        class={hasPseudoBg ? 'use-pseudo-bg' : undefined}
+        onclick={handleClick}
+        onkeydown={handleKeyDown}
+        tabindex={editing ? -1 : undefined}
+        childrenNodes={node.children ?? []}
+        {selectedId}
+        {editing}
+        {selectionBorderDisabled}
+        {select}
+    />
 {:else}
     <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
     <DynamicComponent type={componentType} id={nodeKey} data-name={dataNameAttr} style={finalStyle} {...componentProps} class={hasPseudoBg ? 'use-pseudo-bg' : undefined} onclick={handleClick} onkeydown={handleKeyDown} tabindex={editing ? -1 : undefined}>

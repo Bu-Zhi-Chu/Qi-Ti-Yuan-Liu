@@ -62,11 +62,7 @@
     const baseBoxStyle = 'height: calc(30px * var(--scale-ratio, 1)); background-color: #ffffff; color: #000000; border: calc(1px * var(--scale-ratio, 1)) solid rgb(26, 156, 254)'
 
     function getWidthValueByMode(m: 'input' | 'select' | 'tree' | 'year' | 'date' | 'datetime' | undefined): string {
-        if (m === 'year') return 'calc(80px * var(--scale-ratio, 1))'
-        if (m === 'date') return 'calc(150px * var(--scale-ratio, 1))'
-        if (m === 'datetime') return 'calc(205px * var(--scale-ratio, 1))'
-        if (m === 'select') return 'calc(150px * var(--scale-ratio, 1))'
-        if (m === 'tree') return 'calc(205px * var(--scale-ratio, 1))'
+        // 在所有模式下统一使用 205 自适应 px 宽度，避免切换类型时宽度跳变
         return 'calc(205px * var(--scale-ratio, 1))'
     }
 
@@ -79,11 +75,11 @@
 
     $effect(() => {
         if (!id) return
-        const expectedWidth = getWidthValueByMode(mode)
         const currentStyle = (style || '').replace(/\s+/g, ' ')
-        const escaped = expectedWidth.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')
-        const pattern = new RegExp(`width\\s*:\\s*${escaped}`)
-        if (pattern.test(currentStyle)) return
+        // 如果样式中已经存在 width 定义，认为用户或外部已经控制宽度，不再覆盖
+        const hasWidthProp = /\bwidth\s*:/.test(currentStyle)
+        if (hasWidthProp) return
+        const expectedWidth = getWidthValueByMode(mode)
         updateNodeProps(id, { styles: { width: expectedWidth } })
     })
 

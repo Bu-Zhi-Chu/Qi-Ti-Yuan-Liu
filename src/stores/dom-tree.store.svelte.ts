@@ -15,6 +15,7 @@ import { isLiteMode } from '../services/env/environment.service'
 import { get } from 'svelte/store'
 import { getImage, addOrIncrement } from '../services/database/image-store.service'
 import { decrementOrDelete } from '../services/database/image-store.service'
+import blocksConfig from '../components/blocks/blocks.config.json'
 
 // 初始 domTree 数据结构
 const domTreeData = $state<DomNode>({
@@ -195,6 +196,99 @@ async function loadDomNodesFromDomsTable(projectId: string): Promise<DomNode | n
 }
 
 /**
+ * 初始化 CompanyTableToolbar 的查询条件子节点
+ * 确保工具栏下存在与 queryConditions 数量一致的 ConditionInput 子节点
+ * 默认至少生成 1 个，避免首次打开时为空
+ */
+function initCompanyToolbarChildren(root: DomNode): void {
+  function visit(node: DomNode) {
+    if (node.componentType === 'CompanyTableToolbar') {
+      const attrs = (node.attributes ?? {}) as any;
+      const conditions = attrs.queryConditions;
+      const desiredCount = Array.isArray(conditions) ? conditions.length : 1;
+      if (desiredCount > 0) {
+        if (!node.children) {
+          node.children = [];
+        }
+        const conditionNodes = node.children.filter((c: any) => c.componentType === 'ConditionInput');
+        let current = conditionNodes.length;
+        // 仅补齐，不删除，避免覆盖用户已经手动调整的结构
+        if (current < desiredCount) {
+          for (let i = current; i < desiredCount; i++) {
+            const childId = globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-${Math.random()}`;
+            node.children.push({
+              id: childId,
+              componentType: 'ConditionInput',
+              styles: {},
+              attributes: { 'data-name': `条件输入 ${i + 1}` },
+              children: []
+            } as any);
+          }
+        }
+      }
+    }
+    if (node.children) {
+      for (const child of node.children) {
+        visit(child);
+      }
+    }
+  }
+  visit(root);
+}
+
+/**
+ * 规范 CompanyTable 子节点顺序：
+ * 过滤树(FilterTree) → 表格工具栏(CompanyTableToolbar) → 表单区域(CompanyTableFormArea) → 动态表格(DynamicTable) → 其他
+ * 确保左侧 DOM 树中公司表格内部区域的展示顺序一致
+ */
+function normalizeCompanyTableChildrenOrder(root: DomNode): void {
+  function reorder(node: DomNode) {
+    if (node.componentType === 'CompanyTable' && Array.isArray(node.children) && node.children.length) {
+      const filterTrees: DomNode[] = [];
+      const toolbars: DomNode[] = [];
+      const forms: DomNode[] = [];
+      const tables: DomNode[] = [];
+      const others: DomNode[] = [];
+
+      for (const child of node.children) {
+        if (child.componentType === 'FilterTree') {
+          filterTrees.push(child);
+        } else if (child.componentType === 'CompanyTableToolbar') {
+          toolbars.push(child);
+        } else if (child.componentType === 'CompanyTableFormArea') {
+          forms.push(child);
+        } else if (child.componentType === 'DynamicTable') {
+          tables.push(child);
+        } else {
+          others.push(child);
+        }
+      }
+
+      node.children = [...filterTrees, ...toolbars, ...forms, ...tables, ...others];
+    }
+
+    if (node.children) {
+      for (const child of node.children) {
+        reorder(child);
+      }
+    }
+  }
+
+  reorder(root);
+}
+
+function initExpandedForSubtree(node: DomNode, isRoot: boolean): void {
+  if (!isRoot && node.expanded === undefined) {
+    node.expanded = false;
+  }
+  if (node.children && node.children.length) {
+    for (const child of node.children) {
+      initExpandedForSubtree(child, false);
+    }
+  }
+}
+
+/**
  * 从数据库加载domTree数据
  */
 export async function loadDomTreeFromDatabase(projectId: string): Promise<boolean> {
@@ -230,6 +324,12 @@ export async function loadDomTreeFromDatabase(projectId: string): Promise<boolea
     if (domTreeFromDoms) {
       Object.assign(domTreeData, domTreeFromDoms);
       console.log('✅【数据交互】加载数据');
+
+      // 初始化公司表格工具栏的查询条件子节点（无需打开特性面板）
+      initCompanyToolbarChildren(domTreeData);
+
+      // 规范 CompanyTable 内部各区域在 DOM 树中的展示顺序
+      normalizeCompanyTableChildrenOrder(domTreeData);
 
       const fallbackId = domTreeData.id || 'root';
       const targetSelectedId = savedSelectedNodeId && hasNodeWithId(domTreeData, savedSelectedNodeId)
@@ -433,12 +533,56 @@ export function addNodeToParent(parentId: string, newNode: DomNode): boolean {
     if (!parent.children) {
       parent.children = [];
     }
-    // 确保新节点默认展开
+    // 确保新插入的根节点默认展开
     if (newNode.expanded === undefined) {
       newNode.expanded = true;
     }
+    // 初始化其子树的展开状态：未显式设置的子节点默认为收起
+    initExpandedForSubtree(newNode, true);
     // 自动展开父节点以显示新添加的子节点
     parent.expanded = true;
+
+    // 针对 CompanyTableToolbar：在新节点创建时，根据特性默认值生成真实 ConditionInput 子节点
+    if (newNode.componentType === 'CompanyTableToolbar') {
+      const toolbarMeta = (blocksConfig as any[]).find((b) => b.type === 'CompanyTableToolbar') as any
+      const featureProps = toolbarMeta?.featureProps
+      const defaultConditions = featureProps?.queryConditions?.default
+      const conditions = Array.isArray((newNode.attributes as any)?.queryConditions)
+        ? (newNode.attributes as any).queryConditions
+        : Array.isArray(defaultConditions)
+          ? defaultConditions
+          : []
+
+      // 确保 attributes.queryConditions 至少是一份浅拷贝的数组，便于后续特性面板使用
+      if (!newNode.attributes) newNode.attributes = {}
+      if (!Array.isArray((newNode.attributes as any).queryConditions)) {
+        ; (newNode.attributes as any).queryConditions = conditions.map((c: any) => ({ ...c }))
+      }
+
+      const desiredCount = (newNode.attributes as any).queryConditions.length || 0
+      if (desiredCount > 0) {
+        if (!newNode.children) {
+          newNode.children = []
+        }
+        const existing = newNode.children.filter((c: any) => c.componentType === 'ConditionInput')
+        let current = existing.length
+        if (current < desiredCount) {
+          const conditionMeta = (blocksConfig as any[]).find((b) => b.type === 'ConditionInput') as any
+          const baseStyles = conditionMeta?.presetStyles ? { ...conditionMeta.presetStyles } : {}
+          for (let i = current; i < desiredCount; i++) {
+            const childId = globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-${Math.random()}`
+            newNode.children.push({
+              id: childId,
+              componentType: 'ConditionInput',
+              styles: baseStyles,
+              attributes: { 'data-name': `条件输入 ${i + 1}` },
+              children: []
+            } as any)
+          }
+        }
+      }
+    }
+
     // 添加新节点并触发响应式更新
     parent.children = [...parent.children, newNode];
     // 递增版本号，通知订阅者刷新

@@ -46,14 +46,14 @@
         color: #94a3b8;
     }
 
-    /* 通用输入/选择控件样式，保持与旧面板一致 */
-    :global(input[type='text']),
-    :global(input[type='number']),
-    :global(input[type='password']),
-    :global(input[type='email']),
-    :global(input[type='search']),
-    :global(select),
-    :global(textarea) {
+    /* 通用输入/选择控件样式，仅作用于属性面板内部的 .property-row，避免影响画布上的业务表单 */
+    :global(.property-row input[type='text']),
+    :global(.property-row input[type='number']),
+    :global(.property-row input[type='password']),
+    :global(.property-row input[type='email']),
+    :global(.property-row input[type='search']),
+    :global(.property-row select),
+    :global(.property-row textarea) {
         flex: 1;
         padding: calc(8px * var(--scale-ratio, 1)) calc(12px * var(--scale-ratio, 1));
         border: calc(1px * var(--scale-ratio, 1)) solid rgba(255, 255, 255, 0.2);
@@ -65,13 +65,13 @@
         appearance: none;
     }
 
-    :global(input[type='text']:disabled),
-    :global(input[type='number']:disabled),
-    :global(input[type='password']:disabled),
-    :global(input[type='email']:disabled),
-    :global(input[type='search']:disabled),
-    :global(select:disabled),
-    :global(textarea:disabled) {
+    :global(.property-row input[type='text']:disabled),
+    :global(.property-row input[type='number']:disabled),
+    :global(.property-row input[type='password']:disabled),
+    :global(.property-row input[type='email']:disabled),
+    :global(.property-row input[type='search']:disabled),
+    :global(.property-row select:disabled),
+    :global(.property-row textarea:disabled) {
         color: #64748b;
     }
 
@@ -104,19 +104,19 @@
     }
 
     /* 焦点态 */
-    :global(select:focus),
-    :global(input[type='range']) {
+    :global(.property-row select:focus),
+    :global(.property-row input[type='range']) {
         width: 100%;
         user-select: auto;
         -webkit-user-select: auto;
     }
 
-    :global(input[type='text']:focus),
-    :global(input[type='number']:focus),
-    :global(input[type='password']:focus),
-    :global(input[type='email']:focus),
-    :global(input[type='search']:focus),
-    :global(textarea:focus) {
+    :global(.property-row input[type='text']:focus),
+    :global(.property-row input[type='number']:focus),
+    :global(.property-row input[type='password']:focus),
+    :global(.property-row input[type='email']:focus),
+    :global(.property-row input[type='search']:focus),
+    :global(.property-row textarea:focus) {
         outline: none;
         border-color: #cbd5e1;
         background: rgba(255, 255, 255, 0.15);

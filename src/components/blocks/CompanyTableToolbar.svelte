@@ -1,13 +1,7 @@
 <script lang="ts">
     import { getContext } from 'svelte'
-    import ConditionInput from './ConditionInput.svelte'
-
-    interface QueryCondition {
-        id?: string
-        name?: string
-        type?: 'input' | 'select' | 'date' | 'datetime' | 'year'
-        disabled?: boolean
-    }
+    import NodeRenderer from '../widgets/NodeRenderer.svelte'
+    import type { DomNode } from '../../types/dom-node.types'
 
     interface ActionButtonConfig {
         name?: string
@@ -19,45 +13,17 @@
     interface Props {
         style?: string
         class?: string
-        queryConditions?: QueryCondition[]
+        queryConditions?: any[]
         actionButtons?: ActionButtonConfig[]
+        childrenNodes?: DomNode[]
+        selectedId?: string | null
+        editing?: boolean
+        selectionBorderDisabled?: boolean
+        select?: (id: string) => void
         [key: string]: any
     }
 
-    let { style = '', class: className = '', queryConditions, actionButtons, ...rest }: Props = $props()
-
-    const normalizedConditions = $derived((): QueryCondition[] => {
-        const source = queryConditions
-        if (!Array.isArray(source) || source.length === 0) {
-            return [
-                {
-                    name: '条件一',
-                    type: 'input',
-                    disabled: false
-                }
-            ]
-        }
-        return source.map((item: any): QueryCondition => {
-            if (typeof item === 'string') {
-                return {
-                    name: item,
-                    type: 'input' as const,
-                    disabled: false
-                }
-            }
-            if (!item || typeof item !== 'object') {
-                return {
-                    name: '',
-                    type: 'input' as const,
-                    disabled: false
-                }
-            }
-            const name = typeof item.name === 'string' ? item.name : ''
-            const type = item.type === 'select' || item.type === 'date' || item.type === 'datetime' || item.type === 'year' ? item.type : 'input'
-            const disabled = item.disabled === true
-            return { name, type, disabled }
-        })
-    })
+    let { style = '', class: className = '', queryConditions, actionButtons, childrenNodes = [], selectedId = null, editing = false, selectionBorderDisabled = false, select, ...rest }: Props = $props()
 
     const normalizedButtons = $derived((): ActionButtonConfig[] => {
         const fallback: ActionButtonConfig[] = [
@@ -107,48 +73,22 @@
         }
     }
 
-    const currentYear = new Date().getFullYear()
-    let yearValues = $state<Record<number, number>>({})
-
-    function getYearDisplay(index: number): number {
-        const v = yearValues[index]
-        return typeof v === 'number' && Number.isFinite(v) ? v : currentYear
-    }
-
-    function setYearValue(index: number, value: number) {
-        if (!Number.isFinite(value)) return
-        yearValues = { ...yearValues, [index]: value }
-    }
+    const conditionNodes: () => DomNode[] = $derived(() => (childrenNodes ?? []).filter((n) => n.componentType === 'ConditionInput'))
 </script>
 
 <div {style} class={className} {...rest}>
-    {#if normalizedConditions().length > 0}
-        {#each normalizedConditions().filter((c: QueryCondition) => !c.disabled) as cond, index}
-            <div class="company-table-condition" style={index === 0 ? 'margin-left: calc(5px * var(--scale-ratio, 1));' : ''}>
-                {#if cond?.name}
-                    <span class="company-table-condition-label">{cond.name}</span>
-                {/if}
-                {#if cond?.type === 'select'}
-                    <ConditionInput mode="select" />
-                {:else if cond?.type === 'date'}
-                    <ConditionInput mode="date" />
-                {:else if cond?.type === 'datetime'}
-                    <ConditionInput mode="datetime" />
-                {:else if cond?.type === 'year'}
-                    {@const year = getYearDisplay(index)}
-                    <ConditionInput
-                        mode="year"
-                        value={new Date(year, 0, 1)}
-                        disabled={cond?.disabled}
-                        onChange={(d) => {
-                            const y = d.getFullYear()
-                            setYearValue(index, y)
-                        }}
-                    />
-                {:else}
-                    <input class="company-table-input" type="text" placeholder="" />
-                {/if}
-            </div>
+    {#if conditionNodes().length > 0}
+        {#each conditionNodes() as condNode, index}
+            {@const condConfig = Array.isArray(queryConditions) ? queryConditions[index] : null}
+            {#if !condConfig || condConfig.disabled !== true}
+                {@const displayName = condConfig && typeof condConfig.name === 'string' && condConfig.name.trim().length > 0 ? condConfig.name : condNode.attributes?.['data-name']}
+                <div class="company-table-condition" style={index === 0 ? 'margin-left: calc(5px * var(--scale-ratio, 1));' : ''}>
+                    {#if displayName}
+                        <span class="company-table-condition-label">{displayName}</span>
+                    {/if}
+                    <NodeRenderer node={condNode} {selectedId} {editing} {selectionBorderDisabled} {select} />
+                </div>
+            {/if}
         {/each}
     {/if}
     {#each normalizedButtons().filter((b) => !b.disabled) as btn}

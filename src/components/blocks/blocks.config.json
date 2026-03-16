@@ -1387,34 +1387,6 @@
                         "control": "text"
                     },
                     {
-                        "key": "type",
-                        "label": "类型",
-                        "control": "select",
-                        "options": [
-                            {
-                                "value": "input",
-                                "label": "输入框"
-                            },
-                            {
-                                "value": "select",
-                                "label": "下拉框"
-                            },
-                            {
-                                "value": "date",
-                                "label": "日期"
-                            },
-                            {
-                                "value": "datetime",
-                                "label": "日期时间"
-                            },
-                            {
-                                "value": "year",
-                                "label": "年份"
-                            }
-                        ],
-                        "default": "input"
-                    },
-                    {
                         "key": "disabled",
                         "label": "禁用",
                         "control": "switch"
@@ -1423,7 +1395,6 @@
                 "default": [
                     {
                         "name": "条件一",
-                        "type": "input",
                         "disabled": false
                     }
                 ]
