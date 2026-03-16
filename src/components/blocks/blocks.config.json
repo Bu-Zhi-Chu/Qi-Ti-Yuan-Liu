@@ -837,6 +837,32 @@
         "type": "ConditionInput",
         "nameZh": "条件输入",
         "path": "../blocks/ConditionInput.svelte",
+        "dataBindable": true,
+        "dataSource": {
+            "dataAccess": {
+                "label": "数据接入",
+                "type": "select",
+                "options": [
+                    {
+                        "value": "example",
+                        "label": "示例数据"
+                    },
+                    {
+                        "value": "json",
+                        "label": "临时数据"
+                    },
+                    {
+                        "value": "mock",
+                        "label": "模拟接口"
+                    },
+                    {
+                        "value": "real",
+                        "label": "真实请求"
+                    }
+                ],
+                "default": "example"
+            }
+        },
         "preview": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><rect x='3' y='4' width='26' height='24' fill='none' stroke='%2338bdf8' stroke-width='2' rx='2'/><line x1='3' y1='9' x2='29' y2='9' stroke='%2338bdf8' stroke-width='1.5'/><rect x='7' y='12' width='4' height='4' fill='%2338bdf8' rx='1'/><rect x='14' y='12' width='4' height='4' fill='%2338bdf8' rx='1'/><rect x='21' y='12' width='4' height='4' fill='%2338bdf8' rx='1'/><rect x='7' y='19' width='4' height='4' fill='%2338bdf8' rx='1'/><rect x='14' y='19' width='4' height='4' fill='%2338bdf8' rx='1'/></svg>",
         "showFeatureTab": true,
         "positionAtOrigin": false,

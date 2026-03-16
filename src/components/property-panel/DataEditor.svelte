@@ -290,17 +290,36 @@
         }
     })
 
-    // 派生状态：获取当前组件类型
     let componentType = $derived(selectedId ? getFullNode(selectedId)?.componentType || null : null)
-
-    // 派生状态：获取组件级别的 dataSource 配置
     let dataSourceConfig = $derived(componentType ? getComponentDataSourceConfig(componentType) : null)
-
-    // 派生状态：获取最终的 dataSource 值
     let dataSource = $derived(currentValues.dataSource ?? dataSourceConfig?.default ?? 'json')
-
-    // 派生状态：获取完整的 dataSource 配置（包含 dataAccess 和其他配置）
     let fullDataSourceConfig = $derived(componentType ? getFullDataSourceConfig(componentType) : null)
+
+    let conditionInputMode = $derived.by(() => {
+        if (!selectedId) return null
+        const node = getFullNode(selectedId)
+        const attrs = (node?.attributes || {}) as any
+        return typeof attrs.mode === 'string' ? attrs.mode : null
+    })
+
+    let visibleDataSourceOptions = $derived.by(() => {
+        const base = dataSourceConfig?.options || []
+        if (componentType !== 'ConditionInput') return base
+        const mode = conditionInputMode
+        if (mode === 'year' || mode === 'date' || mode === 'datetime') {
+            const filtered = base.filter((opt: any) => opt?.value !== 'real')
+            return filtered.map((opt: any, index: number) => {
+                if (opt?.value === 'example' && index === 0) {
+                    return { ...opt, label: '默认当前' }
+                }
+                if (opt?.value === 'mock') {
+                    return { ...opt, label: '详细设置' }
+                }
+                return opt
+            })
+        }
+        return base
+    })
 
     /** 实时更新第 index 个 data 数组的内容 */
     function updateDataArray(index: number, newValue: string) {
@@ -489,9 +508,9 @@
 </script>
 
 <div class="data-editor">
-    {#if dataSourceConfig}
+    {#if dataSourceConfig && componentType !== 'ConditionInput'}
         <PropertyRow label={dataSourceConfig.label}>
-            <PropertySelect value={currentValues.dataSource ?? dataSourceConfig.default ?? 'json'} options={dataSourceConfig.options || []} change={(v) => handleAttrChange('dataSource', v)} />
+            <PropertySelect value={currentValues.dataSource ?? dataSourceConfig.default ?? 'json'} options={visibleDataSourceOptions} change={(v) => handleAttrChange('dataSource', v)} />
         </PropertyRow>
     {/if}
 
@@ -503,7 +522,10 @@
     {/if}
 
     <!-- 模拟平台链接组：只在选择模拟接口时显示 -->
-    {#if fullDataSourceConfig?.mockPlatforms && (currentValues.dataSource ?? dataSourceConfig?.default ?? 'json') === 'mock'}
+    {#if fullDataSourceConfig?.mockPlatforms
+        && (currentValues.dataSource ?? dataSourceConfig?.default ?? 'json') === 'mock'
+        && !(componentType === 'ConditionInput'
+            && (conditionInputMode === 'year' || conditionInputMode === 'date' || conditionInputMode === 'datetime'))}
         <PropertyRow label={fullDataSourceConfig.mockPlatforms.label}>
             <div class="link-group" style="display:flex; gap: calc(8px * var(--scale-ratio, 1)); flex:1 1 0; width:0;">
                 {#each fullDataSourceConfig.mockPlatforms.links || [] as link}
@@ -514,7 +536,10 @@
     {/if}
 
     <!-- 模拟路径配置：只在选择模拟接口时显示 -->
-    {#if fullDataSourceConfig?.mockPath && (currentValues.dataSource ?? dataSourceConfig?.default ?? 'json') === 'mock'}
+    {#if fullDataSourceConfig?.mockPath
+        && (currentValues.dataSource ?? dataSourceConfig?.default ?? 'json') === 'mock'
+        && !(componentType === 'ConditionInput'
+            && (conditionInputMode === 'year' || conditionInputMode === 'date' || conditionInputMode === 'datetime'))}
         <PropertyRow label={fullDataSourceConfig.mockPath.label}>
             <input type="text" autocomplete="off" value={currentValues.mockPath ?? fullDataSourceConfig.mockPath.default ?? '/api/mock'} onchange={(e) => handleAttrChange('mockPath', (e.target as HTMLInputElement).value)} class="request-path-input" placeholder="请输入模拟路径" />
         </PropertyRow>
@@ -541,6 +566,21 @@
             <PropertyRow label="临时数据">
                 <CodeEditor code={currentValues.treeDataCode ?? ''} language="json" theme="one-dark" height="calc(120px * var(--scale-ratio, 1))" run={(code: string) => updateFilterTreeData(code)} toolbar={false} autoRun={true} wrap={true} showLineNumbers={false} style="flex:1; width:0;" />
             </PropertyRow>
+        {:else if componentType === 'ConditionInput'}
+            <PropertyRow label="临时数据">
+                <CodeEditor
+                    code={currentValues.inputDataCode ?? ''}
+                    language="javascript"
+                    theme="one-dark"
+                    height="calc(120px * var(--scale-ratio, 1))"
+                    run={(code: string) => handleAttrChange('inputDataCode', code)}
+                    toolbar={false}
+                    autoRun={true}
+                    wrap={true}
+                    showLineNumbers={false}
+                    style="flex:1; width:0;"
+                />
+            </PropertyRow>
         {:else if dataArrays.length > 0}
             {#each dataArrays as arr, idx}
                 <PropertyRow label={`${getChineseOrdinal(idx)}序列`}>
@@ -550,8 +590,124 @@
         {/if}
     {/if}
 
-    <!-- 动态数据(mock)模式：编辑 mockSeriesMapping -->
-    {#if dataSource === 'mock'}
+    <!-- 动态数据(mock)模式：编辑 mockSeriesMapping 或条件输入的详细设置 -->
+    {#if componentType === 'ConditionInput'
+        && (conditionInputMode === 'year' || conditionInputMode === 'date' || conditionInputMode === 'datetime')}
+        {#if conditionInputMode === 'year'}
+            <PropertyRow label="年份设置">
+                <input
+                    type="text"
+                    autocomplete="off"
+                    class="request-path-input"
+                    placeholder="例如 2026 或 +1 / -1"
+                    value={currentValues.detailYear ?? ''}
+                    oninput={(e) => handleAttrChange('detailYear', (e.target as HTMLInputElement).value)}
+                    onchange={(e) => handleAttrChange('detailYear', (e.target as HTMLInputElement).value)}
+                />
+            </PropertyRow>
+        {:else if conditionInputMode === 'date'}
+            <PropertyRow label="年份设置">
+                <input
+                    type="text"
+                    autocomplete="off"
+                    class="request-path-input"
+                    placeholder="例如 2026 或 +1 / -1"
+                    value={currentValues.detailYear ?? ''}
+                    oninput={(e) => handleAttrChange('detailYear', (e.target as HTMLInputElement).value)}
+                    onchange={(e) => handleAttrChange('detailYear', (e.target as HTMLInputElement).value)}
+                />
+            </PropertyRow>
+            <PropertyRow label="月份设置">
+                <input
+                    type="text"
+                    autocomplete="off"
+                    class="request-path-input"
+                    placeholder="1-12 或 +1 / -1，留空使用当前月份"
+                    value={currentValues.detailMonth ?? ''}
+                    oninput={(e) => handleAttrChange('detailMonth', (e.target as HTMLInputElement).value)}
+                    onchange={(e) => handleAttrChange('detailMonth', (e.target as HTMLInputElement).value)}
+                />
+            </PropertyRow>
+            <PropertyRow label="日期设置">
+                <input
+                    type="text"
+                    autocomplete="off"
+                    class="request-path-input"
+                    placeholder="1-31 或 +1 / -1，留空使用当前日期"
+                    value={currentValues.detailDay ?? ''}
+                    oninput={(e) => handleAttrChange('detailDay', (e.target as HTMLInputElement).value)}
+                    onchange={(e) => handleAttrChange('detailDay', (e.target as HTMLInputElement).value)}
+                />
+            </PropertyRow>
+        {:else if conditionInputMode === 'datetime'}
+            <PropertyRow label="年份设置">
+                <input
+                    type="text"
+                    autocomplete="off"
+                    class="request-path-input"
+                    placeholder="例如 2026 或 +1 / -1"
+                    value={currentValues.detailYear ?? ''}
+                    oninput={(e) => handleAttrChange('detailYear', (e.target as HTMLInputElement).value)}
+                    onchange={(e) => handleAttrChange('detailYear', (e.target as HTMLInputElement).value)}
+                />
+            </PropertyRow>
+            <PropertyRow label="月份设置">
+                <input
+                    type="text"
+                    autocomplete="off"
+                    class="request-path-input"
+                    placeholder="1-12 或 +1 / -1，留空使用当前月份"
+                    value={currentValues.detailMonth ?? ''}
+                    oninput={(e) => handleAttrChange('detailMonth', (e.target as HTMLInputElement).value)}
+                    onchange={(e) => handleAttrChange('detailMonth', (e.target as HTMLInputElement).value)}
+                />
+            </PropertyRow>
+            <PropertyRow label="日期设置">
+                <input
+                    type="text"
+                    autocomplete="off"
+                    class="request-path-input"
+                    placeholder="1-31 或 +1 / -1，留空使用当前日期"
+                    value={currentValues.detailDay ?? ''}
+                    oninput={(e) => handleAttrChange('detailDay', (e.target as HTMLInputElement).value)}
+                    onchange={(e) => handleAttrChange('detailDay', (e.target as HTMLInputElement).value)}
+                />
+            </PropertyRow>
+            <PropertyRow label="小时设置">
+                <input
+                    type="text"
+                    autocomplete="off"
+                    class="request-path-input"
+                    placeholder="0-23 或 +1 / -1，留空使用当前小时"
+                    value={currentValues.detailHour ?? ''}
+                    oninput={(e) => handleAttrChange('detailHour', (e.target as HTMLInputElement).value)}
+                    onchange={(e) => handleAttrChange('detailHour', (e.target as HTMLInputElement).value)}
+                />
+            </PropertyRow>
+            <PropertyRow label="分钟设置">
+                <input
+                    type="text"
+                    autocomplete="off"
+                    class="request-path-input"
+                    placeholder="0-59 或 +1 / -1，留空使用当前分钟"
+                    value={currentValues.detailMinute ?? ''}
+                    oninput={(e) => handleAttrChange('detailMinute', (e.target as HTMLInputElement).value)}
+                    onchange={(e) => handleAttrChange('detailMinute', (e.target as HTMLInputElement).value)}
+                />
+            </PropertyRow>
+            <PropertyRow label="秒数设置">
+                <input
+                    type="text"
+                    autocomplete="off"
+                    class="request-path-input"
+                    placeholder="0-59 或 +1 / -1，留空使用当前秒数"
+                    value={currentValues.detailSecond ?? ''}
+                    oninput={(e) => handleAttrChange('detailSecond', (e.target as HTMLInputElement).value)}
+                    onchange={(e) => handleAttrChange('detailSecond', (e.target as HTMLInputElement).value)}
+                />
+            </PropertyRow>
+        {/if}
+    {:else if dataSource === 'mock'}
         {#if seriesCount > 0}
             {#each Array(seriesCount) as _, idx}
                 <PropertyRow label={`${getChineseOrdinal(idx)}映射`}>

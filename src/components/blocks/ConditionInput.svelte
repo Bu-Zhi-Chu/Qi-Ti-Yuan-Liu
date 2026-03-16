@@ -114,6 +114,62 @@
         return typeof v === 'string' ? new Date(v) : new Date(v)
     }
 
+    function parseTempDateByMode(m: 'input' | 'select' | 'tree' | 'year' | 'date' | 'datetime' | undefined, raw: unknown): Date | null {
+        if (!raw || typeof raw !== 'string') return null
+        const trimmed = raw.trim()
+        if (!trimmed) return null
+
+        if (m === 'year') {
+            const mYear = /^(\d{4})$/.exec(trimmed)
+            if (!mYear) return null
+            const year = Number(mYear[1])
+            if (!Number.isFinite(year)) return null
+            return new Date(year, 0, 1)
+        }
+
+        if (m === 'date') {
+            const mDate = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmed)
+            if (!mDate) return null
+            const [_, y, mm, dd] = mDate
+            const year = Number(y)
+            const month = Number(mm)
+            const day = Number(dd)
+            if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) return null
+            return new Date(year, month - 1, day)
+        }
+
+        if (m === 'datetime') {
+            const mDt = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})$/.exec(trimmed)
+            if (!mDt) return null
+            const [_, y, mm, dd, hh, mi, ss] = mDt
+            const year = Number(y)
+            const month = Number(mm)
+            const day = Number(dd)
+            const hour = Number(hh)
+            const minute = Number(mi)
+            const second = Number(ss)
+            if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day) || !Number.isFinite(hour) || !Number.isFinite(minute) || !Number.isFinite(second)) {
+                return null
+            }
+            return new Date(year, month - 1, day, hour, minute, second)
+        }
+
+        return null
+    }
+
+    function parseOffset(raw: unknown, base: number, nowPart: number): number {
+        if (raw === undefined || raw === null) return nowPart
+        const s = String(raw).trim()
+        if (!s) return nowPart
+        const m = /^([+-])\s*(\d+)$/.exec(s)
+        if (m) {
+            const offset = Number(m[2])
+            return base + (m[1] === '+' ? offset : -offset)
+        }
+        const n = Number(s)
+        return Number.isFinite(n) ? n : nowPart
+    }
+
     const initialDate: Date = mode === 'select' || mode === 'input' ? new Date() : dateRecording && recordedDate ? normalizeDate(recordedDate) : normalizeDate(value)
     let internalDate = $state(initialDate)
     // 如果使用记录值，确保外部 value 同步
@@ -127,6 +183,104 @@
         if (!isOpen && newVal.getTime() !== internalDate.getTime()) {
             internalDate = new Date(newVal)
         }
+    })
+
+    let lastDataSource = $state<string | null>(null)
+
+    // 临时数据：按字符串解析 YYYY / YYYY-MM-DD / YYYY-MM-DD HH:MM:SS
+    $effect(() => {
+        const attrs: any = rest
+        const source = attrs?.dataSource
+        if (source !== 'json') return
+        if (mode !== 'year' && mode !== 'date' && mode !== 'datetime') return
+        const raw = attrs?.inputDataCode
+        const parsed = parseTempDateByMode(mode, raw)
+        if (!parsed) return
+        if (parsed.getTime() === internalDate.getTime()) return
+        setValue(parsed)
+    })
+
+    // 默认当前：切换到 example 时，重新使用当前时间
+    $effect(() => {
+        const attrs: any = rest
+        const source: string | null = attrs?.dataSource ?? null
+        if (source === lastDataSource) return
+        lastDataSource = source
+        if (source !== 'example') return
+        if (mode !== 'year' && mode !== 'date' && mode !== 'datetime') return
+        const now = new Date()
+        let next: Date
+        if (mode === 'year') {
+            next = new Date(now.getFullYear(), 0, 1)
+        } else if (mode === 'date') {
+            next = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+        } else {
+            next = now
+        }
+        if (next.getTime() === internalDate.getTime()) return
+        setValue(next)
+    })
+
+    let lastHasDetail = $state(false)
+    let lastDetailSignature = $state<string | null>(null)
+
+    // 详细设置：根据 detail* 字段覆盖当前时间（不再依赖 dataSource）
+    $effect(() => {
+        const attrs: any = rest
+        if (mode !== 'year' && mode !== 'date' && mode !== 'datetime') return
+
+        const yearRaw = attrs.detailYear
+        const monthRaw = attrs.detailMonth
+        const dayRaw = attrs.detailDay
+        const hourRaw = attrs.detailHour
+        const minuteRaw = attrs.detailMinute
+        const secondRaw = attrs.detailSecond
+
+        const signature = `${mode}|${yearRaw ?? ''}|${monthRaw ?? ''}|${dayRaw ?? ''}|${hourRaw ?? ''}|${minuteRaw ?? ''}|${secondRaw ?? ''}`
+        if (signature === lastDetailSignature) return
+        lastDetailSignature = signature
+
+        const now = new Date()
+
+        const hasDetail = (yearRaw !== undefined && yearRaw !== '') || (monthRaw !== undefined && monthRaw !== '') || (dayRaw !== undefined && dayRaw !== '') || (hourRaw !== undefined && hourRaw !== '') || (minuteRaw !== undefined && minuteRaw !== '') || (secondRaw !== undefined && secondRaw !== '')
+
+        let next: Date
+
+        if (hasDetail) {
+            const base = lastHasDetail ? new Date(internalDate) : now
+            const year = parseOffset(yearRaw, base.getFullYear(), now.getFullYear())
+            const month = parseOffset(monthRaw, base.getMonth() + 1, now.getMonth() + 1)
+            const day = parseOffset(dayRaw, base.getDate(), now.getDate())
+            const hour = parseOffset(hourRaw, base.getHours(), now.getHours())
+            const minute = parseOffset(minuteRaw, base.getMinutes(), now.getMinutes())
+            const second = parseOffset(secondRaw, base.getSeconds(), now.getSeconds())
+
+            if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) return
+
+            if (mode === 'year') {
+                next = new Date(year, 0, 1)
+            } else if (mode === 'date') {
+                next = new Date(year, month - 1, day)
+            } else {
+                next = new Date(year, month - 1, day, hour, minute, second)
+            }
+        } else {
+            // 从“有详细设置”切换到“全空”时，用实时当前时间重置一次
+            if (!lastHasDetail) return
+            if (mode === 'year') {
+                next = new Date(now.getFullYear(), 0, 1)
+            } else if (mode === 'date') {
+                next = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+            } else {
+                next = now
+            }
+        }
+
+        lastHasDetail = hasDetail
+
+        if (!isValidDate(next)) return
+        if (next.getTime() === internalDate.getTime()) return
+        setValue(next)
     })
 
     // 获取当前日期值
@@ -162,13 +316,30 @@
         }
         const committed = new Date(newDate)
         value = committed
-        dispatch('change', new Date(committed))
+        const committedCopy = new Date(committed)
+        dispatch('change', committedCopy)
         if (onChange) {
-            onChange(new Date(committed))
+            onChange(committedCopy)
         }
-        // Persist to doms attr if dateRecording enabled
-        if (dateRecording && id) {
-            updateNodeProps(id, { attributes: { recordedDate: toInputValue(committed) } })
+
+        if (id) {
+            const attrs: any = {}
+            // 记录显示用的 recordedDate（仅在 dateRecording 开启时）
+            if (dateRecording) {
+                attrs.recordedDate = toInputValue(committed)
+            }
+            // 同步详细设置字段，便于 DataEditor 双向显示
+            if (mode === 'year' || mode === 'date' || mode === 'datetime') {
+                attrs.detailYear = String(committed.getFullYear())
+                attrs.detailMonth = String(committed.getMonth() + 1)
+                attrs.detailDay = String(committed.getDate())
+                attrs.detailHour = String(committed.getHours())
+                attrs.detailMinute = String(committed.getMinutes())
+                attrs.detailSecond = String(committed.getSeconds())
+            }
+            if (Object.keys(attrs).length > 0) {
+                updateNodeProps(id, { attributes: attrs })
+            }
         }
     }
 
