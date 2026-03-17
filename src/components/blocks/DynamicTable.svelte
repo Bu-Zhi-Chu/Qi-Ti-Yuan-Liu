@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { setContext } from 'svelte'
+    import { getContext, setContext, untrack } from 'svelte'
     import { dataMappingKeysStore } from '../../stores/data-mapping.store.svelte'
     import { cachedFetch } from '../../services/cache/cached-fetch'
     import { updateNodeProps } from '../../services/parser/property-panel.service'
@@ -38,7 +38,6 @@
         mockPath?: string
         requestSeriesMapping?: string[]
         mockSeriesMapping?: string[]
-        queryParams?: Record<string, any>
         style?: string
         class?: string
         children?: Snippet
@@ -66,7 +65,6 @@
         mockPath = '',
         requestSeriesMapping = [],
         mockSeriesMapping = [],
-        queryParams,
         style = '',
         class: className = '',
         children,
@@ -236,26 +234,31 @@
         }
     }
 
-    function withQueryParams(path: string, params: Record<string, any> | undefined): string {
-        const base = (path || '').trim()
-        if (!base) return base
-        if (!params) return base
-        const entries = Object.entries(params).filter(([k, v]) => k && v !== undefined && v !== null && String(v).trim() !== '')
-        if (entries.length === 0) return base
-        const sp = new URLSearchParams()
-        for (const [k, v] of entries) {
-            sp.set(k, String(v))
+    const companyTableContext = getContext<any>('company-table')
+
+    function appendQueryParams(path: string, params: Record<string, any> | null | undefined): string {
+        if (!params) return path
+        const entries = Object.entries(params).filter(([k]) => typeof k === 'string' && k.trim().length > 0)
+        if (entries.length === 0) return path
+        try {
+            const url = new URL(path, typeof window !== 'undefined' ? window.location.origin : 'http://localhost')
+            for (const [k, v] of entries) {
+                url.searchParams.set(k, v == null ? '' : String(v))
+            }
+            return url.toString()
+        } catch {
+            const joiner = path.includes('?') ? '&' : '?'
+            const qs = entries.map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v == null ? '' : String(v))}`).join('&')
+            return `${path}${joiner}${qs}`
         }
-        const qs = sp.toString()
-        if (!qs) return base
-        return base.includes('?') ? `${base}&${qs}` : `${base}?${qs}`
     }
 
     function handleRefresh() {
+        const queryParams = companyTableContext?.getQueryParams?.()
         if (dataSource === 'real' && requestPath) {
-            fetchTableData(withQueryParams(requestPath, queryParams), true)
+            fetchTableData(appendQueryParams(requestPath, queryParams), true)
         } else if (dataSource === 'mock' && mockPath) {
-            fetchTableData(withQueryParams(mockPath, queryParams), true)
+            fetchTableData(appendQueryParams(mockPath, queryParams), true)
         } else if (dataSource === 'json') {
             isLoading = true
             setTimeout(() => {
@@ -265,12 +268,18 @@
     }
 
     $effect(() => {
+        companyTableContext?.registerTableRefresh?.(handleRefresh)
+        return () => companyTableContext?.registerTableRefresh?.(null)
+    })
+
+    $effect(() => {
         const handleDataFetch = (path: string | undefined) => {
             if (!path) {
                 tableData = null
                 return
             }
-            fetchTableData(withQueryParams(path, queryParams))
+            const queryParams = untrack(() => companyTableContext?.getQueryParams?.())
+            fetchTableData(appendQueryParams(path, queryParams))
         }
 
         if (dataSource === 'real' && requestPath) {

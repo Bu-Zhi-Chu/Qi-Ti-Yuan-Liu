@@ -19,17 +19,16 @@
         textContent?: string
         disabled?: boolean
         enableClick?: boolean
+        businessStyle?: string
         textOffsetLeft?: string
         textOffsetTop?: string
         highlightImage?: string
         hoverEffect?: string
         buttonType?: string
-        businessStyle?: string
         navigationTarget?: string
         jumpPath?: string
         // 新增：默认首页开关
         defaultHome?: boolean
-        editing?: boolean
         style?: string
         children?: any
         [key: string]: any
@@ -40,17 +39,16 @@
         text = '按钮',
         textContent,
         disabled = false,
-        enableClick = false,
+        enableClick: enableClickProp = false,
+        businessStyle = '',
         textOffsetLeft = '0px',
         textOffsetTop = '0px',
         highlightImage = '',
         hoverEffect = '',
         buttonType = '',
-        businessStyle = '',
         navigationTarget = '',
         jumpPath = '',
         /* 新增 */ defaultHome = false,
-        editing = false,
         style = '',
         children,
         ...rest
@@ -67,8 +65,8 @@
     const mergedStyle = $derived(() => style)
 
     const companyTableContext = getContext<any>('company-table')
-    const isBusinessButton = $derived(buttonType === 'hongde')
-    const isClickable = $derived((enableClick || isBusinessButton) && !disabled)
+
+    const effectiveEnableClick = $derived(buttonType === 'hongde' ? true : enableClickProp)
 
     function resolveJumpUrl(raw: string): string | null {
         const s = (raw || '').trim()
@@ -81,17 +79,14 @@
 
     /** 点击事件，根据按钮类型执行不同逻辑 */
     function handleClick() {
-        if (editing) return
-
-        if (isBusinessButton) {
-            companyTableContext?.handleBusinessAction?.({
-                id,
-                businessStyle
-            })
-            return
-        }
-
         switch (buttonType) {
+            case 'hongde':
+                if (businessStyle === 'search') {
+                    companyTableContext?.refreshTable?.()
+                } else if (businessStyle === 'add') {
+                    companyTableContext?.toggleExtraRegion?.()
+                }
+                break
             case 'switch':
                 toggled = !toggled
                 // 把状态写回节点
@@ -163,7 +158,7 @@
 </script>
 
 <ResponsiveBox {id} {...rest} class={`btn ${hoverEffect} ${externalClass()}`} {disabled} style={mergedStyle()}>
-    <div class="full-size" role="button" tabindex={isClickable ? 0 : undefined} onclick={isClickable ? handleClick : undefined} onkeydown={isClickable ? handleKey : undefined}>
+    <div class="full-size" role="button" tabindex={effectiveEnableClick ? 0 : undefined} onclick={effectiveEnableClick ? handleClick : undefined} onkeydown={effectiveEnableClick ? handleKey : undefined}>
         <span style="margin-left: calc({textOffsetLeft} * var(--scale-ratio, 1)); margin-top: calc({textOffsetTop} * var(--scale-ratio, 1));">
             {#if children}
                 {@render children()}

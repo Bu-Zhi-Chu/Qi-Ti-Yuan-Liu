@@ -12,18 +12,19 @@
     }
 
     interface Props {
+        id?: string
         tabs?: string[]
         treeData?: TreeNode[]
         multiList?: boolean
         enableMultiSelect?: boolean
         dataSource?: string
-        id?: string
         style?: string
         'data-id'?: string
+        selectedNodeId?: string | number
         [key: string]: any
     }
 
-    let { tabs = ['点类型', '管理单位', '自定义'], treeData: rawTreeData = [], multiList = false, enableMultiSelect = false, dataSource = 'example', id = '', style = '', 'data-id': dataId = '', ...restProps }: Props = $props()
+    let { id = '', tabs = ['点类型', '管理单位', '自定义'], treeData: rawTreeData = [], multiList = false, enableMultiSelect = false, dataSource = 'example', style = '', 'data-id': dataId = '', selectedNodeId: propSelectedNodeId, ...restProps }: Props = $props()
 
     let activeTabIndex = $state(0)
     let searchText = $state('')
@@ -146,8 +147,10 @@
     }
 
     function findNodeById(nodes: TreeNode[], id: string | number): TreeNode | null {
+        // Normalize id to string for comparison to handle number vs string mismatches
+        const targetIdStr = String(id)
         for (const node of nodes) {
-            if (node.id === id) return node
+            if (String(node.id) === targetIdStr) return node
             if (node.children && node.children.length > 0) {
                 const found = findNodeById(node.children, id)
                 if (found) return found
@@ -165,16 +168,31 @@
 
     const initialTreeData: TreeNode[] = rawTreeData.length > 0 ? normalizeTreeData(rawTreeData as any[]) : defaultTreeData
     let treeData = $state<TreeNode[]>(initialTreeData)
-    let selectedNodeId = $state<string | number | null>(initialTreeData[0]?.id ?? null)
+    // Initialize with prop if available, otherwise first node
+    let selectedNodeId = $state<string | number | null>(propSelectedNodeId != null && findNodeById(initialTreeData, propSelectedNodeId) ? (findNodeById(initialTreeData, propSelectedNodeId)?.id ?? propSelectedNodeId) : (initialTreeData[0]?.id ?? null))
     let lastSearchTerm = $state('')
     let lastMatchedNodeId = $state<string | number | null>(null)
-    let lastPersistedId = $state<string | number | null>(null)
 
     $effect(() => {
         console.log('[FilterTree] effect 触发，dataSource:', dataSource, 'rawTreeData length:', Array.isArray(rawTreeData) ? rawTreeData.length : '非数组')
         if (dataSource === 'json' || dataSource === 'real' || dataSource === 'mock') {
             const normalized = rawTreeData.length > 0 ? normalizeTreeData(rawTreeData as any[]) : defaultTreeData
             treeData = normalized
+
+            // Check if current selection is still valid
+            if (selectedNodeId != null && findNodeById(normalized, selectedNodeId)) {
+                return
+            }
+
+            // Check if prop selection is valid (e.g. if updated from parent or init)
+            if (propSelectedNodeId != null) {
+                const found = findNodeById(normalized, propSelectedNodeId)
+                if (found) {
+                    selectedNodeId = found.id
+                    return
+                }
+            }
+
             const first = normalized[0]
             if (first) {
                 selectNode(first)
@@ -184,6 +202,19 @@
         } else if (dataSource === 'example') {
             const normalized = defaultTreeData
             treeData = normalized
+
+            if (selectedNodeId != null && findNodeById(normalized, selectedNodeId)) {
+                return
+            }
+
+            if (propSelectedNodeId != null) {
+                const found = findNodeById(normalized, propSelectedNodeId)
+                if (found) {
+                    selectedNodeId = found.id
+                    return
+                }
+            }
+
             const first = normalized[0]
             if (first) {
                 selectNode(first)
@@ -213,17 +244,24 @@
             SELF_CODE: node.SELF_CODE
         })
         selectedNodeId = node.id
-        if (id && lastPersistedId !== node.id) {
-            lastPersistedId = node.id
-            updateNodeProps(id, {
-                attributes: {
-                    selectedNodeId: node.id,
-                    selectedSelfCode: node.SELF_CODE ?? '',
-                    selectedLabel: node.label ?? ''
-                }
-            })
-        }
     }
+
+    let lastPersistedSelection = $state<string | null>(null)
+    $effect(() => {
+        if (!id) return
+        const selectedIdStr = selectedNodeId == null ? '' : String(selectedNodeId)
+        const selfCode = getSelfCode(selectedNodeId) ?? ''
+        const effectiveSelfCode = selfCode || selectedIdStr
+        const signature = `${selectedIdStr}|${selfCode}`
+        if (signature === lastPersistedSelection) return
+        lastPersistedSelection = signature
+        updateNodeProps(id, {
+            attributes: {
+                selectedNodeId: selectedIdStr,
+                selectedSelfCode: effectiveSelfCode
+            }
+        })
+    })
 
     function collectAllNodes(nodes: TreeNode[]): TreeNode[] {
         const result: TreeNode[] = []
@@ -318,7 +356,7 @@
         lastSearchTerm = term
         lastMatchedNodeId = found.id
         expandAncestors(found.id)
-        selectNode(found)
+        selectedNodeId = found.id
     }
 
     function triggerSearch() {

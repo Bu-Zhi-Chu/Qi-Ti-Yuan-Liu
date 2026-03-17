@@ -57,7 +57,7 @@
             return
         }
         if (btn.buttonType === 'search') {
-            context?.triggerQuery?.()
+            context?.refreshTable?.()
         }
     }
 

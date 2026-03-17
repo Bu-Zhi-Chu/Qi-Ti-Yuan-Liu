@@ -111,7 +111,8 @@
 
     // 内部日期状态
     function normalizeDate(v: Date | string): Date {
-        return typeof v === 'string' ? new Date(v) : new Date(v)
+        const d = typeof v === 'string' ? new Date(v) : new Date(v)
+        return isValidDate(d) ? d : new Date()
     }
 
     function parseTempDateByMode(m: 'input' | 'select' | 'tree' | 'year' | 'date' | 'datetime' | undefined, raw: unknown): Date | null {
@@ -186,6 +187,37 @@
     })
 
     let lastDataSource = $state<string | null>(null)
+
+    // 监听 mode 变化并重置值
+    let previousMode = $state(mode)
+    $effect(() => {
+        if (mode !== previousMode) {
+            previousMode = mode
+            // 重置逻辑：
+            // input/select/tree -> 空字符串
+            // date/datetime/year -> 当前时间
+            if (mode === 'input') {
+                value = ''
+                inputText = ''
+            } else if (mode === 'select') {
+                value = ''
+                selectedIndex = null
+            } else if (mode === 'tree') {
+                value = ''
+                selectedTreeId = null
+            } else if (mode === 'date' || mode === 'datetime' || mode === 'year') {
+                const now = new Date()
+                internalDate = now
+                if (mode === 'datetime') {
+                    hours = now.getHours()
+                    minutes = now.getMinutes()
+                    seconds = now.getSeconds()
+                    timeInput = formatTimeString(hours, minutes, seconds)
+                }
+                updateValue(now)
+            }
+        }
+    })
 
     // 临时数据：按字符串解析 YYYY / YYYY-MM-DD / YYYY-MM-DD HH:MM:SS
     $effect(() => {
@@ -320,12 +352,6 @@
         if (onChange) {
             onChange(new Date(committed))
         }
-        if (id) {
-            const dateStr = toInputValue(committed)
-            const nextValue = mode === 'datetime' ? `${dateStr} ${formatTimeString(committed.getHours(), committed.getMinutes(), committed.getSeconds())}` : dateStr
-            updateNodeProps(id, { attributes: { value: nextValue } })
-        }
-        // Persist to doms attr if dateRecording enabled
         if (dateRecording && id) {
             updateNodeProps(id, { attributes: { recordedDate: toInputValue(committed) } })
         }
@@ -344,11 +370,44 @@
 
     let inputText = $state(typeof value === 'string' ? value : '')
 
+    let pendingUpdates = new Set<string>()
+
     $effect(() => {
         if (mode !== 'input') return
         if (typeof value === 'string' && value !== inputText) {
+            // Check if this value is one we sent recently
+            if (pendingUpdates.has(value)) {
+                pendingUpdates.delete(value)
+                return
+            }
             inputText = value
         }
+    })
+
+    let lastPersistedValue = $state<string | null>(null)
+    $effect(() => {
+        if (!id) return
+
+        let next = ''
+        if (mode === 'input') {
+            next = inputText ?? ''
+        } else if (mode === 'select' || mode === 'tree') {
+            next = typeof value === 'string' ? value : ''
+        } else if (mode === 'year') {
+            next = String(internalDate.getFullYear())
+        } else if (mode === 'datetime') {
+            next = `${toInputValue(internalDate)} ${formatTimeString(hours, minutes, seconds)}`
+        } else {
+            next = toInputValue(internalDate)
+        }
+
+        if (next === (lastPersistedValue ?? null)) return
+        lastPersistedValue = next
+        // Track this update as pending
+        if (mode === 'input') {
+            pendingUpdates.add(next)
+        }
+        updateNodeProps(id, { attributes: { value: next } })
     })
 
     let selectOptions = $derived((options && options.length > 0 ? options : ['选项一', '选项二', '选项三']).slice())
@@ -439,13 +498,11 @@
 
     function selectTreeNode(node: TreeNode) {
         selectedTreeId = node.id
-        if (mode === 'tree') {
-            value = String(node.id)
-            if (id) {
-                updateNodeProps(id, { attributes: { value: String(node.id) } })
-            }
-        }
+        value = node.label ?? ''
         isOpen = false
+        if (id) {
+            updateNodeProps(id, { attributes: { value: typeof value === 'string' ? value : '' } })
+        }
     }
 
     let year = $derived(internalDate.getFullYear())
@@ -552,11 +609,11 @@
         selectedIndex = index
         if (mode === 'select') {
             value = selectOptions[index] ?? ''
-            if (id) {
-                updateNodeProps(id, { attributes: { value: value } })
-            }
         }
         isOpen = false
+        if (id) {
+            updateNodeProps(id, { attributes: { value: typeof value === 'string' ? value : '' } })
+        }
     }
 
     function handleDisplayClick() {
@@ -1041,19 +1098,7 @@
             </div>
         </div>
     {:else if mode === 'input'}
-        <input
-            class="date-picker-display-input"
-            type="text"
-            bind:value={inputText}
-            {disabled}
-            oninput={() => {
-                if (mode !== 'input') return
-                value = inputText
-                if (id) {
-                    updateNodeProps(id, { attributes: { value: inputText } })
-                }
-            }}
-        />
+        <input class="date-picker-display-input" type="text" bind:value={inputText} {disabled} />
     {:else if mode === 'select'}
         <div bind:this={buttonRef} class="date-picker-button select-button" class:disabled>
             <span class="date-text">
