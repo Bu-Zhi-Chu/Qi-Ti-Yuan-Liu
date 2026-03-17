@@ -1640,7 +1640,7 @@
         flex: 1;
         border: none;
         background: transparent;
-        padding: 0;
+        padding: 0 calc(8px * var(--scale-ratio, 1));
         min-width: 0;
         color: inherit;
         font-size: inherit;
@@ -1648,6 +1648,7 @@
         font-weight: inherit;
         line-height: inherit;
         outline: none;
+        box-sizing: border-box;
     }
 
     .date-icon {

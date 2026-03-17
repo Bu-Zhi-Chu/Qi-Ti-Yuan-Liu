@@ -49,6 +49,7 @@
         "formidable": "^2.1.2",
         "lru_map": "^0.3.3",
         "maptalks-gl": "^0.118.1",
+        "pinyin-pro": "^3.28.0",
         "svelte-dnd-action": "^0.9.64",
         "svelte-echarts": "^1.0.0",
         "svelte-splitpanes": "^8.0.9",

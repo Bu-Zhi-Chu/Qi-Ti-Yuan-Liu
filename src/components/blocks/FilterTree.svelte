@@ -9,6 +9,7 @@
         children?: TreeNode[]
         expanded?: boolean
         SELF_CODE?: string
+        PARENT_ID?: string | number
     }
 
     interface Props {
@@ -76,7 +77,8 @@
             checked: raw.checked ?? false,
             expanded: raw.expanded,
             children,
-            SELF_CODE: raw.SELF_CODE
+            SELF_CODE: raw.SELF_CODE,
+            PARENT_ID: raw.PARENT_ID ?? raw.parentId
         }
     }
 
@@ -166,6 +168,38 @@
         return node?.SELF_CODE ?? null
     }
 
+    function findParentIdByTraversal(nodes: TreeNode[], targetId: string | number): string | number | null {
+        const targetStr = String(targetId)
+        for (const node of nodes) {
+            // Check direct children
+            if (node.children && node.children.length > 0) {
+                for (const child of node.children) {
+                    if (String(child.id) === targetStr) {
+                        return node.id
+                    }
+                }
+                // Recursively check children's children
+                const found = findParentIdByTraversal(node.children, targetId)
+                if (found != null) return found
+            }
+        }
+        return null
+    }
+
+    export function getParentId(nodeId?: string | number | null): string | number | null {
+        const id = nodeId ?? selectedNodeId
+        if (id == null) return null
+        
+        // 1. Try to get explicit PARENT_ID from node data (e.g. from DB)
+        const node = findNodeById(treeData, id)
+        if (node && node.PARENT_ID != null && node.PARENT_ID !== '') {
+            return node.PARENT_ID
+        }
+
+        // 2. Fallback: infer parent from tree structure
+        return findParentIdByTraversal(treeData, id)
+    }
+
     const initialTreeData: TreeNode[] = rawTreeData.length > 0 ? normalizeTreeData(rawTreeData as any[]) : defaultTreeData
     let treeData = $state<TreeNode[]>(initialTreeData)
     // Initialize with prop if available, otherwise first node
@@ -251,14 +285,18 @@
         if (!id) return
         const selectedIdStr = selectedNodeId == null ? '' : String(selectedNodeId)
         const selfCode = getSelfCode(selectedNodeId) ?? ''
+        const parentId = getParentId(selectedNodeId)
+        const parentIdStr = parentId == null ? '' : String(parentId)
+
         const effectiveSelfCode = selfCode || selectedIdStr
-        const signature = `${selectedIdStr}|${selfCode}`
+        const signature = `${selectedIdStr}|${selfCode}|${parentIdStr}`
         if (signature === lastPersistedSelection) return
         lastPersistedSelection = signature
         updateNodeProps(id, {
             attributes: {
                 selectedNodeId: selectedIdStr,
-                selectedSelfCode: effectiveSelfCode
+                selectedSelfCode: effectiveSelfCode,
+                selectedParentId: parentIdStr
             }
         })
     })

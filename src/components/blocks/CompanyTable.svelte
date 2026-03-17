@@ -4,6 +4,7 @@
     import NodeRenderer from '../widgets/NodeRenderer.svelte'
     import type { DomNode } from '../../types/dom-node.types'
     import { domTreeVersionStore, domTree, findNodeById } from '../../stores/dom-tree.store.svelte'
+    import { pinyin } from 'pinyin-pro'
 
     interface Props {
         style?: string
@@ -54,7 +55,11 @@
                 const attrs = (latestTreeNode.attributes || {}) as any
                 const v1 = typeof attrs.selectedSelfCode === 'string' ? attrs.selectedSelfCode : ''
                 const v2 = typeof attrs.selectedNodeId === 'string' ? attrs.selectedNodeId : ''
+                const v3 = typeof attrs.selectedParentId === 'string' ? attrs.selectedParentId : ''
+
                 params.SELF_CODE = (v1 || v2) ?? ''
+                if (v2) params.ID = v2
+                if (v3) params.PARENT_ID = v3
             }
         }
 
@@ -63,19 +68,27 @@
             const latestToolbarNode = findNodeById(domTree, rawToolbar.id) || rawToolbar
             const toolbarAttrs = (latestToolbarNode.attributes || {}) as any
             const queryConditions = Array.isArray(toolbarAttrs.queryConditions) ? toolbarAttrs.queryConditions : []
-            const children = Array.isArray(latestToolbarNode.children) ? latestToolbarNode.children : []
-            const condNodes = children.filter((c: any) => c?.componentType === 'ConditionInput')
+            const conditionNodes = (latestToolbarNode.children ?? []).filter((n: any) => n.componentType === 'ConditionInput')
+            conditionNodes.forEach((condNode: any, index: number) => {
+                const condConfig = queryConditions[index]
+                if (!condConfig || condConfig.disabled !== true) {
+                    const latestCondNode = findNodeById(domTree, condNode.id) || condNode
+                    const val = latestCondNode.attributes?.value ?? ''
 
-            queryConditions.forEach((cfg: any, index: number) => {
-                const condNode = condNodes[index]
-                const latestCondNode = condNode ? findNodeById(domTree, condNode.id) || condNode : null
-                const keyRaw = typeof cfg?.id === 'string' ? cfg.id.trim() : ''
-                const fallbackKey = typeof cfg?.name === 'string' ? cfg.name.trim() : ''
-                const key = keyRaw || fallbackKey
-                if (!key) return
-                const condAttrs = (latestCondNode?.attributes || {}) as any
-                const v = condAttrs.value
-                params[key] = v == null ? '' : String(v)
+                    const label = condConfig && typeof condConfig.name === 'string' && condConfig.name.trim().length > 0 ? condConfig.name : latestCondNode.attributes?.['data-name']
+                    const identifier = condConfig && typeof condConfig.id === 'string' && condConfig.id.trim().length > 0 ? condConfig.id.trim() : ''
+
+                    let paramKey = ''
+                    if (identifier) {
+                        paramKey = identifier
+                    } else if (label) {
+                        paramKey = pinyin(label, { pattern: 'first', toneType: 'none', type: 'array' }).join('').toUpperCase()
+                    } else {
+                        paramKey = `condition_${index}`
+                    }
+
+                    params[paramKey] = typeof val === 'string' ? val : String(val)
+                }
             })
         }
 
