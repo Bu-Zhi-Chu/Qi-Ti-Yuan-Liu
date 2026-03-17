@@ -41,6 +41,7 @@
     import { onMount, createEventDispatcher, tick } from 'svelte'
     import ResponsiveBox from '../core/ResponsiveBox.svelte'
     import { updateNodeProps } from '../../services/parser/property-panel.service'
+    import { cachedFetch } from '../../services/cache/cached-fetch'
 
     interface Props {
         value?: Date | string
@@ -329,6 +330,185 @@
         return roots
     }
 
+    function sanitizeUrlInput(raw: string): string {
+        let s = (raw || '').trim()
+        if (!s) return ''
+
+        if ((s.startsWith('`') && s.endsWith('`')) || (s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
+            s = s.slice(1, -1).trim()
+        }
+
+        while (s && /[`\s"'(<]/.test(s[0])) s = s.slice(1)
+        while (s && /[`\s"'()<>:,]/.test(s[s.length - 1])) s = s.slice(0, -1)
+
+        return s.trim()
+    }
+
+    function resolveAbsoluteUrl(raw: string): string {
+        const s = sanitizeUrlInput(raw)
+        if (!s) return ''
+        if (/^https?:\/\//i.test(s)) return s
+        if (s.startsWith('//')) return `https:${s}`
+        if (/^[\w.-]+\.[a-z]{2,}(\/|$)/i.test(s)) return `https://${s}`
+        const origin = window.location.origin
+        if (s.startsWith('/')) return `${origin}${s}`
+        return `${origin}/${s}`
+    }
+
+    function unwrapArrayPayload(payload: any): any[] {
+        if (Array.isArray(payload)) return payload
+        if (payload && typeof payload === 'object') {
+            const candidateKeys = ['data', 'result', 'rows', 'list', 'items']
+            for (const k of candidateKeys) {
+                const v = (payload as any)[k]
+                if (Array.isArray(v)) return v
+            }
+        }
+        return []
+    }
+
+    function normalizeTreePayload(payload: any): TreeNode[] {
+        const arr = unwrapArrayPayload(payload)
+        if (!arr.length) return []
+        const first = arr[0]
+        if (first && typeof first === 'object' && Array.isArray((first as any).children)) {
+            const convert = (raw: any): TreeNode => {
+                const id = raw?.id ?? raw?.ID ?? raw?.REGION_ID
+                const label = raw?.label ?? raw?.NAME ?? raw?.text ?? raw?.USER_NAME ?? String(id ?? '')
+                const children = Array.isArray(raw?.children) ? raw.children.map(convert) : undefined
+                return { id: id == null ? '' : String(id), label, expanded: raw?.expanded ?? true, children }
+            }
+            return arr.map(convert)
+        }
+        if (first && typeof first === 'object' && ('PARENT_ID' in first || 'parentId' in first || 'P_ID' in first)) {
+            return buildTreeFromFlat(arr)
+        }
+        return arr.map((raw: any) => {
+            const id = raw?.id ?? raw?.ID ?? raw?.REGION_ID ?? raw
+            const label = raw?.label ?? raw?.NAME ?? raw?.text ?? raw?.USER_NAME ?? String(id ?? '')
+            return { id: id == null ? '' : String(id), label, expanded: true }
+        })
+    }
+
+    function normalizeSelectPayload(payload: any): string[] {
+        const arr = unwrapArrayPayload(payload)
+        if (!arr.length) return []
+        const result: string[] = []
+        for (const raw of arr) {
+            if (typeof raw === 'string') {
+                result.push(raw)
+                continue
+            }
+            if (raw && typeof raw === 'object') {
+                const s = raw.label ?? raw.NAME ?? raw.text ?? raw.USER_NAME ?? raw.value ?? raw.ID ?? raw.id
+                if (s != null) result.push(String(s))
+            }
+        }
+        return result
+    }
+
+    let lastRemoteFetchKey = $state<string | null>(null)
+    let remoteController: AbortController | null = null
+    let remoteTimer: ReturnType<typeof setTimeout> | null = null
+    let remoteSelectOptions = $state<string[] | null>(null)
+
+    function cancelRemoteRequest() {
+        if (remoteTimer) {
+            clearTimeout(remoteTimer)
+            remoteTimer = null
+        }
+        if (remoteController) {
+            remoteController.abort()
+            remoteController = null
+        }
+    }
+
+    $effect(() => {
+        return () => {
+            cancelRemoteRequest()
+        }
+    })
+
+    $effect(() => {
+        if (mode !== 'tree' && mode !== 'select') {
+            cancelRemoteRequest()
+            lastRemoteFetchKey = null
+            remoteSelectOptions = null
+            return
+        }
+
+        const attrs: any = rest
+        const source = attrs?.dataSource
+        if (source !== 'real' && source !== 'mock') {
+            cancelRemoteRequest()
+            lastRemoteFetchKey = null
+            remoteSelectOptions = null
+            return
+        }
+
+        const requestPath = String(attrs?.requestPath ?? '').trim()
+        const mockPath = String(attrs?.mockPath ?? '').trim()
+        const rawPath = source === 'real' ? requestPath : mockPath
+        const url = resolveAbsoluteUrl(rawPath)
+        if (!url) {
+            cancelRemoteRequest()
+            lastRemoteFetchKey = null
+            remoteSelectOptions = null
+            return
+        }
+
+        const fetchKey = `${source}|${mode}|${url}`
+        if (fetchKey === lastRemoteFetchKey) return
+        lastRemoteFetchKey = fetchKey
+
+        cancelRemoteRequest()
+        remoteController = new AbortController()
+        const controller = remoteController
+
+        remoteTimer = setTimeout(async () => {
+            try {
+                const ownerKey = fetchKey
+                const apply = (payload: any) => {
+                    if (controller.signal.aborted) return
+                    if (lastRemoteFetchKey !== ownerKey) return
+
+                    if (mode === 'tree') {
+                        const next = normalizeTreePayload(payload)
+                        if (next.length > 0) {
+                            treeSelectData = next
+                            if (selectedTreeId && !findTreeNodeById(next, selectedTreeId)) {
+                                selectedTreeId = null
+                                value = ''
+                            }
+                        }
+                    } else {
+                        const opts = normalizeSelectPayload(payload)
+                        remoteSelectOptions = opts.length > 0 ? opts : null
+                        if (typeof value === 'string' && remoteSelectOptions && remoteSelectOptions.length > 0 && !remoteSelectOptions.includes(value)) {
+                            selectedIndex = null
+                            value = ''
+                        }
+                    }
+                }
+
+                const data = await cachedFetch<any>(
+                    url,
+                    { method: 'GET', signal: controller.signal },
+                    {
+                        onUpdate: (fresh) => {
+                            apply(fresh)
+                        }
+                    }
+                )
+
+                apply(data)
+            } catch (e) {
+                if ((e as any)?.name === 'AbortError') return
+                console.error('ConditionInput: Failed to fetch remote data', e)
+            }
+        }, 400)
+    })
+
     // 默认当前：切换到 example 时，重新使用当前时间
     $effect(() => {
         const attrs: any = rest
@@ -507,7 +687,7 @@
         updateNodeProps(id, { attributes: { value: next } })
     })
 
-    let selectOptions = $derived((options && options.length > 0 ? options : ['选项一', '选项二', '选项三']).slice())
+    let selectOptions = $derived(((remoteSelectOptions && remoteSelectOptions.length > 0 ? remoteSelectOptions : options && options.length > 0 ? options : ['选项一', '选项二', '选项三']) as string[]).slice())
     let selectedIndex = $state<number | null>(null)
 
     $effect(() => {
