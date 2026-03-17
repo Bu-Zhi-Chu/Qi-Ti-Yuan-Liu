@@ -7,6 +7,7 @@
     import type { Snippet } from 'svelte'
 
     interface ColumnLabelConfig {
+        id?: string
         label: string
         frozen: boolean
         previewLength?: number
@@ -111,6 +112,7 @@
         const cols = raw.map((h) => {
             if (typeof h === 'string') {
                 return {
+                    id: '',
                     label: h,
                     frozen: false,
                     previewLength: 10,
@@ -125,13 +127,14 @@
             const widthUnit = h.widthUnit === '%' ? '%' : 'px'
 
             return {
+                id: typeof (h as any)?.id === 'string' ? (h as any).id : '',
                 label: h.label ?? '',
                 frozen: globalMode === 'balanced' ? false : (h.frozen ?? false),
                 previewLength: h.previewLength ?? 10,
                 widthMode: globalMode,
                 widthValue,
                 widthUnit,
-                type: 'default',
+                type: h.type ?? 'default',
                 editable: h.editable ?? false
             } as ColumnLabelConfig
         })
@@ -325,8 +328,26 @@
         if ((dataSource === 'mock' || dataSource === 'real') && tableData && tableData.isSuccess && Array.isArray(tableData.result)) {
             const resultData = tableData.result
             const mapping = dataSource === 'mock' ? mockSeriesMapping : requestSeriesMapping
+            const headerIdMapping = allHeaders.filter((h) => !h.type || h.type === 'default').map((h) => (typeof (h as any)?.id === 'string' ? String((h as any).id).trim() : ''))
+            const hasHeaderIds = headerIdMapping.some((v) => v && v.length > 0)
 
             if (!mapping || mapping.length === 0) {
+                if (hasHeaderIds) {
+                    return resultData.map((row: any) => {
+                        const keys = Object.keys(row)
+                        const fallbackKeys = keys.slice(0, dataHeaderCount)
+                        const dataRow = Array.from({ length: dataHeaderCount }, (_, i) => i)
+                            .filter((i) => !hiddenColumnIndices.has(i + systemCols.length))
+                            .map((i) => {
+                                const headerId = headerIdMapping[i] || ''
+                                const fallbackKey = fallbackKeys[i] || ''
+                                const key = headerId || fallbackKey
+                                if (!key) return ''
+                                return row[key] ?? ''
+                            })
+                        return [...systemCols, ...dataRow]
+                    })
+                }
                 return resultData.map((row: any) => {
                     const keys = Object.keys(row)
                     // We only want 'dataHeaderCount' columns from data
@@ -345,10 +366,15 @@
             }
 
             return resultData.map((row: any) => {
-                const dataRow = mapping
-                    .map((key, i) => ({ key, i }))
-                    .filter(({ i }) => !hiddenColumnIndices.has(i + systemCols.length))
-                    .map(({ key }) => {
+                const keys = Object.keys(row)
+                const fallbackKeys = keys.slice(0, dataHeaderCount)
+                const dataRow = Array.from({ length: dataHeaderCount }, (_, i) => i)
+                    .filter((i) => !hiddenColumnIndices.has(i + systemCols.length))
+                    .map((i) => {
+                        const headerId = headerIdMapping[i] || ''
+                        const explicitKey = typeof mapping?.[i] === 'string' ? mapping[i] : ''
+                        const fallbackKey = fallbackKeys[i] || ''
+                        const key = headerId || explicitKey || fallbackKey
                         if (!key) return ''
                         return row[key] ?? ''
                     })

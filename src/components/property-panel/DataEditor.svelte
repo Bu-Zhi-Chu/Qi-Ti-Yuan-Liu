@@ -141,6 +141,13 @@
         return []
     })
 
+    let hasTableHeaderIdMapping = $derived.by(() => {
+        if (componentType !== 'DynamicTable') return false
+        const labels = currentValues.columnLabels
+        if (!Array.isArray(labels) || labels.length === 0) return false
+        return labels.some((c: any) => typeof c === 'object' && c && typeof c.id === 'string' && c.id.trim().length > 0)
+    })
+
     // 派生状态：确保 jsonColumnMapping 数组的长度与列数一致
     let jsonColumnMapping = $derived(() => {
         const mapping = currentValues.jsonColumnMapping as (string | null)[] | undefined
@@ -924,7 +931,7 @@
             </PropertyRow>
         {/if}
     {:else if dataSource === 'mock'}
-        {#if mappingCount() > 0}
+        {#if !hasTableHeaderIdMapping && mappingCount() > 0}
             {#each Array(mappingCount()) as _, idx}
                 <PropertyRow label={`${getChineseOrdinal(idx)}映射`}>
                     {#if dataMappingKeys.length > 0}
@@ -939,7 +946,7 @@
 
     <!-- 动态数据(real)模式：编辑 requestSeriesMapping -->
     {#if dataSource === 'real'}
-        {#if mappingCount() > 0}
+        {#if !hasTableHeaderIdMapping && mappingCount() > 0}
             {#each Array(mappingCount()) as _, idx}
                 <PropertyRow label={`${getChineseOrdinal(idx)}映射`}>
                     {#if dataMappingKeys.length > 0}
