@@ -319,6 +319,8 @@
         const base = dataSourceConfig?.options || []
         if (componentType !== 'ConditionInput') return base
         const mode = conditionInputMode
+
+        // 1. 日期模式：禁用 real，特殊处理 example/mock
         if (mode === 'year' || mode === 'date' || mode === 'datetime') {
             const filtered = base.filter((opt: any) => opt?.value !== 'real')
             return filtered.map((opt: any, index: number) => {
@@ -331,6 +333,12 @@
                 return opt
             })
         }
+
+        // 2. 树模式：保留 example 作为默认示例数据入口
+        if (mode === 'tree') {
+            return base
+        }
+
         return base
     })
 
@@ -722,7 +730,7 @@
 </script>
 
 <div class="data-editor">
-    {#if dataSourceConfig && componentType !== 'ConditionInput'}
+    {#if dataSourceConfig && (componentType !== 'ConditionInput' || conditionInputMode === 'tree')}
         <PropertyRow label={dataSourceConfig.label}>
             <PropertySelect value={currentValues.dataSource ?? dataSourceConfig.default ?? 'json'} options={visibleDataSourceOptions} change={(v) => handleAttrChange('dataSource', v)} />
         </PropertyRow>
@@ -790,7 +798,7 @@
             <PropertyRow label="临时数据">
                 <CodeEditor code={currentValues.treeDataCode ?? ''} language="json" theme="one-dark" height="calc(120px * var(--scale-ratio, 1))" run={(code: string) => updateFilterTreeData(code)} toolbar={false} autoRun={true} wrap={true} showLineNumbers={false} style="flex:1; width:0;" />
             </PropertyRow>
-        {:else if componentType === 'ConditionInput'}
+        {:else if componentType === 'ConditionInput' && conditionInputMode === 'tree'}
             <PropertyRow label="临时数据">
                 <CodeEditor
                     code={currentValues.inputDataCode ?? ''}
@@ -805,7 +813,7 @@
                     style="flex:1; width:0;"
                 />
             </PropertyRow>
-        {:else if dataArrays.length > 0}
+        {:else if componentType !== 'ConditionInput' && dataArrays.length > 0}
             {#each dataArrays as arr, idx}
                 <PropertyRow label={`${getChineseOrdinal(idx)}序列`}>
                     <CodeEditor code={dataArrays[idx]} language="javascript" theme="one-dark" height="calc(80px * var(--scale-ratio, 1))" run={(code: string) => updateDataArray(idx, code)} toolbar={false} autoRun={true} wrap={true} showLineNumbers={false} style="flex:1; width:0;" />

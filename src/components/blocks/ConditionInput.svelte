@@ -223,14 +223,111 @@
     $effect(() => {
         const attrs: any = rest
         const source = attrs?.dataSource
-        if (source !== 'json') return
-        if (mode !== 'year' && mode !== 'date' && mode !== 'datetime') return
-        const raw = attrs?.inputDataCode
-        const parsed = parseTempDateByMode(mode, raw)
-        if (!parsed) return
-        if (parsed.getTime() === internalDate.getTime()) return
-        setValue(parsed)
+
+        // Handle tree mode with JSON data
+        if (source === 'json' && mode === 'tree') {
+            const raw = attrs?.inputDataCode
+            if (raw) {
+                try {
+                    let flatData: any[] = []
+
+                    // Case 1: Raw string input
+                    if (typeof raw === 'string') {
+                        const jsonStr = raw.trim()
+                        if (jsonStr.startsWith('{') || jsonStr.startsWith('[')) {
+                            const parsed = JSON.parse(jsonStr)
+                            if (Array.isArray(parsed)) {
+                                flatData = parsed
+                            } else if (parsed && typeof parsed === 'object') {
+                                if (Array.isArray(parsed.result)) {
+                                    flatData = parsed.result
+                                } else {
+                                    flatData = [parsed]
+                                }
+                            }
+                        }
+                    }
+                    // Case 2: Already an array
+                    else if (Array.isArray(raw)) {
+                        flatData = raw
+                    }
+                    // Case 3: Object with result array
+                    else if (typeof raw === 'object' && raw !== null) {
+                        if (Array.isArray(raw.result)) {
+                            flatData = raw.result
+                        } else {
+                            flatData = [raw]
+                        }
+                    }
+
+                    if (flatData.length > 0) {
+                        // 转换扁平数据为树结构
+                        const roots = buildTreeFromFlat(flatData)
+                        if (roots.length > 0) {
+                            treeSelectData = roots
+                            // 如果当前选中ID不在新树中，重置选中
+                            if (selectedTreeId && !findTreeNodeById(roots, selectedTreeId)) {
+                                selectedTreeId = null
+                                value = ''
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.error('ConditionInput: Failed to parse tree data', e)
+                }
+            }
+            return
+        }
+
+        // Handle date modes with JSON data
+        if (source === 'json' && (mode === 'year' || mode === 'date' || mode === 'datetime')) {
+            const raw = attrs?.inputDataCode
+            const parsed = parseTempDateByMode(mode, raw)
+            if (!parsed) return
+            if (parsed.getTime() === internalDate.getTime()) return
+            setValue(parsed)
+        }
     })
+
+    function buildTreeFromFlat(data: any[]): TreeNode[] {
+        const nodeMap = new Map<string, TreeNode>()
+        const roots: TreeNode[] = []
+
+        // 1. Create nodes map
+        data.forEach((item) => {
+            const id = item.ID ?? item.id ?? item.REGION_ID
+            if (id != null) {
+                const idStr = String(id)
+                nodeMap.set(idStr, {
+                    id: idStr,
+                    label: item.NAME ?? item.label ?? item.text ?? item.USER_NAME ?? idStr,
+                    expanded: true,
+                    children: []
+                })
+            }
+        })
+
+        // 2. Build hierarchy
+        data.forEach((item) => {
+            const id = item.ID ?? item.id ?? item.REGION_ID
+            if (id == null) return
+
+            const node = nodeMap.get(String(id))
+            if (!node) return
+
+            // Try different parent ID fields
+            const parentId = item.PARENT_ID ?? item.parentId ?? item.P_ID
+
+            if (parentId != null && nodeMap.has(String(parentId))) {
+                const parent = nodeMap.get(String(parentId))
+                parent?.children?.push(node)
+            } else {
+                roots.push(node)
+            }
+        })
+
+        return roots
+    }
 
     // 默认当前：切换到 example 时，重新使用当前时间
     $effect(() => {

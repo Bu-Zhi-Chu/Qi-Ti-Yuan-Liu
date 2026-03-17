@@ -189,7 +189,7 @@
     export function getParentId(nodeId?: string | number | null): string | number | null {
         const id = nodeId ?? selectedNodeId
         if (id == null) return null
-        
+
         // 1. Try to get explicit PARENT_ID from node data (e.g. from DB)
         const node = findNodeById(treeData, id)
         if (node && node.PARENT_ID != null && node.PARENT_ID !== '') {
