@@ -54,6 +54,10 @@
     function handleButtonClick(btn: ActionButtonConfig) {
         if (btn.buttonType === 'add') {
             handleAddClick()
+            return
+        }
+        if (btn.buttonType === 'search') {
+            context?.triggerQuery?.()
         }
     }
 

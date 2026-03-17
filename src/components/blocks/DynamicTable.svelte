@@ -38,6 +38,7 @@
         mockPath?: string
         requestSeriesMapping?: string[]
         mockSeriesMapping?: string[]
+        queryParams?: Record<string, any>
         style?: string
         class?: string
         children?: Snippet
@@ -65,6 +66,7 @@
         mockPath = '',
         requestSeriesMapping = [],
         mockSeriesMapping = [],
+        queryParams,
         style = '',
         class: className = '',
         children,
@@ -234,11 +236,26 @@
         }
     }
 
+    function withQueryParams(path: string, params: Record<string, any> | undefined): string {
+        const base = (path || '').trim()
+        if (!base) return base
+        if (!params) return base
+        const entries = Object.entries(params).filter(([k, v]) => k && v !== undefined && v !== null && String(v).trim() !== '')
+        if (entries.length === 0) return base
+        const sp = new URLSearchParams()
+        for (const [k, v] of entries) {
+            sp.set(k, String(v))
+        }
+        const qs = sp.toString()
+        if (!qs) return base
+        return base.includes('?') ? `${base}&${qs}` : `${base}?${qs}`
+    }
+
     function handleRefresh() {
         if (dataSource === 'real' && requestPath) {
-            fetchTableData(requestPath, true)
+            fetchTableData(withQueryParams(requestPath, queryParams), true)
         } else if (dataSource === 'mock' && mockPath) {
-            fetchTableData(mockPath, true)
+            fetchTableData(withQueryParams(mockPath, queryParams), true)
         } else if (dataSource === 'json') {
             isLoading = true
             setTimeout(() => {
@@ -253,7 +270,7 @@
                 tableData = null
                 return
             }
-            fetchTableData(path)
+            fetchTableData(withQueryParams(path, queryParams))
         }
 
         if (dataSource === 'real' && requestPath) {

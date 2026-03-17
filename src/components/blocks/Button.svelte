@@ -10,7 +10,7 @@
     import ResponsiveBox from '../core/ResponsiveBox.svelte'
     import { currentPage } from '../../stores/dom-tree.store.svelte'
     import { setCurrentPage } from '../../stores/dom-tree.store.svelte'
-    import { onMount } from 'svelte'
+    import { getContext, onMount } from 'svelte'
     import { findNodeById, domTree, findParentById } from '../../stores/dom-tree.store.svelte'
 
     interface Props {
@@ -24,10 +24,12 @@
         highlightImage?: string
         hoverEffect?: string
         buttonType?: string
+        businessStyle?: string
         navigationTarget?: string
         jumpPath?: string
         // 新增：默认首页开关
         defaultHome?: boolean
+        editing?: boolean
         style?: string
         children?: any
         [key: string]: any
@@ -44,9 +46,11 @@
         highlightImage = '',
         hoverEffect = '',
         buttonType = '',
+        businessStyle = '',
         navigationTarget = '',
         jumpPath = '',
         /* 新增 */ defaultHome = false,
+        editing = false,
         style = '',
         children,
         ...rest
@@ -62,6 +66,10 @@
     // 移除对 highlightImage 的直接样式注入，交由 NodeRenderer 通过 --bg-img 处理
     const mergedStyle = $derived(() => style)
 
+    const companyTableContext = getContext<any>('company-table')
+    const isBusinessButton = $derived(buttonType === 'hongde')
+    const isClickable = $derived((enableClick || isBusinessButton) && !disabled)
+
     function resolveJumpUrl(raw: string): string | null {
         const s = (raw || '').trim()
         if (!s) return null
@@ -73,6 +81,16 @@
 
     /** 点击事件，根据按钮类型执行不同逻辑 */
     function handleClick() {
+        if (editing) return
+
+        if (isBusinessButton) {
+            companyTableContext?.handleBusinessAction?.({
+                id,
+                businessStyle
+            })
+            return
+        }
+
         switch (buttonType) {
             case 'switch':
                 toggled = !toggled
@@ -145,7 +163,7 @@
 </script>
 
 <ResponsiveBox {id} {...rest} class={`btn ${hoverEffect} ${externalClass()}`} {disabled} style={mergedStyle()}>
-    <div class="full-size" role="button" tabindex={enableClick ? 0 : undefined} onclick={enableClick ? handleClick : undefined} onkeydown={enableClick ? handleKey : undefined}>
+    <div class="full-size" role="button" tabindex={isClickable ? 0 : undefined} onclick={isClickable ? handleClick : undefined} onkeydown={isClickable ? handleKey : undefined}>
         <span style="margin-left: calc({textOffsetLeft} * var(--scale-ratio, 1)); margin-top: calc({textOffsetTop} * var(--scale-ratio, 1));">
             {#if children}
                 {@render children()}

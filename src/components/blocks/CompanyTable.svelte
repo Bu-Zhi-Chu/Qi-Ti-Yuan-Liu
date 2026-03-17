@@ -4,6 +4,7 @@
     import NodeRenderer from '../widgets/NodeRenderer.svelte'
     import type { DomNode } from '../../types/dom-node.types'
     import { domTreeVersionStore, domTree, findNodeById } from '../../stores/dom-tree.store.svelte'
+    import { updateNodeProps } from '../../services/parser/property-panel.service'
 
     interface Props {
         style?: string
@@ -38,9 +39,74 @@
         extraHeightPercent = extraHeightPercent === 0 ? 26 : 0
     }
 
+    function getLatestNode(nodeId: string): any | null {
+        if (!nodeId) return null
+        return findNodeById(domTree, nodeId)
+    }
+
+    function buildQueryParams(): Record<string, any> {
+        const params: Record<string, any> = { _ts: Date.now() }
+
+        const filterTreeChild = childrenNodes.find((n) => n.componentType === 'FilterTree')
+        if (filterTreeChild?.id) {
+            const latest = getLatestNode(filterTreeChild.id)
+            const attrs = (latest?.attributes || {}) as any
+            if (attrs.selectedNodeId != null && String(attrs.selectedNodeId).trim() !== '') {
+                params.treeNodeId = attrs.selectedNodeId
+            }
+            if (attrs.selectedSelfCode != null && String(attrs.selectedSelfCode).trim() !== '') {
+                params.treeSelfCode = attrs.selectedSelfCode
+            }
+            if (attrs.selectedLabel != null && String(attrs.selectedLabel).trim() !== '') {
+                params.treeLabel = attrs.selectedLabel
+            }
+        }
+
+        const toolbarChild = childrenNodes.find((n) => n.componentType === 'CompanyTableToolbar')
+        if (toolbarChild?.id) {
+            const latestToolbar = getLatestNode(toolbarChild.id)
+            const toolbarAttrs = (latestToolbar?.attributes || {}) as any
+            const condConfigs = Array.isArray(toolbarAttrs.queryConditions) ? toolbarAttrs.queryConditions : []
+            const condNodes = Array.isArray(latestToolbar?.children) ? latestToolbar.children.filter((c: any) => c?.componentType === 'ConditionInput') : []
+
+            for (let i = 0; i < condNodes.length; i++) {
+                const node = condNodes[i]
+                const nodeAttrs = (node?.attributes || {}) as any
+                const cfg = condConfigs[i] as any
+                if (cfg?.disabled === true) continue
+                const key = typeof cfg?.id === 'string' && cfg.id.trim().length > 0 ? cfg.id.trim() : node.id
+                const val = nodeAttrs.value
+                if (val !== undefined) {
+                    params[key] = val
+                }
+            }
+        }
+
+        return params
+    }
+
+    function triggerQuery() {
+        const tableChild = childrenNodes.find((n) => n.componentType === 'DynamicTable')
+        if (!tableChild?.id) return
+        const params = buildQueryParams()
+        updateNodeProps(tableChild.id, { attributes: { queryParams: params } })
+    }
+
     const toolbarContext = {
         toggleExtraRegion: () => {
             handleAddClick()
+        },
+        triggerQuery,
+        handleBusinessAction: (payload: { id?: string; businessStyle?: string }) => {
+            const style = (payload?.businessStyle || '').trim()
+            if (style === 'add') {
+                handleAddClick()
+                return
+            }
+            if (style === 'search') {
+                triggerQuery()
+                return
+            }
         }
     }
 
@@ -161,7 +227,7 @@
                 <NodeRenderer node={toolbarNode} {selectedId} {editing} {selectionBorderDisabled} {select} />
             {:else}
                 <div class="company-table-right-toolbar">
-                    <button type="button" class="company-table-btn">
+                    <button type="button" class="company-table-btn" onclick={triggerQuery}>
                         <img class="company-table-btn-icon" src={searchIcon} alt="" />
                         查询
                     </button>

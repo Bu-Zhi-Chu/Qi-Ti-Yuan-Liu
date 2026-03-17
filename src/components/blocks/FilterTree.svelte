@@ -1,5 +1,6 @@
 <script lang="ts">
     import ResponsiveBox from '../core/ResponsiveBox.svelte'
+    import { updateNodeProps } from '../../services/parser/property-panel.service'
 
     interface TreeNode {
         id: string | number
@@ -16,12 +17,13 @@
         multiList?: boolean
         enableMultiSelect?: boolean
         dataSource?: string
+        id?: string
         style?: string
         'data-id'?: string
         [key: string]: any
     }
 
-    let { tabs = ['点类型', '管理单位', '自定义'], treeData: rawTreeData = [], multiList = false, enableMultiSelect = false, dataSource = 'example', style = '', 'data-id': dataId = '', ...restProps }: Props = $props()
+    let { tabs = ['点类型', '管理单位', '自定义'], treeData: rawTreeData = [], multiList = false, enableMultiSelect = false, dataSource = 'example', id = '', style = '', 'data-id': dataId = '', ...restProps }: Props = $props()
 
     let activeTabIndex = $state(0)
     let searchText = $state('')
@@ -166,6 +168,7 @@
     let selectedNodeId = $state<string | number | null>(initialTreeData[0]?.id ?? null)
     let lastSearchTerm = $state('')
     let lastMatchedNodeId = $state<string | number | null>(null)
+    let lastPersistedId = $state<string | number | null>(null)
 
     $effect(() => {
         console.log('[FilterTree] effect 触发，dataSource:', dataSource, 'rawTreeData length:', Array.isArray(rawTreeData) ? rawTreeData.length : '非数组')
@@ -210,6 +213,16 @@
             SELF_CODE: node.SELF_CODE
         })
         selectedNodeId = node.id
+        if (id && lastPersistedId !== node.id) {
+            lastPersistedId = node.id
+            updateNodeProps(id, {
+                attributes: {
+                    selectedNodeId: node.id,
+                    selectedSelfCode: node.SELF_CODE ?? '',
+                    selectedLabel: node.label ?? ''
+                }
+            })
+        }
     }
 
     function collectAllNodes(nodes: TreeNode[]): TreeNode[] {
@@ -305,7 +318,7 @@
         lastSearchTerm = term
         lastMatchedNodeId = found.id
         expandAncestors(found.id)
-        selectedNodeId = found.id
+        selectNode(found)
     }
 
     function triggerSearch() {

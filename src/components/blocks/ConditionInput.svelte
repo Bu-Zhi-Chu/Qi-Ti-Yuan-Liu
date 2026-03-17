@@ -320,6 +320,11 @@
         if (onChange) {
             onChange(new Date(committed))
         }
+        if (id) {
+            const dateStr = toInputValue(committed)
+            const nextValue = mode === 'datetime' ? `${dateStr} ${formatTimeString(committed.getHours(), committed.getMinutes(), committed.getSeconds())}` : dateStr
+            updateNodeProps(id, { attributes: { value: nextValue } })
+        }
         // Persist to doms attr if dateRecording enabled
         if (dateRecording && id) {
             updateNodeProps(id, { attributes: { recordedDate: toInputValue(committed) } })
@@ -434,6 +439,12 @@
 
     function selectTreeNode(node: TreeNode) {
         selectedTreeId = node.id
+        if (mode === 'tree') {
+            value = String(node.id)
+            if (id) {
+                updateNodeProps(id, { attributes: { value: String(node.id) } })
+            }
+        }
         isOpen = false
     }
 
@@ -541,6 +552,9 @@
         selectedIndex = index
         if (mode === 'select') {
             value = selectOptions[index] ?? ''
+            if (id) {
+                updateNodeProps(id, { attributes: { value: value } })
+            }
         }
         isOpen = false
     }
@@ -1027,7 +1041,19 @@
             </div>
         </div>
     {:else if mode === 'input'}
-        <input class="date-picker-display-input" type="text" bind:value={inputText} {disabled} />
+        <input
+            class="date-picker-display-input"
+            type="text"
+            bind:value={inputText}
+            {disabled}
+            oninput={() => {
+                if (mode !== 'input') return
+                value = inputText
+                if (id) {
+                    updateNodeProps(id, { attributes: { value: inputText } })
+                }
+            }}
+        />
     {:else if mode === 'select'}
         <div bind:this={buttonRef} class="date-picker-button select-button" class:disabled>
             <span class="date-text">
