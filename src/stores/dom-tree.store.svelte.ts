@@ -391,6 +391,34 @@ export async function loadDomTreeFromDatabase(projectId: string): Promise<boolea
 
 // 防抖定时器
 let saveTimeout: ReturnType<typeof setTimeout> | null = null;
+let saveInFlight: Promise<void> | null = null;
+let saveQueued = false;
+
+async function enqueueSaveToDomsTable(): Promise<void> {
+  if (!currentProjectId) {
+    console.warn('⚠️【数据交互】项目ID为空，跳过自动保存');
+    return;
+  }
+
+  if (saveInFlight) {
+    saveQueued = true;
+    return;
+  }
+
+  saveInFlight = (async () => {
+    await saveDomNodesToDomsTable(currentProjectId, domTreeData);
+  })();
+
+  try {
+    await saveInFlight;
+  } finally {
+    saveInFlight = null;
+    if (saveQueued) {
+      saveQueued = false;
+      await enqueueSaveToDomsTable();
+    }
+  }
+}
 
 
 
@@ -437,7 +465,7 @@ async function saveDomNodesToDomsTable(projectId: string, domTree: DomNode): Pro
         }
       }
 
-      await DexieService.addRecord(DEFAULT_DB_NAME, 'doms', {
+      await db.table('doms').put({
         projectId,
         moduleId: currentModuleId ?? null,
         id: node.id,
@@ -498,14 +526,7 @@ function autoSaveToDomsTable(): void {
   }
 
   saveTimeout = setTimeout(() => {
-    if (!currentProjectId) {
-      console.warn('⚠️【数据交互】项目ID为空，跳过自动保存');
-      return;
-    }
-
-
-
-    saveDomNodesToDomsTable(currentProjectId, domTreeData);
+    enqueueSaveToDomsTable();
   }, 500); // 500ms防抖
 }
 

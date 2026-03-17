@@ -253,7 +253,8 @@
         }
     }
 
-    function handleRefresh() {
+    async function handleRefresh() {
+        await companyTableContext?.waitForQueryReady?.()
         const queryParams = companyTableContext?.getQueryParams?.()
         if (dataSource === 'real' && requestPath) {
             fetchTableData(appendQueryParams(requestPath, queryParams), true)
@@ -273,21 +274,33 @@
     })
 
     $effect(() => {
-        const handleDataFetch = (path: string | undefined) => {
-            if (!path) {
-                tableData = null
-                return
+        let cancelled = false
+
+        const run = async () => {
+            const handleDataFetch = async (path: string | undefined) => {
+                if (!path) {
+                    tableData = null
+                    return
+                }
+                await companyTableContext?.waitForQueryReady?.()
+                if (cancelled) return
+                const queryParams = untrack(() => companyTableContext?.getQueryParams?.())
+                fetchTableData(appendQueryParams(path, queryParams))
             }
-            const queryParams = untrack(() => companyTableContext?.getQueryParams?.())
-            fetchTableData(appendQueryParams(path, queryParams))
+
+            if (dataSource === 'real' && requestPath) {
+                await handleDataFetch(requestPath)
+            } else if (dataSource === 'mock' && mockPath) {
+                await handleDataFetch(mockPath)
+            } else {
+                tableData = null
+            }
         }
 
-        if (dataSource === 'real' && requestPath) {
-            handleDataFetch(requestPath)
-        } else if (dataSource === 'mock' && mockPath) {
-            handleDataFetch(mockPath)
-        } else {
-            tableData = null
+        run()
+
+        return () => {
+            cancelled = true
         }
     })
 

@@ -188,6 +188,26 @@
     })
 
     let lastDataSource = $state<string | null>(null)
+    let lastDataReady = $state<boolean | null>(null)
+
+    function setDataReady(next: boolean) {
+        if (!id) return
+        if (lastDataReady === next) return
+        lastDataReady = next
+        updateNodeProps(id, { attributes: { dataReady: next } })
+    }
+
+    $effect(() => {
+        const attrs: any = rest
+        const source = attrs?.dataSource
+        if (mode === 'tree' || mode === 'select') {
+            if (source !== 'real' && source !== 'mock') {
+                setDataReady(true)
+            }
+            return
+        }
+        setDataReady(true)
+    })
 
     // 监听 mode 变化并重置值
     let previousMode = $state(mode)
@@ -277,6 +297,7 @@
                     console.error('ConditionInput: Failed to parse tree data', e)
                 }
             }
+            setDataReady(true)
             return
         }
 
@@ -287,6 +308,7 @@
             if (!parsed) return
             if (parsed.getTime() === internalDate.getTime()) return
             setValue(parsed)
+            setDataReady(true)
         }
     })
 
@@ -465,6 +487,7 @@
         remoteController = new AbortController()
         const controller = remoteController
 
+        setDataReady(false)
         remoteTimer = setTimeout(async () => {
             try {
                 const ownerKey = fetchKey
@@ -489,6 +512,7 @@
                             value = ''
                         }
                     }
+                    setDataReady(true)
                 }
 
                 const data = await cachedFetch<any>(
@@ -505,6 +529,7 @@
             } catch (e) {
                 if ((e as any)?.name === 'AbortError') return
                 console.error('ConditionInput: Failed to fetch remote data', e)
+                setDataReady(true)
             }
         }, 400)
     })

@@ -296,7 +296,8 @@
             attributes: {
                 selectedNodeId: selectedIdStr,
                 selectedSelfCode: effectiveSelfCode,
-                selectedParentId: parentIdStr
+                selectedParentId: parentIdStr,
+                dataReady: true
             }
         })
     })

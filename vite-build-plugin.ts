@@ -212,6 +212,11 @@ function startNewPreviewServer(port: number, directory: string, res: any) {
           pathname = '/index.html';
         }
 
+        try {
+          pathname = decodeURIComponent(pathname);
+        } catch {
+        }
+
         // 构建文件路径
         const filePath = resolve(staticDir, `.${pathname}`);
 

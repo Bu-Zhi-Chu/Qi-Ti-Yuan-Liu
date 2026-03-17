@@ -464,6 +464,7 @@
             const trimmed = code.trim()
             if (!trimmed) {
                 handleAttrChange('treeData', [])
+                handleAttrChange('dataReady', true)
                 return
             }
 
@@ -475,8 +476,10 @@
 
             console.log('[FilterTree][DataEditor] 写入 treeData，示例节点:', resultArray[0])
             handleAttrChange('treeData', resultArray)
+            handleAttrChange('dataReady', true)
         } catch (err) {
             console.error('[FilterTree][DataEditor] 更新过滤树临时数据失败', err)
+            handleAttrChange('dataReady', true)
         }
     }
 
@@ -610,6 +613,10 @@
         if (dataSource !== 'real' && dataSource !== 'mock') {
             cancelFilterTreeRequest()
             lastFilterTreeFetchKey = null
+            // 非远程模式视为已就绪（示例数据 / 临时数据）
+            if (selectedId) {
+                handleAttrChange('dataReady', true)
+            }
             return
         }
 
@@ -620,6 +627,8 @@
         if (!url) {
             cancelFilterTreeRequest()
             lastFilterTreeFetchKey = null
+            // 远程模式但未配置 URL 时，不阻塞查询
+            handleAttrChange('dataReady', true)
             return
         }
 
@@ -631,6 +640,7 @@
         filterTreeController = new AbortController()
         const controller = filterTreeController
 
+        handleAttrChange('dataReady', false)
         console.log(`[FilterTree][CacheFlow] start source=${dataSource} url=${url}`)
 
         filterTreeTimer = setTimeout(async () => {
@@ -644,6 +654,7 @@
                     const tree = normalizeFilterTreeRequestData(payload)
                     console.log(`[FilterTree][CacheFlow] apply stage=${stage} nodes=${Array.isArray(tree) ? tree.length : 0}`)
                     handleAttrChange('treeData', tree)
+                    handleAttrChange('dataReady', true)
                 }
 
                 const data = await cachedFetch<any>(
@@ -666,6 +677,7 @@
             } catch (e) {
                 if ((e as any)?.name === 'AbortError') return
                 console.error(`[FilterTree][DataEditor] ${dataSource} 请求解析失败`, e)
+                handleAttrChange('dataReady', true)
             }
         }, 400)
     })

@@ -59,7 +59,7 @@
 
                 params.SELF_CODE = (v1 || v2) ?? ''
                 if (v2) params.ID = v2
-                if (v3) params.PARENT_ID = v3
+                params.PARENT_ID = v3 ?? ''
             }
         }
 
@@ -95,6 +95,57 @@
         return params
     }
 
+    function isQueryReady(): boolean {
+        if (showTreeColumn) {
+            const rawTree = childrenNodes.find((n) => n.componentType === 'FilterTree') ?? childrenNodes[0]
+            if (rawTree) {
+                const latestTreeNode = findNodeById(domTree, rawTree.id) || rawTree
+                const attrs = (latestTreeNode.attributes || {}) as any
+                if (typeof attrs.dataReady === 'boolean' && attrs.dataReady !== true) {
+                    return false
+                }
+            }
+        }
+
+        const rawToolbar = childrenNodes.find((n) => n.componentType === 'CompanyTableToolbar') ?? null
+        if (rawToolbar) {
+            const latestToolbarNode = findNodeById(domTree, rawToolbar.id) || rawToolbar
+            const toolbarAttrs = (latestToolbarNode.attributes || {}) as any
+            const queryConditions = Array.isArray(toolbarAttrs.queryConditions) ? toolbarAttrs.queryConditions : []
+            const conditionNodes = (latestToolbarNode.children ?? []).filter((n: any) => n.componentType === 'ConditionInput')
+            for (let index = 0; index < conditionNodes.length; index++) {
+                const condNode = conditionNodes[index]
+                const condConfig = queryConditions[index]
+                if (condConfig && condConfig.disabled === true) continue
+                const latestCondNode = findNodeById(domTree, condNode.id) || condNode
+                const attrs = (latestCondNode.attributes || {}) as any
+                if (typeof attrs.dataReady === 'boolean' && attrs.dataReady !== true) {
+                    return false
+                }
+            }
+        }
+
+        return true
+    }
+
+    function waitForQueryReady(timeoutMs = 5000): Promise<void> {
+        const start = Date.now()
+        return new Promise((resolve) => {
+            const tick = () => {
+                if (isQueryReady()) {
+                    resolve()
+                    return
+                }
+                if (Date.now() - start >= timeoutMs) {
+                    resolve()
+                    return
+                }
+                setTimeout(tick, 50)
+            }
+            tick()
+        })
+    }
+
     const toolbarContext = {
         toggleExtraRegion: () => {
             handleAddClick()
@@ -102,10 +153,12 @@
         registerTableRefresh: (fn: (() => void) | null) => {
             tableRefreshFn = fn
         },
-        refreshTable: () => {
+        refreshTable: async () => {
+            await waitForQueryReady()
             tableRefreshFn?.()
         },
-        getQueryParams
+        getQueryParams,
+        waitForQueryReady
     }
 
     setContext('company-table', toolbarContext)

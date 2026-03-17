@@ -84,6 +84,18 @@
         return url
     }
 
+    function resolveCssUrl(raw: string): string {
+        const s = (raw || '').trim()
+        if (!s) return ''
+        if (/^(data:|blob:|https?:\/\/)/i.test(s)) return s
+        if (typeof window === 'undefined') return s
+        try {
+            return new URL(s, window.location.href).toString()
+        } catch {
+            return s
+        }
+    }
+
     // 组件卸载时释放所有创建的 Object URL（背景图引用计数由 dom-tree.store 统一管理）
 
     // 首次挂载预取背景图哈希
@@ -197,7 +209,7 @@
                         } else if (str.startsWith('url(')) {
                             value = str
                         } else if (str) {
-                            value = `url(${str})`
+                            value = `url(${resolveCssUrl(str)})`
                         }
                     }
                     // 使用 CSS 变量 --bg-img
